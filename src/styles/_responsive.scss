@@ -1,0 +1,158 @@
+/* ==========================================================================
+   MODERN RESPONSIVE DESIGN UTILITIES & BREAKPOINTS (SASS/SCSS)
+   Designed for maximum accuracy, performance, and cross-system compatibility.
+   ========================================================================== */
+
+@use "sass:map";
+
+// 1. Breakpoint definitions (Ultra-accurate specs for all device tiers)
+$breakpoints: (
+  "xs": 320px,   // Small wearables and compact smartphones (e.g., iPhone SE)
+  "sm": 480px,   // Medium-to-large smartphones (portrait)
+  "md": 768px,   // Tablets (portrait, e.g., iPad Mini/Air/Pro)
+  "lg": 1024px,  // Tablets (landscape), netbooks, small laptop screens
+  "xl": 1280px,  // Standard laptops and mainstream desktop monitors
+  "xxl": 1440px, // High-res laptops and standard widescreen monitors
+  "3xl": 1920px, // Full HD desktop displays and developer/designer monitors
+  "4xl": 2560px  // QHD, 4K monitors, and ultra-wide displays
+) !default;
+
+// Helper function to fetch breakpoint values
+@function get-breakpoint($name) {
+  @if map.has-key($breakpoints, $name) {
+    @return map.get($breakpoints, $name);
+  } @else {
+    @warn "Invalid breakpoint name: #{$name}. Choose from: #{map.keys($breakpoints)}.";
+    @return null;
+  }
+}
+
+// 2. Core Responsive Media Query Mixins
+
+// Mobile First - Min Width (Target screens at or larger than the breakpoint)
+@mixin mq-up($breakpoint) {
+  $val: get-breakpoint($breakpoint);
+  @if $val {
+    @media screen and (min-width: #{$val}) {
+      @content;
+    }
+  }
+}
+
+// Max Width (Target screens smaller than the breakpoint)
+// Subtracting 0.02px from upper bound to prevent pixel overlap issues
+@mixin mq-down($breakpoint) {
+  $val: get-breakpoint($breakpoint);
+  @if $val {
+    @media screen and (max-width: ($val - 0.02px)) {
+      @content;
+    }
+  }
+}
+
+// Range Width (Target screens strictly between two breakpoints)
+@mixin mq-between($min-breakpoint, $max-breakpoint) {
+  $min-val: get-breakpoint($min-breakpoint);
+  $max-val: get-breakpoint($max-breakpoint);
+
+  @if $min-val and $max-val {
+    @media screen and (min-width: #{$min-val}) and (max-width: ($max-val - 0.02px)) {
+      @content;
+    }
+  }
+}
+
+// Custom value queries (for arbitrary pixel overrides)
+@mixin mq-custom-up($width) {
+  @media screen and (min-width: #{$width}) {
+    @content;
+  }
+}
+
+@mixin mq-custom-down($width) {
+  @media screen and (max-width: ($width - 0.02px)) {
+    @content;
+  }
+}
+
+// 3. Advanced Device Capability and Interaction Mixins
+
+// True Hover-Capable Devices (Mice, trackpads, styluses. Prevents sticky hover styles on mobile touch)
+@mixin hover-device {
+  @media (hover: hover) and (pointer: fine) {
+    @content;
+  }
+}
+
+// Touch/Gesture Devices (Phones, tablets, touch screens. Great for enlarging touch targets)
+@mixin touch-device {
+  @media (hover: none), (pointer: coarse) {
+    @content;
+  }
+}
+
+// Screen Orientation
+@mixin orientation($mode) {
+  @if $mode == "portrait" or $mode == "landscape" {
+    @media screen and (orientation: #{$mode}) {
+      @content;
+    }
+  } @else {
+    @warn "Orientation mode must be 'portrait' or 'landscape'.";
+  }
+}
+
+// Screen Aspect Ratio (e.g., 16/9, 4/3, 21/9)
+@mixin aspect-ratio($ratio, $operator: ">=") {
+  @if $operator == ">=" {
+    @media (min-aspect-ratio: #{$ratio}) {
+      @content;
+    }
+  } @else if $operator == "<=" {
+    @media (max-aspect-ratio: #{$ratio}) {
+      @content;
+    }
+  } @else {
+    @media (aspect-ratio: #{$ratio}) {
+      @content;
+    }
+  }
+}
+
+// Retina & High Pixel-Density Screens (Retina Macs, high-end smartphones/tablets)
+@mixin retina {
+  @media (-webkit-min-device-pixel-ratio: 2),
+         (min-resolution: 192dpi),
+         (min-resolution: 2dppx) {
+    @content;
+  }
+}
+
+// 4. Accessibility Preferences
+
+// Respect users who have enabled "Reduce Motion" in their OS settings
+@mixin reduced-motion {
+  @media (prefers-reduced-motion: reduce) {
+    @content;
+  }
+}
+
+// Respect users with high contrast options enabled
+@mixin high-contrast {
+  @media (prefers-contrast: more) {
+    @content;
+  }
+}
+
+// 5. System Color Scheme (Theme support)
+@mixin prefers-dark {
+  @media (prefers-color-scheme: dark) {
+    @content;
+  }
+}
+
+@mixin prefers-light {
+  @media (prefers-color-scheme: light) {
+    @content;
+  }
+}

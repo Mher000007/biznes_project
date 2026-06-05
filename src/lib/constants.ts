@@ -1,0 +1,122 @@
+import type { Category } from "@/types/business";
+
+export const CATEGORIES: Category[] = [
+  {
+    id: "cat-tech",
+    name: "Technology",
+    slug: "technology",
+    description: "Software, IT services, startups, and digital solutions",
+    icon: "Monitor",
+    count: 142,
+  },
+  {
+    id: "cat-agri",
+    name: "Agriculture",
+    slug: "agriculture",
+    description: "Farming, food production, and agritech companies",
+    icon: "Wheat",
+    count: 98,
+  },
+  {
+    id: "cat-horeca",
+    name: "HoReCa",
+    slug: "horeca",
+    description: "Hotels, restaurants, cafés, and catering services",
+    icon: "UtensilsCrossed",
+    count: 215,
+  },
+  {
+    id: "cat-retail",
+    name: "Retail",
+    slug: "retail",
+    description: "Shops, e-commerce, and consumer goods businesses",
+    icon: "ShoppingBag",
+    count: 176,
+  },
+  {
+    id: "cat-construction",
+    name: "Construction",
+    slug: "construction",
+    description: "Building, architecture, and real estate companies",
+    icon: "Building2",
+    count: 87,
+  },
+  {
+    id: "cat-finance",
+    name: "Finance",
+    slug: "finance",
+    description: "Banking, insurance, and financial services",
+    icon: "Landmark",
+    count: 64,
+  },
+  {
+    id: "cat-health",
+    name: "Healthcare",
+    slug: "healthcare",
+    description: "Clinics, pharmacies, and medical services",
+    icon: "Heart",
+    count: 73,
+  },
+  {
+    id: "cat-education",
+    name: "Education",
+    slug: "education",
+    description: "Schools, universities, and training centers",
+    icon: "GraduationCap",
+    count: 51,
+  },
+];
+
+export const ARMENIAN_CITIES = [
+  "Yerevan",
+  "Gyumri",
+  "Vanadzor",
+  "Vagharshapat",
+  "Abovyan",
+  "Kapan",
+  "Hrazdan",
+  "Armavir",
+  "Artashat",
+  "Ijevan",
+  "Sevan",
+  "Goris",
+  "Dilijan",
+  "Jermuk",
+  "Ashtarak",
+];
+
+export const ARMENIAN_REGIONS = [
+  "Yerevan",
+  "Aragatsotn",
+  "Ararat",
+  "Armavir",
+  "Gegharkunik",
+  "Kotayk",
+  "Lori",
+  "Shirak",
+  "Syunik",
+  "Tavush",
+  "Vayots Dzor",
+];
+
+export const EMPLOYEE_RANGES = ["1-10", "11-50", "51-200", "200+"];
+
+export const SORT_OPTIONS = [
+  { value: "popular", label: "Most Popular" },
+  { value: "rating", label: "Highest Rated" },
+  { value: "newest", label: "Newest First" },
+  { value: "name", label: "Alphabetical" },
+];
+
+export const SITE_CONFIG = {
+  name: "ArmenBiz Hub",
+  description:
+    "Armenia's premier business directory. Discover, connect, and grow with Armenian entrepreneurs.",
+  url: "https://armenbiz.am",
+  stats: {
+    businesses: 906,
+    cities: 15,
+    industries: 8,
+    monthlyVisitors: 25000,
+  },
+};

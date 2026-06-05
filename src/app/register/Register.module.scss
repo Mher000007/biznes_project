@@ -1,0 +1,337 @@
+@use "../../styles/responsive" as *;
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+
+  .iconWrapper {
+    display: inline-flex;
+    height: 3.5rem;
+    width: 3.5rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 1rem;
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);
+    color: white;
+    margin-bottom: 1rem;
+    box-shadow: 0 8px 16px hsla(var(--primary), 0.15);
+  }
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.025em;
+  }
+
+  p {
+    color: hsl(var(--muted-foreground));
+    font-size: 0.95rem;
+  }
+}
+
+.progressContainer {
+  margin-bottom: 3rem;
+  position: relative;
+
+  .progressBar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+
+    &::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      height: 2px;
+      background: hsl(var(--border));
+      z-index: -1;
+      transform: translateY(-50%);
+    }
+  }
+
+  .progressStep {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: hsl(var(--background));
+    padding: 0 0.5rem;
+  }
+
+  .stepCircle {
+    height: 2.5rem;
+    width: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 0.9rem;
+    font-weight: 700;
+    border: 2px solid hsl(var(--border));
+    background: hsl(var(--card));
+    color: hsl(var(--muted-foreground));
+    transition: all 0.3s ease;
+
+    &.active {
+      border-color: hsl(var(--primary));
+      background: hsl(var(--primary));
+      color: white;
+      box-shadow: 0 0 12px hsla(var(--primary), 0.3);
+    }
+
+    &.completed {
+      border-color: #22c55e;
+      background: #22c55e;
+      color: white;
+    }
+  }
+
+  .stepLabel {
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-top: 0.5rem;
+    color: hsl(var(--muted-foreground));
+
+    &.active {
+      color: hsl(var(--foreground));
+      font-weight: 600;
+    }
+  }
+}
+
+.card {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 1.25rem;
+  padding: 2rem;
+  box-shadow: var(--shadow);
+  transition: all 0.3s ease;
+
+  h2 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid hsl(var(--border));
+    padding-bottom: 0.75rem;
+  }
+}
+
+.formGroup {
+  margin-bottom: 1.5rem;
+
+  label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: hsl(var(--foreground));
+  }
+
+  input, select, textarea {
+    width: 100%;
+    border-radius: 0.5rem;
+    border: 1px solid hsl(var(--border));
+    background: hsl(var(--background));
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    outline: none;
+    transition: all 0.2s ease;
+
+    &:focus {
+      border-color: hsl(var(--primary));
+      box-shadow: 0 0 0 3px hsla(var(--primary), 0.1);
+    }
+  }
+}
+
+.itemBuilder {
+  border: 1px dashed hsl(var(--border));
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  background: hsl(var(--surface-strong));
+}
+
+.builderHeader {
+  display: flex;
+  justify-content: justify-between;
+  align-items: center;
+  margin-bottom: 1rem;
+
+  h4 {
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .removeButton {
+    background: transparent;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    font-size: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+}
+
+.planGrid {
+  display: grid;
+  grid-template-cols: 1fr;
+  gap: 1.5rem;
+  margin-top: 1rem;
+
+  @include mq-up("md") {
+    grid-template-cols: repeat(3, 1fr);
+  }
+}
+
+.planCard {
+  border: 2px solid hsl(var(--border));
+  border-radius: 1rem;
+  padding: 1.5rem;
+  text-align: center;
+  background: hsl(var(--card));
+  cursor: pointer;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  @include hover-device {
+    &:hover {
+      transform: translateY(-4px);
+      border-color: hsl(var(--primary)) / 0.5;
+      box-shadow: 0 12px 20px rgba(0, 0, 0, 0.05);
+    }
+  }
+
+  &.active {
+    border-color: hsl(var(--primary));
+    background: hsla(var(--primary), 0.02);
+    box-shadow: 0 12px 24px hsla(var(--primary), 0.1);
+  }
+
+  .recommendedBadge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: hsl(var(--primary));
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .planName {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+
+  .planPrice {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: hsl(var(--foreground));
+    margin-bottom: 1rem;
+
+    span {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: hsl(var(--muted-foreground));
+    }
+  }
+
+  .planFeatures {
+    text-align: left;
+    font-size: 0.8rem;
+    color: hsl(var(--muted-foreground));
+    list-style: none;
+    padding: 0;
+    margin: 1.5rem 0 0 0;
+    border-top: 1px solid hsl(var(--border));
+    padding-top: 1rem;
+
+    li {
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      &::before {
+        content: '✓';
+        color: #22c55e;
+        font-weight: bold;
+      }
+    }
+  }
+}
+
+.navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid hsl(var(--border));
+}
+
+.btnBack {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s;
+
+  @include hover-device {
+    &:hover {
+      color: hsl(var(--foreground));
+    }
+  }
+}
+
+.btnNext {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+  background: hsl(var(--primary));
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px hsla(var(--primary), 0.2);
+
+  @include hover-device {
+    &:hover {
+      opacity: 0.9;
+      box-shadow: 0 6px 16px hsla(var(--primary), 0.3);
+    }
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+}
