@@ -29,7 +29,7 @@ export const register = asyncHandler(async (req: Request, res: Response): Promis
   await user.save();
 
   const token = jwt.sign(
-    { id: user._id, email: user.email, role: user.role },
+    { id: user._id, name: user.name, email: user.email, role: user.role },
     process.env.JWT_SECRET || 'your_secret_key',
     { expiresIn: (process.env.JWT_EXPIRE as any) || '7d' }
   );
@@ -65,7 +65,7 @@ export const login = asyncHandler(async (req: Request, res: Response): Promise<v
   }
 
   const token = jwt.sign(
-    { id: user._id, email: user.email, role: user.role },
+    { id: user._id, name: user.name, email: user.email, role: user.role },
     process.env.JWT_SECRET || 'your_secret_key',
     { expiresIn: (process.env.JWT_EXPIRE as any) || '7d' }
   );
