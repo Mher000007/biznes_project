@@ -4,9 +4,9 @@ import { useParams, useRouter } from "next/navigation";
 import { MOCK_BUSINESSES } from "@/data/mock-businesses";
 import { Star, MapPin, BadgeCheck, Globe, Phone, Mail, Clock, Users, Calendar, ArrowLeft, Send, X, Compass, ChevronLeft, ChevronRight, CheckCircle } from "lucide-react";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import axios from "axios";
 import styles from "@/components/business/BusinessProfile.module.scss";
+import ReviewsSection from "@/components/business/ReviewsSection";
 
 
 
@@ -52,11 +52,9 @@ export default function BusinessProfilePage() {
   const [business, setBusiness] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // Rating State
-  const [userRating, setUserRating] = useState(0);
-  const [hoverRating, setHoverRating] = useState(0);
-  const [submittingRating, setSubmittingRating] = useState(false);
-  const [ratingSubmitted, setRatingSubmitted] = useState(false);
+  // Rating / Reviews State (live-synced from ReviewsSection)
+  const [liveRating, setLiveRating] = useState(0);
+  const [liveReviewCount, setLiveReviewCount] = useState(0);
 
   // Booking Modal State
   const [isBookingOpen, setIsBookingOpen] = useState(false);
@@ -78,6 +76,8 @@ export default function BusinessProfilePage() {
         const res = await axios.get(`${apiURL}/businesses/slug/${slug}`);
         if (res.data?.success && res.data?.data) {
           setBusiness(res.data.data);
+          setLiveRating(res.data.data.rating || 0);
+          setLiveReviewCount(res.data.data.reviewCount || 0);
           setLoading(false);
           return;
         }
@@ -175,6 +175,8 @@ export default function BusinessProfilePage() {
                 }))
               };
               setBusiness(normalizedBiz);
+              setLiveRating(normalizedBiz.ratingAvg || 0);
+              setLiveReviewCount(normalizedBiz.reviewCount || 0);
               setLoading(false);
               return;
             }
@@ -249,6 +251,8 @@ export default function BusinessProfilePage() {
           ]
         };
         setBusiness(normalizedBiz);
+        setLiveRating(normalizedBiz.ratingAvg || 0);
+        setLiveReviewCount(normalizedBiz.reviewCount || 0);
       }
       setLoading(false);
     }
@@ -276,95 +280,7 @@ export default function BusinessProfilePage() {
     );
   }
 
-  const handleRateSubmit = async (stars: number) => {
-    setUserRating(stars);
-    setSubmittingRating(true);
-    
-    try {
-      const apiURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-      const businessId = business._id || business.id;
-      
-      if (businessId && !businessId.startsWith('custom-') && !businessId.startsWith('mock-') && businessId.match(/^[0-9a-fA-F]{24}$/)) {
-        const res = await axios.post(`${apiURL}/businesses/${businessId}/rate`, { rating: stars });
-        if (res.data?.success) {
-          setBusiness((prev: any) => ({
-            ...prev,
-            rating: res.data.data.rating,
-            ratingAvg: res.data.data.rating,
-            reviewCount: res.data.data.reviewCount
-          }));
-          setRatingSubmitted(true);
-          setSubmittingRating(false);
-          return;
-        }
-      }
-    } catch (err) {
-      console.warn("Backend rating failed, falling back to local simulation", err);
-    }
-
-    if (typeof window !== "undefined") {
-      const profilesStr = window.localStorage.getItem("armbiz-business-profiles");
-      if (profilesStr) {
-        try {
-          const profiles = JSON.parse(profilesStr);
-          const foundProfileIndex = profiles.findIndex((p: any) => {
-            const profileSlug = p.businessName ? p.businessName.toLowerCase().trim().replace(/\s+/g, "-").replace(/[^\w-]/g, "") : "";
-            return profileSlug === slug;
-          });
-          if (foundProfileIndex !== -1) {
-            const foundProfile = profiles[foundProfileIndex];
-            const currentCount = foundProfile.reviewCount || 0;
-            const currentRating = foundProfile.ratingAvg || 0.0;
-            
-            const newCount = currentCount + 1;
-            const newRating = ((currentRating * currentCount) + stars) / newCount;
-            
-            foundProfile.reviewCount = newCount;
-            foundProfile.ratingAvg = Math.round(newRating * 10) / 10;
-            
-            window.localStorage.setItem("armbiz-business-profiles", JSON.stringify(profiles));
-            
-            setBusiness((prev: any) => ({
-              ...prev,
-              ratingAvg: foundProfile.ratingAvg,
-              reviewCount: foundProfile.reviewCount
-            }));
-            setRatingSubmitted(true);
-            setSubmittingRating(false);
-            return;
-          }
-        } catch (e) {
-          console.error(e);
-        }
-      }
-
-      const mockReviewKey = "armbiz-mock-reviews";
-      try {
-        const mockReviewsMap = JSON.parse(window.localStorage.getItem(mockReviewKey) || "{}");
-        const currentData = mockReviewsMap[slug] || { ratingAvg: business.ratingAvg || 0, reviewCount: business.reviewCount || 0 };
-        const newCount = (currentData.reviewCount || 0) + 1;
-        const newRating = (((currentData.ratingAvg || 0) * (currentData.reviewCount || 0)) + stars) / newCount;
-        
-        const updatedData = {
-          ratingAvg: Math.round(newRating * 10) / 10,
-          reviewCount: newCount
-        };
-        mockReviewsMap[slug] = updatedData;
-        window.localStorage.setItem(mockReviewKey, JSON.stringify(mockReviewsMap));
-
-        setBusiness((prev: any) => ({
-          ...prev,
-          ratingAvg: updatedData.ratingAvg,
-          reviewCount: updatedData.reviewCount
-        }));
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    setRatingSubmitted(true);
-    setSubmittingRating(false);
-  };
+  // handleRateSubmit is now handled inside ReviewsSection
 
   // Handle Navigator Direction Redirects
   const handleDirections = (provider: 'google' | 'yandex') => {
@@ -488,8 +404,8 @@ export default function BusinessProfilePage() {
             )}
             <span className="flex items-center gap-1">
               <Star className="h-4 w-4 fill-amber-400 text-amber-400" /> 
-              {business.ratingAvg !== undefined ? (typeof business.ratingAvg === 'number' ? business.ratingAvg.toFixed(1) : business.ratingAvg) : "0.0"}{' '}
-              ({business.reviewCount !== undefined ? business.reviewCount : 0} review{business.reviewCount !== 1 ? 's' : ''})
+              {(liveRating > 0 ? liveRating : (business.ratingAvg !== undefined ? (typeof business.ratingAvg === 'number' ? business.ratingAvg : 0) : 0)).toFixed(1)}{' '}
+              ({liveReviewCount > 0 ? liveReviewCount : (business.reviewCount !== undefined ? business.reviewCount : 0)} review{(liveReviewCount || business.reviewCount || 0) !== 1 ? 's' : ''})
             </span>
             {business.foundedYear && (
               <span className="flex items-center gap-1"><Calendar className="h-4 w-4" /> Est. {business.foundedYear}</span>
@@ -608,40 +524,6 @@ export default function BusinessProfilePage() {
             </button>
           </div>
 
-          {/* Rate Business Widget */}
-          <div className={styles.contactCard}>
-            <h3>Rate this Business</h3>
-            <p className="text-xs text-[hsl(var(--muted-foreground))] mb-4">
-              Share your feedback by choosing a star rating.
-            </p>
-            {ratingSubmitted ? (
-              <div className="text-center py-2 text-green-600 dark:text-green-400 font-semibold text-sm animate-fade-in flex items-center justify-center gap-1.5">
-                <CheckCircle className="h-4 w-4" /> Thank you for your feedback!
-              </div>
-            ) : (
-              <div className="flex items-center justify-center gap-2 py-2">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    type="button"
-                    onClick={() => handleRateSubmit(star)}
-                    onMouseEnter={() => setHoverRating(star)}
-                    onMouseLeave={() => setHoverRating(0)}
-                    disabled={submittingRating}
-                    className="p-1 transition-transform hover:scale-110 cursor-pointer"
-                  >
-                    <Star
-                      className={`h-7 w-7 transition-all ${
-                        star <= (hoverRating || userRating)
-                          ? "fill-amber-400 text-amber-400"
-                          : "text-gray-300 dark:text-gray-600"
-                      }`}
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
 
           {/* Contact Details */}
           <div className={styles.contactCard}>
@@ -783,6 +665,18 @@ export default function BusinessProfilePage() {
           </div>
         </div>
       )}
+
+      {/* ── Reviews Section ── */}
+      <ReviewsSection
+        businessId={business._id || business.id || ""}
+        businessSlug={slug}
+        initialRating={liveRating || business.ratingAvg || business.rating || 0}
+        initialReviewCount={liveReviewCount || business.reviewCount || 0}
+        onRatingUpdate={(rating, count) => {
+          setLiveRating(rating);
+          setLiveReviewCount(count);
+        }}
+      />
     </div>
   );
 }

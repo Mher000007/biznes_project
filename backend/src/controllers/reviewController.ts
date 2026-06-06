@@ -1,0 +1,180 @@
+import { Response } from 'express';
+import mongoose from 'mongoose';
+import Review from '../models/Review.js';
+import Business from '../models/Business.js';
+import { asyncHandler } from '../middleware/errorHandler.js';
+import { AuthRequest } from '../middleware/auth.js';
+
+// ─── GET reviews for a business ──────────────────────────────────────────────
+export const getReviews = asyncHandler(
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    const { businessId } = req.params;
+    const page  = Math.max(1, parseInt(req.query.page  as string) || 1);
+    const limit = Math.min(50, parseInt(req.query.limit as string) || 10);
+    const skip  = (page - 1) * limit;
+
+    if (!businessId.match(/^[0-9a-fA-F]{24}$/)) {
+      res.status(400).json({ success: false, message: 'Invalid business ID' });
+      return;
+    }
+
+    const [reviews, total] = await Promise.all([
+      Review.find({ business: businessId })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate('author', 'name avatar'),
+      Review.countDocuments({ business: businessId }),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: reviews,
+      pagination: {
+        current: page,
+        total: Math.ceil(total / limit),
+        count: reviews.length,
+        total_count: total,
+      },
+    });
+  }
+);
+
+// ─── CREATE review ────────────────────────────────────────────────────────────
+export const createReview = asyncHandler(
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    const { businessId } = req.params;
+    const { rating, comment } = req.body;
+
+    // Validate business ID format
+    if (!businessId.match(/^[0-9a-fA-F]{24}$/)) {
+      res.status(400).json({ success: false, message: 'Invalid business ID' });
+      return;
+    }
+
+    // Validate inputs
+    const parsedRating = Number(rating);
+    if (!parsedRating || parsedRating < 1 || parsedRating > 5 || !Number.isInteger(parsedRating)) {
+      res.status(400).json({ success: false, message: 'Rating must be a whole number between 1 and 5' });
+      return;
+    }
+
+    if (!comment || typeof comment !== 'string') {
+      res.status(400).json({ success: false, message: 'Comment is required' });
+      return;
+    }
+
+    const trimmed = comment.trim();
+    if (trimmed.length < 10) {
+      res.status(400).json({ success: false, message: 'Comment must be at least 10 characters' });
+      return;
+    }
+    if (trimmed.length > 1000) {
+      res.status(400).json({ success: false, message: 'Comment cannot exceed 1000 characters' });
+      return;
+    }
+
+    // Check business exists
+    const business = await Business.findById(businessId);
+    if (!business) {
+      res.status(404).json({ success: false, message: 'Business not found' });
+      return;
+    }
+
+    // Prevent owner from reviewing their own business
+    if (business.owner.toString() === req.user?.id) {
+      res.status(403).json({ success: false, message: 'You cannot review your own business' });
+      return;
+    }
+
+    // Check for duplicate (1 review per user per business)
+    const existing = await Review.findOne({
+      business: businessId,
+      author: req.user?.id,
+    });
+    if (existing) {
+      res.status(409).json({
+        success: false,
+        message: 'You have already reviewed this business. Delete your existing review to submit a new one.',
+      });
+      return;
+    }
+
+    const review = await Review.create({
+      business: businessId,
+      author: req.user?.id,
+      authorName: req.user?.name || 'Anonymous',
+      rating: parsedRating,
+      comment: trimmed,
+    });
+
+    await review.populate('author', 'name avatar');
+
+    res.status(201).json({
+      success: true,
+      message: 'Review submitted successfully',
+      data: review,
+    });
+  }
+);
+
+// ─── DELETE review (owner of review or admin) ─────────────────────────────────
+export const deleteReview = asyncHandler(
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    const { reviewId } = req.params;
+
+    if (!reviewId.match(/^[0-9a-fA-F]{24}$/)) {
+      res.status(400).json({ success: false, message: 'Invalid review ID' });
+      return;
+    }
+
+    const review = await Review.findById(reviewId);
+    if (!review) {
+      res.status(404).json({ success: false, message: 'Review not found' });
+      return;
+    }
+
+    const isOwner = review.author.toString() === req.user?.id;
+    const isAdmin = req.user?.role === 'admin';
+
+    if (!isOwner && !isAdmin) {
+      res.status(403).json({ success: false, message: 'Not authorized to delete this review' });
+      return;
+    }
+
+    await Review.findByIdAndDelete(reviewId);
+
+    res.status(200).json({
+      success: true,
+      message: 'Review deleted successfully',
+    });
+  }
+);
+
+// ─── MARK review as helpful ───────────────────────────────────────────────────
+export const markHelpful = asyncHandler(
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    const { reviewId } = req.params;
+
+    if (!reviewId.match(/^[0-9a-fA-F]{24}$/)) {
+      res.status(400).json({ success: false, message: 'Invalid review ID' });
+      return;
+    }
+
+    const review = await Review.findByIdAndUpdate(
+      reviewId,
+      { $inc: { helpfulCount: 1 } },
+      { new: true }
+    );
+
+    if (!review) {
+      res.status(404).json({ success: false, message: 'Review not found' });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      data: { helpfulCount: review.helpfulCount },
+    });
+  }
+);

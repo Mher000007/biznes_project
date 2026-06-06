@@ -10,8 +10,9 @@ import {
   rateBusiness,
 } from '../controllers/businessController.js';
 import { authenticate, authorize } from '../middleware/auth.js';
+import reviewRoutes from './reviewRoutes.js';
 
-const router = Router();
+const router = Router({ mergeParams: true });
 
 // Public routes
 router.get('/', getBusinesses);
@@ -25,5 +26,8 @@ router.post('/onboard', authenticate, createBusiness);
 router.get('/me/all', authenticate, getMyBusinesses);
 router.put('/:id', authenticate, updateBusiness);
 router.delete('/:id', authenticate, deleteBusiness);
+
+// Nested review routes → /businesses/:businessId/reviews
+router.use('/:businessId/reviews', reviewRoutes);
 
 export default router;
