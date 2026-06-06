@@ -12,6 +12,7 @@ import categoryRoutes from './routes/categoryRoutes.js';
 import inquiryRoutes from './routes/inquiryRoutes.js';
 import bookingRoutes from './routes/bookingRoutes.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 
 dotenv.config();
 
@@ -55,6 +56,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/inquiries', inquiryRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
+app.use('/api/admin', adminRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {

@@ -48,3 +48,27 @@ export const sendInquiryNotification = async (
   `;
   await sendEmail(businessOwnerEmail, `New Inquiry: ${inquiryDetails.subject}`, html);
 };
+
+export const sendReportResolutionEmail = async (
+  businessOwnerEmail: string,
+  businessName: string,
+  reviewComment: string,
+  resolution: 'keep' | 'delete',
+  adminReply: string
+): Promise<void> => {
+  const html = `
+    <h2>Review Report Resolution for ${businessName}</h2>
+    <p>An admin has moderated a report you submitted regarding a review on your business page.</p>
+    <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;" />
+    <p><strong>Review Content:</strong> <span style="color: #666; font-style: italic;">"${reviewComment}"</span></p>
+    <p><strong>Decision:</strong> The review has been <strong>${resolution === 'delete' ? 'removed from' : 'kept on'}</strong> the platform.</p>
+    <p><strong>Admin Explanation:</strong> ${adminReply}</p>
+    <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;" />
+    <p style="font-size: 11px; color: #999;">This is an automated notification. Thank you for helping keep our platform safe and reliable.</p>
+  `;
+  await sendEmail(
+    businessOwnerEmail,
+    `Review Report Resolution: ${businessName}`,
+    html
+  );
+};

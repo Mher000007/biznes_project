@@ -343,6 +343,28 @@ export default function BusinessProfilePage() {
         mockInqMap[slug] = currentInq + 1;
         window.localStorage.setItem(mockInqKey, JSON.stringify(mockInqMap));
       } catch (e) {}
+
+      // Save booking request to local storage so it is persisted offline/locally
+      try {
+        const localBookings = JSON.parse(window.localStorage.getItem("armbiz-local-bookings") || "[]");
+        const newBooking = {
+          id: `booking-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          businessId: business.id || business._id,
+          customerName,
+          customerPhone,
+          date: bookingDate,
+          timeSlot: bookingTime,
+          serviceName: selectedService?.name || "General Service",
+          totalPrice: selectedService?.price || 0,
+          notes: bookingNotes,
+          status: "pending",
+          createdAt: new Date().toISOString()
+        };
+        localBookings.push(newBooking);
+        window.localStorage.setItem("armbiz-local-bookings", JSON.stringify(localBookings));
+      } catch (e) {
+        console.error("Error saving local booking to localStorage", e);
+      }
     }
 
     try {

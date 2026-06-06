@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import mongoose from 'mongoose';
+import jwt from 'jsonwebtoken';
 import Review from '../models/Review.js';
 import Business from '../models/Business.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
@@ -18,13 +19,40 @@ export const getReviews = asyncHandler(
       return;
     }
 
+    const business = await Business.findById(businessId);
+    if (!business) {
+      res.status(404).json({ success: false, message: 'Business not found' });
+      return;
+    }
+
+    // Optionally authenticate request to check if user is the business owner or admin
+    let requesterId: string | undefined = undefined;
+    let requesterRole: string | undefined = undefined;
+    const token = req.headers.authorization?.split(' ')[1];
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_secret_key') as any;
+        requesterId = decoded.id;
+        requesterRole = decoded.role;
+      } catch (err) {
+        // ignore invalid token for public view
+      }
+    }
+
+    const isOwnerOrAdmin = (requesterId && (business.owner.toString() === requesterId)) || (requesterRole === 'admin');
+
+    const query: any = { business: businessId };
+    if (!isOwnerOrAdmin) {
+      query.status = { $ne: 'resolved_deleted' };
+    }
+
     const [reviews, total] = await Promise.all([
-      Review.find({ business: businessId })
+      Review.find(query)
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .populate('author', 'name avatar'),
-      Review.countDocuments({ business: businessId }),
+      Review.countDocuments(query),
     ]);
 
     res.status(200).json({
@@ -175,6 +203,61 @@ export const markHelpful = asyncHandler(
     res.status(200).json({
       success: true,
       data: { helpfulCount: review.helpfulCount },
+    });
+  }
+);
+
+// ─── REPORT review ───────────────────────────────────────────────────────────
+export const reportReview = asyncHandler(
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    const { businessId, reviewId } = req.params;
+    const { reportedReason } = req.body;
+
+    if (!businessId.match(/^[0-9a-fA-F]{24}$/) || !reviewId.match(/^[0-9a-fA-F]{24}$/)) {
+      res.status(400).json({ success: false, message: 'Invalid ID format' });
+      return;
+    }
+
+    if (!reportedReason || typeof reportedReason !== 'string' || reportedReason.trim().length < 5) {
+      res.status(400).json({ success: false, message: 'Reported reason must be at least 5 characters' });
+      return;
+    }
+
+    const business = await Business.findById(businessId);
+    if (!business) {
+      res.status(404).json({ success: false, message: 'Business not found' });
+      return;
+    }
+
+    // Only business owner or admin can report reviews
+    const isOwner = business.owner.toString() === req.user?.id;
+    const isAdmin = req.user?.role === 'admin';
+    if (!isOwner && !isAdmin) {
+      res.status(403).json({ success: false, message: 'Only the business owner can report reviews' });
+      return;
+    }
+
+    const review = await Review.findOne({ _id: reviewId, business: businessId });
+    if (!review) {
+      res.status(404).json({ success: false, message: 'Review not found for this business' });
+      return;
+    }
+
+    if (review.status === 'reported') {
+      res.status(400).json({ success: false, message: 'Review is already under review' });
+      return;
+    }
+
+    review.status = 'reported';
+    review.reportedReason = reportedReason.trim();
+    review.reportedAt = new Date();
+
+    await review.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Review reported successfully',
+      data: review,
     });
   }
 );

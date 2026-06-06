@@ -4,6 +4,7 @@ import {
   createReview,
   deleteReview,
   markHelpful,
+  reportReview,
 } from '../controllers/reviewController.js';
 import { authenticate } from '../middleware/auth.js';
 
@@ -16,5 +17,6 @@ router.post('/:reviewId/helpful', markHelpful);
 // Protected
 router.post('/', authenticate, createReview);
 router.delete('/:reviewId', authenticate, deleteReview);
+router.post('/:reviewId/report', authenticate, reportReview);
 
 export default router;

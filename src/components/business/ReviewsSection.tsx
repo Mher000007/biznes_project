@@ -497,22 +497,6 @@ export default function ReviewsSection({
                 <ThumbsUp size={13} />
                 Helpful {review.helpfulCount > 0 && `(${review.helpfulCount})`}
               </button>
-
-              {isOwner(review) && (
-                <button
-                  className={styles.deleteBtn}
-                  onClick={() => handleDelete(review._id)}
-                  disabled={deletingId === review._id}
-                  aria-label="Delete review"
-                >
-                  {deletingId === review._id ? (
-                    <Loader2 size={13} className={styles.spin} />
-                  ) : (
-                    <Trash2 size={13} />
-                  )}
-                  Delete
-                </button>
-              )}
             </div>
           </div>
         ))}
