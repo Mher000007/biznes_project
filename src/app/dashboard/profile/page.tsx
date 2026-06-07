@@ -6,13 +6,14 @@ import { useAuth } from "@/context/AuthContext";
 import { getBusinessProfile, saveBusinessProfile } from "@/lib/auth";
 import { 
   Save, CheckCircle, Plus, X, Image as ImageIcon, Star, Phone, Mail, Globe, 
-  MapPin, Clock, Camera, Trash2, Eye, ChevronRight, Award, PlusCircle, Sparkles, Smartphone,
+  MapPin, Clock, Camera, Trash2, Eye, ChevronRight, ChevronLeft, Award, PlusCircle, Sparkles, Smartphone,
   Settings, Grid as GridIcon, User as UserIcon, BadgeCheck, Compass, ArrowLeft, Calendar, Navigation
 } from "lucide-react";
 import axios from "axios";
 import styles from "@/components/dashboard/Dashboard.module.scss";
 import profileStyles from "@/components/business/BusinessProfile.module.scss";
 import { useI18n } from "@/i18n";
+import { getApiUrl } from "@/lib/utils";
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -58,17 +59,92 @@ export default function DashboardProfilePage() {
   const [zoomImageUrl, setZoomImageUrl] = useState<string | null>(null);
 
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const storyInputRef = useRef<HTMLInputElement>(null);
+  const highlightInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+
+  const convertFileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === "string") {
+          resolve(reader.result);
+        } else {
+          reject(new Error("File conversion failed"));
+        }
+      };
+      reader.onerror = (error) => reject(error);
+      reader.readAsDataURL(file);
+    });
+  };
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === "string") {
-          setLogoUrl(reader.result);
+      if (file.size > 3 * 1024 * 1024) {
+        alert("File size exceeds 3MB limit");
+        return;
+      }
+      convertFileToBase64(file).then(setLogoUrl).catch(console.error);
+    }
+  };
+
+  const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 3 * 1024 * 1024) {
+        alert("File size exceeds 3MB limit");
+        return;
+      }
+      convertFileToBase64(file).then(base64 => {
+        setCoverUrls(prev => [...prev, base64]);
+      }).catch(console.error);
+    }
+  };
+
+  const handleStoryUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 3 * 1024 * 1024) {
+        alert("File size exceeds 3MB limit");
+        return;
+      }
+      convertFileToBase64(file).then(setNewStoryImg).catch(console.error);
+    }
+  };
+
+  const handleHighlightUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 3 * 1024 * 1024) {
+        alert("File size exceeds 3MB limit");
+        return;
+      }
+      convertFileToBase64(file).then(setNewHighlightImg).catch(console.error);
+    }
+  };
+
+  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const newImages: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file.size > 3 * 1024 * 1024) {
+          alert(`File ${file.name} exceeds 3MB limit and was skipped`);
+          continue;
         }
-      };
-      reader.readAsDataURL(file);
+        try {
+          const base64 = await convertFileToBase64(file);
+          newImages.push(base64);
+        } catch (err) {
+          console.error(err);
+        }
+      }
+      if (newImages.length > 0) {
+        setGallery(prev => [...prev, ...newImages]);
+      }
     }
   };
 
@@ -90,7 +166,11 @@ export default function DashboardProfilePage() {
 
   // Branding Visuals
   const [logoUrl, setLogoUrl] = useState("https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=150&auto=format&fit=crop");
-  const [coverUrl, setCoverUrl] = useState("https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop");
+  const [coverUrls, setCoverUrls] = useState<string[]>([
+    "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop"
+  ]);
+  const [newCoverUrl, setNewCoverUrl] = useState("");
+  const [activeCoverIdx, setActiveCoverIdx] = useState(0);
 
   // Rating and review states for preview sync
   const [rating, setRating] = useState(0.0);
@@ -148,7 +228,7 @@ export default function DashboardProfilePage() {
   useEffect(() => {
     async function fetchBusinessData() {
       try {
-        const apiURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+        const apiURL = getApiUrl();
         const token = typeof window !== 'undefined' ? window.localStorage.getItem('token') : null;
         
         const res = await axios.get(`${apiURL}/businesses/me/all`, {
@@ -189,7 +269,13 @@ export default function DashboardProfilePage() {
           setReviewCount(biz.reviewCount || 0);
 
           // Fetch extra attributes from metadata mixin
-          if (biz.metadata?.coverUrl) setCoverUrl(biz.metadata.coverUrl);
+          if (biz.metadata?.coverUrl) {
+            if (Array.isArray(biz.metadata.coverUrl)) {
+              setCoverUrls(biz.metadata.coverUrl);
+            } else if (typeof biz.metadata.coverUrl === 'string') {
+              setCoverUrls([biz.metadata.coverUrl]);
+            }
+          }
           if (biz.metadata?.stories) setStories(biz.metadata.stories);
           if (biz.metadata?.operatingHours) setOperatingHours(biz.metadata.operatingHours);
           if (biz.metadata?.noteText) setNoteText(biz.metadata.noteText);
@@ -225,7 +311,13 @@ export default function DashboardProfilePage() {
           if (mockProfile.longitude) setLng(mockProfile.longitude);
           
           if (mockProfile.logo) setLogoUrl(mockProfile.logo);
-          if (mockProfile.coverUrl) setCoverUrl(mockProfile.coverUrl);
+          if (mockProfile.coverUrl) {
+            if (Array.isArray(mockProfile.coverUrl)) {
+              setCoverUrls(mockProfile.coverUrl);
+            } else if (typeof mockProfile.coverUrl === 'string') {
+              setCoverUrls([mockProfile.coverUrl]);
+            }
+          }
           if (mockProfile.gallery) setGallery(mockProfile.gallery);
           if (mockProfile.stories) setStories(mockProfile.stories);
           if (mockProfile.highlights) setHighlights(mockProfile.highlights);
@@ -275,7 +367,7 @@ export default function DashboardProfilePage() {
         layoutType: 'standard'
       },
       metadata: {
-        coverUrl,
+        coverUrl: coverUrls,
         stories,
         operatingHours,
         noteText,
@@ -285,7 +377,7 @@ export default function DashboardProfilePage() {
 
     // 1. Try backend update
     try {
-      const apiURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      const apiURL = getApiUrl();
       const token = typeof window !== 'undefined' ? window.localStorage.getItem('token') : null;
       
       const listRes = await axios.get(`${apiURL}/businesses/me/all`, {
@@ -334,7 +426,7 @@ export default function DashboardProfilePage() {
       linkedin: "",
       tags: category,
       logo: logoUrl,
-      coverUrl: coverUrl,
+      coverUrl: coverUrls,
       stories: stories,
       highlights: highlights,
       gallery: gallery,
@@ -411,7 +503,7 @@ export default function DashboardProfilePage() {
   const handlePlanUpgrade = async (plan: "starter" | "standard" | "premium") => {
     setActivePlan(plan);
     try {
-      const apiURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      const apiURL = getApiUrl();
       const token = typeof window !== 'undefined' ? window.localStorage.getItem('token') : null;
       const listRes = await axios.get(`${apiURL}/businesses/me/all`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
@@ -469,7 +561,7 @@ export default function DashboardProfilePage() {
           { id: "stories", label: t.builder.tabs.stories, icon: Camera },
           { id: "gallery", label: t.builder.tabs.gallery, icon: ImageIcon },
           { id: "hours", label: t.builder.tabs.hours, icon: Clock },
-          { id: "services", label: t.builder.tabs.services, icon: Star }
+          { id: "services", label: t.builder.services.billingTitle, icon: Award }
         ].map((tab) => {
           const Icon = tab.icon;
           return (
@@ -524,12 +616,19 @@ export default function DashboardProfilePage() {
                         onChange={e => setLogoUrl(e.target.value)} 
                         placeholder="Avatar/Logo URL"
                         type="text" 
-                        className="flex-1 rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent" 
+                        className="flex-1 rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]" 
                       />
                       <button 
                         type="button" 
+                        onClick={() => logoInputRef.current?.click()}
+                        className="px-3 py-2 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] transition-colors border border-[hsl(var(--border))] flex items-center gap-1 font-semibold"
+                      >
+                        <Camera className="h-3.5 w-3.5" /> Upload
+                      </button>
+                      <button 
+                        type="button" 
                         onClick={() => setLogoUrl("https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=150&auto=format&fit=crop")}
-                        className="px-3 py-2 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] transition-colors"
+                        className="px-3 py-2 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] transition-colors border border-[hsl(var(--border))]"
                       >
                         {t.builder.branding.reset}
                       </button>
@@ -540,20 +639,60 @@ export default function DashboardProfilePage() {
                     <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1.5">{t.builder.branding.coverUrl}</label>
                     <div className="flex gap-2">
                       <input 
-                        value={coverUrl} 
-                        onChange={e => setCoverUrl(e.target.value)} 
+                        value={newCoverUrl} 
+                        onChange={e => setNewCoverUrl(e.target.value)} 
                         placeholder="Facebook cover-style banner URL"
                         type="text" 
-                        className="flex-1 rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent" 
+                        className="flex-1 rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]" 
                       />
                       <button 
                         type="button" 
-                        onClick={() => setCoverUrl("https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop")}
-                        className="px-3 py-2 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] transition-colors"
+                        onClick={() => {
+                          if (newCoverUrl.trim()) {
+                            setCoverUrls([...coverUrls, newCoverUrl.trim()]);
+                            setNewCoverUrl("");
+                          }
+                        }}
+                        className="px-3 py-2 bg-[hsl(var(--primary))] text-white rounded-lg text-xs hover:opacity-90 transition-colors font-semibold font-semibold"
                       >
-                        {t.builder.branding.reset}
+                        Add
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => coverInputRef.current?.click()}
+                        className="px-3 py-2 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] transition-colors border border-[hsl(var(--border))] flex items-center gap-1 font-semibold"
+                      >
+                        <Camera className="h-3.5 w-3.5" /> Upload
                       </button>
                     </div>
+
+                    {coverUrls.length > 0 && (
+                      <div className="grid grid-cols-3 gap-3 mt-3">
+                        {coverUrls.map((url, index) => (
+                          <div key={index} className="relative group aspect-video rounded-xl border border-[hsl(var(--border))] overflow-hidden bg-slate-900 shadow-sm">
+                            <img src={url} alt="" className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+                            <button 
+                              type="button" 
+                              onClick={() => setCoverUrls(coverUrls.filter((_, idx) => idx !== index))}
+                              className="absolute top-1.5 right-1.5 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {coverUrls.length === 0 && (
+                      <p className="text-[11px] text-[hsl(var(--muted-foreground))] italic mt-1.5">No cover images added. Please add at least one.</p>
+                    )}
+                    <input 
+                      type="file" 
+                      ref={coverInputRef}
+                      onChange={handleCoverUpload}
+                      accept="image/*"
+                      className="hidden" 
+                    />
                   </div>
                 </div>
 
@@ -648,13 +787,13 @@ export default function DashboardProfilePage() {
                   <h3 className="text-base font-bold text-[hsl(var(--foreground))] mb-1">{t.builder.stories.title}</h3>
                   <p className="text-xs text-[hsl(var(--muted-foreground))]">{t.builder.stories.subtitle}</p>
 
-                  <div className="grid grid-cols-2 gap-2 mt-3">
+                  <div className="grid grid-cols-1 gap-2 mt-3">
                     <input 
                       type="text" 
                       placeholder={t.builder.stories.titlePlaceholder} 
                       value={newStoryTitle} 
                       onChange={e => setNewStoryTitle(e.target.value)} 
-                      className="rounded-lg border border-[hsl(var(--border))] px-2.5 py-1.5 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]" 
+                      className="w-full rounded-lg border border-[hsl(var(--border))] px-2.5 py-1.5 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]" 
                     />
                     <div className="flex gap-2">
                       <input 
@@ -666,12 +805,26 @@ export default function DashboardProfilePage() {
                       />
                       <button 
                         type="button" 
+                        onClick={() => storyInputRef.current?.click()}
+                        className="px-2.5 py-1.5 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] transition-colors border border-[hsl(var(--border))] flex items-center gap-1 font-semibold"
+                      >
+                        <Camera className="h-3.5 w-3.5" /> Upload
+                      </button>
+                      <button 
+                        type="button" 
                         onClick={addStoryItem}
-                        className="px-2.5 py-1.5 bg-[hsl(var(--primary))] text-white font-semibold rounded-lg text-xs hover:opacity-90"
+                        className="px-3 py-1.5 bg-[hsl(var(--primary))] text-white font-semibold rounded-lg text-xs hover:opacity-90 font-semibold"
                       >
                         {t.builder.stories.add}
                       </button>
                     </div>
+                    <input 
+                      type="file" 
+                      ref={storyInputRef} 
+                      onChange={handleStoryUpload} 
+                      accept="image/*" 
+                      className="hidden" 
+                    />
                   </div>
 
                   {/* Stories list */}
@@ -697,13 +850,13 @@ export default function DashboardProfilePage() {
                   <h3 className="text-base font-bold text-[hsl(var(--foreground))] mb-1">{t.builder.stories.highlightsTitle}</h3>
                   <p className="text-xs text-[hsl(var(--muted-foreground))]">{t.builder.stories.highlightsSubtitle}</p>
 
-                  <div className="grid grid-cols-2 gap-2 mt-3">
+                  <div className="grid grid-cols-1 gap-2 mt-3">
                     <input 
                       type="text" 
                       placeholder={t.builder.stories.highlightsPlaceholder} 
                       value={newHighlightTitle} 
                       onChange={e => setNewHighlightTitle(e.target.value)} 
-                      className="rounded-lg border border-[hsl(var(--border))] px-2.5 py-1.5 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]" 
+                      className="w-full rounded-lg border border-[hsl(var(--border))] px-2.5 py-1.5 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]" 
                     />
                     <div className="flex gap-2">
                       <input 
@@ -715,12 +868,26 @@ export default function DashboardProfilePage() {
                       />
                       <button 
                         type="button" 
+                        onClick={() => highlightInputRef.current?.click()}
+                        className="px-2.5 py-1.5 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] transition-colors border border-[hsl(var(--border))] flex items-center gap-1 font-semibold"
+                      >
+                        <Camera className="h-3.5 w-3.5" /> Upload
+                      </button>
+                      <button 
+                        type="button" 
                         onClick={addHighlightItem}
-                        className="px-2.5 py-1.5 bg-[hsl(var(--primary))] text-white font-semibold rounded-lg text-xs hover:opacity-90"
+                        className="px-3 py-1.5 bg-[hsl(var(--primary))] text-white font-semibold rounded-lg text-xs hover:opacity-90 font-semibold"
                       >
                         {t.builder.stories.add}
                       </button>
                     </div>
+                    <input 
+                      type="file" 
+                      ref={highlightInputRef} 
+                      onChange={handleHighlightUpload} 
+                      accept="image/*" 
+                      className="hidden" 
+                    />
                   </div>
 
                   {/* Highlights list */}
@@ -761,12 +928,28 @@ export default function DashboardProfilePage() {
                   />
                   <button 
                     type="button" 
+                    onClick={() => galleryInputRef.current?.click()}
+                    className="flex items-center gap-1 px-3 py-2 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] border border-[hsl(var(--border))] transition-colors font-semibold"
+                  >
+                    <Camera className="h-3.5 w-3.5" /> Upload
+                  </button>
+                  <button 
+                    type="button" 
                     onClick={addGalleryItem}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-[hsl(var(--primary))] text-white font-semibold rounded-lg text-xs hover:opacity-90"
+                    className="flex items-center gap-1.5 px-4 py-2 bg-[hsl(var(--primary))] text-white font-semibold rounded-lg text-xs hover:opacity-90 font-semibold"
                   >
                     <Plus className="h-4 w-4" /> {t.builder.gallery.addPhoto}
                   </button>
                 </div>
+
+                <input 
+                  type="file" 
+                  ref={galleryInputRef} 
+                  onChange={handleGalleryUpload} 
+                  accept="image/*" 
+                  multiple 
+                  className="hidden" 
+                />
 
                 <div className="grid grid-cols-3 gap-3">
                   {gallery.map((url, i) => (
@@ -858,39 +1041,8 @@ export default function DashboardProfilePage() {
             {/* TAB 6: SERVICES & PLAN */}
             {activeFormTab === "services" && (
               <div className="space-y-6 animate-scale-in">
-                {/* Services Section */}
-                <div>
-                  <div className="flex items-center justify-between border-b border-[hsl(var(--border))] pb-2 mb-4">
-                    <div>
-                      <h3 className="text-base font-bold text-[hsl(var(--foreground))]">{t.builder.services.title}</h3>
-                      <p className="text-xs text-[hsl(var(--muted-foreground))]">{t.builder.services.subtitle}</p>
-                    </div>
-                    <button 
-                      type="button" 
-                      onClick={addService} 
-                      className="flex items-center gap-1 text-xs font-semibold text-[hsl(var(--primary))] hover:underline"
-                    >
-                      <PlusCircle className="h-4 w-4" /> {t.builder.services.addService}
-                    </button>
-                  </div>
-
-                  <div className="space-y-2">
-                    {services.map((srv, i) => (
-                      <div key={i} className="flex items-center gap-2">
-                        <input value={srv.name} onChange={e => updateService(i, "name", e.target.value)} placeholder={t.builder.services.serviceNamePlaceholder} className="flex-1 rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]" />
-                        <input value={srv.price} onChange={e => updateService(i, "price", e.target.value)} placeholder={t.builder.services.pricePlaceholder} className="w-32 rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]" />
-                        {services.length > 1 && (
-                          <button type="button" onClick={() => removeService(i)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg">
-                            <X className="h-4 w-4" />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
                 {/* Subscriptions */}
-                <div className="border-t border-[hsl(var(--border))] pt-5">
+                <div>
                   <div className="mb-4">
                     <h3 className="text-base font-bold text-[hsl(var(--foreground))]">{t.builder.services.billingTitle}</h3>
                     <p className="text-xs text-[hsl(var(--muted-foreground))]">{t.builder.services.billingSubtitle}</p>
@@ -955,14 +1107,46 @@ export default function DashboardProfilePage() {
             <div className={profileStyles.profileContainer} style={{ padding: "0", maxWidth: "100%" }}>
               
               {/* Cover / Media Gallery */}
-              <div className={profileStyles.coverGallery} style={{ height: "180px", borderRadius: "1rem", marginBottom: "1.5rem" }}>
-                {coverUrl ? (
-                  <img src={coverUrl} className={profileStyles.sliderImage} alt="" />
+              <div className={profileStyles.coverGallery} style={{ height: "180px", borderRadius: "1rem", marginBottom: "1.5rem", position: "relative" }}>
+                {coverUrls && coverUrls.length > 0 ? (
+                  <>
+                    <img 
+                      src={coverUrls[activeCoverIdx % coverUrls.length] || coverUrls[0]} 
+                      className={profileStyles.sliderImage} 
+                      alt="" 
+                    />
+                    {coverUrls.length > 1 && (
+                      <>
+                        <button 
+                          onClick={(e) => { 
+                            e.preventDefault(); 
+                            e.stopPropagation(); 
+                            setActiveCoverIdx((prev) => (prev - 1 + coverUrls.length) % coverUrls.length); 
+                          }}
+                          className="absolute left-2 top-1/2 -translate-y-1/2 p-1 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors z-10 cursor-pointer border border-white/10"
+                          type="button"
+                        >
+                          <ChevronLeft className="h-3 w-3" />
+                        </button>
+                        <button 
+                          onClick={(e) => { 
+                            e.preventDefault(); 
+                            e.stopPropagation(); 
+                            setActiveCoverIdx((prev) => (prev + 1) % coverUrls.length); 
+                          }}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors z-10 cursor-pointer border border-white/10"
+                          type="button"
+                        >
+                          <ChevronRight className="h-3 w-3" />
+                        </button>
+                      </>
+                    )}
+                    <div className={profileStyles.galleryNav}>{activeCoverIdx % coverUrls.length + 1} / {coverUrls.length} Cover{coverUrls.length > 1 ? "s" : ""}</div>
+                  </>
                 ) : (
                   <span className={profileStyles.initialLogo} style={{ fontSize: "3rem" }}>{name ? name[0] : "A"}</span>
                 )}
                 <div className={profileStyles.coverOverlay} />
-                <div className={profileStyles.galleryNav}>1 / {gallery.length || 1} Images</div>
               </div>
 
               {/* Profile Header Details */}
@@ -1021,40 +1205,6 @@ export default function DashboardProfilePage() {
               {/* Main Grid Content */}
               <div className="grid grid-cols-1 gap-6 w-full">
                 <div>
-                  {/* About section */}
-                  <section className="mb-6">
-                    <h2 className="text-sm font-bold mb-2">About the Business</h2>
-                    <p className="text-xs text-[hsl(var(--muted-foreground))] leading-relaxed">
-                      {description || "No description provided yet."}
-                    </p>
-                  </section>
-
-                  {/* Services catalog */}
-                  {services && services.length > 0 && (
-                    <section className={profileStyles.menuSection} style={{ padding: "1rem", borderRadius: "1rem", marginBottom: "1.5rem" }}>
-                      <h2 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: "1rem" }}>Service Catalog & Pricing</h2>
-                      <div className="grid grid-cols-1 gap-3">
-                        {services.map((srv, idx) => (
-                          <div key={idx} className={profileStyles.menuCard} style={{ padding: "0.85rem" }}>
-                            <div>
-                              <div className={profileStyles.itemHeader}>
-                                <h3 style={{ fontSize: "0.85rem" }}>{srv.name || "Untitled Service"}</h3>
-                                <span className={profileStyles.itemPrice} style={{ fontSize: "0.85rem" }}>
-                                  {Number(srv.price) > 0 ? `${Number(srv.price).toLocaleString()} AMD` : "Call"}
-                                </span>
-                              </div>
-                              <p className={profileStyles.itemDesc} style={{ fontSize: "0.75rem", marginBottom: "0.5rem" }}>
-                                Professional service customized for your needs.
-                              </p>
-                            </div>
-                            <button type="button" className={profileStyles.btnBookItem} style={{ padding: "0.35rem", fontSize: "0.75rem" }}>
-                              Book Now
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </section>
-                  )}
 
                   {/* Operating hours */}
                   <section className="mb-6">
@@ -1146,13 +1296,45 @@ export default function DashboardProfilePage() {
 
               {/* Cover / Media Gallery */}
               <div className={profileStyles.coverGallery}>
-                {coverUrl ? (
-                  <img src={coverUrl} className={profileStyles.sliderImage} alt="" />
+                {coverUrls && coverUrls.length > 0 ? (
+                  <>
+                    <img 
+                      src={coverUrls[activeCoverIdx % coverUrls.length] || coverUrls[0]} 
+                      className={profileStyles.sliderImage} 
+                      alt="" 
+                    />
+                    {coverUrls.length > 1 && (
+                      <>
+                        <button 
+                          onClick={(e) => { 
+                            e.preventDefault(); 
+                            e.stopPropagation(); 
+                            setActiveCoverIdx((prev) => (prev - 1 + coverUrls.length) % coverUrls.length); 
+                          }}
+                          className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors z-10 cursor-pointer border border-white/10"
+                          type="button"
+                        >
+                          <ChevronLeft className="h-5 w-5" />
+                        </button>
+                        <button 
+                          onClick={(e) => { 
+                            e.preventDefault(); 
+                            e.stopPropagation(); 
+                            setActiveCoverIdx((prev) => (prev + 1) % coverUrls.length); 
+                          }}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors z-10 cursor-pointer border border-white/10"
+                          type="button"
+                        >
+                          <ChevronRight className="h-5 w-5" />
+                        </button>
+                      </>
+                    )}
+                    <div className={profileStyles.galleryNav}>{activeCoverIdx % coverUrls.length + 1} / {coverUrls.length} Cover{coverUrls.length > 1 ? "s" : ""}</div>
+                  </>
                 ) : (
                   <span className={profileStyles.initialLogo}>{name ? name[0] : "A"}</span>
                 )}
                 <div className={profileStyles.coverOverlay} />
-                <div className={profileStyles.galleryNav}>1 / {gallery.length || 1} Images</div>
               </div>
 
               {/* Profile Header Details */}
@@ -1212,40 +1394,6 @@ export default function DashboardProfilePage() {
               <div className={profileStyles.gridContent}>
                 {/* Left Column: digital catalogs */}
                 <div>
-                  {/* About section */}
-                  <section className="mb-8">
-                    <h2 className="text-lg font-bold mb-3">About the Business</h2>
-                    <p className="text-sm text-[hsl(var(--muted-foreground))] leading-relaxed">
-                      {description || "No description provided yet."}
-                    </p>
-                  </section>
-
-                  {/* Services catalog */}
-                  {services && services.length > 0 && (
-                    <section className={profileStyles.menuSection}>
-                      <h2>Service Catalog & Pricing</h2>
-                      <div className={profileStyles.menuGrid}>
-                        {services.map((srv, idx) => (
-                          <div key={idx} className={profileStyles.menuCard}>
-                            <div>
-                              <div className={profileStyles.itemHeader}>
-                                <h3>{srv.name || "Untitled Service"}</h3>
-                                <span className={profileStyles.itemPrice}>
-                                  {Number(srv.price) > 0 ? `${Number(srv.price).toLocaleString()} AMD` : "Call"}
-                                </span>
-                              </div>
-                              <p className={profileStyles.itemDesc}>
-                                Professional service customized for your needs.
-                              </p>
-                            </div>
-                            <button type="button" className={profileStyles.btnBookItem}>
-                              Book Now
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </section>
-                  )}
 
                   {/* Operating hours */}
                   <section className="mb-6">

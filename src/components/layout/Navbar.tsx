@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import LanguageSwitcher from "./LanguageSwitcher";
@@ -8,10 +9,15 @@ import { useI18n } from "@/i18n";
 import { useAuth } from "@/context/AuthContext";
 
 export default function Navbar() {
+  const pathname = usePathname();
   const { currentUser, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { t } = useI18n();
+
+  if (pathname.startsWith("/admin-secure")) {
+    return null;
+  }
 
   const handleLogout = () => {
     logout();
@@ -48,7 +54,7 @@ export default function Navbar() {
             {currentUser ? (
               <>
                 <Link href="/dashboard" className="hidden sm:inline-flex text-[13px] font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors cursor-pointer">
-                  Hi, {currentUser.displayName}
+                  Hi, {currentUser.name || currentUser.username}
                 </Link>
                 <button
                   onClick={handleLogout}
@@ -85,7 +91,7 @@ export default function Navbar() {
             {currentUser ? (
               <>
                 <Link href="/dashboard" onClick={() => setIsOpen(false)} className="block py-2 text-sm text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]">
-                  Hi, {currentUser.displayName}
+                  Hi, {currentUser.name || currentUser.username}
                 </Link>
                 <button onClick={() => { handleLogout(); }} className="block w-full text-left py-2 text-sm text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]">
                   Sign out

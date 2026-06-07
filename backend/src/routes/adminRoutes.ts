@@ -1,13 +1,49 @@
 import { Router } from 'express';
-import { getReportedReviews, resolveReportedReview } from '../controllers/adminController.js';
+import {
+  getAdminStats,
+  getBusinesses,
+  approveBusiness,
+  rejectBusiness,
+  deleteBusiness,
+  getBookings,
+  deleteBooking,
+  getSubscriptions,
+  deleteSubscription,
+  getReportedReviews,
+  resolveReportedReview,
+  getUsers,
+  deleteUser,
+} from '../controllers/adminController.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 
 const router = Router();
 
-// Secure all admin routes to require admin role
+// All admin routes require valid JWT + admin role
 router.use(authenticate, authorize('admin'));
 
+// Stats
+router.get('/stats', getAdminStats);
+
+// Businesses
+router.get('/businesses', getBusinesses);
+router.put('/businesses/:id/approve', approveBusiness);
+router.put('/businesses/:id/reject', rejectBusiness);
+router.delete('/businesses/:id', deleteBusiness);
+
+// Bookings
+router.get('/bookings', getBookings);
+router.delete('/bookings/:id', deleteBooking);
+
+// Subscriptions
+router.get('/subscriptions', getSubscriptions);
+router.delete('/subscriptions/:id', deleteSubscription);
+
+// Review moderation
 router.get('/reports', getReportedReviews);
 router.put('/reports/:reviewId/resolve', resolveReportedReview);
+
+// Users
+router.get('/users', getUsers);
+router.delete('/users/:id', deleteUser);
 
 export default router;

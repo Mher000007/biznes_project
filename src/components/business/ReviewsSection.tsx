@@ -1,8 +1,9 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
-import { Star, ThumbsUp, Trash2, MessageSquare, CheckCircle, AlertCircle, Loader2, User } from "lucide-react";
+import { Star, ThumbsUp, MessageSquare, CheckCircle, AlertCircle, Loader2, User } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { getApiUrl } from "@/lib/utils";
 import styles from "./ReviewsSection.module.scss";
 
 interface Review {
@@ -83,7 +84,7 @@ export default function ReviewsSection({
   onRatingUpdate,
 }: ReviewsSectionProps) {
   const { currentUser } = useAuth();
-  const isBackend = businessId.match(/^[0-9a-fA-F]{24}$/);
+  const isBackend = /^[0-9a-fA-F]{24}$/.test(businessId);
 
   // ── state ──
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -102,7 +103,6 @@ export default function ReviewsSection({
   const [submitError, setSubmitError] = useState("");
 
   const [helpfulSet, setHelpfulSet] = useState<Set<string>>(new Set());
-  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // rating summary
   const [avgRating, setAvgRating] = useState(initialRating);
@@ -116,7 +116,7 @@ export default function ReviewsSection({
     if (!isBackend) return;
     setLoading(true);
     try {
-      const apiURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+      const apiURL = getApiUrl();
       const res = await axios.get(
         `${apiURL}/businesses/${businessId}/reviews?page=${p}&limit=5`
       );
@@ -179,7 +179,7 @@ export default function ReviewsSection({
         const token = localStorage.getItem("token");
         if (!token) { setSubmitError("You must be logged in to leave a review."); setSubmitting(false); return; }
 
-        const apiURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+        const apiURL = getApiUrl();
         const res = await axios.post(
           `${apiURL}/businesses/${businessId}/reviews`,
           { rating: selectedRating, comment: comment.trim() },
@@ -212,7 +212,7 @@ export default function ReviewsSection({
       const newReview: Review = {
         _id: `local-${Date.now()}`,
         author: null,
-        authorName: currentUser?.name || currentUser?.displayName || "Anonymous",
+        authorName: currentUser?.name || "Anonymous",
         rating: selectedRating,
         comment: comment.trim(),
         isVerified: false,
@@ -250,62 +250,12 @@ export default function ReviewsSection({
 
     if (isBackend) {
       try {
-        const apiURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+        const apiURL = getApiUrl();
         await axios.post(`${apiURL}/businesses/${businessId}/reviews/${reviewId}/helpful`);
       } catch { /* optimistic – ignore error */ }
     }
   };
 
-  // ── delete ──
-  const handleDelete = async (reviewId: string) => {
-    if (!confirm("Are you sure you want to delete this review?")) return;
-    setDeletingId(reviewId);
-
-    if (isBackend) {
-      try {
-        const token = localStorage.getItem("token");
-        const apiURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
-        await axios.delete(
-          `${apiURL}/businesses/${businessId}/reviews/${reviewId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      } catch (err: any) {
-        alert(err.response?.data?.message || "Could not delete review.");
-        setDeletingId(null);
-        return;
-      }
-    }
-
-    const toDelete = reviews.find((r) => r._id === reviewId);
-    const updated = reviews.filter((r) => r._id !== reviewId);
-    setReviews(updated);
-
-    if (!isBackend) {
-      try { localStorage.setItem(`armbiz-reviews-${businessSlug}`, JSON.stringify(updated)); } catch { /* ignore */ }
-    }
-
-    if (toDelete && reviewCount > 1) {
-      const total = avgRating * reviewCount - toDelete.rating;
-      const newCount = reviewCount - 1;
-      const newAvg = Math.round((total / newCount) * 10) / 10;
-      setAvgRating(newAvg);
-      setReviewCount(newCount);
-      onRatingUpdate?.(newAvg, newCount);
-    } else if (reviewCount === 1) {
-      setAvgRating(0);
-      setReviewCount(0);
-      onRatingUpdate?.(0, 0);
-    }
-
-    setDeletingId(null);
-  };
-
-  const isOwner = (review: Review) => {
-    if (!currentUser) return false;
-    const authorId = review.author?._id?.toString() || "";
-    const userId = currentUser._id || currentUser.id || "";
-    return authorId === userId;
-  };
 
   return (
     <section className={styles.section}>

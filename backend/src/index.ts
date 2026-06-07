@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 
 import { connectDB } from './config/database.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { seedCategories } from './utils/seeder.js';
 
 import authRoutes from './routes/authRoutes.js';
 import businessRoutes from './routes/businessRoutes.js';
@@ -70,6 +71,7 @@ app.use(errorHandler);
 const startServer = async () => {
   try {
     await connectDB();
+    await seedCategories();
     app.listen(PORT, () => {
       console.log(`\n🚀 Server running on http://localhost:${PORT}`);
       console.log(`📝 API Documentation:`);

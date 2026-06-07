@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Building2, CheckCircle, ChevronRight, ChevronLeft, ShieldCheck, Sparkles, Star } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
+import { getApiUrl } from "@/lib/utils";
 import styles from "./Register.module.scss";
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -90,13 +91,13 @@ export default function RegisterPage() {
     if (!currentUser) {
       switch (step) {
         case 0: return accountUsername && accountEmail && accountPassword.length >= 6;
-        case 1: return name && category;
+        case 1: return name && category && shortDesc;
         case 2: return city && phone && email;
         default: return true;
       }
     } else {
       switch (step) {
-        case 0: return name && category;
+        case 0: return name && category && shortDesc;
         case 1: return city && phone && email;
         default: return true;
       }
@@ -160,7 +161,7 @@ export default function RegisterPage() {
           setLoading(false);
           return;
         }
-        activeUser = authResult.user;
+        activeUser = authResult.user || null;
         activeUsername = authResult.user?.username || accountUsername;
       } catch (err: any) {
         setSaveError(err.message || "Failed to register user account.");
@@ -189,7 +190,7 @@ export default function RegisterPage() {
     // 3. Try backend listing creation
     try {
       const token = typeof window !== 'undefined' ? window.localStorage.getItem('token') : null;
-      const apiURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      const apiURL = getApiUrl();
       
       const payload = {
         name,
@@ -360,6 +361,16 @@ export default function RegisterPage() {
                 <option value="">Select industry category</option>
                 {CATEGORIES.map(c => <option key={c.id} value={c.slug}>{c.name}</option>)}
               </select>
+            </div>
+            <div className={styles.formGroup}>
+              <label>Business Description / Summary *</label>
+              <textarea
+                value={shortDesc}
+                onChange={e => setShortDesc(e.target.value)}
+                placeholder="Describe what your business does, key products/services, etc. (required)"
+                rows={3}
+                required
+              />
             </div>
             <div className={styles.formGroup}>
               <label>Founded Year</label>

@@ -168,13 +168,28 @@ const businessSchema = new Schema<IBusiness>({
 });
 
 // Create slug from name
-businessSchema.pre('save', function (next) {
+businessSchema.pre('save', async function (next) {
   if (!this.slug) {
-    this.slug = this.name
+    const baseSlug = this.name
       .toLowerCase()
       .replace(/[^\w\s-]/g, '')
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-');
+      
+    let uniqueSlug = baseSlug;
+    let counter = 1;
+    
+    const BusinessModel = this.constructor as mongoose.Model<any>;
+    
+    while (true) {
+      const existing = await BusinessModel.findOne({ slug: uniqueSlug });
+      if (!existing || existing._id.equals(this._id)) {
+        break;
+      }
+      uniqueSlug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+    this.slug = uniqueSlug;
   }
   next();
 });
