@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { LayoutDashboard, Building2, MessageSquare, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, Building2, MessageSquare, Settings, LogOut, Sparkles } from "lucide-react";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -17,6 +17,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const links = [
     { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
     { href: "/dashboard/profile", label: "Business Profile", icon: Building2 },
+    { href: "/dashboard/stories", label: "Stories", icon: Sparkles },
     { href: "/dashboard/inquiries", label: "Inquiries", icon: MessageSquare },
     { href: "/dashboard/settings", label: "Settings", icon: Settings },
   ];

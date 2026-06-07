@@ -6,7 +6,7 @@ import { CATEGORIES } from "@/lib/constants";
 export default function Footer() {
   const pathname = usePathname();
 
-  if (pathname.startsWith("/admin-secure")) {
+  if (pathname.startsWith("/admin-secure") || pathname.startsWith("/dashboard")) {
     return null;
   }
 

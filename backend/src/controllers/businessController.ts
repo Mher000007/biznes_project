@@ -2,14 +2,21 @@ import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import Business from '../models/Business.js';
 import Category from '../models/Category.js';
+import Subscription from '../models/Subscription.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { triggerOnboardingWebhook } from '../utils/n8n.js';
 
 // Get all businesses
 export const getBusinesses = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const { category, city, search, featured, maxPrice, page = 1, limit = 10 } = req.query;
+  const { category, city, search, featured, maxPrice, premiumOnly, page = 1, limit = 10 } = req.query;
 
   const filter: any = { active: true }; // Allow unverified for now during dev, or verified: true. Let's keep active: true for easy developer testing of onboarded businesses!
+
+  if (premiumOnly === 'true') {
+    const premiumSubs = await Subscription.find({ plan: 'premium', status: 'active' }).select('business');
+    const premiumBizIds = premiumSubs.map(sub => sub.business);
+    filter._id = { $in: premiumBizIds };
+  }
 
   if (category) {
     if (category.toString().match(/^[0-9a-fA-F]{24}$/)) {

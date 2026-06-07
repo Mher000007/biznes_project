@@ -15,7 +15,7 @@ export default function HeroSection() {
   };
 
   return (
-    <section className="hero-section pt-24 pb-16 sm:pt-32 sm:pb-24">
+    <section className="hero-section pt-10 pb-16 sm:pt-16 sm:pb-24">
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
         <div className="max-w-3xl">
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 animate-fade-in-up text-[hsl(var(--foreground))]">

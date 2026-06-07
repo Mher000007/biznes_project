@@ -2,12 +2,14 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { MOCK_BUSINESSES } from "@/data/mock-businesses";
-import { Star, MapPin, BadgeCheck, Globe, Phone, Mail, Clock, Users, Calendar, ArrowLeft, Send, X, Compass, ChevronLeft, ChevronRight, CheckCircle } from "lucide-react";
+import { Star, MapPin, BadgeCheck, Globe, Phone, Mail, Clock, Users, Calendar, ArrowLeft, Send, X, Compass, ChevronLeft, ChevronRight, CheckCircle, Maximize2 } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
 import { getApiUrl } from "@/lib/utils";
 import styles from "@/components/business/BusinessProfile.module.scss";
 import ReviewsSection from "@/components/business/ReviewsSection";
+import StoryViewer from "@/components/landing/StoryViewer";
+import { useI18n } from "@/i18n";
 
 
 
@@ -50,15 +52,80 @@ interface Highlight {
 export default function BusinessProfilePage() {
   const { slug } = useParams() as { slug: string };
   const router = useRouter();
+  const { locale, t } = useI18n();
   const [business, setBusiness] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeImgIdx, setActiveImgIdx] = useState(0);
   const [activeHighlight, setActiveHighlight] = useState<Highlight | null>(null);
   const [activeHighlightIdx, setActiveHighlightIdx] = useState<number>(-1);
+  const [activeGalleryIdx, setActiveGalleryIdx] = useState<number | null>(null);
+
+  // Extract gallery images or use category-based fallback placeholders
+  const galleryImages: string[] = (() => {
+    if (!business) return [];
+    if (business.images && business.images.length > 0) return business.images;
+    
+    // Fallback based on category
+    const cat = business.category?.slug || "";
+    if (cat === "horeca") {
+      return [
+        "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=800&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=800&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?q=80&w=800&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=800&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=800&auto=format&fit=crop"
+      ];
+    }
+    if (cat === "beauty") {
+      return [
+        "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=800&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=800&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1607779097040-26e80aa78e66?q=80&w=800&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1527799820374-dcf8d9d4a3ef?q=80&w=800&auto=format&fit=crop"
+      ];
+    }
+    if (cat === "technology") {
+      return [
+        "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=800&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1497366811353-6870744d04b2?q=80&w=800&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=800&auto=format&fit=crop"
+      ];
+    }
+    // General high-quality placeholders
+    return [
+      "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=800&auto=format&fit=crop"
+    ];
+  })();
+
+  // Keyboard navigation for gallery lightbox
+  useEffect(() => {
+    if (activeGalleryIdx === null) return;
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setActiveGalleryIdx(null);
+      } else if (e.key === "ArrowLeft") {
+        setActiveGalleryIdx(prev => 
+          prev !== null && galleryImages.length > 0 ? (prev - 1 + galleryImages.length) % galleryImages.length : null
+        );
+      } else if (e.key === "ArrowRight") {
+        setActiveGalleryIdx(prev => 
+          prev !== null && galleryImages.length > 0 ? (prev + 1) % galleryImages.length : null
+        );
+      }
+    };
+    
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeGalleryIdx, galleryImages]);
 
   // Rating / Reviews State (live-synced from ReviewsSection)
   const [liveRating, setLiveRating] = useState(0);
   const [liveReviewCount, setLiveReviewCount] = useState(0);
+
+
 
   // Booking Modal State
   const [isBookingOpen, setIsBookingOpen] = useState(false);
@@ -249,11 +316,7 @@ export default function BusinessProfilePage() {
             { name: "Khachapuri", price: 2500, description: "Cheese-filled crusty bread", category: "Main Course" },
             { name: "Armenian Brandy (10 Y.O)", price: 4500, description: "Premium local brandy glass", category: "Drinks" }
           ] : [],
-          highlights: [
-            { title: "Traditional Recipe", icon: "👨‍🍳", description: "Authentic preparations" },
-            { title: "Fresh Ingredients", icon: "🥬", description: "Sourced locally" },
-            { title: "Outdoor Seating", icon: "🌿", description: "Garden tables available" }
-          ]
+          highlights: []
         };
         setBusiness(normalizedBiz);
         setLiveRating(normalizedBiz.ratingAvg || 0);
@@ -393,36 +456,33 @@ export default function BusinessProfilePage() {
   // Default time slots for Armenian service listings
   const TIME_SLOTS = ["10:00", "11:30", "13:00", "14:30", "16:00", "17:30", "19:00", "20:30"];
 
-  // Extract images for rendering
-  const images: string[] = [];
-  if (business) {
-    const coverUrl = business.coverImageUrl || business.metadata?.coverUrl;
-    if (coverUrl) {
-      if (Array.isArray(coverUrl)) {
-        coverUrl.forEach((url: string) => {
-          if (url && !images.includes(url)) {
-            images.push(url);
-          }
-        });
-      } else {
-        images.push(coverUrl);
-      }
-    }
-    
-    const logo = business.logo || business.logoUrl;
-    
-    if (business.images && Array.isArray(business.images)) {
-      business.images.forEach((img: string) => {
-        if (img && !images.includes(img)) {
-          images.push(img);
+  // Extract cover image
+  const coverImage = (() => {
+    if (business) {
+      if (business.coverImageUrl) {
+        if (Array.isArray(business.coverImageUrl)) {
+          if (business.coverImageUrl.length > 0) return business.coverImageUrl[0];
+        } else {
+          return business.coverImageUrl;
         }
-      });
+      }
+      const metadataCover = business.metadata?.coverUrl;
+      if (metadataCover) {
+        if (Array.isArray(metadataCover)) {
+          if (metadataCover.length > 0) return metadataCover[0];
+        } else {
+          return metadataCover;
+        }
+      }
+      // Fallback to first gallery image if no cover image
+      if (business.images && business.images.length > 0) {
+        return business.images[0];
+      }
+      // Fallback to logo
+      return business.logo || business.logoUrl || "";
     }
-    
-    if (images.length === 0 && logo) {
-      images.push(logo);
-    }
-  }
+    return "";
+  })();
 
   return (
     <div className={styles.profileContainer}>
@@ -433,46 +493,38 @@ export default function BusinessProfilePage() {
 
       {/* Cover / Media Gallery */}
       <div className={styles.coverGallery}>
-        {images.length > 0 ? (
-          <>
-            <img 
-              src={images[activeImgIdx]} 
-              alt={`${business.name} Gallery`} 
-              className={styles.sliderImage} 
-            />
-            {images.length > 1 && (
-              <>
-                <button 
-                  onClick={() => setActiveImgIdx((activeImgIdx - 1 + images.length) % images.length)}
-                  className={styles.prevBtn}
-                  aria-label="Previous Image"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                <button 
-                  onClick={() => setActiveImgIdx((activeImgIdx + 1) % images.length)}
-                  className={styles.nextBtn}
-                  aria-label="Next Image"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-              </>
-            )}
-            <div className={styles.galleryNav}>
-              {activeImgIdx + 1} / {images.length} Image{images.length > 1 ? "s" : ""}
-            </div>
-          </>
+        {coverImage ? (
+          <img 
+            src={coverImage} 
+            alt={`${business.name} Cover`} 
+            className={styles.sliderImage} 
+          />
         ) : (
-          <>
-            <span className={styles.initialLogo}>{business.name[0]}</span>
-            <div className={styles.galleryNav}>No Images</div>
-          </>
+          <span className={styles.initialLogo}>{business.name ? business.name[0] : "B"}</span>
         )}
         <div className={styles.coverOverlay} />
       </div>
 
       {/* Profile Header Details */}
       <div className={styles.profileHeader}>
+        
+        {/* Logo Avatar */}
+        <div className="flex items-center justify-center shrink-0">
+          <div className="w-20 h-20 rounded-full border border-[hsl(var(--border))]/60 p-[2px] overflow-hidden relative">
+            {business.logo || business.logoUrl ? (
+              <img 
+                src={business.logo || business.logoUrl} 
+                className="w-full h-full rounded-full object-cover" 
+                alt={business.name} 
+              />
+            ) : (
+              <div className="w-full h-full rounded-full bg-violet-600 flex items-center justify-center text-white text-xl font-bold uppercase">
+                {business.name[0]}
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className={styles.titleBlock}>
           <div className="flex items-center gap-3 flex-wrap">
             <h1>
@@ -539,6 +591,56 @@ export default function BusinessProfilePage() {
             ))}
           </div>
         </div>
+      )}
+
+      {/* ── Showcase Gallery Section ── */}
+      {galleryImages.length > 0 && (
+        <section className={styles.gallerySection}>
+          <div className={styles.sectionHeader}>
+            <h2>{t.business.gallery}</h2>
+            <span className={styles.photoCount}>
+              {galleryImages.length} {
+                locale === "hy" ? "լուսանկար" :
+                locale === "ru" ? "фото" :
+                galleryImages.length === 1 ? "photo" : "photos"
+              }
+            </span>
+          </div>
+          <div className={`${styles.bentoGrid} ${
+            galleryImages.length === 1 ? styles.grid1 :
+            galleryImages.length === 2 ? styles.grid2 :
+            galleryImages.length === 3 ? styles.grid3 :
+            galleryImages.length === 4 ? styles.grid4 :
+            styles.grid5
+          }`}>
+            {galleryImages.slice(0, 5).map((url: string, index: number) => {
+              const isLastAndMore = index === 4 && galleryImages.length > 5;
+              return (
+                <div 
+                  key={index} 
+                  className={styles.galleryItem}
+                  onClick={() => setActiveGalleryIdx(index)}
+                >
+                  <img 
+                    src={url} 
+                    alt={`${business.name} Interior ${index + 1}`} 
+                    loading="lazy" 
+                  />
+                  {isLastAndMore ? (
+                    <div className={styles.morePhotosOverlay}>
+                      <span className={styles.moreCount}>+{galleryImages.length - 4}</span>
+                      <span className={styles.moreText}>{t.featured.viewAll}</span>
+                    </div>
+                  ) : (
+                    <div className={styles.itemOverlay}>
+                      <Maximize2 className="h-6 w-6" />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
       )}
 
       {/* Main Grid Content */}
@@ -806,6 +908,63 @@ export default function BusinessProfilePage() {
           setLiveReviewCount(count);
         }}
       />
+
+
+
+      {/* ── Gallery Fullscreen Lightbox Modal ── */}
+      {activeGalleryIdx !== null && galleryImages.length > 0 && (
+        <div 
+          className={styles.lightboxOverlay} 
+          onClick={() => setActiveGalleryIdx(null)}
+        >
+          <div className={styles.lightboxContent} onClick={(e) => e.stopPropagation()}>
+            <button 
+              onClick={() => setActiveGalleryIdx(null)} 
+              className={styles.lightboxClose}
+              aria-label="Close lightbox"
+            >
+              <X className="h-6 w-6" />
+            </button>
+
+            <div className={styles.lightboxMediaWrapper}>
+              <img 
+                src={galleryImages[activeGalleryIdx]} 
+                alt={`${business.name} Interior ${activeGalleryIdx + 1}`} 
+                className={styles.lightboxImage} 
+              />
+              <div className={styles.lightboxText}>
+                <h3>{business.name}</h3>
+                <p>{t.business.gallery} ({activeGalleryIdx + 1} / {galleryImages.length})</p>
+              </div>
+            </div>
+
+            {galleryImages.length > 1 && (
+              <>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveGalleryIdx((activeGalleryIdx - 1 + galleryImages.length) % galleryImages.length);
+                  }}
+                  className={styles.lightboxPrev}
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveGalleryIdx((activeGalleryIdx + 1) % galleryImages.length);
+                  }}
+                  className={styles.lightboxNext}
+                  aria-label="Next image"
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

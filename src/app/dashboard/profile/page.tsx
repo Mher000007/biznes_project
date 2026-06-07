@@ -48,7 +48,7 @@ export default function DashboardProfilePage() {
   const [loading, setLoading] = useState(false);
 
   // Layout Tab State
-  const [activeFormTab, setActiveFormTab] = useState<"identity" | "info" | "stories" | "gallery" | "hours" | "services" | null>("identity");
+  const [activeFormTab, setActiveFormTab] = useState<"identity" | "info" | "stories" | "hours" | "services" | null>("identity");
   const [activePreviewTab, setActivePreviewTab] = useState<"about" | "gallery">("about");
   
   // Simulated Phone Screen Story overlay
@@ -559,7 +559,6 @@ export default function DashboardProfilePage() {
           { id: "identity", label: t.builder.tabs.branding, icon: Sparkles },
           { id: "info", label: t.builder.tabs.credentials, icon: Award },
           { id: "stories", label: t.builder.tabs.stories, icon: Camera },
-          { id: "gallery", label: t.builder.tabs.gallery, icon: ImageIcon },
           { id: "hours", label: t.builder.tabs.hours, icon: Clock },
           { id: "services", label: t.builder.services.billingTitle, icon: Award }
         ].map((tab) => {
@@ -683,7 +682,7 @@ export default function DashboardProfilePage() {
                       </div>
                     )}
 
-                    {coverUrls.length === 0 && (
+                     {coverUrls.length === 0 && (
                       <p className="text-[11px] text-[hsl(var(--muted-foreground))] italic mt-1.5">No cover images added. Please add at least one.</p>
                     )}
                     <input 
@@ -693,6 +692,68 @@ export default function DashboardProfilePage() {
                       accept="image/*"
                       className="hidden" 
                     />
+                  </div>
+
+                  {/* Divider */}
+                  <hr className="border-[hsl(var(--border))]/60 my-4" />
+
+                  {/* Showcase Gallery Upload (Interior/Salon Photos) */}
+                  <div>
+                    <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1.5">{t.builder.gallery.title} (Սրահի նկարներ)</label>
+                    <p className="text-[11px] text-[hsl(var(--muted-foreground))] mb-2">{t.builder.gallery.subtitle}</p>
+                    <div className="flex gap-2 mb-3">
+                      <input 
+                        type="text" 
+                        placeholder={t.builder.gallery.placeholder} 
+                        value={newGalleryUrl} 
+                        onChange={e => setNewGalleryUrl(e.target.value)} 
+                        className="flex-1 rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]" 
+                      />
+                      <button 
+                        type="button" 
+                        onClick={() => galleryInputRef.current?.click()}
+                        className="flex items-center gap-1 px-3 py-2 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] border border-[hsl(var(--border))] transition-colors font-semibold"
+                      >
+                        <Camera className="h-3.5 w-3.5" /> Upload
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={addGalleryItem}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-[hsl(var(--primary))] text-white font-semibold rounded-lg text-xs hover:opacity-90 font-semibold"
+                      >
+                        <Plus className="h-4 w-4" /> {t.builder.gallery.addPhoto}
+                      </button>
+                    </div>
+
+                    <input 
+                      type="file" 
+                      ref={galleryInputRef} 
+                      onChange={handleGalleryUpload} 
+                      accept="image/*" 
+                      multiple 
+                      className="hidden" 
+                    />
+
+                    {gallery.length > 0 && (
+                      <div className="grid grid-cols-3 gap-3">
+                        {gallery.map((url, i) => (
+                          <div key={i} className="relative group aspect-square rounded-xl border border-[hsl(var(--border))] overflow-hidden bg-slate-900 shadow-sm">
+                            <img src={url} alt="" className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+                            <button 
+                              type="button" 
+                              onClick={() => removeGalleryItem(url)}
+                              className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {gallery.length === 0 && (
+                      <p className="text-[11px] text-[hsl(var(--muted-foreground))] italic">No salon/interior images added yet.</p>
+                    )}
                   </div>
                 </div>
 
@@ -779,71 +840,9 @@ export default function DashboardProfilePage() {
               </div>
             )}
 
-            {/* TAB 3: STORIES & HIGHLIGHTS */}
+            {/* TAB 3: HIGHLIGHTS ONLY */}
             {activeFormTab === "stories" && (
               <div className="space-y-6 animate-scale-in">
-                {/* Stories Editor */}
-                <div>
-                  <h3 className="text-base font-bold text-[hsl(var(--foreground))] mb-1">{t.builder.stories.title}</h3>
-                  <p className="text-xs text-[hsl(var(--muted-foreground))]">{t.builder.stories.subtitle}</p>
-
-                  <div className="grid grid-cols-1 gap-2 mt-3">
-                    <input 
-                      type="text" 
-                      placeholder={t.builder.stories.titlePlaceholder} 
-                      value={newStoryTitle} 
-                      onChange={e => setNewStoryTitle(e.target.value)} 
-                      className="w-full rounded-lg border border-[hsl(var(--border))] px-2.5 py-1.5 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]" 
-                    />
-                    <div className="flex gap-2">
-                      <input 
-                        type="text" 
-                        placeholder={t.builder.stories.imgPlaceholder} 
-                        value={newStoryImg} 
-                        onChange={e => setNewStoryImg(e.target.value)} 
-                        className="flex-1 rounded-lg border border-[hsl(var(--border))] px-2.5 py-1.5 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]" 
-                      />
-                      <button 
-                        type="button" 
-                        onClick={() => storyInputRef.current?.click()}
-                        className="px-2.5 py-1.5 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] transition-colors border border-[hsl(var(--border))] flex items-center gap-1 font-semibold"
-                      >
-                        <Camera className="h-3.5 w-3.5" /> Upload
-                      </button>
-                      <button 
-                        type="button" 
-                        onClick={addStoryItem}
-                        className="px-3 py-1.5 bg-[hsl(var(--primary))] text-white font-semibold rounded-lg text-xs hover:opacity-90 font-semibold"
-                      >
-                        {t.builder.stories.add}
-                      </button>
-                    </div>
-                    <input 
-                      type="file" 
-                      ref={storyInputRef} 
-                      onChange={handleStoryUpload} 
-                      accept="image/*" 
-                      className="hidden" 
-                    />
-                  </div>
-
-                  {/* Stories list */}
-                  <div className="flex gap-3 overflow-x-auto py-3 mt-2 border-b border-[hsl(var(--border))]">
-                    {stories.map(s => (
-                      <div key={s.id} className="relative group flex flex-col items-center shrink-0 w-16">
-                        <img src={s.imageUrl} className="h-10 w-10 object-cover rounded-full border border-[hsl(var(--border))]" alt="" />
-                        <span className="text-[10px] mt-1 text-[hsl(var(--muted-foreground))] truncate w-full text-center">{s.title}</span>
-                        <button 
-                          type="button" 
-                          onClick={() => removeStoryItem(s.id)}
-                          className="absolute -top-1 -right-1 p-0.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                        >
-                          <X className="h-2.5 w-2.5" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
 
                 {/* Highlights Editor */}
                 <div>
@@ -910,63 +909,7 @@ export default function DashboardProfilePage() {
               </div>
             )}
 
-            {/* TAB 4: MEDIA GALLERY */}
-            {activeFormTab === "gallery" && (
-              <div className="space-y-6 animate-scale-in">
-                <div>
-                  <h3 className="text-base font-bold text-[hsl(var(--foreground))] mb-1">{t.builder.gallery.title}</h3>
-                  <p className="text-xs text-[hsl(var(--muted-foreground))]">{t.builder.gallery.subtitle}</p>
-                </div>
 
-                <div className="flex gap-2">
-                  <input 
-                    type="text" 
-                    placeholder={t.builder.gallery.placeholder} 
-                    value={newGalleryUrl} 
-                    onChange={e => setNewGalleryUrl(e.target.value)} 
-                    className="flex-1 rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]" 
-                  />
-                  <button 
-                    type="button" 
-                    onClick={() => galleryInputRef.current?.click()}
-                    className="flex items-center gap-1 px-3 py-2 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] border border-[hsl(var(--border))] transition-colors font-semibold"
-                  >
-                    <Camera className="h-3.5 w-3.5" /> Upload
-                  </button>
-                  <button 
-                    type="button" 
-                    onClick={addGalleryItem}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-[hsl(var(--primary))] text-white font-semibold rounded-lg text-xs hover:opacity-90 font-semibold"
-                  >
-                    <Plus className="h-4 w-4" /> {t.builder.gallery.addPhoto}
-                  </button>
-                </div>
-
-                <input 
-                  type="file" 
-                  ref={galleryInputRef} 
-                  onChange={handleGalleryUpload} 
-                  accept="image/*" 
-                  multiple 
-                  className="hidden" 
-                />
-
-                <div className="grid grid-cols-3 gap-3">
-                  {gallery.map((url, i) => (
-                    <div key={i} className="relative group aspect-square rounded-xl border border-[hsl(var(--border))] overflow-hidden bg-slate-900 shadow-sm">
-                      <img src={url} alt="" className="h-full w-full object-cover transition-transform group-hover:scale-105" />
-                      <button 
-                        type="button" 
-                        onClick={() => removeGalleryItem(url)}
-                        className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* TAB 5: HOURS & LOCATION */}
             {activeFormTab === "hours" && (
