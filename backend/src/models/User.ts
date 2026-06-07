@@ -3,12 +3,14 @@ import bcrypt from 'bcryptjs';
 
 export interface IUser extends Document {
   name: string;
+  username: string;
   email: string;
   password: string;
   phone?: string;
   avatar?: string;
   bio?: string;
   businessType?: string;
+  accountType?: 'personal' | 'business';
   location?: string;
   verified: boolean;
   role: 'user' | 'business_owner' | 'admin';
@@ -22,6 +24,14 @@ const userSchema = new Schema<IUser>({
     type: String,
     required: [true, 'Please provide a name'],
     trim: true,
+  },
+  username: {
+    type: String,
+    unique: true,
+    sparse: true,          // allows multiple docs with null/undefined username
+    lowercase: true,
+    trim: true,
+    match: [/^[a-z0-9_]{3,30}$/, 'Username must be 3–30 characters (letters, numbers, underscore)'],
   },
   email: {
     type: String,
@@ -40,6 +50,11 @@ const userSchema = new Schema<IUser>({
   avatar: String,
   bio: String,
   businessType: String,
+  accountType: {
+    type: String,
+    enum: ['personal', 'business'],
+    default: 'personal',
+  },
   location: String,
   verified: {
     type: Boolean,
@@ -66,7 +81,6 @@ userSchema.pre('save', async function (next) {
     next();
     return;
   }
-
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
@@ -74,6 +88,16 @@ userSchema.pre('save', async function (next) {
   } catch (error) {
     next(error as Error);
   }
+});
+
+// Auto-generate username from name if not provided
+userSchema.pre('save', function (next) {
+  if (!this.username && this.name) {
+    const base = this.name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+    const suffix = Math.floor(Math.random() * 9000) + 1000;
+    this.username = `${base}_${suffix}`.substring(0, 30);
+  }
+  next();
 });
 
 // Match user entered password to hashed password in database

@@ -9,25 +9,27 @@ import {
   getMyBusinesses,
   rateBusiness,
 } from '../controllers/businessController.js';
-import { authenticate, authorize } from '../middleware/auth.js';
+import { authenticate } from '../middleware/auth.js';
 import reviewRoutes from './reviewRoutes.js';
 
 const router = Router({ mergeParams: true });
 
-// Public routes
+// ── Static paths FIRST (must come before /:id) ─────────────────────────────
+router.get('/me/all', authenticate, getMyBusinesses);
+router.post('/onboard', authenticate, createBusiness);
+
+// ── Public routes ────────────────────────────────────────────────────────────
 router.get('/', getBusinesses);
 router.get('/slug/:slug', getBusinessBySlug);
-router.get('/:id', getBusinessById);
-router.post('/:id/rate', rateBusiness);
 
-// Protected routes
+// ── Protected CRUD ───────────────────────────────────────────────────────────
 router.post('/', authenticate, createBusiness);
-router.post('/onboard', authenticate, createBusiness);
-router.get('/me/all', authenticate, getMyBusinesses);
+router.get('/:id', getBusinessById);
 router.put('/:id', authenticate, updateBusiness);
 router.delete('/:id', authenticate, deleteBusiness);
+router.post('/:id/rate', rateBusiness);
 
-// Nested review routes → /businesses/:businessId/reviews
+// ── Nested review routes → /businesses/:businessId/reviews ───────────────────
 router.use('/:businessId/reviews', reviewRoutes);
 
 export default router;

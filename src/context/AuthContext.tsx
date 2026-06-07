@@ -1,159 +1,163 @@
 "use client";
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 import axios from "axios";
-import {
-  getCurrentUser as getMockCurrentUser,
-  registerUser as registerMockUser,
-  signIn as signInMock,
-  signOut as signOutMock,
-  UserAccount,
-  AccountType,
-} from "@/lib/auth";
+import { getApiUrl } from "@/lib/utils";
+
+const API = getApiUrl();
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export type AccountType = "personal" | "business";
+
+export interface AuthUser {
+  id: string;
+  name: string;
+  username?: string;
+  email: string;
+  role: "user" | "business_owner" | "admin";
+  accountType?: AccountType;
+  avatar?: string;
+  phone?: string;
+}
 
 export interface AuthContextValue {
-  currentUser: any | null;
+  currentUser: AuthUser | null;
   isLoading: boolean;
   register: (input: {
-    username: string;
+    username?: string;
     displayName: string;
     email: string;
     password: string;
     accountType: AccountType;
-  }) => Promise<{ success: boolean; error?: string; user?: any }>;
-  login: (input: { userOrEmail: string; password: string }) => Promise<{ success: boolean; error?: string; user?: any }>;
+  }) => Promise<{ success: boolean; error?: string; user?: AuthUser }>;
+  login: (input: {
+    userOrEmail: string;
+    password: string;
+  }) => Promise<{ success: boolean; error?: string; user?: AuthUser }>;
   logout: () => void;
-  resetPassword: (input: { userOrEmail: string; newPassword: string }) => Promise<{ success: boolean; error?: string }>;
+  refreshUser: () => Promise<void>;
 }
+
+// ─── Context ──────────────────────────────────────────────────────────────────
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+// ─── Provider ─────────────────────────────────────────────────────────────────
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<any | null>(null);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize: Load user profile
-  useEffect(() => {
-    async function loadUser() {
-      const token = typeof window !== 'undefined' ? window.localStorage.getItem('token') : null;
-      const apiURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-      
-      if (token) {
-        try {
-          const res = await axios.get(`${apiURL}/auth/me`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          if (res.data?.success && res.data?.user) {
-            setCurrentUser(res.data.user);
-            setIsLoading(false);
-            return;
-          }
-        } catch (err) {
-          console.warn("Backend auth fetch failed, attempting local storage mock fallback", err);
-        }
+  const getToken = () =>
+    typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
+
+  const setToken = (token: string) => {
+    if (typeof window !== "undefined") window.localStorage.setItem("token", token);
+  };
+
+  const clearToken = () => {
+    if (typeof window !== "undefined") window.localStorage.removeItem("token");
+  };
+
+  // ── Load user on mount ────────────────────────────────────────────────────
+  const refreshUser = useCallback(async () => {
+    const token = getToken();
+    if (!token) {
+      setCurrentUser(null);
+      setIsLoading(false);
+      return;
+    }
+    try {
+      const res = await axios.get(`${API}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.data?.success && res.data?.user) {
+        setCurrentUser(res.data.user);
+      } else {
+        clearToken();
+        setCurrentUser(null);
       }
-      
-      // Local storage mock fallback
-      const savedUser = getMockCurrentUser();
-      setCurrentUser(savedUser);
+    } catch {
+      // Token invalid / expired — clear it silently
+      clearToken();
+      setCurrentUser(null);
+    } finally {
       setIsLoading(false);
     }
-    loadUser();
   }, []);
 
-  const register = async (input: {
-    username: string;
+  useEffect(() => {
+    refreshUser();
+  }, [refreshUser]);
+
+  // ── Register ──────────────────────────────────────────────────────────────
+  const register = useCallback(async (input: {
+    username?: string;
     displayName: string;
     email: string;
     password: string;
     accountType: AccountType;
   }) => {
-    const apiURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-    
-    // 1. Try backend
     try {
-      const response = await axios.post(`${apiURL}/auth/register`, {
-        name: input.displayName || input.username,
+      const res = await axios.post(`${API}/auth/register`, {
+        name: input.displayName,
+        username: input.username,
         email: input.email,
         password: input.password,
-        phone: ""
+        accountType: input.accountType,
       });
 
-      if (response.data?.success) {
-        const { token, user } = response.data;
-        if (typeof window !== 'undefined') {
-          window.localStorage.setItem('token', token);
-        }
-        setCurrentUser(user);
-        return { success: true, user };
+      if (res.data?.success) {
+        setToken(res.data.token);
+        setCurrentUser(res.data.user);
+        return { success: true, user: res.data.user };
       }
+      return { success: false, error: res.data?.message || "Registration failed" };
     } catch (err: any) {
-      console.warn("Backend registration failed, falling back to mock registration:", err.message);
-      if (err.response?.data?.message) {
-        return { success: false, error: err.response.data.message };
-      }
+      const msg =
+        err.response?.data?.message ||
+        (err.response?.status === 409 ? "Email or username already exists" : "Registration failed");
+      return { success: false, error: msg };
     }
+  }, []);
 
-    // 2. Fallback to local storage mock
-    const result = registerMockUser(input);
-    if (result.success && result.user) {
-      setCurrentUser(result.user);
-    }
-    return result as any;
-  };
-
-  const login = async (input: { userOrEmail: string; password: string }) => {
-    const apiURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-
-    // 1. Try backend
+  // ── Login ─────────────────────────────────────────────────────────────────
+  const login = useCallback(async (input: { userOrEmail: string; password: string }) => {
     try {
-      const response = await axios.post(`${apiURL}/auth/login`, {
-        email: input.userOrEmail,
-        password: input.password
+      const res = await axios.post(`${API}/auth/login`, {
+        email: input.userOrEmail,   // field name 'email' accepts both email & username on backend
+        password: input.password,
       });
 
-      if (response.data?.success) {
-        const { token, user } = response.data;
-        if (typeof window !== 'undefined') {
-          window.localStorage.setItem('token', token);
-        }
-        setCurrentUser(user);
-        return { success: true, user };
+      if (res.data?.success) {
+        setToken(res.data.token);
+        setCurrentUser(res.data.user);
+        return { success: true, user: res.data.user };
       }
+      return { success: false, error: res.data?.message || "Login failed" };
     } catch (err: any) {
-      console.warn("Backend login failed, falling back to mock authentication:", err.message);
-      if (err.response?.data?.message) {
-        return { success: false, error: err.response.data.message };
-      }
+      const msg =
+        err.response?.data?.message ||
+        (err.response?.status === 401 ? "Invalid email or password" : "Login failed");
+      return { success: false, error: msg };
     }
+  }, []);
 
-    // 2. Fallback to mock
-    const result = signInMock(input);
-    if (result.success && result.user) {
-      setCurrentUser(result.user);
-    }
-    return result as any;
-  };
-
-  const logout = () => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.removeItem('token');
-    }
-    signOutMock();
+  // ── Logout ────────────────────────────────────────────────────────────────
+  const logout = useCallback(() => {
+    clearToken();
     setCurrentUser(null);
-  };
-
-  const resetPassword = async (input: { userOrEmail: string; newPassword: string }) => {
-    // Standard mock reset
-    return { success: true };
-  };
+  }, []);
 
   const value = useMemo(
-    () => ({ currentUser, isLoading, register, login, logout, resetPassword }),
-    [currentUser, isLoading]
+    () => ({ currentUser, isLoading, register, login, logout, refreshUser }),
+    [currentUser, isLoading, register, login, logout, refreshUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
+
+// ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export function useAuth() {
   const context = useContext(AuthContext);

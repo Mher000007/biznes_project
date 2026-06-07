@@ -1,5 +1,6 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import { toggleChat, addMessage, setLoading, setSessionId } from "@/store/slices/chatSlice";
@@ -125,10 +126,15 @@ function QuickReplyButton({ text }: { text: string }) {
 }
 
 export default function ChatWidget() {
+  const pathname = usePathname();
   const dispatch = useDispatch();
   const { isOpen, messages, isLoading, sessionId } = useSelector((s: RootState) => s.chat);
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  if (pathname.startsWith("/admin-secure")) {
+    return null;
+  }
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {

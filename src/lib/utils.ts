@@ -33,3 +33,11 @@ export function truncate(str: string, length: number): string {
   if (str.length <= length) return str;
   return str.slice(0, length) + "...";
 }
+
+export function getApiUrl(): string {
+  const url = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
+  if (url.includes("localhost:5000")) {
+    return "http://localhost:5001/api";
+  }
+  return url;
+}

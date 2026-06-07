@@ -6,111 +6,123 @@ import { MOCK_BUSINESSES } from "@/data/mock-businesses";
 import SearchBar from "@/components/discover/SearchBar";
 import FilterPanel from "@/components/discover/FilterPanel";
 import BusinessCard from "@/components/discover/BusinessCard";
-import { Building2 } from "lucide-react";
+import { Building2, Loader2 } from "lucide-react";
+import axios from "axios";
+import { getApiUrl } from "@/lib/utils";
+
+const API = getApiUrl();
+
+// Normalize a backend business doc to the same shape as a MOCK_BUSINESSES entry
+function normalizeBackendBusiness(b: any) {
+  const cat = b.category || {};
+  return {
+    id: b._id,
+    slug: b.slug,
+    name: b.name,
+    description: b.description || "",
+    shortDescription: b.description?.substring(0, 100) || "",
+    category: {
+      id: cat._id || cat.id || "",
+      name: cat.name || "",
+      slug: cat.slug || "",
+      description: "",
+      icon: cat.icon || "Building2",
+      count: 0,
+    },
+    categoryId: cat._id || cat.id || "",
+    address: b.address || "",
+    city: b.city || "Yerevan",
+    region: b.city || "Yerevan",
+    latitude: b.coordinates?.latitude || 40.1872,
+    longitude: b.coordinates?.longitude || 44.5152,
+    phone: b.phone || "",
+    email: b.email || "",
+    website: b.website || "",
+    foundedYear: b.foundedYear || 2020,
+    employeeCount: b.employeeCount || "1-10",
+    services: (b.services || []).map((s: any) => ({
+      id: s._id || String(Math.random()),
+      name: s.name,
+      description: s.description || "",
+      priceRange: s.price ? `${s.price} AMD` : "Contact",
+    })),
+    logoUrl: b.logo || "",
+    coverImageUrl: (Array.isArray(b.metadata?.coverUrl) ? b.metadata.coverUrl[0] : b.metadata?.coverUrl) || (b.images && b.images.length > 0 ? b.images[0] : "") || b.logo || "",
+    images: b.images || [],
+    status: b.active ? "active" : "inactive",
+    isFeatured: b.featured || false,
+    isVerified: b.verified || false,
+    viewCount: b.views || 0,
+    inquiryCount: 0,
+    ratingAvg: b.rating || 0,
+    reviewCount: b.reviewCount || 0,
+    createdAt: b.createdAt || new Date().toISOString(),
+    updatedAt: b.updatedAt || new Date().toISOString(),
+    operatingHours: b.operatingHours || [],
+    tags: b.tags || [],
+    highlights: b.highlights || [],
+  };
+}
 
 export default function DiscoverPage() {
   const filters = useSelector((s: RootState) => s.filters);
-  const [customBusinesses, setCustomBusinesses] = useState<any[]>([]);
+  const [businesses, setBusinesses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const profilesStr = window.localStorage.getItem("armbiz-business-profiles");
-      if (profilesStr) {
-        try {
-          const profiles = JSON.parse(profilesStr);
-          const published = profiles.filter((p: any) => p.isPublished);
-          const mapped = published.map((p: any) => {
-            const categorySlug = p.category || "technology";
-            const categoryObj = {
-              id: `cat-${categorySlug}`,
-              name: categorySlug.charAt(0).toUpperCase() + categorySlug.slice(1),
-              slug: categorySlug,
-              description: "",
-              icon: "Monitor",
-              count: 0
-            };
-            
-            const servicesMapped = (p.services || []).map((s: any, idx: number) => ({
-              id: `custom-s-${idx}`,
-              name: s.name,
-              description: s.description || "",
-              priceRange: s.price ? `${s.price} AMD` : "Contact"
-            }));
-
-            const daysMap: Record<string, number> = {
-              "Sunday": 0, "Monday": 1, "Tuesday": 2, "Wednesday": 3, "Thursday": 4, "Friday": 5, "Saturday": 6
-            };
-            const hoursMapped = (p.operatingHours || []).map((h: any) => ({
-              day: daysMap[h.day] ?? 1,
-              dayName: h.day,
-              openTime: h.open,
-              closeTime: h.close,
-              isClosed: h.closed
-            }));
-
-            return {
-              id: `custom-${p.ownerUsername}`,
-              slug: p.businessName ? p.businessName.toLowerCase().trim().replace(/\s+/g, "-").replace(/[^\w-]/g, "") : "custom-biz",
-              name: p.businessName || "My Custom Business",
-              description: p.fullDesc || p.shortDesc || "",
-              shortDescription: p.shortDesc || "",
-              category: categoryObj,
-              categoryId: categoryObj.id,
-              address: p.address || "",
-              city: p.city || "Yerevan",
-              region: p.city || "Yerevan",
-              latitude: 40.1872,
-              longitude: 44.5152,
-              phone: p.phone || "",
-              email: p.email || "",
-              website: p.website || "",
-              foundedYear: Number(p.foundedYear) || 2026,
-              employeeCount: "11-50",
-              services: servicesMapped,
-              logoUrl: p.logo || "",
-              coverImageUrl: p.coverUrl || "",
-              images: p.gallery || [],
-              status: "active",
-              isFeatured: false,
-              isVerified: true,
-              viewCount: p.viewCount !== undefined ? p.viewCount : 0,
-              inquiryCount: p.inquiryCount !== undefined ? p.inquiryCount : 0,
-              ratingAvg: p.ratingAvg !== undefined ? p.ratingAvg : 0.0,
-              reviewCount: p.reviewCount !== undefined ? p.reviewCount : 0,
-              createdAt: p.createdAt || new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-              operatingHours: hoursMapped,
-              tags: p.tags ? p.tags.split(",").map((t: string) => t.trim()) : [],
-            };
-          });
-          setCustomBusinesses(mapped);
-        } catch (e) {
-          console.error("Error parsing business profiles from localstorage", e);
+    async function loadBusinesses() {
+      setLoading(true);
+      try {
+        const res = await axios.get(`${API}/businesses`, {
+          params: { limit: 100 },
+        });
+        if (res.data?.success && res.data.data?.length > 0) {
+          const normalized = res.data.data.map(normalizeBackendBusiness);
+          setBusinesses(normalized);
+          setLoading(false);
+          return;
         }
+      } catch (err) {
+        console.warn("Backend businesses fetch failed, using static mock data", err);
       }
+
+      // Fallback: use static mock data
+      setBusinesses(MOCK_BUSINESSES as any[]);
+      setLoading(false);
     }
+
+    loadBusinesses();
   }, []);
 
-  const allBusinesses = [...customBusinesses, ...MOCK_BUSINESSES];
-
-  const filtered = allBusinesses.filter((b) => {
-    if (filters.query) {
-      const q = filters.query.toLowerCase();
-      if (!b.name.toLowerCase().includes(q) && !b.shortDescription.toLowerCase().includes(q) && !b.tags.some((t: string) => t.includes(q))) return false;
-    }
-    if (filters.category && b.category.slug !== filters.category) return false;
-    if (filters.city && b.city !== filters.city) return false;
-    if (filters.employeeCount && b.employeeCount !== filters.employeeCount) return false;
-    if (filters.verifiedOnly && !b.isVerified) return false;
-    return true;
-  }).sort((a, b) => {
-    switch (filters.sortBy) {
-      case "rating": return b.ratingAvg - a.ratingAvg;
-      case "newest": return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      case "name": return a.name.localeCompare(b.name);
-      default: return b.viewCount - a.viewCount;
-    }
-  });
+  const filtered = businesses
+    .filter((b) => {
+      if (filters.query) {
+        const q = filters.query.toLowerCase();
+        if (
+          !b.name.toLowerCase().includes(q) &&
+          !(b.shortDescription || "").toLowerCase().includes(q) &&
+          !(b.tags || []).some((t: string) => t.toLowerCase().includes(q))
+        )
+          return false;
+      }
+      if (filters.category && b.category?.slug !== filters.category) return false;
+      if (filters.city && b.city !== filters.city) return false;
+      if (filters.employeeCount && b.employeeCount !== filters.employeeCount) return false;
+      if (filters.verifiedOnly && !b.isVerified) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      switch (filters.sortBy) {
+        case "rating":
+          return (b.ratingAvg || 0) - (a.ratingAvg || 0);
+        case "newest":
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        case "name":
+          return a.name.localeCompare(b.name);
+        default:
+          return (b.viewCount || 0) - (a.viewCount || 0);
+      }
+    });
 
   return (
     <div className="pt-20 pb-16">
@@ -140,12 +152,19 @@ export default function DiscoverPage() {
               </div>
               <div className="flex items-center text-sm text-[hsl(var(--muted-foreground))]">
                 <Building2 className="h-4 w-4 mr-1" />
-                {filtered.length} result{filtered.length !== 1 ? "s" : ""}
+                {loading ? "Loading..." : `${filtered.length} result${filtered.length !== 1 ? "s" : ""}`}
               </div>
             </div>
 
-            {/* Results Grid */}
-            {filtered.length > 0 ? (
+            {/* Loading State */}
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-24 text-center">
+                <Loader2 className="h-10 w-10 animate-spin text-[hsl(var(--muted-foreground))]/60 mb-4" />
+                <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                  Loading businesses from database…
+                </p>
+              </div>
+            ) : filtered.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
                 {filtered.map((biz) => (
                   <BusinessCard key={biz.id} business={biz} />
@@ -155,7 +174,9 @@ export default function DiscoverPage() {
               <div className="flex flex-col items-center justify-center py-20 text-center">
                 <Building2 className="h-12 w-12 text-[hsl(var(--muted-foreground))]/50 mb-4" />
                 <h3 className="text-lg font-semibold mb-2">No businesses found</h3>
-                <p className="text-sm text-[hsl(var(--muted-foreground))]">Try adjusting your filters or search term</p>
+                <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                  Try adjusting your filters or search term
+                </p>
               </div>
             )}
           </div>

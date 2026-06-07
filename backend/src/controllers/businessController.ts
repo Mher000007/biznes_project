@@ -149,12 +149,51 @@ export const createBusiness = asyncHandler(
       longitude,
     } = req.body;
 
-    if (!name || !description || !category || !email || !phone || !address || !city || !country) {
+    const missingFields = [];
+    if (!name) missingFields.push('name');
+    if (!description) missingFields.push('description');
+    if (!category) missingFields.push('category');
+    if (!email) missingFields.push('email');
+    if (!phone) missingFields.push('phone');
+    if (!address) missingFields.push('address');
+    if (!city) missingFields.push('city');
+    if (!country) missingFields.push('country');
+
+    if (missingFields.length > 0) {
       res.status(400).json({
         success: false,
-        message: 'Please provide all required fields',
+        message: `Please provide all required fields. Missing: ${missingFields.join(', ')}`,
       });
       return;
+    }
+
+    // Resolve category ObjectId if needed
+    let categoryId = category;
+    if (!mongoose.Types.ObjectId.isValid(category)) {
+      // Look up by slug directly
+      let foundCategory = await Category.findOne({ slug: category });
+      if (!foundCategory) {
+        // Try parsing slug from static format like "cat-tech" -> "technology"
+        let cleanSlug = category.replace(/^cat-/, '').toLowerCase();
+        const staticSlugMap: Record<string, string> = {
+          'tech': 'technology',
+          'agri': 'agriculture',
+        };
+        if (staticSlugMap[cleanSlug]) {
+          cleanSlug = staticSlugMap[cleanSlug];
+        }
+        foundCategory = await Category.findOne({ slug: cleanSlug });
+      }
+
+      if (foundCategory) {
+        categoryId = foundCategory._id;
+      } else {
+        res.status(400).json({
+          success: false,
+          message: `Category '${category}' not found in the database. Please ensure categories are seeded.`,
+        });
+        return;
+      }
     }
 
     const finalCoordinates = coordinates || (latitude !== undefined && longitude !== undefined ? { latitude: Number(latitude), longitude: Number(longitude) } : undefined);
@@ -162,7 +201,7 @@ export const createBusiness = asyncHandler(
     const business = new Business({
       name,
       description,
-      category,
+      category: categoryId,
       owner: req.user?.id,
       email,
       phone,
@@ -180,7 +219,7 @@ export const createBusiness = asyncHandler(
     await business.save();
 
     // Increment business count in category
-    await Category.findByIdAndUpdate(category, { $inc: { businessCount: 1 } });
+    await Category.findByIdAndUpdate(categoryId, { $inc: { businessCount: 1 } });
 
     // Trigger n8n webhook for vendor registration request
     await triggerOnboardingWebhook(business);
@@ -210,6 +249,37 @@ export const updateBusiness = asyncHandler(
     }
 
     const updateData = { ...req.body };
+
+    // Resolve category ObjectId if needed
+    if (updateData.category) {
+      if (!mongoose.Types.ObjectId.isValid(updateData.category)) {
+        // Look up by slug directly
+        let foundCategory = await Category.findOne({ slug: updateData.category });
+        if (!foundCategory) {
+          // Try parsing slug from static format like "cat-tech" -> "technology"
+          let cleanSlug = updateData.category.replace(/^cat-/, '').toLowerCase();
+          const staticSlugMap: Record<string, string> = {
+            'tech': 'technology',
+            'agri': 'agriculture',
+          };
+          if (staticSlugMap[cleanSlug]) {
+            cleanSlug = staticSlugMap[cleanSlug];
+          }
+          foundCategory = await Category.findOne({ slug: cleanSlug });
+        }
+
+        if (foundCategory) {
+          updateData.category = foundCategory._id;
+        } else {
+          res.status(400).json({
+            success: false,
+            message: `Category '${updateData.category}' not found in the database. Please ensure categories are seeded.`,
+          });
+          return;
+        }
+      }
+    }
+
     if (!updateData.coordinates && updateData.latitude !== undefined && updateData.longitude !== undefined) {
       updateData.coordinates = {
         latitude: Number(updateData.latitude),

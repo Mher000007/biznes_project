@@ -5,6 +5,7 @@ import { MOCK_BUSINESSES } from "@/data/mock-businesses";
 import { Star, MapPin, BadgeCheck, Globe, Phone, Mail, Clock, Users, Calendar, ArrowLeft, Send, X, Compass, ChevronLeft, ChevronRight, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
+import { getApiUrl } from "@/lib/utils";
 import styles from "@/components/business/BusinessProfile.module.scss";
 import ReviewsSection from "@/components/business/ReviewsSection";
 
@@ -51,6 +52,9 @@ export default function BusinessProfilePage() {
   const router = useRouter();
   const [business, setBusiness] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [activeImgIdx, setActiveImgIdx] = useState(0);
+  const [activeHighlight, setActiveHighlight] = useState<Highlight | null>(null);
+  const [activeHighlightIdx, setActiveHighlightIdx] = useState<number>(-1);
 
   // Rating / Reviews State (live-synced from ReviewsSection)
   const [liveRating, setLiveRating] = useState(0);
@@ -72,7 +76,7 @@ export default function BusinessProfilePage() {
     async function loadBusiness() {
       setLoading(true);
       try {
-        const apiURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+        const apiURL = getApiUrl();
         const res = await axios.get(`${apiURL}/businesses/slug/${slug}`);
         if (res.data?.success && res.data?.data) {
           setBusiness(res.data.data);
@@ -170,8 +174,9 @@ export default function BusinessProfilePage() {
                 ] : [],
                 highlights: (foundProfile.highlights || []).map((h: any) => ({
                   title: h.title,
-                  icon: "✨",
-                  description: ""
+                  imageUrl: h.imageUrl || "",
+                  icon: h.imageUrl ? undefined : "✨",
+                  description: h.description || ""
                 }))
               };
               setBusiness(normalizedBiz);
@@ -299,6 +304,11 @@ export default function BusinessProfilePage() {
     setBookingSuccess(false);
   };
 
+  const openHighlight = (idx: number) => {
+    setActiveHighlight(business.highlights[idx]);
+    setActiveHighlightIdx(idx);
+  };
+
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBookingLoading(true);
@@ -368,7 +378,7 @@ export default function BusinessProfilePage() {
     }
 
     try {
-      const apiURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      const apiURL = getApiUrl();
       await axios.post(`${apiURL}/bookings`, bookingPayload);
       setBookingSuccess(true);
     } catch (err: any) {
@@ -383,6 +393,37 @@ export default function BusinessProfilePage() {
   // Default time slots for Armenian service listings
   const TIME_SLOTS = ["10:00", "11:30", "13:00", "14:30", "16:00", "17:30", "19:00", "20:30"];
 
+  // Extract images for rendering
+  const images: string[] = [];
+  if (business) {
+    const coverUrl = business.coverImageUrl || business.metadata?.coverUrl;
+    if (coverUrl) {
+      if (Array.isArray(coverUrl)) {
+        coverUrl.forEach((url: string) => {
+          if (url && !images.includes(url)) {
+            images.push(url);
+          }
+        });
+      } else {
+        images.push(coverUrl);
+      }
+    }
+    
+    const logo = business.logo || business.logoUrl;
+    
+    if (business.images && Array.isArray(business.images)) {
+      business.images.forEach((img: string) => {
+        if (img && !images.includes(img)) {
+          images.push(img);
+        }
+      });
+    }
+    
+    if (images.length === 0 && logo) {
+      images.push(logo);
+    }
+  }
+
   return (
     <div className={styles.profileContainer}>
       {/* Back Link */}
@@ -392,9 +433,42 @@ export default function BusinessProfilePage() {
 
       {/* Cover / Media Gallery */}
       <div className={styles.coverGallery}>
-        <span className={styles.initialLogo}>{business.name[0]}</span>
+        {images.length > 0 ? (
+          <>
+            <img 
+              src={images[activeImgIdx]} 
+              alt={`${business.name} Gallery`} 
+              className={styles.sliderImage} 
+            />
+            {images.length > 1 && (
+              <>
+                <button 
+                  onClick={() => setActiveImgIdx((activeImgIdx - 1 + images.length) % images.length)}
+                  className={styles.prevBtn}
+                  aria-label="Previous Image"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <button 
+                  onClick={() => setActiveImgIdx((activeImgIdx + 1) % images.length)}
+                  className={styles.nextBtn}
+                  aria-label="Next Image"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              </>
+            )}
+            <div className={styles.galleryNav}>
+              {activeImgIdx + 1} / {images.length} Image{images.length > 1 ? "s" : ""}
+            </div>
+          </>
+        ) : (
+          <>
+            <span className={styles.initialLogo}>{business.name[0]}</span>
+            <div className={styles.galleryNav}>No Images</div>
+          </>
+        )}
         <div className={styles.coverOverlay} />
-        <div className={styles.galleryNav}>1 / 1 Image</div>
       </div>
 
       {/* Profile Header Details */}
@@ -450,10 +524,14 @@ export default function BusinessProfilePage() {
           <h2>Key Features & Highlights</h2>
           <div className={styles.highlightsWrapper}>
             {business.highlights.map((h: Highlight, i: number) => (
-              <div key={i} className={styles.highlightTile}>
+              <div key={i} className={styles.highlightTile} onClick={() => openHighlight(i)}>
                 <div className={styles.storyRing}>
                   <div className={styles.storyThumb}>
-                    {h.icon || "✨"}
+                    {h.imageUrl ? (
+                      <img src={h.imageUrl} alt={h.title} className={styles.storyImg} />
+                    ) : (
+                      h.icon || "✨"
+                    )}
                   </div>
                 </div>
                 <span>{h.title}</span>
@@ -467,44 +545,6 @@ export default function BusinessProfilePage() {
       <div className={styles.gridContent}>
         {/* Left Column: digital catalogs */}
         <div>
-          {/* About section */}
-          <section className="mb-8">
-            <h2 className="text-lg font-bold mb-3">About the Business</h2>
-            <p className="text-sm text-[hsl(var(--muted-foreground))] leading-relaxed">
-              {business.description}
-            </p>
-          </section>
-
-          {/* Services catalog */}
-          {business.services && business.services.length > 0 && (
-            <section className={styles.menuSection}>
-              <h2>Service Catalog & Pricing</h2>
-              <div className={styles.menuGrid}>
-                {business.services?.map((srv: Service, idx: number) => (
-                  <div key={idx} className={styles.menuCard}>
-                    <div>
-                      <div className={styles.itemHeader}>
-                        <h3>{srv.name}</h3>
-                        <span className={styles.itemPrice}>{srv.price > 0 ? `${srv.price.toLocaleString()} AMD` : "Call"}</span>
-                      </div>
-                      <p className={styles.itemDesc}>{srv.description}</p>
-                      {srv.duration && (
-                        <div className="text-[10px] text-[hsl(var(--muted-foreground))] mb-3">
-                          Duration: {srv.duration}
-                        </div>
-                      )}
-                    </div>
-                    <button 
-                      onClick={() => openBooking(srv)}
-                      className={styles.btnBookItem}
-                    >
-                      Book Now
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
 
           {/* Operating hours */}
           <section className="mb-6">
@@ -683,6 +723,73 @@ export default function BusinessProfilePage() {
                   {bookingLoading ? "Processing Request..." : <>Request Booking Confirmation <Send className="h-4 w-4" /></>}
                 </button>
               </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Highlight Story Lightbox Modal */}
+      {activeHighlight && (
+        <div className={styles.lightboxOverlay} onClick={() => { setActiveHighlight(null); setActiveHighlightIdx(-1); }}>
+          <div className={styles.lightboxContent} onClick={(e) => e.stopPropagation()}>
+            {/* Close */}
+            <button 
+              onClick={() => { setActiveHighlight(null); setActiveHighlightIdx(-1); }} 
+              className={styles.lightboxClose}
+              aria-label="Close stories"
+            >
+              <X className="h-6 w-6" />
+            </button>
+
+            {/* Slider media */}
+            <div className={styles.lightboxMediaWrapper}>
+              {activeHighlight.imageUrl ? (
+                <img 
+                  src={activeHighlight.imageUrl} 
+                  alt={activeHighlight.title} 
+                  className={styles.lightboxImage} 
+                />
+              ) : (
+                <div className={styles.lightboxPlaceholder}>
+                  <span className="text-6xl">{activeHighlight.icon || "✨"}</span>
+                </div>
+              )}
+
+              {/* Text overlay */}
+              <div className={styles.lightboxText}>
+                <h3>{activeHighlight.title}</h3>
+                {activeHighlight.description && <p>{activeHighlight.description}</p>}
+              </div>
+            </div>
+
+            {/* Nav Arrows */}
+            {business.highlights.length > 1 && (
+              <>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const prevIdx = (activeHighlightIdx - 1 + business.highlights.length) % business.highlights.length;
+                    setActiveHighlightIdx(prevIdx);
+                    setActiveHighlight(business.highlights[prevIdx]);
+                  }}
+                  className={styles.lightboxPrev}
+                  aria-label="Previous Highlight"
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const nextIdx = (activeHighlightIdx + 1) % business.highlights.length;
+                    setActiveHighlightIdx(nextIdx);
+                    setActiveHighlight(business.highlights[nextIdx]);
+                  }}
+                  className={styles.lightboxNext}
+                  aria-label="Next Highlight"
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </button>
+              </>
             )}
           </div>
         </div>

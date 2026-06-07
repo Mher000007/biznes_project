@@ -1,9 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { deleteBusinessProfile } from "@/lib/auth";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import { getApiUrl } from "@/lib/utils";
 import { AlertTriangle, Loader2, Trash2, X } from "lucide-react";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
@@ -19,7 +19,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (currentUser) {
-      setFullName(currentUser.displayName || currentUser.username || "");
+      setFullName(currentUser.name || currentUser.username || "");
       setEmail(currentUser.email || "");
     }
   }, [currentUser]);
@@ -38,7 +38,7 @@ export default function SettingsPage() {
 
     try {
       // 1. Attempt delete on backend
-      const apiURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      const apiURL = getApiUrl();
       const token = typeof window !== 'undefined' ? window.localStorage.getItem('token') : null;
       
       try {
@@ -56,10 +56,7 @@ export default function SettingsPage() {
         console.warn("Backend delete failed or not configured, skipping", err);
       }
 
-      // 2. Delete locally from mock database
-      deleteBusinessProfile(currentUser.username);
-
-      // 3. Logout the user
+      // 2. Logout the user
       logout();
 
       // Redirect to homepage
