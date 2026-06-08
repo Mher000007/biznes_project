@@ -49,6 +49,28 @@ interface Highlight {
   description?: string;
 }
 
+const isDefaultImage = (url: string) => {
+  if (!url) return false;
+  return (
+    url.includes("photo-1497366216548-37526070297c") ||
+    url.includes("photo-1497366811353-6870744d04b2") ||
+    url.includes("photo-1497215728101-856f4ea42174") ||
+    url.includes("photo-1618005182384-a83a8bd57fbe") ||
+    url.includes("photo-1516321318423-f06f85e504b3")
+  );
+};
+
+const isDefaultHighlight = (h: any) => {
+  if (!h) return false;
+  const url = h.imageUrl || "";
+  const title = h.title || "";
+  return (
+    (title === "Menu" && url.includes("photo-1504674900247-0877df9cc836")) ||
+    (title === "Interior" && url.includes("photo-1554118811-1e0d58224f24")) ||
+    (title === "Reviews" && url.includes("photo-1522071820081-009f0129c71c"))
+  );
+};
+
 export default function BusinessProfilePage() {
   const { slug } = useParams() as { slug: string };
   const router = useRouter();
@@ -60,43 +82,10 @@ export default function BusinessProfilePage() {
   const [activeHighlightIdx, setActiveHighlightIdx] = useState<number>(-1);
   const [activeGalleryIdx, setActiveGalleryIdx] = useState<number | null>(null);
 
-  // Extract gallery images or use category-based fallback placeholders
+  // Extract gallery images
   const galleryImages: string[] = (() => {
     if (!business) return [];
-    if (business.images && business.images.length > 0) return business.images;
-    
-    // Fallback based on category
-    const cat = business.category?.slug || "";
-    if (cat === "horeca") {
-      return [
-        "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=800&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=800&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?q=80&w=800&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=800&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=800&auto=format&fit=crop"
-      ];
-    }
-    if (cat === "beauty") {
-      return [
-        "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=800&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=800&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1607779097040-26e80aa78e66?q=80&w=800&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1527799820374-dcf8d9d4a3ef?q=80&w=800&auto=format&fit=crop"
-      ];
-    }
-    if (cat === "technology") {
-      return [
-        "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=800&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1497366811353-6870744d04b2?q=80&w=800&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=800&auto=format&fit=crop"
-      ];
-    }
-    // General high-quality placeholders
-    return [
-      "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=800&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=800&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=800&auto=format&fit=crop"
-    ];
+    return business.images || [];
   })();
 
   // Keyboard navigation for gallery lightbox
@@ -125,6 +114,33 @@ export default function BusinessProfilePage() {
   const [liveRating, setLiveRating] = useState(0);
   const [liveReviewCount, setLiveReviewCount] = useState(0);
 
+  // Active stories states
+  const [activeStoriesGroups, setActiveStoriesGroups] = useState<any[]>([]);
+  const [matchingGroupIdx, setMatchingGroupIdx] = useState<number | null>(null);
+  const [showStoryViewer, setShowStoryViewer] = useState(false);
+
+  useEffect(() => {
+    const fetchStories = async () => {
+      try {
+        const apiURL = getApiUrl();
+        const res = await axios.get(`${apiURL}/stories`);
+        if (res.data?.success && res.data?.data) {
+          const allGroups = res.data.data;
+          setActiveStoriesGroups(allGroups);
+          
+          // Find the group index for the current business slug
+          const idx = allGroups.findIndex((g: any) => g.business.slug === slug);
+          if (idx !== -1) {
+            setMatchingGroupIdx(idx);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch stories for profile:", err);
+      }
+    };
+    if (slug) fetchStories();
+  }, [slug]);
+
 
 
   // Booking Modal State
@@ -146,9 +162,21 @@ export default function BusinessProfilePage() {
         const apiURL = getApiUrl();
         const res = await axios.get(`${apiURL}/businesses/slug/${slug}`);
         if (res.data?.success && res.data?.data) {
-          setBusiness(res.data.data);
-          setLiveRating(res.data.data.rating || 0);
-          setLiveReviewCount(res.data.data.reviewCount || 0);
+          const biz = res.data.data;
+          // Clean default placeholder assets from business
+          biz.logo = biz.logo && !isDefaultImage(biz.logo) ? biz.logo : "";
+          biz.images = (biz.images || []).filter((url: string) => !isDefaultImage(url));
+          biz.highlights = (biz.highlights || []).filter((h: any) => !isDefaultHighlight(h));
+          if (biz.metadata?.coverUrl) {
+            if (Array.isArray(biz.metadata.coverUrl)) {
+              biz.metadata.coverUrl = biz.metadata.coverUrl.filter((url: string) => !isDefaultImage(url));
+            } else if (typeof biz.metadata.coverUrl === 'string' && isDefaultImage(biz.metadata.coverUrl)) {
+              biz.metadata.coverUrl = "";
+            }
+          }
+          setBusiness(biz);
+          setLiveRating(biz.rating || 0);
+          setLiveReviewCount(biz.reviewCount || 0);
           setLoading(false);
           return;
         }
@@ -221,9 +249,9 @@ export default function BusinessProfilePage() {
                 foundedYear: Number(foundProfile.foundedYear) || 2026,
                 employeeCount: "11-50",
                 services: servicesMapped,
-                logoUrl: foundProfile.logo || "",
-                coverImageUrl: foundProfile.coverUrl || "",
-                images: foundProfile.gallery || [],
+                logoUrl: foundProfile.logo && !isDefaultImage(foundProfile.logo) ? foundProfile.logo : "",
+                coverImageUrl: foundProfile.coverUrl ? (Array.isArray(foundProfile.coverUrl) ? foundProfile.coverUrl.filter((url: string) => !isDefaultImage(url))[0] : (!isDefaultImage(foundProfile.coverUrl) ? foundProfile.coverUrl : "")) : "",
+                images: (foundProfile.gallery || []).filter((url: string) => !isDefaultImage(url)),
                 status: "active",
                 isFeatured: false,
                 isVerified: true,
@@ -239,12 +267,14 @@ export default function BusinessProfilePage() {
                   { name: "Armenian Khorovats (BBQ)", price: 4200, description: "Charcoal grilled marinated pork loin", category: "Main Course" },
                   { name: "Lavash Wrap", price: 1800, description: "Flatbread wrap with fresh greens and cheese", category: "Appetizer" }
                 ] : [],
-                highlights: (foundProfile.highlights || []).map((h: any) => ({
-                  title: h.title,
-                  imageUrl: h.imageUrl || "",
-                  icon: h.imageUrl ? undefined : "✨",
-                  description: h.description || ""
-                }))
+                highlights: (foundProfile.highlights || [])
+                  .filter((h: any) => !isDefaultHighlight(h))
+                  .map((h: any) => ({
+                    title: h.title,
+                    imageUrl: h.imageUrl || "",
+                    icon: h.imageUrl ? undefined : "✨",
+                    description: h.description || ""
+                  }))
               };
               setBusiness(normalizedBiz);
               setLiveRating(normalizedBiz.ratingAvg || 0);
@@ -508,20 +538,34 @@ export default function BusinessProfilePage() {
       {/* Profile Header Details */}
       <div className={styles.profileHeader}>
         
-        {/* Logo Avatar */}
+        {/* Instagram-style Logo Avatar (Story indicator) */}
         <div className="flex items-center justify-center shrink-0">
-          <div className="w-20 h-20 rounded-full border border-[hsl(var(--border))]/60 p-[2px] overflow-hidden relative">
-            {business.logo || business.logoUrl ? (
-              <img 
-                src={business.logo || business.logoUrl} 
-                className="w-full h-full rounded-full object-cover" 
-                alt={business.name} 
-              />
-            ) : (
-              <div className="w-full h-full rounded-full bg-violet-600 flex items-center justify-center text-white text-xl font-bold uppercase">
-                {business.name[0]}
-              </div>
-            )}
+          <div 
+            onClick={() => {
+              if (matchingGroupIdx !== null) {
+                setShowStoryViewer(true);
+              }
+            }}
+            className={`w-20 h-20 rounded-full shrink-0 flex items-center justify-center overflow-hidden ${
+              matchingGroupIdx !== null 
+                ? "p-[3px] bg-gradient-to-tr from-pink-500 via-purple-500 to-yellow-500 cursor-pointer hover:scale-105 transition-all shadow" 
+                : "border border-[hsl(var(--border))]/60 p-[2px]"
+            }`}
+            title={matchingGroupIdx !== null ? "Click to view active stories" : undefined}
+          >
+            <div className="w-full h-full rounded-full bg-[hsl(var(--background))] p-[2px] overflow-hidden relative">
+              {business.logo || business.logoUrl ? (
+                <img 
+                  src={business.logo || business.logoUrl} 
+                  className="w-full h-full rounded-full object-cover" 
+                  alt={business.name} 
+                />
+              ) : (
+                <div className="w-full h-full rounded-full bg-violet-600 flex items-center justify-center text-white text-xl font-bold uppercase">
+                  {business.name[0]}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -909,6 +953,15 @@ export default function BusinessProfilePage() {
         }}
       />
 
+      {showStoryViewer && matchingGroupIdx !== null && (
+        <StoryViewer
+          groups={activeStoriesGroups}
+          initialGroupIndex={matchingGroupIdx}
+          onClose={() => setShowStoryViewer(false)}
+          onStoriesViewedUpdate={() => {}}
+        />
+      )}
+
 
 
       {/* ── Gallery Fullscreen Lightbox Modal ── */}
@@ -917,7 +970,7 @@ export default function BusinessProfilePage() {
           className={styles.lightboxOverlay} 
           onClick={() => setActiveGalleryIdx(null)}
         >
-          <div className={styles.lightboxContent} onClick={(e) => e.stopPropagation()}>
+          <div className={styles.galleryLightboxContent} onClick={(e) => e.stopPropagation()}>
             <button 
               onClick={() => setActiveGalleryIdx(null)} 
               className={styles.lightboxClose}
@@ -930,7 +983,7 @@ export default function BusinessProfilePage() {
               <img 
                 src={galleryImages[activeGalleryIdx]} 
                 alt={`${business.name} Interior ${activeGalleryIdx + 1}`} 
-                className={styles.lightboxImage} 
+                className={styles.galleryLightboxImage} 
               />
               <div className={styles.lightboxText}>
                 <h3>{business.name}</h3>

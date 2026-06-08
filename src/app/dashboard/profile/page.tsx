@@ -41,6 +41,28 @@ interface Highlight {
   title: string;
 }
 
+const isDefaultImage = (url: string) => {
+  if (!url) return false;
+  return (
+    url.includes("photo-1497366216548-37526070297c") ||
+    url.includes("photo-1497366811353-6870744d04b2") ||
+    url.includes("photo-1497215728101-856f4ea42174") ||
+    url.includes("photo-1618005182384-a83a8bd57fbe") ||
+    url.includes("photo-1516321318423-f06f85e504b3")
+  );
+};
+
+const isDefaultHighlight = (h: any) => {
+  if (!h) return false;
+  const url = h.imageUrl || "";
+  const title = h.title || "";
+  return (
+    (title === "Menu" && url.includes("photo-1504674900247-0877df9cc836")) ||
+    (title === "Interior" && url.includes("photo-1554118811-1e0d58224f24")) ||
+    (title === "Reviews" && url.includes("photo-1522071820081-009f0129c71c"))
+  );
+};
+
 export default function DashboardProfilePage() {
   const { currentUser } = useAuth();
   const { t } = useI18n();
@@ -56,7 +78,7 @@ export default function DashboardProfilePage() {
 
   // Fullscreen and Lightbox Overlays
   const [isFullscreenPreview, setIsFullscreenPreview] = useState(false);
-  const [zoomImageUrl, setZoomImageUrl] = useState<string | null>(null);
+  const [zoomImageIdx, setZoomImageIdx] = useState<number | null>(null);
 
   const logoInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -152,23 +174,21 @@ export default function DashboardProfilePage() {
   const [noteText, setNoteText] = useState("");
 
   // Form Fields State
-  const [name, setName] = useState("ArmTech Solutions");
-  const [foundedYear, setFoundedYear] = useState("1997");
+  const [name, setName] = useState("");
+  const [foundedYear, setFoundedYear] = useState("");
   const [category, setCategory] = useState("technology");
   const [city, setCity] = useState("Yerevan");
-  const [description, setDescription] = useState("Leading software development company specializing in enterprise solutions.");
-  const [address, setAddress] = useState("14 Tumanyan St, Yerevan");
+  const [description, setDescription] = useState("");
+  const [address, setAddress] = useState("");
   const [lat, setLat] = useState(40.1872);
   const [lng, setLng] = useState(44.5152);
-  const [email, setEmail] = useState("info@armtech.am");
-  const [phone, setPhone] = useState("+374 10 555 123");
-  const [website, setWebsite] = useState("https://armtech.am");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [website, setWebsite] = useState("");
 
   // Branding Visuals
-  const [logoUrl, setLogoUrl] = useState("https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=150&auto=format&fit=crop");
-  const [coverUrls, setCoverUrls] = useState<string[]>([
-    "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200&auto=format&fit=crop"
-  ]);
+  const [logoUrl, setLogoUrl] = useState("");
+  const [coverUrls, setCoverUrls] = useState<string[]>([]);
   const [newCoverUrl, setNewCoverUrl] = useState("");
   const [activeCoverIdx, setActiveCoverIdx] = useState(0);
 
@@ -177,31 +197,16 @@ export default function DashboardProfilePage() {
   const [reviewCount, setReviewCount] = useState(0);
 
   // Services State
-  const [services, setServices] = useState<Service[]>([
-    { name: "Software Development", price: "12000" },
-    { name: "IT Consulting", price: "25000" }
-  ]);
+  const [services, setServices] = useState<Service[]>([]);
 
   // Instagram-like Stories State
-  const [stories, setStories] = useState<Story[]>([
-    { id: "1", title: "New Launch", imageUrl: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=600&auto=format&fit=crop" },
-    { id: "2", title: "Special Deal", imageUrl: "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?q=80&w=600&auto=format&fit=crop" },
-    { id: "3", title: "Our Office", imageUrl: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?q=80&w=600&auto=format&fit=crop" }
-  ]);
+  const [stories, setStories] = useState<Story[]>([]);
 
   // Instagram-style Highlights State
-  const [highlights, setHighlights] = useState<Highlight[]>([
-    { id: "1", title: "Menu", imageUrl: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=150&auto=format&fit=crop" },
-    { id: "2", title: "Interior", imageUrl: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=150&auto=format&fit=crop" },
-    { id: "3", title: "Reviews", imageUrl: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=150&auto=format&fit=crop" }
-  ]);
+  const [highlights, setHighlights] = useState<Highlight[]>([]);
 
   // Gallery Images List State
-  const [gallery, setGallery] = useState<string[]>([
-    "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=600&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1497366811353-6870744d04b2?q=80&w=600&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=600&auto=format&fit=crop"
-  ]);
+  const [gallery, setGallery] = useState<string[]>([]);
 
   // Weekly Working Hours State
   const [operatingHours, setOperatingHours] = useState([
@@ -249,21 +254,17 @@ export default function DashboardProfilePage() {
           setEmail(biz.email);
           setPhone(biz.phone);
           setWebsite(biz.website || "");
-          setLogoUrl(biz.logo || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=150&auto=format&fit=crop");
-          
-          if (biz.images?.length > 0) {
-            setGallery(biz.images);
-          }
-          if (biz.highlights?.length > 0) {
-            setHighlights(biz.highlights.map((h: any, index: number) => ({
+          setLogoUrl(biz.logo && !isDefaultImage(biz.logo) ? biz.logo : "");
+          setGallery((biz.images || []).filter((url: string) => !isDefaultImage(url)));
+          setHighlights((biz.highlights || [])
+            .map((h: any, index: number) => ({
               id: index.toString(),
               imageUrl: h.imageUrl,
               title: h.title
-            })));
-          }
-          if (biz.services?.length > 0) {
-            setServices(biz.services.map((s: any) => ({ name: s.name, price: s.price.toString() })));
-          }
+            }))
+            .filter((h: any) => !isDefaultHighlight(h))
+          );
+          setServices((biz.services || []).map((s: any) => ({ name: s.name, price: s.price.toString() })));
 
           setRating(biz.rating !== undefined ? biz.rating : (biz.ratingAvg !== undefined ? biz.ratingAvg : 0.0));
           setReviewCount(biz.reviewCount || 0);
@@ -271,15 +272,19 @@ export default function DashboardProfilePage() {
           // Fetch extra attributes from metadata mixin
           if (biz.metadata?.coverUrl) {
             if (Array.isArray(biz.metadata.coverUrl)) {
-              setCoverUrls(biz.metadata.coverUrl);
-            } else if (typeof biz.metadata.coverUrl === 'string') {
+              setCoverUrls(biz.metadata.coverUrl.filter((url: string) => !isDefaultImage(url)));
+            } else if (typeof biz.metadata.coverUrl === 'string' && !isDefaultImage(biz.metadata.coverUrl)) {
               setCoverUrls([biz.metadata.coverUrl]);
+            } else {
+              setCoverUrls([]);
             }
+          } else {
+            setCoverUrls([]);
           }
-          if (biz.metadata?.stories) setStories(biz.metadata.stories);
+          setStories(biz.metadata?.stories || []);
           if (biz.metadata?.operatingHours) setOperatingHours(biz.metadata.operatingHours);
-          if (biz.metadata?.noteText) setNoteText(biz.metadata.noteText);
-          if (biz.metadata?.foundedYear) setFoundedYear(biz.metadata.foundedYear.toString());
+          setNoteText(biz.metadata?.noteText || "");
+          setFoundedYear(biz.metadata?.foundedYear ? biz.metadata.foundedYear.toString() : "");
 
           // Fetch active subscription
           const subRes = await axios.get(`${apiURL}/subscriptions/business/${biz._id}`, {
@@ -310,22 +315,24 @@ export default function DashboardProfilePage() {
           if (mockProfile.latitude) setLat(mockProfile.latitude);
           if (mockProfile.longitude) setLng(mockProfile.longitude);
           
-          if (mockProfile.logo) setLogoUrl(mockProfile.logo);
+          setLogoUrl(mockProfile.logo && !isDefaultImage(mockProfile.logo) ? mockProfile.logo : "");
           if (mockProfile.coverUrl) {
             if (Array.isArray(mockProfile.coverUrl)) {
-              setCoverUrls(mockProfile.coverUrl);
-            } else if (typeof mockProfile.coverUrl === 'string') {
+              setCoverUrls(mockProfile.coverUrl.filter((url: string) => !isDefaultImage(url)));
+            } else if (typeof mockProfile.coverUrl === 'string' && !isDefaultImage(mockProfile.coverUrl)) {
               setCoverUrls([mockProfile.coverUrl]);
+            } else {
+              setCoverUrls([]);
             }
+          } else {
+            setCoverUrls([]);
           }
-          if (mockProfile.gallery) setGallery(mockProfile.gallery);
-          if (mockProfile.stories) setStories(mockProfile.stories);
-          if (mockProfile.highlights) setHighlights(mockProfile.highlights);
+          setGallery((mockProfile.gallery || []).filter((url: string) => !isDefaultImage(url)));
+          setStories(mockProfile.stories || []);
+          setHighlights((mockProfile.highlights || []).filter((h: any) => !isDefaultHighlight(h)));
           if (mockProfile.operatingHours) setOperatingHours(mockProfile.operatingHours);
-          if (mockProfile.noteText) setNoteText(mockProfile.noteText);
-          if (mockProfile.services) {
-            setServices(mockProfile.services.map((s: any) => ({ name: s.name, price: s.price.toString() })));
-          }
+          setNoteText(mockProfile.noteText || "");
+          setServices((mockProfile.services || []).map((s: any) => ({ name: s.name, price: s.price.toString() })));
           setRating(mockProfile.ratingAvg !== undefined ? mockProfile.ratingAvg : 0.0);
           setReviewCount(mockProfile.reviewCount || 0);
         }
@@ -522,6 +529,13 @@ export default function DashboardProfilePage() {
       console.warn("Backend subscription change failed, simulated locally", err);
     }
   };
+
+  // Cover banner selection logic for preview (matches public detail view logic)
+  const previewCoverImage = coverUrls && coverUrls.length > 0
+    ? coverUrls[0]
+    : (gallery && gallery.length > 0
+      ? gallery[0]
+      : logoUrl || "");
 
   return (
     <div className="pb-16">
@@ -1051,41 +1065,12 @@ export default function DashboardProfilePage() {
               
               {/* Cover / Media Gallery */}
               <div className={profileStyles.coverGallery} style={{ height: "180px", borderRadius: "1rem", marginBottom: "1.5rem", position: "relative" }}>
-                {coverUrls && coverUrls.length > 0 ? (
-                  <>
-                    <img 
-                      src={coverUrls[activeCoverIdx % coverUrls.length] || coverUrls[0]} 
-                      className={profileStyles.sliderImage} 
-                      alt="" 
-                    />
-                    {coverUrls.length > 1 && (
-                      <>
-                        <button 
-                          onClick={(e) => { 
-                            e.preventDefault(); 
-                            e.stopPropagation(); 
-                            setActiveCoverIdx((prev) => (prev - 1 + coverUrls.length) % coverUrls.length); 
-                          }}
-                          className="absolute left-2 top-1/2 -translate-y-1/2 p-1 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors z-10 cursor-pointer border border-white/10"
-                          type="button"
-                        >
-                          <ChevronLeft className="h-3 w-3" />
-                        </button>
-                        <button 
-                          onClick={(e) => { 
-                            e.preventDefault(); 
-                            e.stopPropagation(); 
-                            setActiveCoverIdx((prev) => (prev + 1) % coverUrls.length); 
-                          }}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors z-10 cursor-pointer border border-white/10"
-                          type="button"
-                        >
-                          <ChevronRight className="h-3 w-3" />
-                        </button>
-                      </>
-                    )}
-                    <div className={profileStyles.galleryNav}>{activeCoverIdx % coverUrls.length + 1} / {coverUrls.length} Cover{coverUrls.length > 1 ? "s" : ""}</div>
-                  </>
+                {previewCoverImage ? (
+                  <img 
+                    src={previewCoverImage} 
+                    className={profileStyles.sliderImage} 
+                    alt="" 
+                  />
                 ) : (
                   <span className={profileStyles.initialLogo} style={{ fontSize: "3rem" }}>{name ? name[0] : "A"}</span>
                 )}
@@ -1103,7 +1088,7 @@ export default function DashboardProfilePage() {
                       </span>
                     </h1>
                   </div>
-                  <p className="text-[hsl(var(--muted-foreground))] mt-0.5 text-xs">Since {foundedYear}</p>
+                  {foundedYear && <p className="text-[hsl(var(--muted-foreground))] mt-0.5 text-xs">Since {foundedYear}</p>}
                   <div className="flex items-center gap-3 flex-wrap text-xs text-[hsl(var(--muted-foreground))] mt-2">
                     <span className="flex items-center gap-1">
                       <MapPin className="h-3.5 w-3.5 text-[hsl(var(--primary))]" /> {address ? `${address}, ${city}` : `${city}, Armenia`}
@@ -1112,7 +1097,9 @@ export default function DashboardProfilePage() {
                       <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />{' '}
                       {rating.toFixed(1)} ({reviewCount} review{reviewCount !== 1 ? 's' : ''})
                     </span>
-                    <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> Est. {foundedYear}</span>
+                    {foundedYear && (
+                      <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> Est. {foundedYear}</span>
+                    )}
                   </div>
                 </div>
 
@@ -1143,6 +1130,45 @@ export default function DashboardProfilePage() {
                     ))}
                   </div>
                 </div>
+              )}
+
+              {/* Showcase Gallery Section */}
+              {gallery && gallery.length > 0 && (
+                <section className={profileStyles.gallerySection} style={{ marginBottom: "1.5rem" }}>
+                  <div className={profileStyles.galleryHeader}>
+                    <h2 style={{ fontSize: "0.95rem", fontWeight: 700 }}>Gallery</h2>
+                    <span className={profileStyles.photoCount} style={{ fontSize: "0.75rem" }}>
+                      {gallery.length} {gallery.length === 1 ? "photo" : "photos"}
+                    </span>
+                  </div>
+                  <div className={`${profileStyles.bentoGrid} ${
+                    gallery.length === 1 ? profileStyles.grid1 :
+                    gallery.length === 2 ? profileStyles.grid2 :
+                    gallery.length === 3 ? profileStyles.grid3 :
+                    gallery.length === 4 ? profileStyles.grid4 :
+                    profileStyles.grid5
+                  }`}>
+                    {gallery.slice(0, 5).map((url: string, index: number) => {
+                      const isLastAndMore = index === 4 && gallery.length > 5;
+                      return (
+                        <div 
+                          key={index} 
+                          className={profileStyles.galleryItem}
+                          onClick={() => setZoomImageIdx(index)}
+                          style={{ cursor: "zoom-in" }}
+                        >
+                          <img src={url} alt={`Gallery ${index + 1}`} />
+                          {isLastAndMore && (
+                            <div className={profileStyles.moreOverlay}>
+                              <span className={profileStyles.moreCount}>+{gallery.length - 4}</span>
+                              <span className={profileStyles.moreText} style={{ fontSize: "0.65rem" }}>view all</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
               )}
 
               {/* Main Grid Content */}
@@ -1239,41 +1265,12 @@ export default function DashboardProfilePage() {
 
               {/* Cover / Media Gallery */}
               <div className={profileStyles.coverGallery}>
-                {coverUrls && coverUrls.length > 0 ? (
-                  <>
-                    <img 
-                      src={coverUrls[activeCoverIdx % coverUrls.length] || coverUrls[0]} 
-                      className={profileStyles.sliderImage} 
-                      alt="" 
-                    />
-                    {coverUrls.length > 1 && (
-                      <>
-                        <button 
-                          onClick={(e) => { 
-                            e.preventDefault(); 
-                            e.stopPropagation(); 
-                            setActiveCoverIdx((prev) => (prev - 1 + coverUrls.length) % coverUrls.length); 
-                          }}
-                          className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors z-10 cursor-pointer border border-white/10"
-                          type="button"
-                        >
-                          <ChevronLeft className="h-5 w-5" />
-                        </button>
-                        <button 
-                          onClick={(e) => { 
-                            e.preventDefault(); 
-                            e.stopPropagation(); 
-                            setActiveCoverIdx((prev) => (prev + 1) % coverUrls.length); 
-                          }}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors z-10 cursor-pointer border border-white/10"
-                          type="button"
-                        >
-                          <ChevronRight className="h-5 w-5" />
-                        </button>
-                      </>
-                    )}
-                    <div className={profileStyles.galleryNav}>{activeCoverIdx % coverUrls.length + 1} / {coverUrls.length} Cover{coverUrls.length > 1 ? "s" : ""}</div>
-                  </>
+                {previewCoverImage ? (
+                  <img 
+                    src={previewCoverImage} 
+                    className={profileStyles.sliderImage} 
+                    alt="" 
+                  />
                 ) : (
                   <span className={profileStyles.initialLogo}>{name ? name[0] : "A"}</span>
                 )}
@@ -1291,7 +1288,7 @@ export default function DashboardProfilePage() {
                       </span>
                     </h1>
                   </div>
-                  <p className="text-[hsl(var(--muted-foreground))] mt-1 text-base">Since {foundedYear}</p>
+                  {foundedYear && <p className="text-[hsl(var(--muted-foreground))] mt-1 text-base">Since {foundedYear}</p>}
                   <div className="flex items-center gap-4 flex-wrap text-sm text-[hsl(var(--muted-foreground))] mt-4">
                     <span className="flex items-center gap-1">
                       <MapPin className="h-4 w-4 text-[hsl(var(--primary))]" /> {address ? `${address}, ${city}` : `${city}, Armenia`}
@@ -1300,7 +1297,9 @@ export default function DashboardProfilePage() {
                       <Star className="h-4 w-4 fill-amber-400 text-amber-400" />{' '}
                       {rating.toFixed(1)} ({reviewCount} review{reviewCount !== 1 ? 's' : ''})
                     </span>
-                    <span className="flex items-center gap-1"><Calendar className="h-4 w-4" /> Est. {foundedYear}</span>
+                    {foundedYear && (
+                      <span className="flex items-center gap-1"><Calendar className="h-4 w-4" /> Est. {foundedYear}</span>
+                    )}
                   </div>
                 </div>
 
@@ -1331,6 +1330,45 @@ export default function DashboardProfilePage() {
                     ))}
                   </div>
                 </div>
+              )}
+
+              {/* Showcase Gallery Section */}
+              {gallery && gallery.length > 0 && (
+                <section className={profileStyles.gallerySection} style={{ marginBottom: "2rem" }}>
+                  <div className={profileStyles.galleryHeader}>
+                    <h2>Gallery</h2>
+                    <span className={profileStyles.photoCount}>
+                      {gallery.length} {gallery.length === 1 ? "photo" : "photos"}
+                    </span>
+                  </div>
+                  <div className={`${profileStyles.bentoGrid} ${
+                    gallery.length === 1 ? profileStyles.grid1 :
+                    gallery.length === 2 ? profileStyles.grid2 :
+                    gallery.length === 3 ? profileStyles.grid3 :
+                    gallery.length === 4 ? profileStyles.grid4 :
+                    profileStyles.grid5
+                  }`}>
+                    {gallery.slice(0, 5).map((url: string, index: number) => {
+                      const isLastAndMore = index === 4 && gallery.length > 5;
+                      return (
+                        <div 
+                          key={index} 
+                          className={profileStyles.galleryItem}
+                          onClick={() => setZoomImageIdx(index)}
+                          style={{ cursor: "zoom-in" }}
+                        >
+                          <img src={url} alt={`Gallery ${index + 1}`} />
+                          {isLastAndMore && (
+                            <div className={profileStyles.moreOverlay}>
+                              <span className={profileStyles.moreCount}>+{gallery.length - 4}</span>
+                              <span className={profileStyles.moreText}>view all photos</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
               )}
 
               {/* Main Grid Content */}
@@ -1408,19 +1446,57 @@ export default function DashboardProfilePage() {
       )}
 
       {/* GALLERY LIGHTBOX ZOOM */}
-      {zoomImageUrl && (
+      {zoomImageIdx !== null && gallery.length > 0 && (
         <div 
-          onClick={() => setZoomImageUrl(null)}
-          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 md:p-8 cursor-zoom-out animate-fade-in"
+          className={profileStyles.lightboxOverlay} 
+          onClick={() => setZoomImageIdx(null)}
         >
-          <button 
-            type="button"
-            onClick={() => setZoomImageUrl(null)}
-            className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors cursor-pointer border border-white/10"
-          >
-            <X className="h-6 w-6" />
-          </button>
-          <img src={zoomImageUrl} className="max-w-full max-h-[90dvh] object-contain rounded-lg shadow-2xl animate-scale-in" alt="" />
+          <div className={profileStyles.galleryLightboxContent} onClick={(e) => e.stopPropagation()}>
+            <button 
+              onClick={() => setZoomImageIdx(null)} 
+              className={profileStyles.lightboxClose}
+              aria-label="Close lightbox"
+            >
+              <X className="h-6 w-6" />
+            </button>
+
+            <div className={profileStyles.lightboxMediaWrapper}>
+              <img 
+                src={gallery[zoomImageIdx]} 
+                alt={`Gallery ${zoomImageIdx + 1}`} 
+                className={profileStyles.galleryLightboxImage} 
+              />
+              <div className={profileStyles.lightboxText}>
+                <h3>{name || "Business Name"}</h3>
+                <p>Gallery ({zoomImageIdx + 1} / {gallery.length})</p>
+              </div>
+            </div>
+
+            {gallery.length > 1 && (
+              <>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setZoomImageIdx((zoomImageIdx - 1 + gallery.length) % gallery.length);
+                  }}
+                  className={profileStyles.lightboxPrev}
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setZoomImageIdx((zoomImageIdx + 1) % gallery.length);
+                  }}
+                  className={profileStyles.lightboxNext}
+                  aria-label="Next image"
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </button>
+              </>
+            )}
+          </div>
         </div>
       )}
 

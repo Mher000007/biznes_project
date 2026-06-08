@@ -105,8 +105,10 @@ export default function StoryViewer({
     } else if (groupIndex < groups.length - 1) {
       setGroupIndex((prev) => prev + 1);
     } else {
-      // Reached very end of all stories
-      onClose();
+      // Reached very end of all stories, close safely after layout pass
+      setTimeout(() => {
+        onClose();
+      }, 0);
     }
   }, [storyIndex, groupIndex, activeGroup, groups.length, onClose]);
 

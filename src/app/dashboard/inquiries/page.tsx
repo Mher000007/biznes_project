@@ -1,12 +1,14 @@
 import { MessageSquare } from "lucide-react";
 
-const INQUIRIES = [
-  { id: 1, name: "Armen Grigoryan", email: "armen@example.com", subject: "Partnership inquiry", message: "We are interested in partnering for a joint technology project.", time: "2 hours ago", status: "new" as const },
-  { id: 2, name: "Seda Hovhannisyan", email: "seda@example.com", subject: "Service pricing", message: "Could you provide a quote for your cloud migration service?", time: "5 hours ago", status: "read" as const },
-  { id: 3, name: "David Mkrtchyan", email: "david@example.com", subject: "Collaboration proposal", message: "Our company would like to explore B2B collaboration opportunities.", time: "1 day ago", status: "replied" as const },
-  { id: 4, name: "Anna Petrosyan", email: "anna@example.com", subject: "Custom solution request", message: "We need a custom ERP solution for our manufacturing business.", time: "2 days ago", status: "new" as const },
-  { id: 5, name: "Hovhannes Avetisyan", email: "hovhannes@example.com", subject: "Technical consultation", message: "Looking for technical consultation on migrating to the cloud.", time: "3 days ago", status: "archived" as const },
-];
+const INQUIRIES: {
+  id: number;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  time: string;
+  status: "new" | "read" | "replied" | "archived";
+}[] = [];
 
 const STATUS_STYLES = {
   new: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
