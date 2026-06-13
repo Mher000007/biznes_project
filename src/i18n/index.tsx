@@ -8,7 +8,7 @@ export type Locale = "en" | "hy" | "ru";
 
 const translations: Record<Locale, Translations> = { en, hy, ru };
 
-export const LOCALE_LABELS: Record<Locale, string> = { en: "EN", hy: "ՀY", ru: "RU" };
+export const LOCALE_LABELS: Record<Locale, string> = { en: "EN", hy: "HY", ru: "RU" };
 
 interface I18nContextType {
   locale: Locale;

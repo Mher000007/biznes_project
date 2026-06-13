@@ -2,6 +2,7 @@ import type { Translations } from "./en";
 
 export const hy: Translations = {
   nav: {
+    home: "Գլխավոր",
     discover: "Հայտնաբերել",
     categories: "Կատեգորիաներ",
     about: "Մեր մասին",

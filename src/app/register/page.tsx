@@ -410,7 +410,6 @@ export default function RegisterPage() {
                 {ARMENIAN_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
-            {/* 
             <div className={styles.formGroup}>
               <label>Interactive Map Location Picker</label>
               <LocationPicker
@@ -423,7 +422,6 @@ export default function RegisterPage() {
                 }}
               />
             </div>
-            */}
             <div className={styles.formGroup}>
               <label>Address details</label>
               <input value={address} onChange={e => setAddress(e.target.value)} type="text" placeholder="Address resolved from map or custom details" />

@@ -131,10 +131,6 @@ export default function ChatWidget() {
   const { isOpen, messages, isLoading, sessionId } = useSelector((s: RootState) => s.chat);
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  if (pathname.startsWith("/admin-secure")) {
-    return null;
-  }
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -194,6 +190,10 @@ export default function ChatWidget() {
     }
     dispatch(setLoading(false));
   };
+
+  if (pathname.startsWith("/admin-secure")) {
+    return null;
+  }
 
   return (
     <>

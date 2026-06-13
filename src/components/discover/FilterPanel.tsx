@@ -1,15 +1,15 @@
 "use client";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
-import { setCategory, setCity, setEmployeeCount, setVerifiedOnly, resetFilters } from "@/store/slices/filterSlice";
-import { CATEGORIES, ARMENIAN_CITIES, EMPLOYEE_RANGES } from "@/lib/constants";
+import { setCategory, setCity, resetFilters } from "@/store/slices/filterSlice";
+import { CATEGORIES, ARMENIAN_CITIES } from "@/lib/constants";
 import { SlidersHorizontal, X } from "lucide-react";
 
 export default function FilterPanel() {
   const dispatch = useDispatch();
   const filters = useSelector((s: RootState) => s.filters);
 
-  const hasFilters = filters.category || filters.city || filters.employeeCount || filters.verifiedOnly;
+  const hasFilters = filters.category || filters.city;
 
   return (
     <div className="space-y-6">
@@ -53,32 +53,6 @@ export default function FilterPanel() {
           ))}
         </select>
       </div>
-
-      {/* Company Size */}
-      <div>
-        <label className="block text-xs font-medium mb-2 text-[hsl(var(--muted-foreground))]">Company Size</label>
-        <select
-          value={filters.employeeCount}
-          onChange={(e) => dispatch(setEmployeeCount(e.target.value))}
-          className="w-full rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]/20"
-        >
-          <option value="">Any Size</option>
-          {EMPLOYEE_RANGES.map((r) => (
-            <option key={r} value={r}>{r} employees</option>
-          ))}
-        </select>
-      </div>
-
-      {/* Verified only */}
-      <label className="flex items-center gap-2 cursor-pointer">
-        <input
-          type="checkbox"
-          checked={filters.verifiedOnly}
-          onChange={(e) => dispatch(setVerifiedOnly(e.target.checked))}
-          className="h-4 w-4 rounded border-[hsl(var(--border))] accent-[hsl(var(--primary))]"
-        />
-        <span className="text-sm">Verified only</span>
-      </label>
     </div>
   );
 }

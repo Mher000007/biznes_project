@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
-import "./globals.css";
+import "../styles/leaflet.css";
+import "./globals.scss";
+
 import StoreProvider from "@/store/provider";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";

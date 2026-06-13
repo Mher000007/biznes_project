@@ -1,8 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MapPin, Search, Loader2, X } from "lucide-react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import LeafletMap from "@/components/map/LeafletMap";
 
 interface LocationPickerProps {
   lat?: number;
@@ -26,9 +25,6 @@ export default function LocationPicker({
   readonly = false,
   height = "300px",
 }: LocationPickerProps) {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<L.Map | null>(null);
-  const markerRef = useRef<L.Marker | null>(null);
   const [position, setPosition] = useState({ lat, lng });
   const [address, setAddress] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -36,23 +32,6 @@ export default function LocationPicker({
   const [searching, setSearching] = useState(false);
   const [reversing, setReversing] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
-
-  const markerIcon = L.divIcon({
-    className: "",
-    html: `<div style="width:36px;height:36px;background:#111;border-radius:50%;border:3px solid white;box-shadow:0 2px 10px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>`,
-    iconSize: [36, 36],
-    iconAnchor: [18, 36],
-  });
-
-  // Move map + marker to position
-  const flyTo = useCallback((newLat: number, newLng: number) => {
-    const map = mapInstance.current;
-    const marker = markerRef.current;
-    if (map && marker) {
-      marker.setLatLng([newLat, newLng]);
-      map.flyTo([newLat, newLng], 17, { duration: 1 });
-    }
-  }, []);
 
   // Reverse geocode
   const reverseGeocode = useCallback(async (rlat: number, rlng: number) => {
@@ -101,76 +80,21 @@ export default function LocationPicker({
     setSearchQuery("");
     setSuggestions([]);
     onLocationChange?.(newLat, newLng, result.display_name);
-    setTimeout(() => flyTo(newLat, newLng), 50);
   };
 
-  // Init map
-  useEffect(() => {
-    if (!mapRef.current || mapInstance.current) return;
-
-    const map = L.map(mapRef.current, {
-      zoomControl: !readonly,
-      scrollWheelZoom: !readonly,
-      dragging: !readonly,
-      attributionControl: false,
-    }).setView([lat, lng], 14);
-
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-    }).addTo(map);
-
-    L.control.attribution({ position: "bottomright", prefix: false })
-      .addAttribution('© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>')
-      .addTo(map);
-
-    const marker = L.marker([lat, lng], { icon: markerIcon, draggable: !readonly }).addTo(map);
-    markerRef.current = marker;
-    mapInstance.current = map;
-
-    if (!readonly) {
-      marker.on("dragend", () => {
-        const pos = marker.getLatLng();
-        setPosition({ lat: pos.lat, lng: pos.lng });
-        reverseGeocode(pos.lat, pos.lng);
-      });
-
-      map.on("click", (e: L.LeafletMouseEvent) => {
-        marker.setLatLng(e.latlng);
-        setPosition({ lat: e.latlng.lat, lng: e.latlng.lng });
-        reverseGeocode(e.latlng.lat, e.latlng.lng);
-      });
-
-      reverseGeocode(lat, lng);
-    }
-
-    // Fix tile rendering on container resize
-    const resizeTimer = setTimeout(() => {
-      if (mapInstance.current) {
-        map.invalidateSize();
-      }
-    }, 200);
-
-    return () => {
-      clearTimeout(resizeTimer);
-      map.remove();
-      mapInstance.current = null;
-      markerRef.current = null;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const handleMapAction = (newLat: number, newLng: number) => {
+    if (readonly) return;
+    setPosition({ lat: newLat, lng: newLng });
+    reverseGeocode(newLat, newLng);
+  };
 
   // Sync with external coordinates updates (e.g. after async loading)
   useEffect(() => {
-    if (mapInstance.current && markerRef.current) {
-      const currentPos = markerRef.current.getLatLng();
-      const diffLat = Math.abs(currentPos.lat - lat);
-      const diffLng = Math.abs(currentPos.lng - lng);
-      if (diffLat > 0.0001 || diffLng > 0.0001) {
-        setPosition({ lat, lng });
-        markerRef.current.setLatLng([lat, lng]);
-        mapInstance.current.setView([lat, lng], mapInstance.current.getZoom());
-        reverseGeocode(lat, lng);
-      }
+    const diffLat = Math.abs(position.lat - lat);
+    const diffLng = Math.abs(position.lng - lng);
+    if (diffLat > 0.0001 || diffLng > 0.0001) {
+      setPosition({ lat, lng });
+      reverseGeocode(lat, lng);
     }
   }, [lat, lng, reverseGeocode]);
 
@@ -211,7 +135,24 @@ export default function LocationPicker({
         </div>
       )}
 
-      <div ref={mapRef} style={{ height }} className="rounded-xl border border-[hsl(var(--border))] overflow-hidden" />
+      <div className="rounded-xl border border-[hsl(var(--border))] overflow-hidden">
+        <LeafletMap
+          center={[position.lat, position.lng]}
+          zoom={14}
+          markers={[
+            {
+              id: "picker-marker",
+              lat: position.lat,
+              lng: position.lng,
+              draggable: !readonly,
+            }
+          ]}
+          height={height}
+          onMapClick={handleMapAction}
+          onMarkerDragEnd={(_, flat, flng) => handleMapAction(flat, flng)}
+          readonly={readonly}
+        />
+      </div>
 
       {!readonly && (
         <div className="rounded-lg bg-[hsl(var(--muted))] px-3 py-2">
@@ -233,3 +174,4 @@ export default function LocationPicker({
     </div>
   );
 }
+

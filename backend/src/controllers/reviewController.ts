@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import Review from '../models/Review.js';
@@ -46,18 +46,35 @@ export const getReviews = asyncHandler(
       query.status = { $ne: 'resolved_deleted' };
     }
 
-    const [reviews, total] = await Promise.all([
+    const matchQuery = {
+      ...query,
+      business: new mongoose.Types.ObjectId(businessId)
+    };
+
+    const [reviews, total, distributionRaw] = await Promise.all([
       Review.find(query)
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .populate('author', 'name avatar'),
       Review.countDocuments(query),
+      Review.aggregate([
+        { $match: matchQuery },
+        { $group: { _id: '$rating', count: { $sum: 1 } } }
+      ])
     ]);
+
+    const distribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    distributionRaw.forEach((item: any) => {
+      if (item._id >= 1 && item._id <= 5) {
+        distribution[item._id as 1 | 2 | 3 | 4 | 5] = item.count;
+      }
+    });
 
     res.status(200).json({
       success: true,
       data: reviews,
+      distribution,
       pagination: {
         current: page,
         total: Math.ceil(total / limit),
@@ -72,7 +89,7 @@ export const getReviews = asyncHandler(
 export const createReview = asyncHandler(
   async (req: AuthRequest, res: Response): Promise<void> => {
     const { businessId } = req.params;
-    const { rating, comment } = req.body;
+    const { rating, comment, image, authorName } = req.body;
 
     // Validate business ID format
     if (!businessId.match(/^[0-9a-fA-F]{24}$/)) {
@@ -109,34 +126,69 @@ export const createReview = asyncHandler(
       return;
     }
 
-    // Prevent owner from reviewing their own business
-    if (business.owner.toString() === req.user?.id) {
-      res.status(403).json({ success: false, message: 'You cannot review your own business' });
-      return;
+    // Try optional authentication manually
+    let userId: string | undefined = undefined;
+    let userName: string | undefined = undefined;
+
+    const token = req.headers.authorization?.split(' ')[1];
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_secret_key') as any;
+        userId = decoded.id;
+        userName = decoded.name;
+      } catch (err) {
+        // ignore invalid token for optional auth
+      }
     }
 
-    // Check for duplicate (1 review per user per business)
-    const existing = await Review.findOne({
-      business: businessId,
-      author: req.user?.id,
-    });
-    if (existing) {
-      res.status(409).json({
-        success: false,
-        message: 'You have already reviewed this business. Delete your existing review to submit a new one.',
+    let resolvedAuthorName = '';
+
+    if (userId) {
+      // Prevent owner from reviewing their own business
+      if (business.owner.toString() === userId) {
+        res.status(403).json({ success: false, message: 'You cannot review your own business' });
+        return;
+      }
+
+      // Check for duplicate (1 review per user per business)
+      const existing = await Review.findOne({
+        business: businessId,
+        author: userId,
       });
-      return;
+      if (existing) {
+        res.status(409).json({
+          success: false,
+          message: 'You have already reviewed this business. Delete your existing review to submit a new one.',
+        });
+        return;
+      }
+
+      resolvedAuthorName = userName || 'Anonymous';
+    } else {
+      // Guest validation
+      if (!authorName || typeof authorName !== 'string' || authorName.trim().length < 2) {
+        res.status(400).json({ success: false, message: 'Please provide your name (minimum 2 characters)' });
+        return;
+      }
+      if (authorName.trim().length > 50) {
+        res.status(400).json({ success: false, message: 'Name cannot exceed 50 characters' });
+        return;
+      }
+      resolvedAuthorName = authorName.trim();
     }
 
     const review = await Review.create({
       business: businessId,
-      author: req.user?.id,
-      authorName: req.user?.name || 'Anonymous',
+      author: userId || undefined,
+      authorName: resolvedAuthorName,
       rating: parsedRating,
       comment: trimmed,
+      image: image || undefined,
     });
 
-    await review.populate('author', 'name avatar');
+    if (userId) {
+      await review.populate('author', 'name avatar');
+    }
 
     res.status(201).json({
       success: true,
@@ -258,6 +310,27 @@ export const reportReview = asyncHandler(
       success: true,
       message: 'Review reported successfully',
       data: review,
+    });
+  }
+);
+
+// ─── GET all reviews globally (e.g. for homepage review feed) ─────────────────
+export const getAllReviews = asyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const page  = Math.max(1, parseInt(req.query.page  as string) || 1);
+    const limit = Math.min(50, parseInt(req.query.limit as string) || 10);
+    const skip  = (page - 1) * limit;
+
+    const reviews = await Review.find({ status: { $ne: 'resolved_deleted' } })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate('author', 'name avatar')
+      .populate('business', 'name slug address city images');
+
+    res.status(200).json({
+      success: true,
+      data: reviews,
     });
   }
 );

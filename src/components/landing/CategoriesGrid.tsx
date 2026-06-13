@@ -1,10 +1,10 @@
 "use client";
 import Link from "next/link";
-import { Monitor, Wheat, UtensilsCrossed, ShoppingBag, Building2, Landmark, Heart, GraduationCap } from "lucide-react";
+import { Monitor, Wheat, UtensilsCrossed, ShoppingBag, Building2, Landmark, Heart, GraduationCap, Hammer } from "lucide-react";
 import { CATEGORIES } from "@/lib/constants";
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  Monitor, Wheat, UtensilsCrossed, ShoppingBag, Building2, Landmark, Heart, GraduationCap,
+  Monitor, Wheat, UtensilsCrossed, ShoppingBag, Building2, Landmark, Heart, GraduationCap, Hammer,
 };
 
 export default function CategoriesGrid() {

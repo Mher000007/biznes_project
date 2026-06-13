@@ -1,10 +1,9 @@
 import Category from '../models/Category.js';
 
 const SEED_CATEGORIES = [
-  { name: 'Technology',    slug: 'technology',    description: 'Software, IT services, startups, and digital solutions',    icon: 'Monitor' },
+  { name: 'Building Material', slug: 'building-material', description: 'Construction supplies, materials, tools, and hardware', icon: 'Hammer' },
   { name: 'Agriculture',   slug: 'agriculture',   description: 'Farming, food production, and agritech companies',           icon: 'Wheat' },
   { name: 'HoReCa',        slug: 'horeca',        description: 'Hotels, restaurants, cafés, and catering services',          icon: 'UtensilsCrossed' },
-  { name: 'Retail',        slug: 'retail',        description: 'Shops, e-commerce, and consumer goods businesses',           icon: 'ShoppingBag' },
   { name: 'Construction',  slug: 'construction',  description: 'Building, architecture, and real estate companies',          icon: 'Building2' },
   { name: 'Finance',       slug: 'finance',       description: 'Banking, insurance, and financial services',                 icon: 'Landmark' },
   { name: 'Healthcare',    slug: 'healthcare',    description: 'Clinics, pharmacies, and medical services',                  icon: 'Heart' },

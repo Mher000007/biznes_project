@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IReview extends Document {
   business: mongoose.Types.ObjectId;
-  author: mongoose.Types.ObjectId;
+  author?: mongoose.Types.ObjectId;
   authorName: string;      // denormalised snapshot for fast reads
   rating: number;          // 1–5
   comment: string;         // max 1000 chars
@@ -12,6 +12,7 @@ export interface IReview extends Document {
   reportedReason?: string;
   adminReply?: string;
   reportedAt?: Date;
+  image?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -27,7 +28,7 @@ const reviewSchema = new Schema<IReview>(
     author: {
       type: Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      required: false,
     },
     authorName: {
       type: String,
@@ -76,14 +77,24 @@ const reviewSchema = new Schema<IReview>(
     reportedAt: {
       type: Date,
     },
+    image: {
+      type: String,
+      trim: true,
+    },
   },
   {
     timestamps: true,
   }
 );
 
-// One review per user per business
-reviewSchema.index({ business: 1, author: 1 }, { unique: true });
+// One review per user per business (only applies to authenticated users)
+reviewSchema.index(
+  { business: 1, author: 1 },
+  { 
+    unique: true, 
+    partialFilterExpression: { author: { $exists: true, $ne: null } } 
+  }
+);
 
 // After saving a review, recalculate business rating atomically
 reviewSchema.post('save', async function () {

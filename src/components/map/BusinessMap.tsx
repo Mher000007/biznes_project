@@ -15,7 +15,7 @@ interface BusinessMapProps {
   address: string;
 }
 
-export default function BusinessMap({ lat, lng, name, address }: BusinessMapProps) {
+export default function BusinessMap({ lat, lng, address }: BusinessMapProps) {
   const [resolvedAddress, setResolvedAddress] = useState(address);
   const [loading, setLoading] = useState(true);
 

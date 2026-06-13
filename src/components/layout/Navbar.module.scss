@@ -1,0 +1,489 @@
+@use "../../styles/theme" as *;
+@use "../../styles/responsive" as *;
+
+.header {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 100;
+  background-color: $bg-primary;
+  border-bottom: 1px solid $border-light;
+  box-shadow: none; // Strictly remove box-shadows
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  transition: $transition-smooth;
+
+  @include mq-down("md") {
+    padding: 0 16px;
+  }
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.logoImage {
+  height:  7rem;
+  width: auto;
+  object-fit: contain;
+  filter: brightness(0) !important;
+  transition: filter 0.3s ease;
+
+  :global(.dark) & {
+    filter: brightness(0) invert(1) !important;
+  }
+}
+
+.searchForm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  max-width: 500px;
+  margin-left: 24px;
+
+  @include mq-down("lg") {
+    max-width: none;
+  }
+
+  @include mq-down("md") {
+    display: none; // Hidden on mobile navigation, will toggle or stack
+    margin-left: 0;
+
+    &.mobileSearchVisible {
+      display: flex;
+      flex-direction: column;
+      position: absolute;
+      top: 64px;
+      left: 0;
+      right: 0;
+      background-color: $bg-primary;
+      padding: 16px;
+      border-bottom: 1px solid $border-light;
+      gap: 12px;
+      max-width: none;
+      z-index: 90;
+    }
+  }
+}
+
+.searchGroup {
+  display: flex;
+  align-items: center;
+  background-color: var(--bg-input-search); // Very light grey background
+  border-radius: 4px; // Max 4px border radius for soft but structured look
+  border: 1px solid transparent;
+  flex: 1;
+  overflow: hidden;
+  height: 40px;
+  transition: $transition-smooth;
+
+  &:focus-within {
+    border-color: $text-secondary;
+    background-color: $bg-primary;
+  }
+
+  @include mq-down("md") {
+    flex-direction: column;
+    width: 100%;
+    background-color: transparent;
+    border-radius: 0;
+    gap: 8px;
+    height: auto;
+  }
+}
+
+.inputWrapper {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  flex: 1;
+  height: 100%;
+  min-width: 0;
+
+  @include mq-down("md") {
+    width: 100%;
+    background-color: var(--bg-input-search);
+    border-radius: 4px;
+    height: 40px;
+  }
+}
+
+.inputIcon {
+  width: 16px;
+  height: 16px;
+  color: $text-secondary;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.inputField {
+  width: 100%;
+  height: 100%;
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  font-size: 14px;
+  color: $text-primary;
+  outline: none;
+
+  &::placeholder {
+    color: $text-secondary;
+  }
+}
+
+.selectField {
+  width: 100%;
+  height: 100%;
+  border: none !important;
+  background: transparent !important;
+  padding: 0 20px 0 0 !important; // override default select styles
+  font-size: 14px;
+  color: $text-primary;
+  outline: none;
+  cursor: pointer;
+  appearance: none; // remove default arrow
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23666666' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E") !important;
+  background-position: right center !important;
+  background-repeat: no-repeat !important;
+  background-size: 16px !important;
+
+  & option {
+    background-color: $bg-primary;
+    color: $text-primary;
+  }
+}
+
+.divider {
+  width: 1px;
+  height: 24px;
+  background-color: $border-light;
+  flex-shrink: 0;
+
+  @include mq-down("md") {
+    display: none;
+  }
+}
+
+.searchButton {
+  height: 40px;
+  padding: 0 20px;
+  background-color: $accent-primary; // Solid black
+  color: #FFFFFF; // White text
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: $transition-smooth;
+  flex-shrink: 0;
+
+  @include hover-device {
+    &:hover {
+      opacity: 0.85;
+      transform: translateY(-1px);
+    }
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  @include mq-down("md") {
+    width: 100%;
+  }
+}
+
+/* Nav Actions & Links */
+.navActions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
+  @include mq-down("md") {
+    gap: 8px;
+  }
+}
+
+.links {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-left: auto;
+  margin-right: 24px;
+
+  @include mq-down("lg") {
+    display: none; // Hidden on smaller screens
+  }
+}
+
+:global(.transparent-header) {
+  .links {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+  }
+}
+
+.navLink {
+  font-size: 13px;
+  font-weight: 500;
+  color: $text-secondary;
+  transition: $transition-smooth;
+
+  @include hover-device {
+    &:hover {
+      color: $text-primary;
+    }
+  }
+
+  &.active {
+    color: $text-primary;
+    font-weight: 600;
+  }
+}
+
+.actionButton {
+  font-size: 13px;
+  font-weight: 600;
+  color: $text-secondary;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: $transition-smooth;
+
+  @include hover-device {
+    &:hover {
+      color: $text-primary;
+    }
+  }
+}
+
+.registerButton {
+  height: 36px;
+  padding: 0 16px;
+  background-color: $accent-primary;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: $transition-smooth;
+
+  @include hover-device {
+    &:hover {
+      opacity: 0.85;
+    }
+  }
+
+  @include mq-down("lg") {
+    display: none; // Hide in header for mobile/tablet screen sizes, since it's inside the menu drawer
+  }
+}
+
+.mobileControls {
+  display: none;
+
+  @include mq-down("lg") {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+}
+
+.iconButton {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: $text-primary;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: $transition-smooth;
+
+  &:hover {
+    background-color: var(--bg-input-search);
+  }
+}
+
+/* Mobile Full Screen Menu Overlay */
+.mobileMenu {
+  display: none;
+
+  @include mq-down("lg") {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 64px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: calc(100vh - 64px);
+    background-color: $bg-primary;
+    padding: 24px;
+    z-index: 80;
+    gap: 20px;
+    animation: slideDown 0.25s ease-out forwards;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.transparentHeader {
+  background-color: rgba(0, 0, 0, 0.4) !important; // Semi-transparent dark background for the required "slight darkness"
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.15) !important;
+
+  // Make the logo stand out in white against the dark tint
+  .logoImage {
+    filter: brightness(0) invert(1) !important;
+  }
+
+  // Navbar Links
+  .navLink {
+    color: rgba(255, 255, 255, 0.7) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+
+    &:hover {
+      color: #FFFFFF !important;
+    }
+
+    &.active {
+      color: #FFFFFF !important;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    }
+  }
+
+  // Plain text labels / actions
+  .actionButton,
+  :global(.hidden.lg\:inline-flex.text-\[13px\]) {
+    color: rgba(255, 255, 255, 0.7) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    
+    &:hover {
+      color: #FFFFFF !important;
+    }
+  }
+
+  // Style the search bar inputs to match the dark glassmorphic look
+  .searchGroup {
+    background-color: rgba(0, 0, 0, 0.45) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+
+    &:focus-within {
+      background-color: rgba(0, 0, 0, 0.65) !important;
+      border-color: rgba(255, 255, 255, 0.3) !important;
+    }
+  }
+
+  .inputField {
+    color: #FFFFFF !important;
+    
+    &::placeholder {
+      color: rgba(255, 255, 255, 0.5) !important;
+    }
+  }
+
+  .selectField {
+    color: #FFFFFF !important;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23FFFFFF' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E") !important;
+
+    & option {
+      background-color: #101012 !important;
+      color: #FFFFFF !important;
+    }
+  }
+
+  .inputIcon {
+    color: rgba(255, 255, 255, 0.6) !important;
+  }
+
+  .divider {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+  }
+
+  // Adjust Language Switcher button styles
+  :global(.flex.items-center.h-9.rounded-lg.border) {
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    background-color: rgba(0, 0, 0, 0.45) !important;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+
+    button {
+      color: rgba(255, 255, 255, 0.6) !important;
+
+      &:hover {
+        color: #FFFFFF !important;
+        background-color: rgba(255, 255, 255, 0.08) !important;
+      }
+
+      // Active state button (EN, HY, RU)
+      &:global(.bg-\[hsl\(var\(--foreground\)\)\]) {
+        background-color: #FFFFFF !important;
+        color: #101012 !important;
+      }
+    }
+  }
+
+  // Adjust Theme Toggle button styles
+  :global(.relative.flex.h-9.w-9) {
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    background-color: rgba(0, 0, 0, 0.45) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15) !important;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.08) !important;
+      color: #FFFFFF !important;
+    }
+  }
+
+  // Adjust Sign Out button styles
+  :global(.hidden.lg\:inline-flex.h-9.items-center.rounded-lg.border) {
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    background-color: rgba(0, 0, 0, 0.2) !important;
+
+    &:hover {
+      color: #FFFFFF !important;
+      background-color: rgba(255, 255, 255, 0.08) !important;
+      border-color: rgba(255, 255, 255, 0.3) !important;
+    }
+  }
+
+  // Adjust mobile menu trigger button color
+  .iconButton {
+    color: #FFFFFF !important;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.08) !important;
+    }
+  }
+}

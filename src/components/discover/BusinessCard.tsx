@@ -1,34 +1,132 @@
 import Link from "next/link";
 import { Star, MapPin, BadgeCheck } from "lucide-react";
 import type { Business } from "@/types/business";
+import styles from "./BusinessCard.module.scss";
+
+// Simple utility to determine if a business is currently open
+function getOpenStatus(operatingHours?: any[]) {
+  if (!operatingHours || operatingHours.length === 0) {
+    return { isOpen: true, text: "Open Now" };
+  }
+  const now = new Date();
+  const day = now.getDay(); // 0 is Sunday, 1-6 Mon-Sat
+  
+  // Find operating hours for today (day matches, handling both 0 and 7 for Sunday if needed)
+  const todayHours = operatingHours.find(
+    (h) => h.day === day || (day === 0 && h.day === 7) || (day === 7 && h.day === 0)
+  );
+
+  if (!todayHours || todayHours.isClosed || !todayHours.openTime || !todayHours.closeTime) {
+    return { isOpen: false, text: "Closed" };
+  }
+
+  const currentHour = now.getHours();
+  const currentMin = now.getMinutes();
+  
+  const [openH, openM] = todayHours.openTime.split(":").map(Number);
+  const [closeH, closeM] = todayHours.closeTime.split(":").map(Number);
+
+  const currentVal = currentHour * 60 + currentMin;
+  const openVal = openH * 60 + openM;
+  const closeVal = closeH * 60 + closeM;
+
+  if (currentVal >= openVal && currentVal < closeVal) {
+    return { isOpen: true, text: "Open Now" };
+  }
+  return { isOpen: false, text: "Closed" };
+}
 
 export default function BusinessCard({ business }: { business: Business }) {
+  const status = getOpenStatus(business.operatingHours);
+
   return (
-    <Link href={`/business/${business.slug}`}
-      className="group rounded-xl border border-[hsl(var(--border))] p-4 transition-all hover:shadow-md hover:border-[hsl(var(--muted-foreground))]/20">
-      <div className="flex items-center gap-3 mb-3">
-        {business.logoUrl ? (
-          <img 
-            src={business.logoUrl} 
-            alt={business.name} 
-            className="h-10 w-10 shrink-0 rounded-lg object-cover" 
+    <div className={styles.card}>
+      {/* Image container */}
+      <Link href={`/business/${business.slug}`} className={styles.imageContainer}>
+        {business.logoUrl || business.coverImageUrl ? (
+          <img
+            src={business.coverImageUrl || business.logoUrl}
+            alt={business.name}
+            className={styles.image}
           />
         ) : (
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[hsl(var(--muted))] text-sm font-semibold text-[hsl(var(--muted-foreground))]">
+          <div className={styles.imagePlaceholder}>
             {business.name[0]}
           </div>
         )}
-        <div className="min-w-0">
-          <h3 className="text-sm font-medium truncate group-hover:text-[hsl(var(--accent))] transition-colors">{business.name}</h3>
-          <p className="text-[11px] text-[hsl(var(--muted-foreground))]">{business.category.name}</p>
+      </Link>
+
+      {/* Details container */}
+      <div className={styles.details}>
+        <div>
+          <div className={styles.headerRow}>
+            <Link href={`/business/${business.slug}`} className={styles.title}>
+              {business.name}
+            </Link>
+            {business.isVerified && (
+              <BadgeCheck className={`h-5 w-5 shrink-0 ${
+                business.plan === "premium" || business.plan === "standard"
+                  ? styles.verifiedBadgeGold
+                  : styles.verifiedBadgeStarter
+              }`} />
+            )}
+          </div>
+
+          <div className={styles.category}>{business.category.name}</div>
+          
+          <p className={styles.description}>{business.shortDescription}</p>
+
+          <div className={styles.ratingRow}>
+            <div className={styles.stars}>
+              {[...Array(5)].map((_, i) => (
+                <Star
+                  key={i}
+                  className={styles.starIcon}
+                  style={{
+                    fill: i < Math.floor(business.ratingAvg || 0) ? "#D4AF37" : "none",
+                    stroke: "#D4AF37",
+                  }}
+                />
+              ))}
+            </div>
+            <span className={styles.reviewCount}>
+              {business.ratingAvg?.toFixed(1) || "0.0"} ({business.reviewCount || 0} reviews)
+            </span>
+          </div>
+
+          <div className={styles.metaRow}>
+            <span className={styles.metaItem}>
+              <MapPin className={styles.metaIcon} />
+              {business.address ? `${business.address}, ` : ""}{business.city}
+            </span>
+          </div>
+
+          {business.tags && business.tags.length > 0 && (
+            <div className={styles.tagsRow}>
+              {business.tags.slice(0, 3).map((tag, i) => (
+                <span key={i} className={styles.tag}>
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
-        {business.isVerified && <BadgeCheck className="h-4 w-4 text-[hsl(var(--accent))] shrink-0 ml-auto" />}
+
+        <div className={styles.footerRow}>
+          <div className={styles.statusBadge}>
+            <span
+              className={`${styles.statusDot} ${
+                !status.isOpen ? styles.closed : ""
+              }`}
+            />
+            {status.text}
+          </div>
+          <Link href={`/business/${business.slug}`} className={styles.actionButton}>
+            Book Now
+          </Link>
+        </div>
       </div>
-      <p className="text-xs text-[hsl(var(--muted-foreground))] line-clamp-2 mb-3">{business.shortDescription}</p>
-      <div className="flex items-center justify-between text-[11px] text-[hsl(var(--muted-foreground))]">
-        <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{business.city}</span>
-        <span className="flex items-center gap-1"><Star className="h-3 w-3 fill-amber-400 text-amber-400" />{business.ratingAvg}</span>
-      </div>
-    </Link>
+    </div>
   );
 }
+

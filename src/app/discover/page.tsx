@@ -1,16 +1,31 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
+// Force page compile cache reload
+import { useState, useEffect, Suspense } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store/store";
+import { setQuery, setCity, setCategory, setRatingMin, setVerifiedOnly, setSortBy, resetFilters } from "@/store/slices/filterSlice";
 import { MOCK_BUSINESSES } from "@/data/mock-businesses";
-import SearchBar from "@/components/discover/SearchBar";
-import FilterPanel from "@/components/discover/FilterPanel";
+import { CATEGORIES, ARMENIAN_CITIES, SORT_OPTIONS } from "@/lib/constants";
 import BusinessCard from "@/components/discover/BusinessCard";
-import { Building2, Loader2 } from "lucide-react";
+import { Building2, Loader2, Map as MapIcon, List as ListIcon } from "lucide-react";
 import axios from "axios";
 import { getApiUrl } from "@/lib/utils";
+import { useSearchParams } from "next/navigation";
+import dynamic from "next/dynamic";
+import styles from "./Discover.module.scss";
 
 const API = getApiUrl();
+
+// Dynamically import Leaflet Map to prevent SSR errors
+const DiscoverMap = dynamic(() => import("@/components/discover/DiscoverMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-full w-full flex items-center justify-center text-sm text-[hsl(var(--muted-foreground))]">
+      <Loader2 className="h-6 w-6 animate-spin mr-2" />
+      Loading map...
+    </div>
+  ),
+});
 
 // Normalize a backend business doc to the same shape as a MOCK_BUSINESSES entry
 function normalizeBackendBusiness(b: any) {
@@ -64,10 +79,30 @@ function normalizeBackendBusiness(b: any) {
   };
 }
 
-export default function DiscoverPage() {
+function DiscoverContent() {
+  const dispatch = useDispatch();
+  const searchParams = useSearchParams();
   const filters = useSelector((s: RootState) => s.filters);
+
   const [businesses, setBusinesses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Track hovered business to highlight on map
+  const [hoveredBusinessId, setHoveredBusinessId] = useState<string | null>(null);
+
+  // Mobile View Toggling: "list" or "map"
+  const [mobileView, setMobileView] = useState<"list" | "map">("list");
+
+  // Sync Redux filters with URL query parameters on load
+  useEffect(() => {
+    const q = searchParams.get("q");
+    const city = searchParams.get("city") || searchParams.get("location");
+    const cat = searchParams.get("category");
+
+    if (q !== null) dispatch(setQuery(q));
+    if (city !== null) dispatch(setCity(city));
+    if (cat !== null) dispatch(setCategory(cat));
+  }, [searchParams, dispatch]);
 
   useEffect(() => {
     async function loadBusinesses() {
@@ -106,9 +141,10 @@ export default function DiscoverPage() {
           return false;
       }
       if (filters.category && b.category?.slug !== filters.category) return false;
-      if (filters.city && b.city !== filters.city) return false;
+      if (filters.city && b.city.toLowerCase() !== filters.city.toLowerCase()) return false;
       if (filters.employeeCount && b.employeeCount !== filters.employeeCount) return false;
       if (filters.verifiedOnly && !b.isVerified) return false;
+      if (filters.ratingMin && (b.ratingAvg || 0) < filters.ratingMin) return false;
       return true;
     })
     .sort((a, b) => {
@@ -125,63 +161,206 @@ export default function DiscoverPage() {
     });
 
   return (
-    <div className="pt-20 pb-16">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight mb-2">Discover Businesses</h1>
-          <p className="text-[hsl(var(--muted-foreground))]">
-            Browse and filter through Armenia&apos;s business directory
-          </p>
-        </div>
-
-        <div className="flex gap-8">
-          {/* Sidebar */}
-          <aside className="hidden lg:block w-64 shrink-0">
-            <div className="sticky top-24 rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-5">
-              <FilterPanel />
+    <div className={styles.discoverPage}>
+      {/* Main Column Container */}
+      <div className={styles.mainContainer}>
+        {/* Left Column (60%): Listing feed */}
+        <div
+          className={`${styles.feedColumn} ${
+            mobileView === "map" ? styles.hiddenMobile : ""
+          }`}
+        >
+          <div className={styles.feedHeader}>
+            <h1 className="text-xl font-bold tracking-tight text-[#111111] mb-1">
+              Discover Directory
+            </h1>
+            <div className={styles.resultsCount}>
+              {loading ? (
+                <span>Loading directory...</span>
+              ) : (
+                <span>
+                  Showing {filtered.length} business
+                  {filtered.length !== 1 ? "es" : ""}
+                </span>
+              )}
             </div>
-          </aside>
-
-          {/* Main */}
-          <div className="flex-1 min-w-0">
-            {/* Search + count */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
-              <div className="flex-1">
-                <SearchBar />
-              </div>
-              <div className="flex items-center text-sm text-[hsl(var(--muted-foreground))]">
-                <Building2 className="h-4 w-4 mr-1" />
-                {loading ? "Loading..." : `${filtered.length} result${filtered.length !== 1 ? "s" : ""}`}
-              </div>
-            </div>
-
-            {/* Loading State */}
-            {loading ? (
-              <div className="flex flex-col items-center justify-center py-24 text-center">
-                <Loader2 className="h-10 w-10 animate-spin text-[hsl(var(--muted-foreground))]/60 mb-4" />
-                <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                  Loading businesses from database…
-                </p>
-              </div>
-            ) : filtered.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-                {filtered.map((biz) => (
-                  <BusinessCard key={biz.id} business={biz} />
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <Building2 className="h-12 w-12 text-[hsl(var(--muted-foreground))]/50 mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No businesses found</h3>
-                <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                  Try adjusting your filters or search term
-                </p>
-              </div>
-            )}
           </div>
+
+          {/* Secondary Horizontal Filter Bar */}
+          <div className={styles.categoryBar}>
+            <div className={styles.categoryList}>
+              {/* "All" Reset Button */}
+              <button
+                onClick={() => dispatch(resetFilters())}
+                className={`${styles.categoryButton} ${
+                  (!filters.category &&
+                   !filters.city &&
+                   filters.ratingMin === 0 &&
+                   !filters.verifiedOnly &&
+                   !filters.query &&
+                   filters.sortBy === "popular")
+                    ? styles.active
+                    : ""
+                }`}
+              >
+                All
+              </button>
+
+              {/* Location Selector Dropdown */}
+              <div className="relative inline-block">
+                <select
+                  value={filters.city}
+                  onChange={(e) => dispatch(setCity(e.target.value))}
+                  className={`${styles.categoryButton} ${filters.city ? styles.active : ""} !pr-8 bg-none cursor-pointer appearance-none outline-none`}
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='${filters.city ? "%23101012" : "%23666666"}' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
+                    backgroundPosition: "right 10px center",
+                    backgroundRepeat: "no-repeat",
+                    backgroundSize: "14px",
+                  }}
+                >
+                  <option value="" className="bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">All Locations</option>
+                  {ARMENIAN_CITIES.map((city) => (
+                    <option key={city} value={city} className="bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
+                      {city}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Rating Selector Dropdown */}
+              <div className="relative inline-block">
+                <select
+                  value={filters.ratingMin || 0}
+                  onChange={(e) => dispatch(setRatingMin(Number(e.target.value)))}
+                  className={`${styles.categoryButton} ${filters.ratingMin > 0 ? styles.active : ""} !pr-8 bg-none cursor-pointer appearance-none outline-none`}
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='${filters.ratingMin > 0 ? "%23101012" : "%23666666"}' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
+                    backgroundPosition: "right 10px center",
+                    backgroundRepeat: "no-repeat",
+                    backgroundSize: "14px",
+                  }}
+                >
+                  <option value="0" className="bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">All Ratings</option>
+                  <option value="4.5" className="bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">★ 4.5 & up</option>
+                  <option value="4" className="bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">★ 4.0 & up</option>
+                  <option value="3" className="bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">★ 3.0 & up</option>
+                </select>
+              </div>
+
+              {/* Sort By Selector Dropdown */}
+              <div className="relative inline-block">
+                <select
+                  value={filters.sortBy}
+                  onChange={(e) => dispatch(setSortBy(e.target.value as any))}
+                  className={`${styles.categoryButton} ${filters.sortBy !== "popular" ? styles.active : ""} !pr-8 bg-none cursor-pointer appearance-none outline-none`}
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='${filters.sortBy !== "popular" ? "%23101012" : "%23666666"}' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
+                    backgroundPosition: "right 10px center",
+                    backgroundRepeat: "no-repeat",
+                    backgroundSize: "14px",
+                  }}
+                >
+                  {SORT_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value} className="bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Verified Only Toggle Button */}
+              <button
+                onClick={() => dispatch(setVerifiedOnly(!filters.verifiedOnly))}
+                className={`${styles.categoryButton} ${filters.verifiedOnly ? styles.active : ""}`}
+              >
+                Verified Only
+              </button>
+
+              {/* Reset Filters Button */}
+              {(filters.category || filters.city || filters.ratingMin > 0 || filters.verifiedOnly || filters.sortBy !== "popular") && (
+                <button
+                  onClick={() => dispatch(resetFilters())}
+                  className="text-xs text-[hsl(var(--primary))] font-semibold hover:underline ml-2 cursor-pointer"
+                >
+                  Clear Filters
+                </button>
+              )}
+            </div>
+          </div>
+
+          {loading ? (
+            <div className={styles.centeredState}>
+              <Loader2 className={styles.loaderIcon} />
+              <p>Loading premium businesses...</p>
+            </div>
+          ) : filtered.length > 0 ? (
+            <div className={styles.feedList}>
+              {filtered.map((biz) => (
+                <div
+                  key={biz.id}
+                  onMouseEnter={() => setHoveredBusinessId(biz.id)}
+                  onMouseLeave={() => setHoveredBusinessId(null)}
+                >
+                  <BusinessCard business={biz} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className={styles.centeredState}>
+              <Building2 className="h-12 w-12 text-[#666666]/30 mb-4" />
+              <h3>No businesses found</h3>
+              <p>Try adjusting your search criteria or clear location filters.</p>
+            </div>
+          )}
         </div>
+
+        {/* Right Column (40%): Sticky interactive map */}
+        <div
+          className={`${styles.mapColumn} ${
+            mobileView === "list" ? styles.hiddenMobile : ""
+          }`}
+        >
+          <DiscoverMap
+            businesses={filtered}
+            hoveredBusinessId={hoveredBusinessId}
+          />
+        </div>
+      </div>
+
+      {/* Mobile view toggle switcher button */}
+      <div className={styles.mobileToggleWrapper}>
+        <button
+          onClick={() => setMobileView(mobileView === "list" ? "map" : "list")}
+          className={styles.mobileToggleButton}
+        >
+          {mobileView === "list" ? (
+            <>
+              <MapIcon className="h-4 w-4" /> Show Map
+            </>
+          ) : (
+            <>
+              <ListIcon className="h-4 w-4" /> Show List
+            </>
+          )}
+        </button>
       </div>
     </div>
   );
 }
+
+export default function DiscoverPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="h-screen w-screen flex flex-col items-center justify-center bg-white text-black font-sans">
+          <Loader2 className="h-8 w-8 animate-spin mb-4" />
+          <p className="text-sm font-medium">Loading ArmBiz Directory...</p>
+        </div>
+      }
+    >
+      <DiscoverContent />
+    </Suspense>
+  );
+}
+

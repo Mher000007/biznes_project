@@ -67,7 +67,11 @@ export default function DashboardProfilePage() {
   const { currentUser } = useAuth();
   const { t } = useI18n();
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Track the MongoDB ObjectId of the category so we can send it back on save
+  const [categoryId, setCategoryId] = useState<string | null>(null);
 
   // Layout Tab State
   const [activeFormTab, setActiveFormTab] = useState<"identity" | "info" | "stories" | "hours" | "services" | null>("identity");
@@ -176,7 +180,7 @@ export default function DashboardProfilePage() {
   // Form Fields State
   const [name, setName] = useState("");
   const [foundedYear, setFoundedYear] = useState("");
-  const [category, setCategory] = useState("technology");
+  const [category, setCategory] = useState("building-material");
   const [city, setCity] = useState("Yerevan");
   const [description, setDescription] = useState("");
   const [address, setAddress] = useState("");
@@ -244,7 +248,8 @@ export default function DashboardProfilePage() {
           const biz = res.data.data[0];
           setName(biz.name);
           setDescription(biz.description);
-          setCategory(biz.category?.slug || "technology");
+          setCategory(biz.category?.slug || "building-material");
+          if (biz.category?._id) setCategoryId(biz.category._id);
           setCity(biz.city);
           setAddress(biz.address);
           if (biz.latitude) setLat(biz.latitude);
@@ -304,7 +309,7 @@ export default function DashboardProfilePage() {
         const mockProfile = getBusinessProfile(currentUser.username) as any;
         if (mockProfile) {
           setName(mockProfile.businessName || "");
-          setCategory(mockProfile.category || "technology");
+          setCategory(mockProfile.category || "building-material");
           setCity(mockProfile.city || "Yerevan");
           setAddress(mockProfile.address || "");
           setEmail(mockProfile.email || "");
@@ -347,11 +352,16 @@ export default function DashboardProfilePage() {
     if (e) e.preventDefault();
     setLoading(true);
     setSaved(false);
+    setSaveError(null);
+    let currentSaveError: string | null = null;
+
+    // Send the ObjectId if we have it, otherwise fall back to slug
+    const categoryValue = categoryId || category;
 
     const payload = {
       name,
       description,
-      category,
+      category: categoryValue,
       city,
       address,
       latitude: lat,
@@ -383,6 +393,7 @@ export default function DashboardProfilePage() {
     };
 
     // 1. Try backend update
+    let backendSaveOk = false;
     try {
       const apiURL = getApiUrl();
       const token = typeof window !== 'undefined' ? window.localStorage.getItem('token') : null;
@@ -393,12 +404,26 @@ export default function DashboardProfilePage() {
 
       if (listRes.data?.success && listRes.data.data?.length > 0) {
         const bizId = listRes.data.data[0]._id;
-        await axios.put(`${apiURL}/businesses/${bizId}`, payload, {
+        const updateRes = await axios.put(`${apiURL}/businesses/${bizId}`, payload, {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         });
+        if (updateRes.data?.success) {
+          backendSaveOk = true;
+          // Update categoryId if the backend returned a resolved category
+          if (updateRes.data.data?.category) {
+            const resolvedCat = updateRes.data.data.category;
+            if (typeof resolvedCat === 'string') {
+              setCategoryId(resolvedCat);
+            } else if (resolvedCat._id) {
+              setCategoryId(resolvedCat._id);
+            }
+          }
+        }
       }
-    } catch (err) {
-      console.warn("Backend update failed, proceeding with localStorage backup sync", err);
+    } catch (err: any) {
+      currentSaveError = err.response?.data?.message || err.message || 'Unknown error';
+      console.error("Backend update failed:", currentSaveError, err);
+      setSaveError(currentSaveError);
     }
 
     // 2. Synchronize to local storage mock database
@@ -446,8 +471,12 @@ export default function DashboardProfilePage() {
     } as any);
 
     setLoading(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    if (!currentSaveError) {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } else {
+      setTimeout(() => setSaveError(null), 8000);
+    }
   };
 
   // Service helpers
@@ -551,9 +580,14 @@ export default function DashboardProfilePage() {
         </div>
         
         <div className="flex items-center gap-3">
-          {saved && (
+          {saved && !saveError && (
             <span className="flex items-center gap-1.5 text-xs text-emerald-600 font-semibold bg-emerald-50 dark:bg-emerald-950/30 px-3 py-1.5 rounded-full border border-emerald-200 dark:border-emerald-900 animate-fade-in">
               <CheckCircle className="h-3.5 w-3.5" /> {t.builder.published}
+            </span>
+          )}
+          {saveError && (
+            <span className="flex items-center gap-1.5 text-xs text-red-600 font-semibold bg-red-50 dark:bg-red-950/30 px-3 py-1.5 rounded-full border border-red-200 dark:border-red-900 animate-fade-in max-w-xs truncate">
+              <X className="h-3.5 w-3.5 shrink-0" /> {saveError}
             </span>
           )}
           <button
@@ -800,7 +834,10 @@ export default function DashboardProfilePage() {
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1">{t.builder.credentials.category}</label>
-                    <select value={category} onChange={e=>setCategory(e.target.value)} className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]">
+                    <select value={category} onChange={e => {
+                      setCategory(e.target.value);
+                      setCategoryId(null); // Clear categoryId so categoryValue resolves to the new selected category slug
+                    }} className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]">
                       {CATEGORIES.map((c) => <option key={c.id} value={c.slug}>{c.name}</option>)}
                     </select>
                   </div>
@@ -946,7 +983,17 @@ export default function DashboardProfilePage() {
                   </div>
                 </div>
 
-                <LocationPicker lat={lat} lng={lng} onLocationChange={(newLat, newLng) => { setLat(newLat); setLng(newLng); }} />
+                <LocationPicker 
+                  lat={lat} 
+                  lng={lng} 
+                  onLocationChange={(newLat, newLng, newAddr) => { 
+                    setLat(newLat); 
+                    setLng(newLng); 
+                    if (newAddr) {
+                      setAddress(newAddr.split(',').slice(0, 2).join(',').trim());
+                    }
+                  }} 
+                />
 
                 <div className="border-t border-[hsl(var(--border))] pt-4">
                   <h3 className="text-base font-bold text-[hsl(var(--foreground))] mb-3">{t.builder.hours.schedule}</h3>
@@ -1083,7 +1130,11 @@ export default function DashboardProfilePage() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <h1 style={{ fontSize: "1.5rem", fontWeight: 800, marginBottom: "0.25rem", display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
                       {name || "Business Name"}
-                      <span className={profileStyles.verifiedBadge} style={{ fontSize: "0.65rem", padding: "0.15rem 0.45rem" }}>
+                      <span className={`${profileStyles.verifiedBadge} ${
+                        activePlan === "premium" || activePlan === "standard"
+                          ? profileStyles.verifiedGold
+                          : profileStyles.verifiedStarter
+                      }`} style={{ fontSize: "0.65rem", padding: "0.15rem 0.45rem" }}>
                         <BadgeCheck className="h-3 w-3" /> Verified Partner
                       </span>
                     </h1>
@@ -1283,7 +1334,11 @@ export default function DashboardProfilePage() {
                   <div className="flex items-center gap-3 flex-wrap">
                     <h1>
                       {name || "Business Name"}
-                      <span className={profileStyles.verifiedBadge}>
+                      <span className={`${profileStyles.verifiedBadge} ${
+                        activePlan === "premium" || activePlan === "standard"
+                          ? profileStyles.verifiedGold
+                          : profileStyles.verifiedStarter
+                      }`}>
                         <BadgeCheck className="h-3.5 w-3.5" /> Verified Partner
                       </span>
                     </h1>

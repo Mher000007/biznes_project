@@ -1,0 +1,672 @@
+@use "../styles/theme" as *;
+@use "../styles/responsive" as *;
+
+@import "../styles/leaflet";
+@import "tailwindcss";
+
+
+
+/* ========== TAILWIND V4 CUSTOM BREAKPOINTS ========== */
+@theme {
+  --breakpoint-xs: 320px;
+  --breakpoint-sm: 480px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1440px;
+  --breakpoint-3xl: 1920px;
+  --breakpoint-4xl: 2560px;
+}
+
+/* ========== DYNAMIC VIEWPORT HELPERS ========== */
+.h-dvh {
+  height: 100vh;
+  height: 100dvh;
+}
+
+.min-h-dvh {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.max-h-dvh {
+  max-height: 100vh;
+  max-height: 100dvh;
+}
+
+.w-dvw {
+  width: 100vw;
+  width: 100dvw;
+}
+
+.min-w-dvw {
+  min-width: 100vw;
+  min-width: 100dvw;
+}
+
+.max-w-dvw {
+  max-width: 100vw;
+  max-width: 100dvw;
+}
+
+/* ========== DESIGN TOKENS — MODERN CINEMATIC & SOFT-3D ========== */
+:root {
+  --background: 210 20% 98%; // hsl equivalent of #f8f9fa
+  --foreground: 220 15% 13%; // hsl equivalent of #1a1d20
+  --surface: 0 0% 100%; // hsl equivalent of #ffffff
+  --surface-strong: 210 20% 95%; // hsl equivalent of #eff2f5
+  --card: 0 0% 100%;
+  --popover: 0 0% 100%;
+  --muted: 210 20% 95%;
+  --muted-foreground: 210 10% 40%; // hsl equivalent of #5a626a
+  --border: 210 15% 88%; // hsl equivalent of #e2e5e9
+  --input: 210 15% 92%;
+  --ring: 220 15% 13%;
+  --accent: 147 100% 36%; // deep green for legibility on light background
+  --accent-2: 45 100% 45%; // rich premium gold
+  --accent-foreground: 0 0% 100%;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  --radius: 16px; // Yelp rounded 16px cards
+  --radius-soft: 16px;
+
+  // Custom variables mapping to SCSS globals
+  --bg-global: #f8f9fa;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f1f3f5;
+  --bg-card-raised: linear-gradient(145deg, #ffffff, #f1f3f5);
+  --bg-card-pressed: linear-gradient(145deg, #e9ecef, #f1f3f5);
+  --border-dark-soft: #e9ecef;
+  --border-light: rgba(0, 0, 0, 0.06);
+  --border-color-rgba: rgba(0, 0, 0, 0.06);
+  --accent-primary: #00c853;
+  --text-primary: #1a1d20;
+  --text-secondary: #5a626a;
+  --accent-booking: #00c853;
+  --accent-highlight: #ffb300;
+  --shadow-neomorphic-raised: 0 4px 20px rgba(0, 0, 0, 0.05);
+  --shadow-neomorphic-pressed: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+  --bg-input-search: #F4F4F4;
+  --header-bg: #ffffff;
+  --header-border: rgba(0, 0, 0, 0.06);
+  --header-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+}
+
+.dark {
+  --background: 240 6% 7%; // hsl equivalent of #101012
+  --foreground: 0 0% 100%;
+  --surface: 240 6% 9%; // hsl equivalent of #161618
+  --surface-strong: 240 6% 11%;
+  --card: 240 6% 9%;
+  --popover: 240 6% 9%;
+  --muted: 240 6% 14%;
+  --muted-foreground: 240 3% 67%;
+  --border: 240 6% 14%;
+  --input: 240 6% 8%;
+  --ring: 0 0% 100%;
+  --accent: 147 100% 45%; // booking green
+  --accent-2: 45 100% 50%; // premium gold
+  --accent-foreground: 240 6% 7%;
+  --shadow: 5px 5px 15px #0a0a0b, -5px -5px 15px #161619;
+
+  // Custom variables mapping to SCSS globals
+  --bg-global: #101012;
+  --bg-primary: #101012;
+  --bg-secondary: #161618;
+  --bg-card-raised: linear-gradient(145deg, #1A1A1D, #161618);
+  --bg-card-pressed: linear-gradient(145deg, #111113, #151517);
+  --border-dark-soft: #222225;
+  --border-light: rgba(255, 255, 255, 0.08);
+  --border-color-rgba: rgba(255, 255, 255, 0.08);
+  --accent-primary: #00E676;
+  --text-primary: #FFFFFF;
+  --text-secondary: #AAAAAA;
+  --accent-booking: #00E676;
+  --accent-highlight: #FFD700;
+  --shadow-neomorphic-raised: 5px 5px 15px #0a0a0b, -5px -5px 15px #161619;
+  --shadow-neomorphic-pressed: inset 2px 2px 5px #0a0a0b, inset -2px -2px 5px #161619;
+  --bg-input-search: #202024;
+  --header-bg: #101012;
+  --header-border: rgba(255, 255, 255, 0.05);
+  --header-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+/* ========== BASE OVERRIDES ========== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  border-color: var(--border-color-rgba) !important;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background-color: $bg-global !important;
+  color: $text-primary !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+main {
+  position: relative;
+  background-color: $bg-global;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(0, 230, 118, 0.2);
+  color: $text-primary;
+}
+
+/* ========== TYPOGRAPHY ========== */
+body,
+input,
+textarea,
+button,
+select {
+  font-feature-settings: 'ss01' 1;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin: 0;
+  color: $text-primary;
+}
+
+h1 {
+  font-size: clamp(2rem, 3.5vw, 3.5rem);
+  text-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+h2 {
+  font-size: clamp(1.5rem, 2.2vw, 2rem);
+  position: relative;
+
+  &::after {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 3px;
+    background: $accent-booking;
+    border-radius: 99px;
+    margin-top: 8px;
+  }
+}
+
+h3,
+h4 {
+  font-size: 1.1rem;
+}
+
+p,
+li,
+span {
+  line-height: 1.6;
+  color: $text-secondary;
+}
+
+/* ========== SCROLLBAR ========== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: $bg-global;
+}
+
+::-webkit-scrollbar-thumb {
+  background: $border-dark-soft;
+  border-radius: 999px;
+  border: 2px solid $bg-global;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: $text-secondary;
+}
+
+/* ========== HEADER & NAVBAR MOOD OVERHAUL ========== */
+header,
+nav {
+  background: var(--header-bg) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--header-border) !important;
+  box-shadow: var(--header-shadow) !important;
+}
+
+/* ========== HERO BACKGROUND PARTICLE WEB & PARALLAX ========== */
+.hero-section {
+  background-color: transparent !important;
+  position: relative;
+  overflow: hidden;
+  border-radius: 0 !important;
+  width: 100%;
+
+  // Disable low-poly particles since background is slides
+  &::before,
+  &::after {
+    display: none !important;
+  }
+
+  h1 {
+    color: #ffffff !important;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  }
+
+  p {
+    color: rgba(255, 255, 255, 0.9) !important;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  }
+
+  span {
+    color: rgba(255, 255, 255, 0.8) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+
+  strong {
+    color: #ffffff !important;
+  }
+
+  .mx-auto {
+    position: relative;
+    z-index: 20;
+  }
+}
+
+
+/* ========== SEARCH BAR - NEOMORPHIC PRESSED TROUGH ========== */
+.hero-section form {
+  .flex-1.w-full.flex {
+    background: rgba(0, 0, 0, 0.45) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    border-radius: 12px !important;
+    padding: 6px 4px !important;
+    transition: $transition-smooth;
+
+    input {
+      color: #ffffff !important;
+      caret-color: #00E676 !important;
+      font-size: 15px !important;
+
+      &::placeholder {
+        color: rgba(255, 255, 255, 0.6) !important;
+      }
+    }
+
+    svg {
+      color: #00E676 !important;
+      filter: drop-shadow(0 0 5px rgba(0, 230, 118, 0.4));
+    }
+
+    &:focus-within {
+      border-color: rgba(255, 255, 255, 0.45) !important;
+      background: rgba(0, 0, 0, 0.55) !important;
+    }
+  }
+}
+
+/* ========== HOMEPAGE STRUCTURAL LAYOUT SHIFT (YELP F-PATTERN) ========== */
+main>div.pt-14,
+main>div.pt-16 {
+  background-color: $bg-global;
+  min-height: 100vh;
+  padding-top: 64px !important;
+}
+
+.homepage-wrapper {
+  background-color: $bg-global;
+  min-height: 100vh;
+  padding-top: 0 !important;
+}
+
+header.transparent-header {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-bottom-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.homepage-grid {
+  display: grid;
+  grid-template-columns: 100%;
+  gap: 32px;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+/* ========== STAT CARD PREMIUM NEOMORPHISM ========== */
+.stat-card {
+  background: $bg-card-pressed !important;
+  box-shadow: $shadow-neomorphic-pressed !important;
+  border: 1px solid rgba(255, 255, 255, 0.02) !important;
+  border-radius: 12px !important;
+  padding: 16px 20px !important;
+  transition: $transition-smooth;
+
+  .text-4xl,
+  .text-3xl {
+    color: $text-primary !important;
+    font-weight: 800 !important;
+    text-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  }
+
+  .text-sm {
+    color: $text-secondary !important;
+    font-weight: 500 !important;
+    text-transform: uppercase;
+    font-size: 11px !important;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: rgba(0, 230, 118, 0.15) !important;
+  }
+}
+
+/* ========== 3D ISOMETRIC CATEGORY CARDS & FLIP ========== */
+.category-card {
+  background: $bg-card-raised !important;
+  box-shadow: $shadow-neomorphic-raised !important;
+  border: 1px solid $border-dark-soft !important;
+  border-radius: 16px !important;
+  padding: 20px !important;
+  transition: $transition-bounce !important;
+  transform-style: preserve-3d;
+  perspective: 1000px;
+
+  // Subtle 3D starting tilt
+  transform: rotateX(8deg) rotateY(-8deg) rotateZ(0deg);
+
+  .flex.h-10.w-10 {
+    background: $bg-card-pressed !important;
+    box-shadow: $shadow-neomorphic-pressed !important;
+    border: 1px solid rgba(255, 255, 255, 0.02) !important;
+    border-radius: 12px !important;
+    color: $accent-booking !important;
+    transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform-style: preserve-3d;
+
+    svg {
+      filter: drop-shadow(0 0 4px rgba(0, 230, 118, 0.3));
+    }
+  }
+
+  h3 {
+    color: $text-primary !important;
+    font-weight: 700 !important;
+    margin-top: 8px;
+  }
+
+  p {
+    color: $text-secondary !important;
+    font-size: 12px !important;
+  }
+
+  &:hover {
+    transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg) translateY(-8px) !important;
+    box-shadow: 10px 20px 30px rgba(0, 0, 0, 0.5), -5px -5px 15px rgba(255, 255, 255, 0.01) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+
+    .flex.h-10.w-10 {
+      transform: rotateY(180deg) translateZ(10px);
+      color: $accent-highlight !important;
+
+      svg {
+        filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.4));
+      }
+    }
+  }
+}
+
+/* ========== NEOMORPHIC LISTING CARDS WITH 3D TILT ========== */
+.feature-card,
+.card {
+  background: $bg-card-raised !important;
+  box-shadow: $shadow-neomorphic-raised !important;
+  border: 1px solid $border-dark-soft !important;
+  border-radius: 16px !important;
+  padding: 24px !important;
+  transition: $transition-smooth !important;
+  transform-style: preserve-3d;
+  perspective: 1000px;
+
+  // Layout and text rules
+  h3:not(.text-sm) {
+    font-size: 22px; // Business Name (22px, Font-Weight: 700)
+  }
+
+  h3 {
+    font-weight: 700 !important;
+    color: $text-primary !important;
+    letter-spacing: -0.01em;
+  }
+
+  p {
+    color: $text-secondary !important;
+  }
+
+  // Image border-radius and soft edges
+  img {
+    border-radius: 12px !important;
+    border: 1px solid rgba(255, 255, 255, 0.03) !important;
+  }
+
+  // Stars and rating styling
+  .stars svg,
+  svg.fill-amber-400,
+  svg.text-amber-400 {
+    fill: $accent-highlight !important;
+    stroke: $accent-highlight !important;
+    filter: drop-shadow(0 0 3px rgba(255, 215, 0, 0.3));
+  }
+
+  .reviewCount,
+  .text-amber-400 {
+    color: $accent-highlight !important;
+    font-weight: 700 !important;
+  }
+
+  // Outlined Neomorphic Tag Pills
+  .tag,
+  .tagsRow span {
+    background: $bg-card-pressed !important;
+    box-shadow: $shadow-neomorphic-pressed !important;
+    border: 1px solid rgba(255, 255, 255, 0.04) !important;
+    color: $text-secondary !important;
+    border-radius: 99px !important; // pill shape
+    padding: 4px 14px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.3px;
+    line-height: 1.2 !important;
+  }
+
+  // Subtle 3D Tilt animation on hover
+  &:hover {
+    transform: perspective(1000px) rotateX(4deg) rotateY(-4deg) translateY(-6px);
+    box-shadow: 10px 20px 30px rgba(0, 0, 0, 0.6), -5px -5px 20px rgba(255, 255, 255, 0.01) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+}
+
+/* ========== ACTIVE NEON BOOKING BUTTONS ========== */
+.btn-primary,
+.actionButton,
+button[type='submit'] {
+  background: $accent-booking !important;
+  color: #101012 !important;
+  font-weight: 700 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 0 10px rgba(0, 230, 118, 0.15) !important;
+  transition: $transition-bounce !important;
+  border: none !important;
+  cursor: pointer;
+
+  &:hover {
+    box-shadow: 0 0 20px rgba(0, 230, 118, 0.45) !important;
+    transform: scale(1.04) translateZ(10px) !important;
+  }
+
+  &:active {
+    transform: scale(0.96) !important;
+    box-shadow: 0 0 5px rgba(0, 230, 118, 0.1) !important;
+  }
+}
+
+/* Secondary Button Custom Overrides */
+.btn-secondary {
+  background: $bg-card-raised !important;
+  box-shadow: $shadow-neomorphic-raised !important;
+  border: 1px solid $border-dark-soft !important;
+  color: $text-primary !important;
+
+  &:hover {
+    background: $bg-card-pressed !important;
+    box-shadow: $shadow-neomorphic-pressed !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+  }
+}
+
+/* ========== HERO CAROUSEL LUXURY GLOW ========== */
+.hero-carousel-section,
+section:has(.relative.rounded-2xl.overflow-hidden.group) {
+  .rounded-2xl {
+    border-radius: 16px !important;
+    box-shadow: $shadow-neomorphic-raised !important;
+    border: 1px solid $border-dark-soft !important;
+  }
+
+  button {
+    background: rgba(16, 16, 18, 0.6) !important;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  }
+}
+
+/* ========== STORIES OVERHAUL & COLLAPSE ========== */
+.stories-section-container {
+  background: $bg-global !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+  transition: padding 0.35s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.35s ease, box-shadow 0.35s ease, border-radius 0.35s ease;
+
+  // Active story rings
+  .bg-gradient-to-tr {
+    background: linear-gradient(135deg, $accent-booking, $accent-highlight) !important;
+    box-shadow: 0 0 10px rgba(0, 230, 118, 0.2);
+  }
+
+  .stories-content-wrapper {
+    transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease, transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    max-height: 120px;
+    opacity: 1;
+    overflow: hidden;
+  }
+
+  // Smooth slide transition for toggle button
+  >button {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translate(-50%, 50%) !important;
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease, scale 0.2s ease !important;
+  }
+
+  @media (min-width: 768px) {
+    &.is-collapsed {
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+      border-bottom-color: transparent !important;
+      box-shadow: none !important;
+      border-radius: 0 !important;
+
+      .stories-content-wrapper {
+        max-height: 0 !important;
+        opacity: 0 !important;
+        transform: translateY(-10px);
+        pointer-events: none;
+      }
+
+      // Reposition button fixed to the bottom of the header (top: 64px) when collapsed
+      >button {
+        position: fixed !important;
+        top: 64px !important;
+        bottom: auto !important;
+        transform: translate(-50%, 0) !important;
+      }
+    }
+  }
+}
+
+/* ========== DISCOVER PAGE NEOMORPHIC PILLS ========== */
+[class*='categoryButton'],
+[class*='categoryBar'] {
+  background-color: $bg-global !important;
+  border-bottom-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+[class*='categoryButton'] {
+  background: $bg-card-raised !important;
+  box-shadow: $shadow-neomorphic-raised !important;
+  border: 1px solid $border-dark-soft !important;
+  color: $text-secondary !important;
+  border-radius: 99px !important;
+
+  &:hover {
+    color: $text-primary !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+
+  &[class*='active'],
+  &.active {
+    background: $accent-booking !important;
+    border-color: $accent-booking !important;
+    color: #101012 !important;
+    box-shadow: 0 0 10px rgba(0, 230, 118, 0.2) !important;
+  }
+}
+
+/* ========== DISCOVER PAGE VIEWPORT LOCK (DESKTOP) ========== */
+@media screen and (min-width: 768px) {
+  body:has([class*='discoverPage']) {
+    overflow: hidden !important;
+    height: 100vh !important;
+
+    footer {
+      display: none !important;
+    }
+  }
+}
+
+@import "../components/map/MapWorkspace.scss";

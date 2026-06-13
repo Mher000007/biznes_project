@@ -13,6 +13,11 @@ export const createInquiry = asyncHandler(
       return;
     }
 
+    if (!businessId.match(/^[0-9a-fA-F]{24}$/)) {
+      res.status(400).json({ success: false, message: 'Invalid business ID format' });
+      return;
+    }
+
     const business = await Business.findById(businessId);
     if (!business) {
       res.status(404).json({ success: false, message: 'Business not found' });

@@ -82,9 +82,17 @@ export const getBusinesses = asyncHandler(async (req: Request, res: Response): P
 
   const total = await Business.countDocuments(filter);
 
+  const populatedBusinesses = await Promise.all(businesses.map(async (biz) => {
+    const sub = await Subscription.findOne({ business: biz._id, status: 'active' });
+    const plan = sub ? sub.plan : 'starter';
+    const bizObj = biz.toObject();
+    bizObj.plan = plan;
+    return bizObj;
+  }));
+
   res.status(200).json({
     success: true,
-    data: businesses,
+    data: populatedBusinesses,
     pagination: {
       current: pageNum,
       total: Math.ceil(total / limitNum),
@@ -105,9 +113,15 @@ export const getBusinessById = asyncHandler(async (req: Request, res: Response):
     return;
   }
 
+  const sub = await Subscription.findOne({ business: business._id, status: 'active' });
+  const plan = sub ? sub.plan : 'starter';
+
+  const bizObj = business.toObject();
+  bizObj.plan = plan;
+
   res.status(200).json({
     success: true,
-    data: business,
+    data: bizObj,
   });
 });
 
@@ -127,9 +141,15 @@ export const getBusinessBySlug = asyncHandler(
       return;
     }
 
+    const sub = await Subscription.findOne({ business: business._id, status: 'active' });
+    const plan = sub ? sub.plan : 'starter';
+
+    const bizObj = business.toObject();
+    bizObj.plan = plan;
+
     res.status(200).json({
       success: true,
-      data: business,
+      data: bizObj,
     });
   }
 );
@@ -268,21 +288,43 @@ export const updateBusiness = asyncHandler(
           const staticSlugMap: Record<string, string> = {
             'tech': 'technology',
             'agri': 'agriculture',
+            'building-material': 'construction',
+            'building_material': 'construction',
+            'buildingmaterial': 'construction',
+            'health': 'healthcare',
+            'auto': 'automotive',
+            'law': 'legal',
+            'hotel': 'horeca',
+            'restaurant': 'horeca',
+            'food': 'horeca',
+            'delivery': 'logistics',
+            'transport': 'logistics',
+            'spa': 'beauty',
+            'school': 'education',
+            'university': 'education',
+            'bank': 'finance',
+            'insurance': 'finance',
           };
           if (staticSlugMap[cleanSlug]) {
             cleanSlug = staticSlugMap[cleanSlug];
           }
           foundCategory = await Category.findOne({ slug: cleanSlug });
+
+          // Last resort: try a case-insensitive partial name match
+          if (!foundCategory) {
+            foundCategory = await Category.findOne({
+              name: { $regex: new RegExp(cleanSlug.replace(/-/g, '.*'), 'i') }
+            });
+          }
         }
 
         if (foundCategory) {
           updateData.category = foundCategory._id;
         } else {
-          res.status(400).json({
-            success: false,
-            message: `Category '${updateData.category}' not found in the database. Please ensure categories are seeded.`,
-          });
-          return;
+          // Don't block the update — just remove category from the update payload
+          // so we preserve the existing category instead of failing the entire save
+          console.warn(`Category '${updateData.category}' not found, keeping existing category`);
+          delete updateData.category;
         }
       }
     }

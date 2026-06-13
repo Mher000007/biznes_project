@@ -1,6 +1,7 @@
 export const en = {
   // Navbar
   nav: {
+    home: "Home",
     discover: "Discover",
     categories: "Categories",
     about: "About",

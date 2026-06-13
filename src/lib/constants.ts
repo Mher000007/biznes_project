@@ -2,12 +2,12 @@ import type { Category } from "@/types/business";
 
 export const CATEGORIES: Category[] = [
   {
-    id: "cat-tech",
-    name: "Technology",
-    slug: "technology",
-    description: "Software, IT services, startups, and digital solutions",
-    icon: "Monitor",
-    count: 142,
+    id: "cat-building-material",
+    name: "Building Material",
+    slug: "building-material",
+    description: "Construction supplies, materials, tools, and hardware",
+    icon: "Hammer",
+    count: 124,
   },
   {
     id: "cat-agri",
@@ -24,14 +24,6 @@ export const CATEGORIES: Category[] = [
     description: "Hotels, restaurants, cafés, and catering services",
     icon: "UtensilsCrossed",
     count: 215,
-  },
-  {
-    id: "cat-retail",
-    name: "Retail",
-    slug: "retail",
-    description: "Shops, e-commerce, and consumer goods businesses",
-    icon: "ShoppingBag",
-    count: 176,
   },
   {
     id: "cat-construction",

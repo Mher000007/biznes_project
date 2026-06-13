@@ -14,8 +14,8 @@ const router = Router({ mergeParams: true }); // inherits :businessId from paren
 router.get('/', getReviews);
 router.post('/:reviewId/helpful', markHelpful);
 
-// Protected
-router.post('/', authenticate, createReview);
+// Public or protected (manually verified for optional auth in controller)
+router.post('/', createReview);
 router.delete('/:reviewId', authenticate, deleteReview);
 router.post('/:reviewId/report', authenticate, reportReview);
 

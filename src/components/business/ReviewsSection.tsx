@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
-import { Star, ThumbsUp, MessageSquare, CheckCircle, AlertCircle, Loader2, User } from "lucide-react";
+import { Star, ThumbsUp, MessageSquare, CheckCircle, AlertCircle, Loader2, User, Camera, X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { getApiUrl } from "@/lib/utils";
 import styles from "./ReviewsSection.module.scss";
@@ -15,6 +15,7 @@ interface Review {
   isVerified: boolean;
   helpfulCount: number;
   createdAt: string;
+  image?: string;
 }
 
 interface ReviewsSectionProps {
@@ -75,6 +76,157 @@ function RatingBar({ count, total }: { count: number; total: number }) {
   );
 }
 
+// ─── Seeded reviews helper ───────────────────────────────────────────────────
+function getSeededReviews(slug: string): Review[] {
+  const now = new Date();
+  const date1 = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString(); // 2 days ago
+  const date2 = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString(); // 5 days ago
+  const date3 = new Date(now.getTime() - 12 * 24 * 60 * 60 * 1000).toISOString(); // 12 days ago
+
+  if (slug === "lavash-restaurant-group") {
+    return [
+      {
+        _id: "seed-lavash-1",
+        author: { _id: "u1", name: "Anahit Sargsyan" },
+        authorName: "Anahit Sargsyan",
+        rating: 5,
+        comment: "Amazing traditional food! The lavash is always hot and fresh, and the khorovats was perfectly cooked. Excellent service too.",
+        isVerified: true,
+        helpfulCount: 14,
+        createdAt: date1
+      },
+      {
+        _id: "seed-lavash-2",
+        author: { _id: "u2", name: "Aram Grigoryan" },
+        authorName: "Aram Grigoryan",
+        rating: 5,
+        comment: "Best restaurant in Yerevan for traditional Armenian cuisine. The basturma and khachapuri are outstanding. Highly recommended!",
+        isVerified: true,
+        helpfulCount: 8,
+        createdAt: date2
+      },
+      {
+        _id: "seed-lavash-3",
+        author: { _id: "u3", name: "Sarah Connor" },
+        authorName: "Sarah Connor",
+        rating: 4,
+        comment: "Great atmosphere and delicious food. The seating area is beautiful. Service can be a bit slow during weekend peak hours, but overall a great experience.",
+        isVerified: false,
+        helpfulCount: 3,
+        createdAt: date3
+      }
+    ];
+  } else if (slug === "armstone-materials") {
+    return [
+      {
+        _id: "seed-stone-1",
+        author: { _id: "u4", name: "Gevorg Harutyunyan" },
+        authorName: "Gevorg Harutyunyan",
+        rating: 5,
+        comment: "Outstanding tufa and basalt quality. We ordered in bulk for our home facade and they delivered on time with perfect specifications.",
+        isVerified: true,
+        helpfulCount: 9,
+        createdAt: date1
+      },
+      {
+        _id: "seed-stone-2",
+        author: { _id: "u5", name: "Tigran Abrahamyan" },
+        authorName: "Tigran Abrahamyan",
+        rating: 4,
+        comment: "Good service and competitive pricing. The stones were cut precisely. Minor delay in transport, but customer support was very helpful.",
+        isVerified: true,
+        helpfulCount: 2,
+        createdAt: date2
+      }
+    ];
+  } else if (slug === "ararat-organic-farms") {
+    return [
+      {
+        _id: "seed-farms-1",
+        author: { _id: "u6", name: "Mariam Davtyan" },
+        authorName: "Mariam Davtyan",
+        rating: 5,
+        comment: "The sweetest peaches and fresh herbs! We buy wholesale for our market chain and our customers love the organic quality from Ararat.",
+        isVerified: true,
+        helpfulCount: 7,
+        createdAt: date1
+      },
+      {
+        _id: "seed-farms-2",
+        author: { _id: "u7", name: "John Doe" },
+        authorName: "John Doe",
+        rating: 4,
+        comment: "Excellent organic vegetables. They supply our cafe and the freshness is always top-notch. Highly recommended organic supplier.",
+        isVerified: false,
+        helpfulCount: 1,
+        createdAt: date2
+      }
+    ];
+  } else if (slug === "elite-build-materials") {
+    return [
+      {
+        _id: "seed-elite-1",
+        author: { _id: "u8", name: "Karen Karapetyan" },
+        authorName: "Karen Karapetyan",
+        rating: 5,
+        comment: "A huge selection of construction tools and dry mixes. They offer great wholesale discounts for contractors. Very reliable partner.",
+        isVerified: true,
+        helpfulCount: 11,
+        createdAt: date1
+      },
+      {
+        _id: "seed-elite-2",
+        author: { _id: "u9", name: "Narek Simonyan" },
+        authorName: "Narek Simonyan",
+        rating: 4,
+        comment: "Good price range for power tool rentals. The mixers were in great condition. Smooth return process.",
+        isVerified: true,
+        helpfulCount: 4,
+        createdAt: date2
+      }
+    ];
+  }
+  return [];
+}
+
+// ─── Mathematical rating distributor helper ──────────────────────────────────
+function calculateMockDistribution(total: number, avg: number): Record<number, number> {
+  const dist: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  if (total <= 0) return dist;
+
+  if (avg >= 4.7) {
+    dist[5] = Math.round(total * 0.85);
+    dist[4] = Math.round(total * 0.12);
+    dist[3] = Math.round(total * 0.03);
+  } else if (avg >= 4.5) {
+    dist[5] = Math.round(total * 0.70);
+    dist[4] = Math.round(total * 0.20);
+    dist[3] = Math.round(total * 0.08);
+    dist[2] = Math.round(total * 0.02);
+  } else if (avg >= 4.0) {
+    dist[5] = Math.round(total * 0.50);
+    dist[4] = Math.round(total * 0.35);
+    dist[3] = Math.round(total * 0.10);
+    dist[2] = Math.round(total * 0.04);
+    dist[1] = Math.round(total * 0.01);
+  } else {
+    dist[5] = Math.round(total * 0.30);
+    dist[4] = Math.round(total * 0.30);
+    dist[3] = Math.round(total * 0.20);
+    dist[2] = Math.round(total * 0.15);
+    dist[1] = Math.round(total * 0.05);
+  }
+
+  // Adjust sum due to rounding
+  const sum = dist[1] + dist[2] + dist[3] + dist[4] + dist[5];
+  const diff = total - sum;
+  if (diff !== 0) {
+    dist[5] = Math.max(0, dist[5] + diff);
+  }
+
+  return dist;
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function ReviewsSection({
   businessId,
@@ -103,6 +255,35 @@ export default function ReviewsSection({
   const [submitError, setSubmitError] = useState("");
 
   const [helpfulSet, setHelpfulSet] = useState<Set<string>>(new Set());
+  const [image, setImage] = useState<string | null>(null);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [guestName, setGuestName] = useState("");
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setSubmitError("Image size must be less than 5MB");
+      return;
+    }
+
+    setImageUploading(true);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === "string") {
+        setImage(reader.result);
+      } else {
+        setSubmitError("Failed to convert image");
+      }
+      setImageUploading(false);
+    };
+    reader.onerror = () => {
+      setSubmitError("Failed to read image file");
+      setImageUploading(false);
+    };
+    reader.readAsDataURL(file);
+  };
 
   // rating summary
   const [avgRating, setAvgRating] = useState(initialRating);
@@ -125,12 +306,9 @@ export default function ReviewsSection({
         setTotalPages(res.data.pagination?.total ?? 1);
         setPage(p);
 
-        // Rebuild distribution from all reviews (fetch all for accurate bars)
-        const dist: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-        (res.data.data as Review[]).forEach((r) => {
-          if (r.rating >= 1 && r.rating <= 5) dist[r.rating]++;
-        });
-        setDistribution(dist);
+        if (res.data.distribution) {
+          setDistribution(res.data.distribution);
+        }
       }
     } catch (err) {
       console.warn("Could not load reviews", err);
@@ -143,15 +321,47 @@ export default function ReviewsSection({
   const loadLocalReviews = useCallback(() => {
     try {
       const raw = localStorage.getItem(`armbiz-reviews-${businessSlug}`);
+      let parsed: Review[] = [];
       if (raw) {
-        const parsed: Review[] = JSON.parse(raw);
-        setReviews(parsed);
-        const dist: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-        parsed.forEach((r) => { if (r.rating >= 1 && r.rating <= 5) dist[r.rating]++; });
-        setDistribution(dist);
+        parsed = JSON.parse(raw);
+      } else {
+        parsed = getSeededReviews(businessSlug);
+        if (parsed.length > 0) {
+          localStorage.setItem(`armbiz-reviews-${businessSlug}`, JSON.stringify(parsed));
+        }
       }
+
+      setReviews(parsed);
+
+      // Distinguish user-added reviews (IDs starting with "local-")
+      const userAddedReviews = parsed.filter(r => r._id.startsWith("local-"));
+      const userReviewsCount = userAddedReviews.length;
+
+      // Calculate total count: initial count + user reviews
+      const totalCount = initialReviewCount + userReviewsCount;
+
+      // Calculate weighted average
+      let calculatedAvg = initialRating;
+      if (totalCount > 0) {
+        const userSum = userAddedReviews.reduce((sum, r) => sum + r.rating, 0);
+        calculatedAvg = ((initialRating * initialReviewCount) + userSum) / totalCount;
+        calculatedAvg = Math.round(calculatedAvg * 10) / 10;
+      }
+
+      setAvgRating(calculatedAvg);
+      setReviewCount(totalCount);
+      onRatingUpdate?.(calculatedAvg, totalCount);
+
+      // Compute distribution: base distribution from initial counts + user reviews
+      const baseDist = calculateMockDistribution(initialReviewCount, initialRating);
+      userAddedReviews.forEach(r => {
+        if (r.rating >= 1 && r.rating <= 5) {
+          baseDist[r.rating] = (baseDist[r.rating] || 0) + 1;
+        }
+      });
+      setDistribution(baseDist);
     } catch { /* ignore */ }
-  }, [businessSlug]);
+  }, [businessSlug, initialRating, initialReviewCount, onRatingUpdate]);
 
   useEffect(() => {
     if (isBackend) {
@@ -177,13 +387,27 @@ export default function ReviewsSection({
     if (isBackend) {
       try {
         const token = localStorage.getItem("token");
-        if (!token) { setSubmitError("You must be logged in to leave a review."); setSubmitting(false); return; }
+        if (!token && (!guestName || guestName.trim().length < 2)) {
+          setSubmitError("Please enter your name (minimum 2 characters).");
+          setSubmitting(false);
+          return;
+        }
 
         const apiURL = getApiUrl();
+        const headers: any = {};
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+
         const res = await axios.post(
           `${apiURL}/businesses/${businessId}/reviews`,
-          { rating: selectedRating, comment: comment.trim() },
-          { headers: { Authorization: `Bearer ${token}` } }
+          { 
+            rating: selectedRating, 
+            comment: comment.trim(), 
+            image: image || undefined,
+            authorName: token ? undefined : guestName.trim()
+          },
+          { headers }
         );
 
         if (res.data?.success) {
@@ -197,10 +421,18 @@ export default function ReviewsSection({
           setAvgRating(rounded);
           onRatingUpdate?.(rounded, reviewCount + 1);
 
+          // Update distribution locally
+          setDistribution((prev) => ({
+            ...prev,
+            [selectedRating]: (prev[selectedRating] || 0) + 1,
+          }));
+
           setSubmitSuccess(true);
           setSelectedRating(0);
           setComment("");
           setCommentLength(0);
+          setImage(null);
+          setGuestName("");
           setTimeout(() => setSubmitSuccess(false), 3500);
         }
       } catch (err: any) {
@@ -212,28 +444,43 @@ export default function ReviewsSection({
       const newReview: Review = {
         _id: `local-${Date.now()}`,
         author: null,
-        authorName: currentUser?.name || "Anonymous",
+        authorName: currentUser?.name || guestName.trim() || "Anonymous",
         rating: selectedRating,
         comment: comment.trim(),
         isVerified: false,
         helpfulCount: 0,
         createdAt: new Date().toISOString(),
+        image: image || undefined,
       };
       const updated = [newReview, ...reviews];
       setReviews(updated);
       try { localStorage.setItem(`armbiz-reviews-${businessSlug}`, JSON.stringify(updated)); } catch { /* ignore */ }
 
-      const newCount = reviewCount + 1;
-      const newAvg = ((avgRating * reviewCount) + selectedRating) / newCount;
-      const rounded = Math.round(newAvg * 10) / 10;
+      // Recalculate based on initial data + all user-added reviews
+      const userAdded = updated.filter(r => r._id.startsWith("local-"));
+      const userCount = userAdded.length;
+      const totalCount = initialReviewCount + userCount;
+      const userSum = userAdded.reduce((sum, r) => sum + r.rating, 0);
+      const rounded = Math.round((((initialRating * initialReviewCount) + userSum) / totalCount) * 10) / 10;
+
       setAvgRating(rounded);
-      setReviewCount(newCount);
-      onRatingUpdate?.(rounded, newCount);
+      setReviewCount(totalCount);
+      onRatingUpdate?.(rounded, totalCount);
+
+      // Update distribution
+      const baseDist = calculateMockDistribution(initialReviewCount, initialRating);
+      userAdded.forEach(r => {
+        if (r.rating >= 1 && r.rating <= 5) {
+          baseDist[r.rating] = (baseDist[r.rating] || 0) + 1;
+        }
+      });
+      setDistribution(baseDist);
 
       setSubmitSuccess(true);
       setSelectedRating(0);
       setComment("");
       setCommentLength(0);
+      setImage(null);
       setTimeout(() => setSubmitSuccess(false), 3500);
     }
 
@@ -297,6 +544,23 @@ export default function ReviewsSection({
           </div>
         ) : (
           <form onSubmit={handleSubmit} className={styles.form} noValidate>
+            {!currentUser && (
+              <div className={styles.guestNameField}>
+                <label className={styles.label} htmlFor="guest-name">
+                  Your Name *
+                </label>
+                <input
+                  type="text"
+                  id="guest-name"
+                  value={guestName}
+                  placeholder="Enter your name"
+                  onChange={(e) => setGuestName(e.target.value)}
+                  className={styles.inputField}
+                  required
+                />
+              </div>
+            )}
+
             {/* Star selector */}
             <div className={styles.starSelector}>
               <label className={styles.label}>Your Rating *</label>
@@ -355,6 +619,38 @@ export default function ReviewsSection({
               </div>
             </div>
 
+            {/* Image upload */}
+            <div className={styles.imageUploadField}>
+              <label className={styles.label}>Add Photo (Optional)</label>
+              <div className={styles.fileInputWrapper}>
+                {!image ? (
+                  <label className={styles.uploadTriggerBtn}>
+                    <Camera size={16} />
+                    {imageUploading ? "Processing..." : "Upload Photo"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className={styles.fileInputHidden}
+                      disabled={imageUploading}
+                    />
+                  </label>
+                ) : (
+                  <div className={styles.imagePreviewContainer}>
+                    <img src={image} alt="Preview" className={styles.previewImage} />
+                    <button
+                      type="button"
+                      onClick={() => setImage(null)}
+                      className={styles.removePreviewBtn}
+                      title="Remove image"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Error */}
             {submitError && (
               <div className={styles.errorBanner}>
@@ -366,7 +662,12 @@ export default function ReviewsSection({
             {/* Submit */}
             <button
               type="submit"
-              disabled={submitting || !selectedRating || comment.trim().length < 10}
+              disabled={
+                submitting ||
+                !selectedRating ||
+                comment.trim().length < 10 ||
+                (!currentUser && !guestName.trim())
+              }
               className={styles.submitBtn}
               id="submit-review-btn"
             >
@@ -382,17 +683,6 @@ export default function ReviewsSection({
                 </>
               )}
             </button>
-
-            {!currentUser && (
-              <p className={styles.loginHint}>
-                <AlertCircle size={14} />
-                You must be{" "}
-                <a href="/signin" className={styles.loginLink}>
-                  signed in
-                </a>{" "}
-                to post a review.
-              </p>
-            )}
           </form>
         )}
       </div>
@@ -436,6 +726,12 @@ export default function ReviewsSection({
             </div>
 
             <p className={styles.reviewComment}>{review.comment}</p>
+
+            {review.image && (
+              <div className={styles.reviewImageContainer}>
+                <img src={review.image} alt="Review upload" className={styles.reviewImage} />
+              </div>
+            )}
 
             <div className={styles.reviewFooter}>
               <button

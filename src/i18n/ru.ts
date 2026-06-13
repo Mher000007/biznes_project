@@ -1,6 +1,6 @@
 import type { Translations } from "./en";
 export const ru: Translations = {
-  nav: { discover: "Поиск", categories: "Категории", about: "О нас", login: "Войти", getStarted: "Начать" },
+  nav: { home: "Главная", discover: "Поиск", categories: "Категории", about: "О нас", login: "Войти", getStarted: "Начать" },
   hero: { title: "Найдите нужный бизнес в Армении", subtitle: "Более 900 проверенных компаний во всех отраслях. Находите услуги, читайте отзывы, связывайтесь напрямую.", searchPlaceholder: "Поиск компаний...", search: "Найти", businesses: "компаний", cities: "городов", industries: "отраслей" },
   categories: { title: "Поиск по категориям", subtitle: "Все основные отрасли бизнеса Армении", listed: "в списке", allCategories: "Все категории", allSubtitle: "Просмотрите все отрасли" },
   featured: { title: "Избранные компании", subtitle: "Лучшие компании на ArmBiz", viewAll: "Все" },

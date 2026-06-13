@@ -13,6 +13,11 @@ export const createBooking = asyncHandler(async (req: Request, res: Response): P
     return;
   }
 
+  if (!businessId.match(/^[0-9a-fA-F]{24}$/)) {
+    res.status(400).json({ success: false, message: 'Invalid business ID format' });
+    return;
+  }
+
   const businessExists = await Business.findById(businessId);
   if (!businessExists) {
     res.status(404).json({ success: false, message: 'Business not found' });

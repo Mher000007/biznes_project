@@ -1,0 +1,15 @@
+@use "../styles/theme" as *;
+
+.homepage {
+  background-color: $bg-global;
+  color: $text-primary;
+  min-height: 100vh;
+  padding-top: 10px;
+  overflow-x: hidden;
+  position: relative;
+  
+  // Custom global styling tweaks just for the homepage views
+  & h2 {
+    color: $text-primary !important;
+  }
+}

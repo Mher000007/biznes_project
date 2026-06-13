@@ -1,19 +1,32 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { Menu, X, Search, MapPin } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { useI18n } from "@/i18n";
 import { useAuth } from "@/context/AuthContext";
+import styles from "./Navbar.module.scss";
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { currentUser, logout } = useAuth();
-  const [isOpen, setIsOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const { t } = useI18n();
+
+  const [isOpen, setIsOpen] = useState(false);
+  const [navQuery, setNavQuery] = useState("");
+  const [navLocation, setNavLocation] = useState("");
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   if (pathname.startsWith("/admin-secure")) {
     return null;
@@ -24,88 +37,231 @@ export default function Navbar() {
     setIsOpen(false);
   };
 
-  useEffect(() => {
-    const handler = () => setScrolled(window.scrollY > 10);
-    window.addEventListener("scroll", handler);
-    return () => window.removeEventListener("scroll", handler);
-  }, []);
+  const handleNavSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const params = new URLSearchParams();
+    if (navQuery.trim()) params.append("q", navQuery.trim());
+    if (navLocation) params.append("location", navLocation);
+    router.push(`/discover?${params.toString()}`);
+  };
+
+  const isTransparent = pathname === "/" && !scrolled;
 
   return (
-    <header className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
-      scrolled ? "glass-strong border-b border-[hsl(var(--border))]" : ""
-    }`}>
-      <nav className="mx-auto max-w-6xl px-5 sm:px-8">
-        <div className="flex h-14 items-center justify-between">
-          <Link href="/" className="text-base font-bold tracking-tight">
-            arm<span className="gradient-text">biz</span>
-          </Link>
+    <header className={`${styles.header} ${isTransparent ? styles.transparentHeader : ""}`}>
+      {/* Logo */}
+      <Link href="/" className={styles.logo}>
+        <img src="/logo.png" alt="Findy Logo" className={styles.logoImage} />
+      </Link>
 
-          <div className="hidden md:flex items-center gap-6">
-            <Link href="/discover" className="text-[13px] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors">{t.nav.discover}</Link>
-            <Link href="/categories" className="text-[13px] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors">{t.nav.categories}</Link>
-            <Link href="/about" className="text-[13px] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors">{t.nav.about}</Link>
+      {/* Search Form (always visible) */}
+      <form onSubmit={handleNavSearch} className={styles.searchForm}>
+        <div className={styles.searchGroup}>
+          <div className={styles.inputWrapper}>
+            <Search className={styles.inputIcon} />
+            <input
+              type="text"
+              placeholder="Service or business..."
+              className={styles.inputField}
+              value={navQuery}
+              onChange={(e) => setNavQuery(e.target.value)}
+            />
           </div>
-
-          <div className="flex items-center gap-2.5">
-            <div className="hidden md:block">
-              <LanguageSwitcher />
-            </div>
-            <ThemeToggle />
-            {currentUser ? (
-              <>
-                <Link href="/dashboard" className="hidden sm:inline-flex text-[13px] font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors cursor-pointer">
-                  Hi, {currentUser.name || currentUser.username}
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="hidden sm:inline-flex h-8 items-center rounded-lg px-3.5 text-[13px] font-medium border border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors"
-                >
-                  Sign out
-                </button>
-              </>
-            ) : (
-              <Link href="/signin" className="hidden sm:inline-flex text-[13px] font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors">
-                {t.nav.login}
-              </Link>
-            )}
-            <Link href="/register" className="hidden sm:inline-flex h-8 items-center rounded-lg px-3.5 text-[13px] font-medium btn-primary">{t.nav.getStarted}</Link>
-            <button onClick={() => setIsOpen(!isOpen)} className="md:hidden p-1.5">
-              {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </button>
+          <div className={styles.divider}></div>
+          <div className={styles.inputWrapper}>
+            <MapPin className={styles.inputIcon} />
+            <select
+              className={styles.selectField}
+              value={navLocation}
+              onChange={(e) => setNavLocation(e.target.value)}
+            >
+              <option value="">All Locations</option>
+              <option value="Yerevan">Yerevan</option>
+              <option value="Gyumri">Gyumri</option>
+              <option value="Vanadzor">Vanadzor</option>
+              <option value="Vagharshapat">Vagharshapat</option>
+              <option value="Abovyan">Abovyan</option>
+              <option value="Kapan">Kapan</option>
+              <option value="Hrazdan">Hrazdan</option>
+              <option value="Armavir">Armavir</option>
+              <option value="Artashat">Artashat</option>
+              <option value="Ijevan">Ijevan</option>
+              <option value="Sevan">Sevan</option>
+              <option value="Goris">Goris</option>
+              <option value="Dilijan">Dilijan</option>
+              <option value="Jermuk">Jermuk</option>
+              <option value="Ashtarak">Ashtarak</option>
+            </select>
           </div>
         </div>
+        <button type="submit" className={styles.searchButton}>
+          Search
+        </button>
+      </form>
 
-        {isOpen && (
-          <div className="md:hidden pb-4 animate-fade-in">
-            <Link href="/discover" onClick={() => setIsOpen(false)} className="block py-2 text-sm text-[hsl(var(--muted-foreground))]">{t.nav.discover}</Link>
-            <Link href="/categories" onClick={() => setIsOpen(false)} className="block py-2 text-sm text-[hsl(var(--muted-foreground))]">{t.nav.categories}</Link>
-            <Link href="/about" onClick={() => setIsOpen(false)} className="block py-2 text-sm text-[hsl(var(--muted-foreground))]">{t.nav.about}</Link>
-            
-            <div className="py-2.5 my-2.5 border-y border-[hsl(var(--border))] flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
-                Language
-              </span>
+      <div className={styles.links}>
+        <Link
+          href="/"
+          className={`${styles.navLink} ${(pathname as string) === "/" ? styles.active : ""
+            }`}
+        >
+          {t.nav.home}
+        </Link>
+        <Link
+          href="/discover"
+          className={`${styles.navLink} ${(pathname as string) === "/discover" ? styles.active : ""
+            }`}
+        >
+          {t.nav.discover}
+        </Link>
+        {/* <Link
+          href="/categories"
+          className={`${styles.navLink} ${
+            (pathname as string) === "/categories" ? styles.active : ""
+          }`}
+        >
+          {t.nav.categories}
+        </Link> */}
+        <Link
+          href="/about"
+          className={`${styles.navLink} ${(pathname as string) === "/about" ? styles.active : ""
+            }`}
+        >
+          {t.nav.about}
+        </Link>
+      </div>
+
+      {/* Actions */}
+      <div className={styles.navActions}>
+
+        <div className="hidden lg:flex items-center gap-2">
+          <LanguageSwitcher />
+          <ThemeToggle />
+        </div>
+
+        {currentUser ? (
+          <>
+            <Link
+              href="/dashboard"
+              className="hidden lg:inline-flex text-[13px] font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors cursor-pointer"
+            >
+              Hi, {currentUser.name || currentUser.username}
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="hidden lg:inline-flex h-9 items-center rounded-lg px-4 text-[13px] font-medium border border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors cursor-pointer"
+            >
+              Sign out
+            </button>
+          </>
+        ) : (
+          <Link
+            href="/signin"
+            className="hidden lg:inline-flex text-[13px] font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors"
+          >
+            {t.nav.login}
+          </Link>
+        )}
+
+        <Link href="/register" className={styles.registerButton}>
+          {t.nav.getStarted}
+        </Link>
+
+        {/* Mobile controls */}
+        <div className={styles.mobileControls}>
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className={styles.iconButton}
+            aria-label="Toggle Menu"
+          >
+            {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile menu overlay */}
+      {isOpen && (
+        <div className={styles.mobileMenu}>
+          <Link
+            href="/"
+            onClick={() => setIsOpen(false)}
+            className={`${styles.navLink} ${pathname === "/" ? styles.active : ""
+              }`}
+          >
+            {t.nav.home}
+          </Link>
+          <Link
+            href="/discover"
+            onClick={() => setIsOpen(false)}
+            className={styles.navLink}
+          >
+            {t.nav.discover}
+          </Link>
+          {/* <Link
+              href="/categories"
+              onClick={() => setIsOpen(false)}
+              className={styles.navLink}
+            >
+              {t.nav.categories}
+            </Link> */}
+          <Link
+            href="/about"
+            onClick={() => setIsOpen(false)}
+            className={styles.navLink}
+          >
+            {t.nav.about}
+          </Link>
+
+          <div className="py-2.5 my-2 border-y border-[hsl(var(--border))] flex items-center justify-between">
+            <span className="text-[11px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
+              Settings
+            </span>
+            <div className="flex gap-2">
               <LanguageSwitcher />
-            </div>
-
-            {currentUser ? (
-              <>
-                <Link href="/dashboard" onClick={() => setIsOpen(false)} className="block py-2 text-sm text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]">
-                  Hi, {currentUser.name || currentUser.username}
-                </Link>
-                <button onClick={() => { handleLogout(); }} className="block w-full text-left py-2 text-sm text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]">
-                  Sign out
-                </button>
-              </>
-            ) : (
-              <Link href="/signin" onClick={() => setIsOpen(false)} className="block py-2 text-sm text-[hsl(var(--muted-foreground))]">{t.nav.login}</Link>
-            )}
-            <div className="mt-3">
-              <Link href="/register" onClick={() => setIsOpen(false)} className="h-8 flex items-center rounded-lg px-3.5 text-sm font-medium btn-primary">{t.nav.getStarted}</Link>
+              <ThemeToggle />
             </div>
           </div>
-        )}
-      </nav>
+
+          {currentUser ? (
+            <>
+              <Link
+                href="/dashboard"
+                onClick={() => setIsOpen(false)}
+                className="block py-2 text-sm text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+              >
+                Hi, {currentUser.name || currentUser.username}
+              </Link>
+              <button
+                onClick={() => {
+                  handleLogout();
+                }}
+                className="block w-full text-left py-2 text-sm text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+              >
+                Sign out
+              </button>
+            </>
+          ) : (
+            <Link
+              href="/signin"
+              onClick={() => setIsOpen(false)}
+              className="block py-2 text-sm text-[hsl(var(--muted-foreground))]"
+            >
+              {t.nav.login}
+            </Link>
+          )}
+
+          <div className="mt-3">
+            <Link
+              href="/register"
+              onClick={() => setIsOpen(false)}
+              className="h-10 flex items-center justify-center rounded-lg bg-black text-white text-sm font-medium w-full"
+            >
+              {t.nav.getStarted}
+            </Link>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
+

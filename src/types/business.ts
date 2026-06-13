@@ -55,6 +55,7 @@ export interface Business {
 
   // Tags
   tags: string[];
+  plan?: 'starter' | 'standard' | 'premium';
 }
 
 export interface Category {

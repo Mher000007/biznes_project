@@ -1,0 +1,26 @@
+/* ==========================================================================
+   MODERN CINEMATIC & SOFT-3D STYLE DESIGN TOKENS
+   ========================================================================== */
+
+$bg-global: var(--bg-global);
+$bg-primary: var(--bg-primary);
+$bg-secondary: var(--bg-secondary);
+$bg-card-raised: var(--bg-card-raised);
+$bg-card-pressed: var(--bg-card-pressed);
+$border-dark-soft: var(--border-dark-soft);
+$border-light: var(--border-light);
+$accent-primary: var(--accent-primary);
+
+$text-primary: var(--text-primary);
+$text-secondary: var(--text-secondary);
+$accent-booking: var(--accent-booking);
+$accent-highlight: var(--accent-highlight);
+
+// Neomorphic Shadows (Depth, layering and immersion)
+$shadow-neomorphic-raised: var(--shadow-neomorphic-raised);
+$shadow-neomorphic-pressed: var(--shadow-neomorphic-pressed);
+
+// Transition constants for premium micro-animations
+$transition-smooth: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+$transition-bounce: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+$transition-tilt: transform 0.1s ease-out, box-shadow 0.3s ease;

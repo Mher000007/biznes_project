@@ -10,6 +10,12 @@ import styles from "@/components/business/BusinessProfile.module.scss";
 import ReviewsSection from "@/components/business/ReviewsSection";
 import StoryViewer from "@/components/landing/StoryViewer";
 import { useI18n } from "@/i18n";
+import dynamic from "next/dynamic";
+
+const BusinessMap = dynamic(() => import("@/components/map/BusinessMap"), {
+  ssr: false,
+  loading: () => <div className="h-[220px] rounded-xl bg-[hsl(var(--muted))] animate-pulse" />,
+});
 
 
 
@@ -201,13 +207,13 @@ export default function BusinessProfilePage() {
               foundProfile.viewCount = currentViews + 1;
               window.localStorage.setItem("armbiz-business-profiles", JSON.stringify(profiles));
 
-              const categorySlug = foundProfile.category || "technology";
+              const categorySlug = foundProfile.category || "building-material";
               const categoryObj = {
                 id: `cat-${categorySlug}`,
-                name: categorySlug.charAt(0).toUpperCase() + categorySlug.slice(1),
+                name: categorySlug === "building-material" ? "Building Material" : categorySlug.charAt(0).toUpperCase() + categorySlug.slice(1),
                 slug: categorySlug,
                 description: "",
-                icon: "Monitor",
+                icon: categorySlug === "building-material" ? "Hammer" : "Monitor",
                 count: 0
               };
               const servicesMapped = (foundProfile.services || []).map((s: any, idx: number) => ({
@@ -380,10 +386,12 @@ export default function BusinessProfilePage() {
 
   // handleRateSubmit is now handled inside ReviewsSection
 
+  // Extract coordinates supporting both flat and nested database formats
+  const lat = business.coordinates?.latitude || business.latitude || 40.1872;
+  const lng = business.coordinates?.longitude || business.longitude || 44.5152;
+
   // Handle Navigator Direction Redirects
   const handleDirections = (provider: 'google' | 'yandex') => {
-    const lat = business.latitude || 40.1872;
-    const lng = business.longitude || 44.5152;
     const url = provider === 'google' 
       ? `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
       : `https://yandex.com/maps/?rtext=~${lat},${lng}`;
@@ -574,7 +582,11 @@ export default function BusinessProfilePage() {
             <h1>
               {business.name}
               {(business.isVerified || business.verified) && (
-                <span className={styles.verifiedBadge}>
+                <span className={`${styles.verifiedBadge} ${
+                  business.plan === "premium" || business.plan === "standard"
+                    ? styles.verifiedGold
+                    : styles.verifiedStarter
+                }`}>
                   <BadgeCheck className="h-3.5 w-3.5" /> Verified Partner
                 </span>
               )}
@@ -719,6 +731,15 @@ export default function BusinessProfilePage() {
         {/* Right Column: sidebar widgets */}
         <div className={styles.sidebar}>
 
+          {/* Live Location Map */}
+          <div className="mb-4">
+            <BusinessMap 
+              lat={lat} 
+              lng={lng} 
+              name={business.name} 
+              address={business.address || ""} 
+            />
+          </div>
 
           {/* Navigator direction links */}
           <div className={styles.navigatorCard}>
@@ -945,8 +966,8 @@ export default function BusinessProfilePage() {
       <ReviewsSection
         businessId={business._id || business.id || ""}
         businessSlug={slug}
-        initialRating={liveRating || business.ratingAvg || business.rating || 0}
-        initialReviewCount={liveReviewCount || business.reviewCount || 0}
+        initialRating={business.ratingAvg || business.rating || 0}
+        initialReviewCount={business.reviewCount || 0}
         onRatingUpdate={(rating, count) => {
           setLiveRating(rating);
           setLiveReviewCount(count);
