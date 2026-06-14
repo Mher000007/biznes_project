@@ -15,7 +15,47 @@ if (typeof window !== "undefined") {
   });
 }
 
-// Marker Item Type
+// ─── Icon builders ────────────────────────────────────────────────────────────
+
+function buildDefaultIcon(): L.DivIcon {
+  return L.divIcon({
+    html: `
+      <svg width="28" height="36" viewBox="0 0 28 36" fill="none" xmlns="http://www.w3.org/2000/svg"
+           style="filter:drop-shadow(0 3px 6px rgba(0,0,0,0.30));display:block;">
+        <path d="M14 0C6.268 0 0 6.268 0 14c0 9.5 14 22 14 22S28 23.5 28 14C28 6.268 21.732 0 14 0z"
+              fill="#2563eb"/>
+        <circle cx="14" cy="14" r="6.5" fill="white" fill-opacity="0.95"/>
+        <rect x="10" y="10" width="8" height="8" rx="0.8" fill="#2563eb"/>
+        <rect x="12" y="14" width="2" height="4" fill="white"/>
+        <rect x="11" y="11" width="2.2" height="2.2" fill="white" fill-opacity="0.75"/>
+        <rect x="14.8" y="11" width="2.2" height="2.2" fill="white" fill-opacity="0.75"/>
+      </svg>
+    `,
+    className: "leaflet-custom-pin-icon",
+    iconSize: [28, 36],
+    iconAnchor: [14, 36],
+    popupAnchor: [0, -36],
+    tooltipAnchor: [16, -18],
+  });
+}
+
+function buildHoveredIcon(): L.DivIcon {
+  return L.divIcon({
+    html: `
+      <div class="pulsing-marker-wrapper">
+        <div class="pulsing-marker-dot"></div>
+        <div class="pulsing-marker-pulse"></div>
+      </div>
+    `,
+    className: "leaflet-pulsing-marker-container",
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+    tooltipAnchor: [14, 0],
+  });
+}
+
+// ─── Types ───────────────────────────────────────────────────────────────────
+
 export interface LeafletMarkerItem {
   id: string | number;
   lat: number;
@@ -23,9 +63,12 @@ export interface LeafletMarkerItem {
   popupContent?: string;
   draggable?: boolean;
   slug?: string;
+  name?: string;
+  category?: string;
+  rating?: number;
+  reviewCount?: number;
 }
 
-// Shared LeafletMap Prop Interface
 export interface LeafletMapProps {
   center: [number, number];
   zoom: number;
@@ -42,6 +85,8 @@ export interface LeafletMapProps {
   fitAllBounds?: boolean;
   hoveredLocationId?: string | number | null;
 }
+
+// ─── Component ───────────────────────────────────────────────────────────────
 
 export default function LeafletMap({
   center = [40.1872, 44.5152],
@@ -65,294 +110,264 @@ export default function LeafletMap({
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const markersGroupRef = useRef<L.LayerGroup | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const performViewAdjustmentRef = useRef<((animate?: boolean) => void) | null>(null);
 
-  // 1. Initialize Map
+  // Registry: id → Leaflet marker instance (to swap icons without rebuilding)
+  const markerRegistryRef = useRef<Map<string | number, L.Marker>>(new Map());
+  // Tracks the currently highlighted id so we can restore it on the next hover
+  const prevHoveredIdRef = useRef<string | number | null>(null);
+
+  // Store latest bounds fn so ResizeObserver / fullscreen can call it
+  const fitBoundsFnRef = useRef<((animate: boolean) => void) | null>(null);
+
+  // ── 1. Init map ────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
-    const centerLat = Number(center[0]);
-    const centerLng = Number(center[1]);
-    const validCenter: [number, number] = [
-      isNaN(centerLat) ? 40.1872 : centerLat,
-      isNaN(centerLng) ? 44.5152 : centerLng
+    const safeCenter: [number, number] = [
+      isNaN(Number(center[0])) ? 40.1872 : Number(center[0]),
+      isNaN(Number(center[1])) ? 44.5152 : Number(center[1]),
     ];
 
     const map = L.map(containerRef.current, {
       zoomControl: zoomControl && !readonly,
-      scrollWheelZoom: scrollWheelZoom,
+      scrollWheelZoom,
       dragging: !readonly,
       attributionControl: false,
-    }).setView(validCenter, zoom);
+      // smoother panning
+      inertia: true,
+      inertiaDeceleration: 2000,
+      inertiaMaxSpeed: 1200,
+    }).setView(safeCenter, zoom);
 
-    // Setup Tile Layer
     const tileLayer = L.tileLayer(tileLayerUrl, {
       attribution: tileLayerAttribution,
       maxZoom: 19,
+      // preload adjacent tiles for smoother scroll
+      keepBuffer: 4,
     }).addTo(map);
     tileLayerRef.current = tileLayer;
 
-    // Setup Attribution control at bottom right
     L.control.attribution({ position: "bottomright", prefix: false })
       .addAttribution(tileLayerAttribution)
       .addTo(map);
 
-    // Scroll wheel zoom toggle on focus/click/blur
     if (!readonly) {
-      const enableScroll = () => map.scrollWheelZoom.enable();
-      const disableScroll = () => map.scrollWheelZoom.disable();
-
-      map.on("focus", enableScroll);
-      map.on("click", enableScroll);
-      map.on("blur", disableScroll);
+      map.on("focus", () => map.scrollWheelZoom.enable());
+      map.on("click", () => map.scrollWheelZoom.enable());
+      map.on("blur",  () => map.scrollWheelZoom.disable());
     }
 
-    // Map Click Listener
     if (onMapClick && !readonly) {
-      map.on("click", (e: L.LeafletMouseEvent) => {
-        onMapClick(e.latlng.lat, e.latlng.lng);
-      });
+      map.on("click", (e: L.LeafletMouseEvent) => onMapClick(e.latlng.lat, e.latlng.lng));
     }
 
-    // Add Layer Group to hold markers dynamically
     const markersGroup = L.layerGroup().addTo(map);
     markersGroupRef.current = markersGroup;
     mapRef.current = map;
 
-    // Force map to recalculate container size on load to prevent tile offsets
-    const sizeTimer = setTimeout(() => {
-      map.invalidateSize();
-    }, 200);
-
+    // Let the browser paint before we call invalidateSize
+    const sizeTimer = setTimeout(() => map.invalidateSize(), 100);
     return () => {
       clearTimeout(sizeTimer);
       map.remove();
       mapRef.current = null;
       tileLayerRef.current = null;
       markersGroupRef.current = null;
+      markerRegistryRef.current.clear();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 1b. Setup dynamic Tile Layer updates
+  // ── 1b. Tile layer swap (theme changes) ───────────────────────────────────
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-
-    if (tileLayerRef.current) {
-      tileLayerRef.current.remove();
-    }
-
-    const newTileLayer = L.tileLayer(tileLayerUrl, {
+    tileLayerRef.current?.remove();
+    tileLayerRef.current = L.tileLayer(tileLayerUrl, {
       attribution: tileLayerAttribution,
       maxZoom: 19,
+      keepBuffer: 4,
     }).addTo(map);
-    tileLayerRef.current = newTileLayer;
   }, [tileLayerUrl, tileLayerAttribution]);
 
-  // 2. React to dynamic center & zoom updates
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-
-    const centerLat = Number(center[0]);
-    const centerLng = Number(center[1]);
-    const validCenter: [number, number] = [
-      isNaN(centerLat) ? 40.1872 : centerLat,
-      isNaN(centerLng) ? 44.5152 : centerLng
-    ];
-
-    const currentCenter = map.getCenter();
-    const latDiff = Math.abs(currentCenter.lat - validCenter[0]);
-    const lngDiff = Math.abs(currentCenter.lng - validCenter[1]);
-
-    if (latDiff > 0.0001 || lngDiff > 0.0001) {
-      map.setView(validCenter, zoom);
-    }
-  }, [center, zoom]);
-
-  // 3. React to dynamic markers updates and handle layout stabilization view centering
+  // ── 2. Rebuild markers ONLY when marker data changes (NOT on hover) ───────
   useEffect(() => {
     const map = mapRef.current;
     const markersGroup = markersGroupRef.current;
     if (!map || !markersGroup) return;
 
-    // Clean old markers
     markersGroup.clearLayers();
+    markerRegistryRef.current.clear();
 
     const bounds = L.latLngBounds([]);
-    const validMarkersList: [number, number][] = [];
+    const validList: [number, number][] = [];
 
     if (markers && markers.length > 0) {
       markers.forEach((m) => {
-        const markerLat = Number(m.lat);
-        const markerLng = Number(m.lng);
-        if (isNaN(markerLat) || isNaN(markerLng)) return;
+        const lat = Number(m.lat);
+        const lng = Number(m.lng);
+        if (isNaN(lat) || isNaN(lng)) return;
 
-        const isHovered = m.id === hoveredLocationId;
-        let iconOptions = {};
-
-        if (isHovered) {
-          iconOptions = {
-            icon: L.divIcon({
-              html: `
-                <div class="pulsing-marker-wrapper">
-                  <div class="pulsing-marker-dot"></div>
-                  <div class="pulsing-marker-pulse"></div>
-                </div>
-              `,
-              className: "leaflet-pulsing-marker-container",
-              iconSize: [24, 24],
-              iconAnchor: [12, 12],
-            })
-          };
-        }
-
-        const marker = L.marker([markerLat, markerLng], {
+        const marker = L.marker([lat, lng], {
           draggable: m.draggable && !readonly,
-          ...iconOptions,
+          icon: buildDefaultIcon(),
         });
 
-        if (m.popupContent) {
+        // Tooltip (shown on marker hover)
+        if (m.name) {
+          const starsNum = m.rating ? Math.round(m.rating * 10) / 10 : null;
+          const starsHtml = starsNum
+            ? `<span class="marker-tooltip-rating">&#9733; ${starsNum.toFixed(1)}${
+                m.reviewCount
+                  ? ` <span class="marker-tooltip-reviews">(${m.reviewCount})</span>`
+                  : ""
+              }</span>`
+            : "";
+          const catHtml = m.category
+            ? `<span class="marker-tooltip-category">${m.category}</span>`
+            : "";
+          marker.bindTooltip(
+            `<div class="marker-tooltip-inner">
+               <strong class="marker-tooltip-name">${m.name}</strong>
+               ${catHtml}
+               ${starsHtml}
+             </div>`,
+            {
+              permanent: false,
+              direction: "right",
+              offset: [10, 0],
+              className: "leaflet-business-tooltip",
+              opacity: 1,
+            }
+          );
+        } else if (m.popupContent) {
           marker.bindPopup(m.popupContent);
         }
 
-        // Route to page on click
         if (m.slug && !readonly) {
-          marker.on("click", () => {
-            router.push(`/business/${m.slug}`);
-          });
+          marker.on("click", () => router.push(`/business/${m.slug}`));
         }
 
-        // Drag Listener
         if (m.draggable && !readonly && onMarkerDragEnd) {
           marker.on("dragend", () => {
-            const newPos = marker.getLatLng();
-            onMarkerDragEnd(m.id, newPos.lat, newPos.lng);
+            const pos = marker.getLatLng();
+            onMarkerDragEnd(m.id, pos.lat, pos.lng);
           });
         }
 
         marker.addTo(markersGroup);
-        bounds.extend([markerLat, markerLng]);
-        validMarkersList.push([markerLat, markerLng]);
+        markerRegistryRef.current.set(m.id, marker);
+        bounds.extend([lat, lng]);
+        validList.push([lat, lng]);
       });
     }
 
-    const centerLat = Number(center[0]);
-    const centerLng = Number(center[1]);
-    const validCenter: [number, number] = [
-      isNaN(centerLat) ? 40.1872 : centerLat,
-      isNaN(centerLng) ? 44.5152 : centerLng
+    const safeCenter: [number, number] = [
+      isNaN(Number(center[0])) ? 40.1872 : Number(center[0]),
+      isNaN(Number(center[1])) ? 44.5152 : Number(center[1]),
     ];
 
-    // Unified helper to invalidate size and adjust map view/bounds
-    const performViewAdjustment = (animate = false) => {
-      if (!mapRef.current) return;
-      mapRef.current.invalidateSize({ animate: false });
-      if (fitAllBounds && validMarkersList.length > 1) {
-        mapRef.current.fitBounds(bounds, {
-          padding: [40, 40],
-          maxZoom: 15,
-          animate: animate,
-          duration: animate ? 0.8 : undefined,
-        });
-      } else if (fitAllBounds && validMarkersList.length === 1) {
-        mapRef.current.setView(validMarkersList[0], 15, { animate: animate });
+    const doFitBounds = (animate: boolean) => {
+      const m = mapRef.current;
+      if (!m) return;
+      m.invalidateSize({ animate: false });
+      if (fitAllBounds && validList.length > 1) {
+        m.fitBounds(bounds, { padding: [40, 40], maxZoom: 14, animate, duration: animate ? 0.6 : undefined });
+      } else if (fitAllBounds && validList.length === 1) {
+        m.setView(validList[0], 14, { animate });
       } else {
-        // Fallback: center the map on the user-specified center and zoom
-        mapRef.current.setView(validCenter, zoom, { animate: animate });
+        m.setView(safeCenter, zoom, { animate });
       }
     };
 
-    performViewAdjustmentRef.current = performViewAdjustment;
+    fitBoundsFnRef.current = doFitBounds;
 
-    // Perform immediately on markers update
-    performViewAdjustment(true);
+    // Initial fit (only on first load — skip if a hover is already active)
+    if (!prevHoveredIdRef.current) {
+      doFitBounds(true);
+    }
 
-    // Re-perform view adjustments as parent container sizes stabilize
-    const timers = [100, 350, 750, 1500, 3000].map(delay => 
+    // Stabilisation passes (no animation after first)
+    const timers = [200, 600, 1200].map((delay) =>
       setTimeout(() => {
         const m = mapRef.current;
         if (!m) return;
-        const size = m.getSize();
-        if (size.x > 0 && size.y > 0) {
-          performViewAdjustment(false);
+        const { x, y } = m.getSize();
+        if (x > 0 && y > 0 && !prevHoveredIdRef.current) {
+          m.invalidateSize({ animate: false });
         }
       }, delay)
     );
 
-    return () => {
-      timers.forEach(clearTimeout);
-    };
-  }, [markers, center, zoom, readonly, onMarkerDragEnd, fitAllBounds, hoveredLocationId, router]);
+    return () => timers.forEach(clearTimeout);
+    // hoveredLocationId intentionally excluded — handle it in a separate effect
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [markers, center, zoom, readonly, onMarkerDragEnd, fitAllBounds, router]);
 
-  // 4. Force invalidate size on fullscreen toggle and handle body class
+  // ── 3. Handle hover: swap icons + flyTo (no marker rebuild) ──────────────
+  useEffect(() => {
+    const map = mapRef.current;
+    const registry = markerRegistryRef.current;
+
+    // Restore previous hovered marker icon
+    if (prevHoveredIdRef.current !== null) {
+      const prev = registry.get(prevHoveredIdRef.current);
+      if (prev) prev.setIcon(buildDefaultIcon());
+    }
+
+    if (hoveredLocationId !== null && hoveredLocationId !== undefined) {
+      const target = registry.get(hoveredLocationId);
+      if (target && map) {
+        // Swap to pulsing icon
+        target.setIcon(buildHoveredIcon());
+        // Smooth flyTo
+        const { lat, lng } = target.getLatLng();
+        map.flyTo([lat, lng], Math.max(map.getZoom(), 14), {
+          animate: true,
+          duration: 0.55,
+          easeLinearity: 0.2,
+        });
+      }
+    }
+
+    prevHoveredIdRef.current = hoveredLocationId ?? null;
+  }, [hoveredLocationId]);
+
+  // ── 4. Fullscreen toggle ──────────────────────────────────────────────────
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-
-    if (isFullscreen) {
-      document.body.classList.add("map-fullscreen-active");
-    } else {
-      document.body.classList.remove("map-fullscreen-active");
-    }
-
-    const timer = setTimeout(() => {
-      if (performViewAdjustmentRef.current) {
-        performViewAdjustmentRef.current(false);
-      } else {
-        map.invalidateSize();
-      }
+    document.body.classList.toggle("map-fullscreen-active", isFullscreen);
+    const t = setTimeout(() => {
+      map.invalidateSize({ animate: false });
+      if (fitBoundsFnRef.current) fitBoundsFnRef.current(false);
     }, 150);
-
     return () => {
       document.body.classList.remove("map-fullscreen-active");
-      clearTimeout(timer);
+      clearTimeout(t);
     };
   }, [isFullscreen]);
 
-  // 5. Safe ResizeObserver to keep map container sized correctly and re-center on size changes
+  // ── 5. ResizeObserver ─────────────────────────────────────────────────────
   useEffect(() => {
     const map = mapRef.current;
     const container = containerRef.current;
     if (!map || !container) return;
 
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const { width, height } = entry.contentRect;
-        if (width > 0 && height > 0) {
-          if (performViewAdjustmentRef.current) {
-            performViewAdjustmentRef.current(false);
-          } else {
-            map.invalidateSize({ animate: false });
-          }
-        }
+    const ro = new ResizeObserver((entries) => {
+      for (const e of entries) {
+        const { width, height: h } = e.contentRect;
+        if (width > 0 && h > 0) map.invalidateSize({ animate: false });
       }
     });
-
-    resizeObserver.observe(container);
-
-    return () => {
-      resizeObserver.disconnect();
-    };
+    ro.observe(container);
+    return () => ro.disconnect();
   }, []);
 
-  // 5b. Centering map view on hovered marker coords
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !hoveredLocationId || !markers || markers.length === 0) return;
-
-    const matched = markers.find((m) => m.id === hoveredLocationId);
-    if (matched) {
-      map.setView([matched.lat, matched.lng], 15, {
-        animate: true,
-        duration: 0.6,
-      });
-    }
-  }, [hoveredLocationId, markers]);
+  // ─────────────────────────────────────────────────────────────────────────
 
   return (
-    <div 
+    <div
       className={`leaflet-map-outer-wrapper ${isFullscreen ? "fullscreen-mode" : ""} ${className}`}
       style={{ width: "100%", height: isFullscreen ? "100vh" : height, position: "relative" }}
     >
@@ -363,7 +378,7 @@ export default function LeafletMap({
       />
       <button
         type="button"
-        onClick={() => setIsFullscreen(prev => !prev)}
+        onClick={() => setIsFullscreen((prev) => !prev)}
         className="leaflet-fullscreen-toggle-btn"
         title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
       >

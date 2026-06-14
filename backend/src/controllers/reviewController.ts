@@ -214,7 +214,7 @@ export const deleteReview = asyncHandler(
       return;
     }
 
-    const isOwner = review.author.toString() === req.user?.id;
+    const isOwner = review.author ? review.author.toString() === req.user?.id : false;
     const isAdmin = req.user?.role === 'admin';
 
     if (!isOwner && !isAdmin) {

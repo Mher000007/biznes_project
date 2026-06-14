@@ -74,6 +74,8 @@ export default function DiscoverMap({
       addressDetails: biz.address ? `${biz.address}, ${biz.city}` : biz.city,
       category: biz.category?.name,
       slug: biz.slug,
+      rating: biz.ratingAvg || 0,
+      reviewCount: biz.reviewCount || 0,
     };
   });
 

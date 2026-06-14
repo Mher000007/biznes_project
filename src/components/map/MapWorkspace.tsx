@@ -13,6 +13,8 @@ export interface LocationItem {
   addressDetails?: string;
   category?: string;
   slug?: string;
+  rating?: number;
+  reviewCount?: number;
 }
 
 // Map Component Props
@@ -48,6 +50,10 @@ export default function MapWorkspace({
       lng: loc.lng,
       popupContent,
       slug: loc.slug,
+      name: loc.name,
+      category: loc.category,
+      rating: loc.rating,
+      reviewCount: loc.reviewCount,
     };
   });
 

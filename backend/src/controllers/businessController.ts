@@ -85,7 +85,7 @@ export const getBusinesses = asyncHandler(async (req: Request, res: Response): P
   const populatedBusinesses = await Promise.all(businesses.map(async (biz) => {
     const sub = await Subscription.findOne({ business: biz._id, status: 'active' });
     const plan = sub ? sub.plan : 'starter';
-    const bizObj = biz.toObject();
+    const bizObj = biz.toObject() as any;
     bizObj.plan = plan;
     return bizObj;
   }));
@@ -116,7 +116,7 @@ export const getBusinessById = asyncHandler(async (req: Request, res: Response):
   const sub = await Subscription.findOne({ business: business._id, status: 'active' });
   const plan = sub ? sub.plan : 'starter';
 
-  const bizObj = business.toObject();
+  const bizObj = business.toObject() as any;
   bizObj.plan = plan;
 
   res.status(200).json({
@@ -144,7 +144,7 @@ export const getBusinessBySlug = asyncHandler(
     const sub = await Subscription.findOne({ business: business._id, status: 'active' });
     const plan = sub ? sub.plan : 'starter';
 
-    const bizObj = business.toObject();
+    const bizObj = business.toObject() as any;
     bizObj.plan = plan;
 
     res.status(200).json({
