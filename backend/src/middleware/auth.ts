@@ -19,7 +19,7 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
       return;
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_secret_key');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'armbiz_dev_secret_key_2026');
     req.user = decoded as AuthRequest['user'];
     next();
   } catch (error) {

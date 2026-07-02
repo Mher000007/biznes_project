@@ -4,118 +4,103 @@ import axios from "axios";
 import { getApiUrl } from "@/lib/utils";
 import {
   BarChart3, Building2, CalendarDays, Gem, Flag, Users,
-  Mail, MapPin, Star, Eye, Phone, Trash2, CheckCircle2,
-  X, Ban, RefreshCw, LogOut, CheckCircle, AlertOctagon, UserCircle2, Crown, Briefcase, Award
+  Mail, Phone, Trash2, CheckCircle2,
+  X, Ban, RefreshCw, LogOut, CheckCircle, AlertOctagon,
+  UserCircle2, Crown, Briefcase, Star, Eye,
 } from "lucide-react";
 
 const API = getApiUrl();
 const ADMIN_TOKEN_KEY = "admin-token";
 const ADMIN_USER_KEY = "admin-user";
 
+/* ── Dark theme color palette ── */
+const C = {
+  bg:        "#1e1e2e",
+  surface:   "#252538",
+  card:      "#2a2a42",
+  border:    "rgba(255,255,255,0.09)",
+  text:      "#e8e8f8",
+  muted:     "rgba(220,220,255,0.55)",
+  faint:     "rgba(200,200,255,0.28)",
+  violet:    "#c4b5fd",
+  violetDim: "rgba(167,139,250,0.22)",
+  green:     "#86efac",
+  greenDim:  "rgba(134,239,172,0.15)",
+  amber:     "#fcd34d",
+  amberDim:  "rgba(252,211,77,0.15)",
+  red:       "#fca5a5",
+  redDim:    "rgba(252,165,165,0.15)",
+  sky:       "#7dd3fc",
+  pink:      "#f9a8d4",
+  emerald:   "#6ee7b7",
+  yellow:    "#fde68a",
+};
+
+
+
 interface Business {
-  _id: string;
-  name: string;
-  slug: string;
-  email: string;
-  phone?: string;
-  city?: string;
-  verified: boolean;
-  active: boolean;
-  rating: number;
-  reviewCount: number;
-  views: number;
-  createdAt: string;
+  _id: string; name: string; slug: string; email: string;
+  phone?: string; city?: string; verified: boolean; active: boolean;
+  rating: number; reviewCount: number; views: number; createdAt: string;
   owner?: { name: string; email: string };
   category?: { name: string };
 }
-
 interface Booking {
-  _id: string;
-  customerName: string;
-  customerPhone: string;
-  serviceName: string;
-  date: string;
-  timeSlot: string;
-  status: "pending" | "confirmed" | "cancelled";
-  createdAt: string;
+  _id: string; customerName: string; customerPhone: string;
+  serviceName: string; date: string; timeSlot: string;
+  status: "pending" | "confirmed" | "cancelled"; createdAt: string;
   business?: { name: string; slug: string };
 }
-
 interface Subscription {
-  _id: string;
-  plan: "starter" | "standard" | "premium";
+  _id: string; plan: "starter" | "standard" | "premium";
   status: "active" | "expired" | "cancelled";
-  startDate: string;
-  endDate: string;
+  startDate: string; endDate: string;
   business?: { name: string; email: string; slug: string };
 }
-
 interface Review {
-  _id: string;
-  comment: string;
-  rating: number;
-  reportedReason?: string;
-  reportedAt?: string;
-  status: string;
+  _id: string; comment: string; rating: number;
+  reportedReason?: string; reportedAt?: string; status: string;
   author?: { name: string; email: string };
   business?: { _id: string; name: string; slug: string; email?: string };
 }
-
 interface User {
-  _id: string;
-  name: string;
-  username?: string;
-  email: string;
-  phone?: string;
-  role: "user" | "business_owner" | "admin";
-  createdAt: string;
+  _id: string; name: string; username?: string; email: string;
+  phone?: string; role: "user" | "business_owner" | "admin"; createdAt: string;
 }
-
 interface Stats {
-  totalBusinesses: number;
-  pendingBusinesses: number;
-  verifiedBusinesses: number;
-  totalBookings: number;
-  confirmedBookings: number;
-  cancelledBookings: number;
-  activeSubscriptions: number;
-  totalUsers: number;
-  totalReviews: number;
-  flaggedReviews: number;
-  totalRevenue: number;
+  totalBusinesses: number; pendingBusinesses: number; verifiedBusinesses: number;
+  totalBookings: number; confirmedBookings: number; cancelledBookings: number;
+  activeSubscriptions: number; totalUsers: number; totalReviews: number;
+  flaggedReviews: number; totalRevenue: number;
 }
-
 type TabKey = "overview" | "businesses" | "bookings" | "subscriptions" | "reviews" | "users";
 
 function getToken() {
   return typeof window !== "undefined" ? localStorage.getItem(ADMIN_TOKEN_KEY) : null;
 }
-
 function authHeaders() {
   const t = getToken();
   return t ? { Authorization: `Bearer ${t}` } : {};
 }
 
-// ─── LOGIN SCREEN ────────────────────────────────────────────────────────────
+/* ─────────────── LOGIN SCREEN ─────────────── */
 function AdminLogin({ onLogin }: { onLogin: (token: string) => void }) {
-  const [email, setEmail] = useState("");
+  const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [showPw, setShowPw] = useState(false);
+  const [error, setError]       = useState("");
+  const [loading, setLoading]   = useState(false);
+  const [showPw, setShowPw]     = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError("");
+    setLoading(true); setError("");
     try {
       const res = await axios.post(`${API}/auth/login`, { email, password });
       if (res.data?.success) {
         const user = res.data.user;
         if (user?.role !== "admin") {
           setError("Access denied — admin credentials required.");
-          setLoading(false);
-          return;
+          setLoading(false); return;
         }
         localStorage.setItem(ADMIN_TOKEN_KEY, res.data.token);
         localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(user));
@@ -129,66 +114,67 @@ function AdminLogin({ onLogin }: { onLogin: (token: string) => void }) {
     setLoading(false);
   };
 
+  const inp: React.CSSProperties = {
+    width: "100%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: 12, padding: "12px 16px", fontSize: 14, color: C.text,
+    outline: "none", boxSizing: "border-box",
+  };
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-start bg-[#1a1a1a] text-white px-4 pt-20 lg:pt-28 pb-12">
-      <div className="relative w-full max-w-md">
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-lg shadow-violet-500/30 mb-4">
-            <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-            </svg>
+    <div data-admin-panel="1" style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center",
+      justifyContent: "center", padding: 24 }}>
+      <div style={{ width: "100%", maxWidth: 420 }}>
+        {/* Logo */}
+        <div style={{ textAlign: "center", marginBottom: 32 }}>
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 12, marginBottom: 8 }}>
+            <img src="/logo.png" alt="Findy Logo" style={{ height: "52px", objectFit: "contain" }} />
+            <span style={{ fontSize: 22, fontWeight: 800, color: "#00E676", letterSpacing: "2.5px", textTransform: "uppercase" }}>
+              Admin
+            </span>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">arm<span className="gradient-text">biz</span> <span className="text-violet-400 font-semibold">Admin</span></h1>
-          <p className="text-xs text-white/40 mt-1">Restricted access — authorized personnel only</p>
+          <p style={{ fontSize: 12, color: C.faint, marginTop: 6 }}>Restricted access — authorized personnel only</p>
         </div>
 
-        <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 shadow-2xl w-full border-0">
-          <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Card */}
+        <div style={{ background: C.surface, borderRadius: 20, padding: 28,
+          border: `1px solid ${C.border}`, boxShadow: "0 24px 64px rgba(0,0,0,0.5)" }}>
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div>
-              <label className="block text-xs font-semibold text-white/50 mb-1.5 uppercase tracking-wider">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="admin@armbiz.am"
-                required
-                className="w-full bg-white/8 rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 outline-none focus:bg-white/12 transition-all border-0"
-              />
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
+                letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>Email</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                placeholder="admin@armbiz.am" required style={inp} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-white/50 mb-1.5 uppercase tracking-wider">Password</label>
-              <div className="relative">
-                <input
-                  type={showPw ? "text" : "password"}
-                  value={password}
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
+                letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>Password</label>
+              <div style={{ position: "relative" }}>
+                <input type={showPw ? "text" : "password"} value={password}
                   onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  className="w-full bg-white/8 rounded-xl px-4 py-3 pr-11 text-sm text-white placeholder-white/20 outline-none focus:bg-white/12 transition-all border-0"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPw(!showPw)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
-                >
-                  {showPw ? <X className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  placeholder="••••••••" required style={{ ...inp, paddingRight: 44 }} />
+                <button type="button" onClick={() => setShowPw(!showPw)}
+                  style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+                    background: "none", border: "none", color: C.faint, cursor: "pointer", padding: 0 }}>
+                  {showPw ? <X size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
 
             {error && (
-              <div className="bg-red-500/10 border border-red-500/25 rounded-xl px-4 py-3 flex items-center gap-2">
-                <AlertOctagon className="w-4 h-4 text-red-400 shrink-0" />
-                <p className="text-xs text-red-400">{error}</p>
+              <div style={{ background: C.redDim, border: "1px solid rgba(248,113,113,0.25)",
+                borderRadius: 12, padding: "12px 16px", display: "flex", alignItems: "center", gap: 8 }}>
+                <AlertOctagon size={16} color={C.red} style={{ flexShrink: 0 }} />
+                <p style={{ fontSize: 13, color: C.red, margin: 0 }}>{error}</p>
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 shadow-lg shadow-violet-500/25 transition-all disabled:opacity-60 cursor-pointer border-0"
-            >
-              {loading ? "Authenticating..." : "Access Portal"}
+            <button type="submit" disabled={loading}
+              style={{ padding: "13px 0", borderRadius: 12, fontWeight: 700, fontSize: 14,
+                color: "#fff", border: "none", cursor: loading ? "not-allowed" : "pointer",
+                background: "linear-gradient(90deg,#7c3aed,#4f46e5)",
+                boxShadow: "0 4px 20px rgba(124,58,237,0.35)",
+                opacity: loading ? 0.65 : 1, transition: "opacity 0.2s" }}>
+              {loading ? "Authenticating…" : "Access Portal"}
             </button>
           </form>
         </div>
@@ -197,31 +183,32 @@ function AdminLogin({ onLogin }: { onLogin: (token: string) => void }) {
   );
 }
 
-// ─── ADMIN DASHBOARD ──────────────────────────────────────────────────────────
+/* ─────────────── STAT CARD ─────────────── */
 function StatCard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color: string }) {
   return (
-    <div className="bg-white/5 rounded-2xl p-4 sm:p-5 shadow-sm border-0">
-      <p className="text-xs font-semibold text-white/40 mb-1 uppercase tracking-wider">{label}</p>
-      <p className={`text-2xl sm:text-3xl font-extrabold ${color}`}>{value}</p>
-      {sub && <p className="text-xs text-white/30 mt-1">{sub}</p>}
+    <div style={{ background: C.card, borderRadius: 16, padding: "20px 22px",
+      border: `1px solid ${C.border}` }}>
+      <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase",
+        letterSpacing: "0.08em", margin: "0 0 8px" }}>{label}</p>
+      <p style={{ fontSize: 28, fontWeight: 900, color, margin: 0 }}>{value}</p>
+      {sub && <p style={{ fontSize: 12, color: C.faint, marginTop: 4 }}>{sub}</p>}
     </div>
   );
 }
 
+/* ─────────────── ADMIN DASHBOARD ─────────────── */
 function AdminDashboard({ onLogout }: { onLogout: () => void }) {
-  const [tab, setTab] = useState<TabKey>("overview");
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [businesses, setBusinesses] = useState<Business[]>([]);
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [tab, setTab]                   = useState<TabKey>("overview");
+  const [stats, setStats]               = useState<Stats | null>(null);
+  const [businesses, setBusinesses]     = useState<Business[]>([]);
+  const [bookings, setBookings]         = useState<Booking[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [allUsers, setAllUsers] = useState<User[]>([]);
-  const [loadingData, setLoadingData] = useState(false);
-  const [bizSubTab, setBizSubTab] = useState<"pending" | "verified" | "all">("pending");
-
-  // Moderation state
-  const [resolvingId, setResolvingId] = useState<string | null>(null);
-  const [adminReply, setAdminReply] = useState("");
+  const [reviews, setReviews]           = useState<Review[]>([]);
+  const [allUsers, setAllUsers]         = useState<User[]>([]);
+  const [loadingData, setLoadingData]   = useState(false);
+  const [bizSubTab, setBizSubTab]       = useState<"pending" | "verified" | "all">("pending");
+  const [resolvingId, setResolvingId]   = useState<string | null>(null);
+  const [adminReply, setAdminReply]     = useState("");
   const [resolveAction, setResolveAction] = useState<"keep" | "delete" | null>(null);
 
   const load = useCallback(async () => {
@@ -236,12 +223,12 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         axios.get(`${API}/admin/reports`, { headers: h }),
         axios.get(`${API}/admin/users`, { headers: h }),
       ]);
-      if (statsRes.data?.success) setStats(statsRes.data.data);
-      if (bizRes.data?.success) setBusinesses(bizRes.data.data);
-      if (bookRes.data?.success) setBookings(bookRes.data.data);
-      if (subRes.data?.success) setSubscriptions(subRes.data.data);
-      if (revRes.data?.success) setReviews(revRes.data.data);
-      if (usersRes.data?.success) setAllUsers(usersRes.data.data);
+      if (statsRes.data?.success)   setStats(statsRes.data.data);
+      if (bizRes.data?.success)     setBusinesses(bizRes.data.data);
+      if (bookRes.data?.success)    setBookings(bookRes.data.data);
+      if (subRes.data?.success)     setSubscriptions(subRes.data.data);
+      if (revRes.data?.success)     setReviews(revRes.data.data);
+      if (usersRes.data?.success)   setAllUsers(usersRes.data.data);
     } catch (err) {
       console.error("Admin data load failed:", err);
     }
@@ -251,219 +238,255 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   useEffect(() => { load(); }, [load]);
 
   const approveBiz = async (id: string) => {
-    await axios.put(`${API}/admin/businesses/${id}/approve`, {}, { headers: authHeaders() });
-    load();
+    await axios.put(`${API}/admin/businesses/${id}/approve`, {}, { headers: authHeaders() }); load();
   };
   const rejectBiz = async (id: string) => {
     if (!confirm("Suspend this business?")) return;
-    await axios.put(`${API}/admin/businesses/${id}/reject`, {}, { headers: authHeaders() });
-    load();
+    await axios.put(`${API}/admin/businesses/${id}/reject`, {}, { headers: authHeaders() }); load();
   };
   const deleteBiz = async (id: string) => {
     if (!confirm("Permanently delete this business and all its data?")) return;
-    await axios.delete(`${API}/admin/businesses/${id}`, { headers: authHeaders() });
-    load();
+    await axios.delete(`${API}/admin/businesses/${id}`, { headers: authHeaders() }); load();
   };
   const deleteBook = async (id: string) => {
     if (!confirm("Delete this booking?")) return;
-    await axios.delete(`${API}/admin/bookings/${id}`, { headers: authHeaders() });
-    load();
+    await axios.delete(`${API}/admin/bookings/${id}`, { headers: authHeaders() }); load();
   };
   const deleteSub = async (id: string) => {
     if (!confirm("Delete this subscription?")) return;
-    await axios.delete(`${API}/admin/subscriptions/${id}`, { headers: authHeaders() });
-    load();
+    await axios.delete(`${API}/admin/subscriptions/${id}`, { headers: authHeaders() }); load();
   };
   const deleteUserById = async (id: string) => {
     if (!confirm("Permanently delete this user account?")) return;
-    await axios.delete(`${API}/admin/users/${id}`, { headers: authHeaders() });
-    load();
+    await axios.delete(`${API}/admin/users/${id}`, { headers: authHeaders() }); load();
   };
   const submitResolve = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!resolvingId || !resolveAction || adminReply.trim().length < 5) return;
-    await axios.put(`${API}/admin/reports/${resolvingId}/resolve`, {
-      action: resolveAction,
-      adminReply: adminReply.trim(),
-    }, { headers: authHeaders() });
-    setResolvingId(null);
-    setAdminReply("");
-    setResolveAction(null);
-    load();
+    await axios.put(`${API}/admin/reports/${resolvingId}/resolve`,
+      { action: resolveAction, adminReply: adminReply.trim() }, { headers: authHeaders() });
+    setResolvingId(null); setAdminReply(""); setResolveAction(null); load();
   };
 
   const filteredBiz = businesses.filter(b => {
-    if (bizSubTab === "pending") return !b.verified;
+    if (bizSubTab === "pending")  return !b.verified;
     if (bizSubTab === "verified") return b.verified;
     return true;
   });
 
   type TabDef = { key: TabKey; label: string; Icon: React.ElementType };
   const tabs: TabDef[] = [
-    { key: "overview",      label: "Overview",   Icon: BarChart3 },
-    { key: "businesses",   label: "Businesses", Icon: Building2 },
-    { key: "bookings",     label: "Bookings",   Icon: CalendarDays },
-    { key: "subscriptions",label: "Plans",      Icon: Gem },
-    { key: "reviews",      label: "Reports",    Icon: Flag },
-    { key: "users",        label: "Users",      Icon: Users },
+    { key: "overview",       label: "Overview",    Icon: BarChart3 },
+    { key: "businesses",     label: "Businesses",  Icon: Building2 },
+    { key: "bookings",       label: "Bookings",    Icon: CalendarDays },
+    { key: "subscriptions",  label: "Plans",       Icon: Gem },
+    { key: "reviews",        label: "Reports",     Icon: Flag },
+    { key: "users",          label: "Users",       Icon: Users },
   ];
 
+  const tabBtn = (t: TabDef) => {
+    const active = tab === t.key;
+    return (
+      <button key={t.key} onClick={() => setTab(t.key)}
+        style={{ display: "flex", alignItems: "center", gap: 6,
+          padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer",
+          fontSize: 12, fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0,
+          background: active ? C.violetDim : "rgba(255,255,255,0.05)",
+          color: active ? C.violet : C.text,
+          transition: "all 0.15s" }}>
+        <t.Icon size={14} />
+        {t.label}
+        {t.key === "businesses" && stats?.pendingBusinesses ? (
+          <span style={{ background: C.amber, color: "#1a1a1a", fontSize: 9, fontWeight: 800,
+            padding: "2px 6px", borderRadius: 99 }}>{stats.pendingBusinesses}</span>
+        ) : null}
+        {t.key === "reviews" && stats?.flaggedReviews ? (
+          <span style={{ background: C.red, color: "#fff", fontSize: 9, fontWeight: 800,
+            padding: "2px 6px", borderRadius: 99 }}>{stats.flaggedReviews}</span>
+        ) : null}
+        {t.key === "users" && allUsers.length > 0 ? (
+          <span style={{ background: "#7c3aed", color: "#fff", fontSize: 9, fontWeight: 800,
+            padding: "2px 6px", borderRadius: 99 }}>{allUsers.length}</span>
+        ) : null}
+      </button>
+    );
+  };
+
+  const btnSm = (label: string, onClick: () => void, color: string, dim: string, icon?: React.ReactNode) => (
+    <button onClick={onClick}
+      style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px",
+        borderRadius: 8, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700,
+        background: color, color: "#fff", transition: "opacity 0.15s" }}
+      onMouseEnter={e => (e.currentTarget.style.opacity = "0.85")}
+      onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
+      {icon}{label}
+    </button>
+  );
+
+  const iconBtn = (onClick: () => void, icon: React.ReactNode, color: string, dim: string, title?: string) => (
+    <button onClick={onClick} title={title}
+      style={{ background: dim, border: "none", color, padding: 8, borderRadius: 8,
+        cursor: "pointer", display: "flex", transition: "opacity 0.15s" }}
+      onMouseEnter={e => (e.currentTarget.style.opacity = "0.75")}
+      onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
+      {icon}
+    </button>
+  );
+
+  const sectionHead = (title: string, sub: string) => (
+    <div style={{ marginBottom: 20 }}>
+      <h2 style={{ fontSize: 18, fontWeight: 800, color: C.text, margin: 0 }}>{title}</h2>
+      <p style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>{sub}</p>
+    </div>
+  );
+
+  const emptyState = (Icon: React.ElementType, msg: string) => (
+    <div style={{ textAlign: "center", padding: "64px 0", background: C.card,
+      borderRadius: 16, border: `1px solid ${C.border}` }}>
+      <Icon size={40} color={C.faint} style={{ marginBottom: 12 }} />
+      <p style={{ fontSize: 14, fontWeight: 600, color: C.muted }}>{msg}</p>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-[#1a1a1a] text-white flex flex-col pt-0">
-      {/* Top Bar */}
-      <header className="sticky top-0 z-50 bg-[#1a1a1a]/90">
-        <div className="max-w-7xl mx-auto bg-[#1a1a1a] px-4 sm:px-6 flex items-center justify-between h-12">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-sm tracking-tight text-white">
-              arm<span className="gradient-text">biz</span> <span className="text-violet-400 font-semibold">Admin</span>
+    <div data-admin-panel="1" style={{ minHeight: "100vh", background: C.bg, color: C.text, display: "flex", flexDirection: "column",
+      colorScheme: "dark" }}>
+      <style>{`
+        html, body, main { background: ${C.bg} !important; color: ${C.text} !important; color-scheme: dark; }
+        * { box-sizing: border-box; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: ${C.bg}; }
+        ::-webkit-scrollbar-thumb { background: rgba(167,139,250,0.3); border-radius: 4px; }
+        @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+        /* Hide Navbar/Footer/ChatWidget on admin page */
+        body.admin-dark > main > *:not([data-admin-panel]) { display: none !important; }
+      `}</style>
+
+      {/* ── TOP BAR ── */}
+      <header style={{ position: "sticky", top: 0, zIndex: 50,
+        background: C.bg, borderBottom: `1px solid ${C.border}`,
+        backdropFilter: "blur(12px)" }}>
+        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 24px",
+          display: "flex", alignItems: "center", justifyContent: "space-between", height: 52 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <img src="/logo.png" alt="Findy Logo" style={{ height: "34px", objectFit: "contain" }} />
+            <span style={{ fontSize: 15, fontWeight: 800, color: "#00E676", letterSpacing: "1.5px", textTransform: "uppercase" }}>
+              Admin
             </span>
           </div>
-
-          <div className="flex items-center gap-2">
-            {loadingData && (
-              <RefreshCw className="w-3.5 h-3.5 text-violet-400 animate-spin" />
-            )}
-            <button
-              onClick={load}
-              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors text-white/50 hover:text-white shrink-0 cursor-pointer"
-              title="Refresh data"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {loadingData && <RefreshCw size={14} color={C.violet} style={{ animation: "spin 1s linear infinite" }} />}
+            <button onClick={load}
+              style={{ padding: 7, borderRadius: 8, background: "rgba(255,255,255,0.06)",
+                border: "none", color: C.muted, cursor: "pointer" }}
+              title="Refresh">
+              <RefreshCw size={14} />
             </button>
-            <button
-              onClick={onLogout}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-white/50 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0 cursor-pointer"
-            >
-              <LogOut className="w-3.5 h-3.5" /> Sign out
+            <button onClick={onLogout}
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px",
+                borderRadius: 8, background: "none", border: "none", color: C.muted,
+                cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
+              <LogOut size={14} /> Sign out
             </button>
           </div>
         </div>
       </header>
 
-      {/* Tab Navigation — scrollable on small screens */}
-      <nav className="sticky top-12 z-40 bg-[#1a1a1a]/95 backdrop-blur">
-        <div className="max-w-7xl mx-auto px-2 sm:px-6 flex gap-1 overflow-x-auto scrollbar-none py-1">
-          {tabs.map(t => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all shrink-0 cursor-pointer ${
-                tab === t.key
-                  ? "bg-violet-600/20 text-violet-300"
-                  : "text-white/40 hover:text-white hover:bg-white/5"
-              }`}
-            >
-              <t.Icon className="w-3.5 h-3.5" /> {t.label}
-              {t.key === "businesses" && stats?.pendingBusinesses ? (
-                <span className="ml-1 bg-amber-500 text-black text-[9px] font-bold px-1.5 py-0.5 rounded-full">{stats.pendingBusinesses}</span>
-              ) : null}
-              {t.key === "reviews" && stats?.flaggedReviews ? (
-                <span className="ml-1 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">{stats.flaggedReviews}</span>
-              ) : null}
-              {t.key === "users" && allUsers.length > 0 ? (
-                <span className="ml-1 bg-violet-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">{allUsers.length}</span>
-              ) : null}
-            </button>
-          ))}
+      {/* ── TAB NAV ── */}
+      <nav style={{ position: "sticky", top: 52, zIndex: 40,
+        background: C.surface, borderBottom: `1px solid ${C.border}` }}>
+        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "8px 16px",
+          display: "flex", gap: 4, overflowX: "auto",
+          scrollbarWidth: "none", msOverflowStyle: "none" } as React.CSSProperties}>
+          {tabs.map(tabBtn)}
         </div>
       </nav>
 
-      {/* Content wrapper */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 pt-4 pb-12">
-        
-        {/* ── OVERVIEW TAB ── */}
+      {/* ── CONTENT ── */}
+      <main style={{ flex: 1, maxWidth: 1280, width: "100%", margin: "0 auto",
+        padding: "24px 24px 64px" }}>
+
+        {/* OVERVIEW */}
         {tab === "overview" && stats && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-lg font-bold text-white mb-1">Platform Overview</h2>
-              <p className="text-xs text-white/30">Live statistics across all registered businesses and users.</p>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-              <StatCard label="Total Businesses" value={stats.totalBusinesses} sub={`${stats.verifiedBusinesses} verified`} color="text-violet-300" />
-              <StatCard label="Pending Approval" value={stats.pendingBusinesses} sub="Awaiting review" color="text-amber-400" />
-              <StatCard label="Total Bookings" value={stats.totalBookings} sub={`${stats.confirmedBookings} confirmed`} color="text-emerald-400" />
-              <StatCard label="Active Plans" value={stats.activeSubscriptions} sub="Subscriptions" color="text-sky-400" />
-              <StatCard label="Total Users" value={stats.totalUsers} sub="Registered accounts" color="text-pink-400" />
-              <StatCard label="Reviews" value={stats.totalReviews} sub={`${stats.flaggedReviews} flagged`} color="text-orange-400" />
-              <StatCard label="Revenue (AMD)" value={`֏${stats.totalRevenue.toLocaleString()}`} sub="Active subscriptions" color="text-yellow-400" />
-              <StatCard label="Cancelled Bookings" value={stats.cancelledBookings} color="text-red-400" />
+          <div>
+            {sectionHead("Platform Overview", "Live statistics across all registered businesses and users.")}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px,1fr))", gap: 16 }}>
+              <StatCard label="Total Businesses" value={stats.totalBusinesses} sub={`${stats.verifiedBusinesses} verified`} color={C.violet} />
+              <StatCard label="Pending Approval" value={stats.pendingBusinesses} sub="Awaiting review" color={C.amber} />
+              <StatCard label="Total Bookings"   value={stats.totalBookings}   sub={`${stats.confirmedBookings} confirmed`} color={C.emerald} />
+              <StatCard label="Active Plans"     value={stats.activeSubscriptions} sub="Subscriptions" color={C.sky} />
+              <StatCard label="Total Users"      value={stats.totalUsers}      sub="Registered accounts" color={C.pink} />
+              <StatCard label="Reviews"          value={stats.totalReviews}    sub={`${stats.flaggedReviews} flagged`} color="#fb923c" />
+              <StatCard label="Revenue (AMD)"    value={`֏${stats.totalRevenue.toLocaleString()}`} sub="Active subscriptions" color={C.yellow} />
+              <StatCard label="Cancelled Bookings" value={stats.cancelledBookings} color={C.red} />
             </div>
           </div>
         )}
 
-        {/* ── BUSINESSES TAB ── */}
+        {/* BUSINESSES */}
         {tab === "businesses" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
+              flexWrap: "wrap", gap: 12, marginBottom: 20 }}>
               <div>
-                <h2 className="text-lg font-bold text-white">Businesses</h2>
-                <p className="text-xs text-white/30">Review, verify, and moderate registered Armenian businesses.</p>
+                <h2 style={{ fontSize: 18, fontWeight: 800, color: C.text, margin: 0 }}>Businesses</h2>
+                <p style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>Review, verify, and moderate registered businesses.</p>
               </div>
-              <div className="flex rounded-lg p-0.5 bg-white/5">
-                {(["pending", "verified", "all"] as const).map(mode => (
-                  <button
-                    key={mode}
-                    onClick={() => setBizSubTab(mode)}
-                    className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer capitalize ${
-                      bizSubTab === mode 
-                        ? "bg-white/10 text-white shadow-sm border-0" 
-                        : "text-white/40 hover:text-white"
-                    }`}
-                  >
-                    {mode}
+              <div style={{ display: "flex", background: "rgba(255,255,255,0.05)",
+                borderRadius: 10, padding: 4, gap: 2 }}>
+                {(["pending","verified","all"] as const).map(m => (
+                  <button key={m} onClick={() => setBizSubTab(m)}
+                    style={{ padding: "5px 14px", borderRadius: 7, border: "none",
+                      cursor: "pointer", fontSize: 12, fontWeight: 700,
+                      textTransform: "capitalize",
+                      background: bizSubTab === m ? "rgba(255,255,255,0.1)" : "transparent",
+                      color: bizSubTab === m ? C.text : C.muted,
+                      transition: "all 0.15s" }}>
+                    {m}
                   </button>
                 ))}
               </div>
             </div>
-
-            {filteredBiz.length === 0 ? (
-              <div className="text-center py-16 rounded-2xl bg-white/5 border-0">
-                <Building2 className="w-10 h-10 mx-auto text-white/20 mb-2" />
-                <p className="text-sm font-semibold text-white/50">No businesses found</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
+            {filteredBiz.length === 0 ? emptyState(Building2, "No businesses found") : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {filteredBiz.map(b => (
-                  <div key={b._id} className="bg-white/5 rounded-2xl p-4 flex flex-col md:flex-row justify-between md:items-center gap-4 shadow-sm border-0">
+                  <div key={b._id} style={{ background: C.card, borderRadius: 16, padding: 20,
+                    border: `1px solid ${C.border}`, display: "flex",
+                    justifyContent: "space-between", alignItems: "center",
+                    flexWrap: "wrap", gap: 16 }}>
                     <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-white">{b.name}</span>
-                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border-0 ${
-                          b.verified ? "bg-green-500/10 text-green-400" : "bg-amber-500/10 text-amber-400"
-                        }`}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontWeight: 700, fontSize: 14, color: C.text }}>{b.name}</span>
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 99,
+                          background: b.verified ? C.greenDim : C.amberDim,
+                          color: b.verified ? C.green : C.amber }}>
                           {b.verified ? "Verified" : "Pending"}
                         </span>
                       </div>
-                      <p className="text-xs text-white/40 mt-1">{b.category?.name || "No Category"} • {b.city}</p>
-                      <div className="flex flex-wrap gap-4 mt-2 text-xs text-white/40">
-                        <span className="flex items-center gap-1"><Mail className="w-3.5 h-3.5 text-white/40" /> {b.email}</span>
-                        {b.phone && <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5 text-white/40" /> {b.phone}</span>}
-                        <span className="flex items-center gap-1"><Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" /> {b.rating.toFixed(1)} ({b.reviewCount} reviews)</span>
+                      <p style={{ fontSize: 12, color: C.muted, margin: "6px 0 0" }}>
+                        {b.category?.name || "No Category"} • {b.city}
+                      </p>
+                      <div style={{ display: "flex", gap: 16, marginTop: 8, flexWrap: "wrap" }}>
+                        <span style={{ display: "flex", alignItems: "center", gap: 4,
+                          fontSize: 12, color: C.muted }}>
+                          <Mail size={13} />{b.email}
+                        </span>
+                        {b.phone && <span style={{ display: "flex", alignItems: "center", gap: 4,
+                          fontSize: 12, color: C.muted }}>
+                          <Phone size={13} />{b.phone}
+                        </span>}
+                        <span style={{ display: "flex", alignItems: "center", gap: 4,
+                          fontSize: 12, color: C.amber }}>
+                          <Star size={13} fill={C.amber} />{b.rating.toFixed(1)} ({b.reviewCount})
+                        </span>
                       </div>
                     </div>
-
-                    <div className="flex gap-2 shrink-0">
-                      {!b.verified ? (
-                        <button
-                          onClick={() => approveBiz(b._id)}
-                          className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white font-semibold text-xs px-3 py-1.5 rounded-lg transition-colors cursor-pointer border-0"
-                        >
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Approve
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => rejectBiz(b._id)}
-                          className="flex items-center gap-1 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs px-3 py-1.5 rounded-lg transition-colors cursor-pointer border-0"
-                        >
-                          <Ban className="w-3.5 h-3.5" /> Suspend
-                        </button>
-                      )}
-                      <button
-                        onClick={() => deleteBiz(b._id)}
-                        className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white font-semibold text-xs px-3 py-1.5 rounded-lg transition-colors cursor-pointer border-0"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" /> Delete
-                      </button>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      {!b.verified
+                        ? btnSm("Approve", () => approveBiz(b._id), "#16a34a", C.greenDim, <CheckCircle2 size={13} />)
+                        : btnSm("Suspend", () => rejectBiz(b._id),  "#b45309", C.amberDim, <Ban size={13} />)
+                      }
+                      {btnSm("Delete", () => deleteBiz(b._id), "#dc2626", C.redDim, <Trash2 size={13} />)}
                     </div>
                   </div>
                 ))}
@@ -472,45 +495,36 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           </div>
         )}
 
-        {/* ── BOOKINGS TAB ── */}
+        {/* BOOKINGS */}
         {tab === "bookings" && (
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-lg font-bold text-white">Bookings</h2>
-              <p className="text-xs text-white/30">View and remove registered appointments across the platform.</p>
-            </div>
-
-            {bookings.length === 0 ? (
-              <div className="text-center py-16 rounded-2xl bg-white/5 border-0">
-                <CalendarDays className="w-10 h-10 mx-auto text-white/20 mb-2" />
-                <p className="text-sm font-semibold text-white/50">No bookings registered</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
+          <div>
+            {sectionHead("Bookings", "View and remove registered appointments across the platform.")}
+            {bookings.length === 0 ? emptyState(CalendarDays, "No bookings registered") : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {bookings.map(bk => (
-                  <div key={bk._id} className="bg-white/5 rounded-2xl p-4 flex justify-between items-center gap-4 shadow-sm border-0">
+                  <div key={bk._id} style={{ background: C.card, borderRadius: 16, padding: 20,
+                    border: `1px solid ${C.border}`, display: "flex",
+                    justifyContent: "space-between", alignItems: "center", gap: 16 }}>
                     <div>
-                      <span className="font-bold text-sm text-white">{bk.serviceName}</span>
-                      <p className="text-xs text-white/40 mt-0.5">at {bk.business?.name || "Business"} • {bk.customerName} ({bk.customerPhone})</p>
-                      <p className="text-xs text-white/40 mt-1 font-semibold flex items-center gap-1">
-                        <CalendarDays className="w-3.5 h-3.5 text-white/40" /> {bk.date} @ {bk.timeSlot}
+                      <span style={{ fontWeight: 700, fontSize: 14, color: C.text }}>{bk.serviceName}</span>
+                      <p style={{ fontSize: 12, color: C.muted, margin: "4px 0 0" }}>
+                        at {bk.business?.name || "Business"} • {bk.customerName} ({bk.customerPhone})
+                      </p>
+                      <p style={{ fontSize: 12, color: C.muted, margin: "4px 0 0",
+                        display: "flex", alignItems: "center", gap: 4 }}>
+                        <CalendarDays size={12} /> {bk.date} @ {bk.timeSlot}
                       </p>
                     </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border-0 uppercase ${
-                        bk.status === "confirmed" ? "bg-green-500/10 text-green-400" :
-                        bk.status === "cancelled" ? "bg-red-500/10 text-red-400" :
-                        "bg-amber-500/10 text-amber-400"
-                      }`}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <span style={{ fontSize: 10, fontWeight: 800, padding: "3px 10px",
+                        borderRadius: 99, textTransform: "uppercase",
+                        background: bk.status === "confirmed" ? C.greenDim
+                          : bk.status === "cancelled" ? C.redDim : C.amberDim,
+                        color: bk.status === "confirmed" ? C.green
+                          : bk.status === "cancelled" ? C.red : C.amber }}>
                         {bk.status}
                       </span>
-                      <button
-                        onClick={() => deleteBook(bk._id)}
-                        className="bg-red-600/10 text-red-500 hover:bg-red-600 hover:text-white p-2 rounded-lg transition-all cursor-pointer border-0"
-                        title="Delete booking"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      {iconBtn(() => deleteBook(bk._id), <Trash2 size={14} />, C.red, C.redDim, "Delete booking")}
                     </div>
                   </div>
                 ))}
@@ -519,43 +533,37 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           </div>
         )}
 
-        {/* ── PLANS TAB ── */}
+        {/* SUBSCRIPTIONS */}
         {tab === "subscriptions" && (
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-lg font-bold text-white">Subscription Plans</h2>
-              <p className="text-xs text-white/30">Track active billing details and premium tiers.</p>
-            </div>
-
-            {subscriptions.length === 0 ? (
-              <div className="text-center py-16 rounded-2xl bg-white/5 border-0">
-                <Gem className="w-10 h-10 mx-auto text-white/20 mb-2" />
-                <p className="text-sm font-semibold text-white/50">No active subscriptions</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
+          <div>
+            {sectionHead("Subscription Plans", "Track active billing details and premium tiers.")}
+            {subscriptions.length === 0 ? emptyState(Gem, "No active subscriptions") : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {subscriptions.map(s => (
-                  <div key={s._id} className="bg-white/5 rounded-2xl p-4 flex justify-between items-center gap-4 shadow-sm border-0">
+                  <div key={s._id} style={{ background: C.card, borderRadius: 16, padding: 20,
+                    border: `1px solid ${C.border}`, display: "flex",
+                    justifyContent: "space-between", alignItems: "center", gap: 16 }}>
                     <div>
-                      <span className="font-bold text-sm capitalize text-white">{s.plan} Plan</span>
-                      <p className="text-xs text-white/40 mt-0.5">Business: {s.business?.name || "Business"} ({s.business?.email})</p>
-                      <p className="text-xs text-white/40 mt-1 font-semibold flex items-center gap-1">
-                        <CalendarDays className="w-3.5 h-3.5 text-white/40" /> Cycle: {new Date(s.startDate).toLocaleDateString()} to {new Date(s.endDate).toLocaleDateString()}
+                      <span style={{ fontWeight: 700, fontSize: 14, color: C.text, textTransform: "capitalize" }}>
+                        {s.plan} Plan
+                      </span>
+                      <p style={{ fontSize: 12, color: C.muted, margin: "4px 0 0" }}>
+                        Business: {s.business?.name || "—"} ({s.business?.email})
+                      </p>
+                      <p style={{ fontSize: 12, color: C.muted, margin: "4px 0 0",
+                        display: "flex", alignItems: "center", gap: 4 }}>
+                        <CalendarDays size={12} />
+                        {new Date(s.startDate).toLocaleDateString()} → {new Date(s.endDate).toLocaleDateString()}
                       </p>
                     </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border-0 uppercase ${
-                        s.status === "active" ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400"
-                      }`}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <span style={{ fontSize: 10, fontWeight: 800, padding: "3px 10px", borderRadius: 99,
+                        textTransform: "uppercase",
+                        background: s.status === "active" ? C.greenDim : C.redDim,
+                        color: s.status === "active" ? C.green : C.red }}>
                         {s.status}
                       </span>
-                      <button
-                        onClick={() => deleteSub(s._id)}
-                        className="bg-red-600/10 text-red-500 hover:bg-red-600 hover:text-white p-2 rounded-lg transition-all cursor-pointer border-0"
-                        title="Cancel Subscription"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      {iconBtn(() => deleteSub(s._id), <Trash2 size={14} />, C.red, C.redDim, "Cancel subscription")}
                     </div>
                   </div>
                 ))}
@@ -564,105 +572,97 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           </div>
         )}
 
-        {/* ── REPORTS TAB ── */}
+        {/* REPORTS / REVIEWS */}
         {tab === "reviews" && (
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-lg font-bold text-white">Review Moderation</h2>
-              <p className="text-xs text-white/30">Inspect flagged reviews and respond to business owner report appeals.</p>
-            </div>
-
+          <div>
+            {sectionHead("Review Moderation", "Inspect flagged reviews and respond to business owner report appeals.")}
             {reviews.length === 0 ? (
-              <div className="text-center py-16 rounded-2xl bg-white/5 border-0">
-                <CheckCircle className="w-10 h-10 mx-auto text-green-500 mb-2" />
-                <p className="text-sm font-semibold text-white/50">Queue is clear!</p>
+              <div style={{ textAlign: "center", padding: "64px 0", background: C.card,
+                borderRadius: 16, border: `1px solid ${C.border}` }}>
+                <CheckCircle size={40} color={C.green} style={{ marginBottom: 12 }} />
+                <p style={{ fontSize: 14, fontWeight: 600, color: C.muted }}>Queue is clear!</p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 {reviews.map(r => (
-                  <div key={r._id} className="bg-white/5 rounded-2xl p-5 hover:bg-white/8 transition-all shadow-sm border-0">
-                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-4">
+                  <div key={r._id} style={{ background: C.card, borderRadius: 16, padding: 24,
+                    border: `1px solid ${C.border}` }}>
+                    <div style={{ display: "flex", justifyContent: "space-between",
+                      flexWrap: "wrap", gap: 16, marginBottom: 16 }}>
                       <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-xs font-semibold text-white/40">Flagged on:</span>
-                          <span className="text-sm font-bold text-white">{r.business?.name}</span>
-                          <span className="text-xs text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full">Reported</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                          <span style={{ fontSize: 12, color: C.muted }}>Flagged on:</span>
+                          <span style={{ fontWeight: 700, fontSize: 14, color: C.text }}>{r.business?.name}</span>
+                          <span style={{ fontSize: 11, color: C.red, background: C.redDim,
+                            padding: "2px 8px", borderRadius: 99 }}>Reported</span>
                         </div>
-                        <div className="flex items-center gap-1.5 mt-1 text-xs text-white/40">
-                          <span>By: <strong>{r.author?.name || "Anonymous"}</strong></span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6,
+                          fontSize: 12, color: C.muted }}>
+                          <span>By: <strong style={{ color: C.text }}>{r.author?.name || "Anonymous"}</strong></span>
                           <span>•</span>
-                          <span className="flex items-center text-amber-400">
-                            Rating: {r.rating} <Star className="w-3 h-3 fill-amber-400 text-amber-400 ml-0.5" />
-                          </span>
+                          <span style={{ color: C.amber }}>Rating: {r.rating} ★</span>
                           {r.reportedAt && (
-                            <>
-                              <span>•</span>
-                              <span>Date: {new Date(r.reportedAt).toLocaleDateString()}</span>
-                            </>
+                            <><span>•</span><span>Date: {new Date(r.reportedAt).toLocaleDateString()}</span></>
                           )}
                         </div>
                       </div>
-
                       {resolvingId !== r._id && (
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => { setResolvingId(r._id); setResolveAction("keep"); }}
-                            className="bg-green-600 hover:bg-green-700 text-white font-semibold text-xs px-3 py-1.5 rounded-lg cursor-pointer border-0"
-                          >
-                            Keep Review
-                          </button>
-                          <button
-                            onClick={() => { setResolvingId(r._id); setResolveAction("delete"); }}
-                            className="bg-red-600 hover:bg-red-700 text-white font-semibold text-xs px-3 py-1.5 rounded-lg cursor-pointer border-0"
-                          >
-                            Delete Review
-                          </button>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          {btnSm("Keep Review",   () => { setResolvingId(r._id); setResolveAction("keep");   }, "#16a34a", C.greenDim)}
+                          {btnSm("Delete Review", () => { setResolvingId(r._id); setResolveAction("delete"); }, "#dc2626", C.redDim)}
                         </div>
                       )}
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="bg-white/5 p-3.5 rounded-xl border-0">
-                        <span className="text-[10px] font-semibold text-white/40 uppercase tracking-wider block mb-1">Review Content</span>
-                        <p className="text-xs italic text-white/90">&ldquo;{r.comment}&rdquo;</p>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr",
+                      gap: 16, marginBottom: resolvingId === r._id ? 20 : 0 }}>
+                      <div style={{ background: "rgba(255,255,255,0.04)", padding: 14, borderRadius: 10 }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: C.muted,
+                          textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>
+                          Review Content
+                        </span>
+                        <p style={{ fontSize: 13, color: C.text, fontStyle: "italic", margin: 0 }}>
+                          &ldquo;{r.comment}&rdquo;
+                        </p>
                       </div>
-                      <div className="bg-red-500/5 p-3.5 rounded-xl border-0">
-                        <span className="text-[10px] font-semibold text-red-400 uppercase tracking-wider block mb-1">Report Reason</span>
-                        <p className="text-xs text-white/90">{r.reportedReason || "Inappropriate content"}</p>
+                      <div style={{ background: C.redDim, padding: 14, borderRadius: 10 }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: C.red,
+                          textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>
+                          Report Reason
+                        </span>
+                        <p style={{ fontSize: 13, color: C.text, margin: 0 }}>
+                          {r.reportedReason || "Inappropriate content"}
+                        </p>
                       </div>
                     </div>
 
                     {resolvingId === r._id && (
-                      <form onSubmit={submitResolve} className="mt-5 border-t border-white/5 pt-4 space-y-3">
-                        <div className="bg-white/5 p-4 rounded-xl border-0">
-                          <h4 className="text-xs font-bold text-white mb-1 flex items-center gap-1">
+                      <form onSubmit={submitResolve}
+                        style={{ borderTop: `1px solid ${C.border}`, paddingTop: 20, marginTop: 4 }}>
+                        <div style={{ background: "rgba(255,255,255,0.04)", padding: 16, borderRadius: 12 }}>
+                          <h4 style={{ fontSize: 13, fontWeight: 700, color: C.text, margin: "0 0 8px" }}>
                             {resolveAction === "delete" ? "Delete Review & Reply" : "Keep Review & Reply"}
                           </h4>
-                          <p className="text-[11px] text-white/40 mb-3">
-                            Provide a message explaining why this review was {resolveAction === "delete" ? "deleted" : "kept"}. An official notification will be sent to the business owner.
+                          <p style={{ fontSize: 12, color: C.muted, margin: "0 0 12px" }}>
+                            Provide a message explaining the decision. Notification will be sent to the business owner.
                           </p>
-                          <textarea
-                            value={adminReply}
-                            onChange={e => setAdminReply(e.target.value)}
-                            placeholder="Explain your decision (e.g. This review conforms to community guidelines / This review constitutes spam.)"
-                            rows={3}
-                            className="w-full text-xs rounded-lg bg-[#1a1a1a] p-3 outline-none focus:border-violet-500/70 text-white placeholder-white/20 border-0"
-                            required
-                          />
-                          <div className="flex justify-end gap-2 mt-3">
-                            <button
-                              type="button"
+                          <textarea value={adminReply} onChange={e => setAdminReply(e.target.value)}
+                            placeholder="Explain your decision…" rows={3} required
+                            style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`,
+                              borderRadius: 8, padding: 12, fontSize: 12, color: C.text,
+                              outline: "none", resize: "vertical", boxSizing: "border-box" }} />
+                          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12 }}>
+                            <button type="button"
                               onClick={() => { setResolvingId(null); setResolveAction(null); }}
-                              className="px-3 py-1.5 text-xs font-medium rounded-lg hover:bg-white/5 cursor-pointer text-white/60 hover:text-white border-0"
-                            >
+                              style={{ padding: "7px 14px", borderRadius: 8, border: "none",
+                                background: "rgba(255,255,255,0.06)", color: C.muted,
+                                cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
                               Cancel
                             </button>
-                            <button
-                              type="submit"
-                              className={`px-3 py-1.5 text-xs font-medium text-white rounded-lg cursor-pointer border-0 ${
-                                resolveAction === "delete" ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"
-                              }`}
-                            >
+                            <button type="submit"
+                              style={{ padding: "7px 14px", borderRadius: 8, border: "none",
+                                background: resolveAction === "delete" ? "#dc2626" : "#16a34a",
+                                color: "#fff", cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
                               Submit Resolution
                             </button>
                           </div>
@@ -676,55 +676,44 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           </div>
         )}
 
-        {/* ── USERS TAB ── */}
+        {/* USERS */}
         {tab === "users" && (
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-lg font-bold text-white">All Users</h2>
-              <p className="text-xs text-white/30">View and moderate all registered users.</p>
-            </div>
-
-            {allUsers.length === 0 ? (
-              <div className="text-center py-16 rounded-2xl bg-white/5 border-0">
-                <Users className="w-10 h-10 mx-auto text-white/20 mb-2" />
-                <p className="text-sm font-semibold text-white/50">No registered users found</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
+          <div>
+            {sectionHead("All Users", "View and moderate all registered users.")}
+            {allUsers.length === 0 ? emptyState(Users, "No registered users found") : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {allUsers.map(u => {
-                  const isCurAdmin = u.role === "admin";
-                  const RoleIcon = isCurAdmin ? Crown : u.role === "business_owner" ? Briefcase : UserCircle2;
-                  const badgeColor = isCurAdmin ? "bg-violet-500/10 text-violet-400" :
-                    u.role === "business_owner" ? "bg-sky-500/10 text-sky-400" :
-                    "bg-white/5 text-white/40";
-                  
+                  const isAdmin = u.role === "admin";
+                  const Icon = isAdmin ? Crown : u.role === "business_owner" ? Briefcase : UserCircle2;
+                  const badgeColor = isAdmin ? C.violet : u.role === "business_owner" ? C.sky : C.muted;
+                  const badgeDim   = isAdmin ? C.violetDim : u.role === "business_owner" ? "rgba(56,189,248,0.12)" : "rgba(255,255,255,0.06)";
                   return (
-                    <div key={u._id} className="bg-white/5 rounded-2xl p-4 flex justify-between items-center gap-4 shadow-sm border-0">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-white/8 flex items-center justify-center shrink-0 border-0">
-                          <RoleIcon className="w-4 h-4 text-white/40" />
+                    <div key={u._id} style={{ background: C.card, borderRadius: 16, padding: 18,
+                      border: `1px solid ${C.border}`, display: "flex",
+                      justifyContent: "space-between", alignItems: "center", gap: 16 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                        <div style={{ width: 38, height: 38, borderRadius: 10,
+                          background: "rgba(255,255,255,0.06)", display: "flex",
+                          alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <Icon size={16} color={C.muted} />
                         </div>
                         <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-sm text-white">{u.name}</span>
-                            {u.username && <span className="text-xs text-white/40">@{u.username}</span>}
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ fontWeight: 700, fontSize: 14, color: C.text }}>{u.name}</span>
+                            {u.username && <span style={{ fontSize: 12, color: C.muted }}>@{u.username}</span>}
                           </div>
-                          <p className="text-xs text-white/40 mt-0.5">Email: {u.email} • Joined: {new Date(u.createdAt).toLocaleDateString()}</p>
+                          <p style={{ fontSize: 12, color: C.muted, margin: "3px 0 0" }}>
+                            {u.email} • Joined {new Date(u.createdAt).toLocaleDateString()}
+                          </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3 shrink-0">
-                        <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border-0 uppercase ${badgeColor}`}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <span style={{ fontSize: 10, fontWeight: 800, padding: "3px 10px",
+                          borderRadius: 99, background: badgeDim, color: badgeColor,
+                          textTransform: "uppercase" }}>
                           {u.role.replace("_", " ")}
                         </span>
-                        {!isCurAdmin && (
-                          <button
-                            onClick={() => deleteUserById(u._id)}
-                            className="bg-red-600/10 text-red-500 hover:bg-red-600 hover:text-white p-2 rounded-lg transition-all cursor-pointer border-0"
-                            title="Delete User"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
+                        {!isAdmin && iconBtn(() => deleteUserById(u._id), <Trash2 size={14} />, C.red, C.redDim, "Delete user")}
                       </div>
                     </div>
                   );
@@ -735,36 +724,38 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         )}
 
       </main>
+      <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 }
 
-// ─── ROOT PAGE ───────────────────────────────────────────────────────────────
+/* ─────────────── ROOT PAGE ─────────────── */
 export default function AdminSecurePage() {
-  const [authed, setAuthed] = useState(false);
+  const [authed, setAuthed]     = useState(false);
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    // Restore admin session from dedicated key (separate from regular user session)
     const token = localStorage.getItem(ADMIN_TOKEN_KEY);
-    const savedUser = localStorage.getItem(ADMIN_USER_KEY);
-    if (token && savedUser) {
-      try {
-        const user = JSON.parse(savedUser);
+    if (!token) { setChecking(false); return; }
+    axios
+      .get(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(res => {
+        const user = res.data?.user;
         if (user?.role === "admin") {
           setAuthed(true);
+        } else {
+          localStorage.removeItem(ADMIN_TOKEN_KEY);
+          localStorage.removeItem(ADMIN_USER_KEY);
         }
-      } catch {
-        // ignore
-      }
-    }
-    setChecking(false);
+      })
+      .catch(() => {
+        localStorage.removeItem(ADMIN_TOKEN_KEY);
+        localStorage.removeItem(ADMIN_USER_KEY);
+      })
+      .finally(() => setChecking(false));
   }, []);
 
-  const handleLogin = (token: string) => {
-    setAuthed(true);
-  };
-
+  const handleLogin  = () => setAuthed(true);
   const handleLogout = () => {
     localStorage.removeItem(ADMIN_TOKEN_KEY);
     localStorage.removeItem(ADMIN_USER_KEY);
@@ -773,18 +764,18 @@ export default function AdminSecurePage() {
 
   if (checking) {
     return (
-      <div className="min-h-screen bg-[#1a1a1a] flex items-center justify-center">
-        <svg className="w-8 h-8 text-violet-500 animate-spin" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+      <div data-admin-panel="1" style={{ minHeight: "100vh", background: "#1e1e2e",
+        display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <svg style={{ width: 32, height: 32, color: "#c4b5fd",
+          animation: "spin 1s linear infinite" }} fill="none" viewBox="0 0 24 24">
+          <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+          <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
         </svg>
+        <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
       </div>
     );
   }
 
-  if (!authed) {
-    return <AdminLogin onLogin={handleLogin} />;
-  }
-
+  if (!authed) return <AdminLogin onLogin={handleLogin} />;
   return <AdminDashboard onLogout={handleLogout} />;
 }

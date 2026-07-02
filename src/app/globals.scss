@@ -669,4 +669,30 @@ section:has(.relative.rounded-2xl.overflow-hidden.group) {
   }
 }
 
+/* ========== ADMIN PANEL — FORCED DARK MODE ========== */
+body.admin-dark,
+html.admin-dark {
+  background-color: #1e1e2e !important;
+  color: #e8e8f8 !important;
+}
+/* Make Next.js main wrapper transparent so body dark bg shows through */
+body.admin-dark > main {
+  background-color: transparent !important;
+}
+/* Force header and nav to use the dark theme backgrounds */
+body.admin-dark header {
+  background: #1e1e2e !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09) !important;
+  box-shadow: none !important;
+}
+body.admin-dark nav {
+  background: #252538 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09) !important;
+  box-shadow: none !important;
+}
+/* Admin panel inline styles handle all internal backgrounds */
+body.admin-dark [data-admin-panel] {
+  color: #e8e8f8;
+}
+
 @import "../components/map/MapWorkspace.scss";
