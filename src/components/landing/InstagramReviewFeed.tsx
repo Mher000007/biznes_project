@@ -307,12 +307,12 @@ export default function InstagramReviewFeed() {
             return (
               <div
                 key={review.id}
-                className="w-full max-w-[360px] bg-white dark:bg-[#1a1b1e] border border-[hsl(var(--border))] rounded-[12px] flex flex-col overflow-hidden transition-all duration-300"
+                className="w-full max-w-[360px] bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-[12px] flex flex-col overflow-hidden transition-all duration-300"
               >
                 {/* Header */}
                 <div className="flex items-center gap-3 p-3.5">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 p-[1.5px]">
-                    <div className="flex h-full w-full items-center justify-center rounded-full bg-white dark:bg-[#1a1b1e] p-[1.5px]">
+                    <div className="flex h-full w-full items-center justify-center rounded-full bg-[hsl(var(--card))] p-[1.5px]">
                       <div className="flex h-full w-full items-center justify-center rounded-full bg-[hsl(var(--muted))] text-[10px] font-bold text-[hsl(var(--foreground))] uppercase">
                         {review.user.initials || "U"}
                       </div>
@@ -335,13 +335,22 @@ export default function InstagramReviewFeed() {
                 </div>
 
                 {/* Main 1:1 Photo */}
-                <div className="relative w-full aspect-square bg-[hsl(var(--muted))] overflow-hidden border-y border-[hsl(var(--border))]">
+                <div 
+                  className="relative w-full aspect-square bg-[hsl(var(--muted))] overflow-hidden border-y border-[hsl(var(--border))] cursor-pointer group"
+                  onDoubleClick={() => {
+                    const isLiked = likedMap[review.id]?.liked;
+                    if (!isLiked) {
+                      handleLike(review.id, review.businessId);
+                    }
+                  }}
+                >
                   <img
                     src={review.img}
                     alt={`${review.biz.name} review`}
-                    className="w-full h-full object-cover select-none"
+                    className="w-full h-full object-cover select-none transition-transform duration-500 group-active:scale-95"
                     loading="lazy"
                   />
+                  {/* Optional icon overlay could go here, but this enables the functionality */}
                 </div>
 
                 {/* Footer Interactions & Stars */}

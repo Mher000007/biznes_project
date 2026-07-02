@@ -2,9 +2,6 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-<<<<<<< HEAD
-import { LayoutDashboard, Building2, MessageSquare, Settings, LogOut, Sparkles, MapPin } from "lucide-react";
-=======
 import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
@@ -18,8 +15,8 @@ import {
   Lock,
   Camera,
   Clock,
+  MapPin,
 } from "lucide-react";
->>>>>>> 6c11acbd71a849c0dc4696a358475f836f27fd45
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
