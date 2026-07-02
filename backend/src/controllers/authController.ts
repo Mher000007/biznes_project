@@ -144,3 +144,35 @@ export const updateProfile = asyncHandler(
     });
   }
 );
+
+// ─── Change password ──────────────────────────────────────────────────────────
+export const changePassword = asyncHandler(
+  async (req: Request & { user?: any }, res: Response): Promise<void> => {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      res.status(400).json({ success: false, message: 'Please provide current and new passwords' });
+      return;
+    }
+
+    const user = await User.findById(req.user?.id).select('+password');
+    if (!user) {
+      res.status(404).json({ success: false, message: 'User not found' });
+      return;
+    }
+
+    const isMatch = await user.matchPassword(currentPassword);
+    if (!isMatch) {
+      res.status(400).json({ success: false, message: 'Incorrect current password' });
+      return;
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Password changed successfully',
+    });
+  }
+);

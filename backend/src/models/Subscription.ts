@@ -8,6 +8,9 @@ export interface ISubscription extends Document {
   status: 'active' | 'expired' | 'cancelled';
   startDate: Date;
   endDate: Date;
+  isGifted?: boolean;
+  giftReason?: string;
+  promoCode?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -44,6 +47,18 @@ const subscriptionSchema = new Schema<ISubscription>({
   endDate: {
     type: Date,
     required: true,
+  },
+  isGifted: {
+    type: Boolean,
+    default: false,
+  },
+  giftReason: {
+    type: String,
+    default: null,
+  },
+  promoCode: {
+    type: String,
+    default: null,
   }
 }, {
   timestamps: true

@@ -4,16 +4,13 @@ import dynamic from "next/dynamic";
 import { CATEGORIES, ARMENIAN_CITIES } from "@/lib/constants";
 import { useAuth } from "@/context/AuthContext";
 import { getBusinessProfile, saveBusinessProfile } from "@/lib/auth";
-import { 
-  Save, CheckCircle, Plus, X, Image as ImageIcon, Star, Phone, Mail, Globe, 
-  MapPin, Clock, Camera, Trash2, Eye, ChevronRight, ChevronLeft, Award, PlusCircle, Sparkles, Smartphone,
-  Settings, Grid as GridIcon, User as UserIcon, BadgeCheck, Compass, ArrowLeft, Calendar, Navigation
-} from "lucide-react";
+import { Save, CheckCircle, Plus, X, Image as ImageIcon, Star, Phone, Mail, Globe, MapPin, Clock, Camera, Trash2, Eye, ChevronRight, ChevronLeft, Award, PlusCircle, Sparkles, Smartphone, Settings, Grid as GridIcon, User as UserIcon, BadgeCheck, Compass, ArrowLeft, Calendar, Navigation, Lock } from "lucide-react";
 import axios from "axios";
 import styles from "@/components/dashboard/Dashboard.module.scss";
 import profileStyles from "@/components/business/BusinessProfile.module.scss";
 import { useI18n } from "@/i18n";
 import { getApiUrl } from "@/lib/utils";
+import { useSearchParams, useRouter } from "next/navigation";
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -73,8 +70,16 @@ export default function DashboardProfilePage() {
   // Track the MongoDB ObjectId of the category so we can send it back on save
   const [categoryId, setCategoryId] = useState<string | null>(null);
 
-  // Layout Tab State
-  const [activeFormTab, setActiveFormTab] = useState<"identity" | "info" | "stories" | "hours" | "services" | null>("identity");
+  // Layout Tab State (from search query param)
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const rawTab = searchParams.get("tab") || "branding";
+  const activeFormTab = rawTab === "branding" ? "identity" : rawTab === "credentials" ? "info" : rawTab === "stories" ? "stories" : rawTab === "hours" ? "hours" : "identity";
+
+  const handleTabChange = (tabId: string) => {
+    router.push(`/dashboard/profile?tab=${tabId}`);
+  };
+
   const [activePreviewTab, setActivePreviewTab] = useState<"about" | "gallery">("about");
   
   // Simulated Phone Screen Story overlay
@@ -232,6 +237,12 @@ export default function DashboardProfilePage() {
 
   // Active Subscription
   const [activePlan, setActivePlan] = useState<"starter" | "standard" | "premium">("standard");
+  const [activeSubscription, setActiveSubscription] = useState<any>(null);
+  const [businessId, setBusinessId] = useState<string | null>(null);
+  const [promoCodeInput, setPromoCodeInput] = useState("");
+  const [promoMessage, setPromoMessage] = useState("");
+  const [promoMessageType, setPromoMessageType] = useState<"success" | "error" | "">("");
+  const [applyingPromo, setApplyingPromo] = useState(false);
 
   // Load business info from backend/local mock on init
   useEffect(() => {
@@ -291,12 +302,15 @@ export default function DashboardProfilePage() {
           setNoteText(biz.metadata?.noteText || "");
           setFoundedYear(biz.metadata?.foundedYear ? biz.metadata.foundedYear.toString() : "");
 
+          setBusinessId(biz._id);
+
           // Fetch active subscription
           const subRes = await axios.get(`${apiURL}/subscriptions/business/${biz._id}`, {
             headers: token ? { Authorization: `Bearer ${token}` } : {}
           });
           if (subRes.data?.success && subRes.data.data) {
             setActivePlan(subRes.data.data.plan);
+            setActiveSubscription(subRes.data.data);
           }
           return;
         }
@@ -559,6 +573,44 @@ export default function DashboardProfilePage() {
     }
   };
 
+  const handlePromoApply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!promoCodeInput.trim() || !businessId) return;
+    setApplyingPromo(true);
+    setPromoMessage("");
+    setPromoMessageType("");
+    try {
+      const apiURL = getApiUrl();
+      const token = typeof window !== 'undefined' ? window.localStorage.getItem('token') : null;
+      const res = await axios.post(
+        `${apiURL}/subscriptions/promo/activate`,
+        {
+          businessId,
+          code: promoCodeInput.trim(),
+        },
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+      );
+      if (res.data?.success) {
+        setPromoMessageType("success");
+        setPromoMessage(res.data.message || "Promo code applied successfully!");
+        setPromoCodeInput("");
+        // Reload subscription details
+        const subRes = await axios.get(`${apiURL}/subscriptions/business/${businessId}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        if (subRes.data?.success && subRes.data.data) {
+          setActivePlan(subRes.data.data.plan);
+          setActiveSubscription(subRes.data.data);
+        }
+      }
+    } catch (err: any) {
+      setPromoMessageType("error");
+      setPromoMessage(err.response?.data?.message || "Failed to apply promo code");
+    } finally {
+      setApplyingPromo(false);
+    }
+  };
+
   // Cover banner selection logic for preview (matches public detail view logic)
   const previewCoverImage = coverUrls && coverUrls.length > 0
     ? coverUrls[0]
@@ -601,22 +653,22 @@ export default function DashboardProfilePage() {
         </div>
       </div>
 
-      {/* Builder Navigation Tabs (Full Width) */}
-      <div className="flex items-center justify-start md:justify-center gap-1 border-b border-[hsl(var(--border))] overflow-x-auto pb-px mb-8">
+      {/* Mobile/Fallback Builder Navigation Tabs (Hidden on Desktop) */}
+      <div className="lg:hidden flex items-center justify-start gap-1 border-b border-[hsl(var(--border))] overflow-x-auto pb-px mb-8">
         {[
-          { id: "identity", label: t.builder.tabs.branding, icon: Sparkles },
-          { id: "info", label: t.builder.tabs.credentials, icon: Award },
+          { id: "branding", label: t.builder.tabs.branding, icon: Sparkles },
+          { id: "credentials", label: t.builder.tabs.credentials, icon: Lock },
           { id: "stories", label: t.builder.tabs.stories, icon: Camera },
           { id: "hours", label: t.builder.tabs.hours, icon: Clock },
-          { id: "services", label: t.builder.services.billingTitle, icon: Award }
         ].map((tab) => {
           const Icon = tab.icon;
+          const isActive = rawTab === tab.id;
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveFormTab(prev => prev === tab.id ? null : (tab.id as any))}
-              className={`flex items-center gap-2 px-5 py-3.5 text-xs font-semibold whitespace-nowrap border-b-2 transition-all cursor-pointer ${
-                activeFormTab === tab.id
+              onClick={() => handleTabChange(tab.id)}
+              className={`flex items-center gap-2 px-4 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-all cursor-pointer ${
+                isActive
                   ? "border-[hsl(var(--primary))] text-[hsl(var(--foreground))]"
                   : "border-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
               }`}
@@ -1042,49 +1094,6 @@ export default function DashboardProfilePage() {
               </div>
             )}
 
-            {/* TAB 6: SERVICES & PLAN */}
-            {activeFormTab === "services" && (
-              <div className="space-y-6 animate-scale-in">
-                {/* Subscriptions */}
-                <div>
-                  <div className="mb-4">
-                    <h3 className="text-base font-bold text-[hsl(var(--foreground))]">{t.builder.services.billingTitle}</h3>
-                    <p className="text-xs text-[hsl(var(--muted-foreground))]">{t.builder.services.billingSubtitle}</p>
-                  </div>
-
-                  <div className={styles.activeSubscriptionBox}>
-                    <div>
-                      <span className="text-xs text-[hsl(var(--muted-foreground))] uppercase font-bold tracking-wider">{t.builder.services.activePlan}</span>
-                      <div className={styles.planTitle}>{activePlan === "starter" ? t.builder.services.plans.starterTitle : activePlan === "standard" ? t.builder.services.plans.standardTitle : t.builder.services.plans.premiumTitle}</div>
-                      <div className={styles.planDetails}>{t.builder.services.billingDate}</div>
-                    </div>
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))] shrink-0">
-                      <Award className="h-5 w-5" />
-                    </div>
-                  </div>
-
-                  <div className={styles.planCardGrid}>
-                    <div onClick={() => handlePlanUpgrade("starter")} className={`${styles.planCard} ${activePlan === "starter" ? styles.active : ""}`}>
-                      <h4>{t.builder.services.plans.starter}</h4>
-                      <div className="price">0 AMD</div>
-                      {activePlan !== "starter" && <button type="button" className={styles.btnUpgrade}>{t.builder.services.plans.downgrade}</button>}
-                    </div>
-
-                    <div onClick={() => handlePlanUpgrade("standard")} className={`${styles.planCard} ${activePlan === "standard" ? styles.active : ""}`}>
-                      <h4>{t.builder.services.plans.standard}</h4>
-                      <div className="price">20,000 AMD</div>
-                      {activePlan !== "standard" && <button type="button" className={styles.btnUpgrade}>{t.builder.services.plans.select}</button>}
-                    </div>
-
-                    <div onClick={() => handlePlanUpgrade("premium")} className={`${styles.planCard} ${activePlan === "premium" ? styles.active : ""}`}>
-                      <h4>{t.builder.services.plans.premium}</h4>
-                      <div className="price">50,000 AMD</div>
-                      {activePlan !== "premium" && <button type="button" className={styles.btnUpgrade}>{t.builder.services.plans.upgrade}</button>}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
         )}
