@@ -232,6 +232,12 @@ export default function DashboardProfilePage() {
 
   // Active Subscription
   const [activePlan, setActivePlan] = useState<"starter" | "standard" | "premium">("standard");
+  const [activeSubscription, setActiveSubscription] = useState<any>(null);
+  const [businessId, setBusinessId] = useState<string | null>(null);
+  const [promoCodeInput, setPromoCodeInput] = useState("");
+  const [promoMessage, setPromoMessage] = useState("");
+  const [promoMessageType, setPromoMessageType] = useState<"success" | "error" | "">("");
+  const [applyingPromo, setApplyingPromo] = useState(false);
 
   // Load business info from backend/local mock on init
   useEffect(() => {
@@ -291,12 +297,15 @@ export default function DashboardProfilePage() {
           setNoteText(biz.metadata?.noteText || "");
           setFoundedYear(biz.metadata?.foundedYear ? biz.metadata.foundedYear.toString() : "");
 
+          setBusinessId(biz._id);
+
           // Fetch active subscription
           const subRes = await axios.get(`${apiURL}/subscriptions/business/${biz._id}`, {
             headers: token ? { Authorization: `Bearer ${token}` } : {}
           });
           if (subRes.data?.success && subRes.data.data) {
             setActivePlan(subRes.data.data.plan);
+            setActiveSubscription(subRes.data.data);
           }
           return;
         }
@@ -556,6 +565,44 @@ export default function DashboardProfilePage() {
       }
     } catch (err) {
       console.warn("Backend subscription change failed, simulated locally", err);
+    }
+  };
+
+  const handlePromoApply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!promoCodeInput.trim() || !businessId) return;
+    setApplyingPromo(true);
+    setPromoMessage("");
+    setPromoMessageType("");
+    try {
+      const apiURL = getApiUrl();
+      const token = typeof window !== 'undefined' ? window.localStorage.getItem('token') : null;
+      const res = await axios.post(
+        `${apiURL}/subscriptions/promo/activate`,
+        {
+          businessId,
+          code: promoCodeInput.trim(),
+        },
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+      );
+      if (res.data?.success) {
+        setPromoMessageType("success");
+        setPromoMessage(res.data.message || "Promo code applied successfully!");
+        setPromoCodeInput("");
+        // Reload subscription details
+        const subRes = await axios.get(`${apiURL}/subscriptions/business/${businessId}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        if (subRes.data?.success && subRes.data.data) {
+          setActivePlan(subRes.data.data.plan);
+          setActiveSubscription(subRes.data.data);
+        }
+      }
+    } catch (err: any) {
+      setPromoMessageType("error");
+      setPromoMessage(err.response?.data?.message || "Failed to apply promo code");
+    } finally {
+      setApplyingPromo(false);
     }
   };
 
@@ -1056,7 +1103,28 @@ export default function DashboardProfilePage() {
                     <div>
                       <span className="text-xs text-[hsl(var(--muted-foreground))] uppercase font-bold tracking-wider">{t.builder.services.activePlan}</span>
                       <div className={styles.planTitle}>{activePlan === "starter" ? t.builder.services.plans.starterTitle : activePlan === "standard" ? t.builder.services.plans.standardTitle : t.builder.services.plans.premiumTitle}</div>
-                      <div className={styles.planDetails}>{t.builder.services.billingDate}</div>
+                      {activeSubscription ? (
+                        <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 4 }}>
+                          <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+                            Status: <strong style={{ color: activeSubscription.status === 'active' ? '#10b981' : '#ef4444', textTransform: 'capitalize' }}>{activeSubscription.status}</strong>
+                          </span>
+                          <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+                            Valid until: <strong>{new Date(activeSubscription.endDate).toLocaleDateString()}</strong>
+                          </span>
+                          {activeSubscription.isGifted && (
+                            <div style={{ marginTop: 4, display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(124,58,237,0.12)", color: "#c084fc", padding: "4px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700, width: "fit-content" }}>
+                              🎁 Gifted by Admin {activeSubscription.giftReason ? `(${activeSubscription.giftReason})` : ''}
+                            </div>
+                          )}
+                          {activeSubscription.promoCode && (
+                            <div style={{ marginTop: 4, display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(16,185,129,0.12)", color: "#34d399", padding: "4px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700, width: "fit-content" }}>
+                              🎟️ Activated via Promo Code: {activeSubscription.promoCode}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className={styles.planDetails}>{t.builder.services.billingDate}</div>
+                      )}
                     </div>
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))] shrink-0">
                       <Award className="h-5 w-5" />
@@ -1081,6 +1149,67 @@ export default function DashboardProfilePage() {
                       <div className="price">50,000 AMD</div>
                       {activePlan !== "premium" && <button type="button" className={styles.btnUpgrade}>{t.builder.services.plans.upgrade}</button>}
                     </div>
+                  </div>
+
+                  {/* Promo Code Redemption */}
+                  <div style={{ marginTop: 24, padding: 20, borderRadius: 16, background: "var(--bg-secondary)", border: "1px solid var(--border-dark-soft)" }}>
+                    <h4 className="text-sm font-bold mb-1 text-[hsl(var(--foreground))]">Have a promo code?</h4>
+                    <p className="text-xs text-[hsl(var(--muted-foreground))] mb-4">Enter a code below to activate special subscription discounts or free plans.</p>
+                    <form onSubmit={handlePromoApply} style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                      <input
+                        type="text"
+                        placeholder="ENTER PROMO CODE"
+                        value={promoCodeInput}
+                        onChange={e => setPromoCodeInput(e.target.value.toUpperCase())}
+                        style={{
+                          flex: 1,
+                          minWidth: 180,
+                          padding: "10px 14px",
+                          borderRadius: 10,
+                          border: "1px solid var(--border-dark-soft)",
+                          background: "var(--bg-primary)",
+                          color: "var(--text-primary)",
+                          fontSize: 13,
+                          fontWeight: 700,
+                          letterSpacing: "1px",
+                          outline: "none"
+                        }}
+                      />
+                      <button
+                        type="submit"
+                        disabled={applyingPromo || !promoCodeInput.trim()}
+                        style={{
+                          padding: "10px 20px",
+                          borderRadius: 10,
+                          background: "linear-gradient(90deg, #10b981, #059669)",
+                          border: "none",
+                          color: "#fff",
+                          cursor: (applyingPromo || !promoCodeInput.trim()) ? "not-allowed" : "pointer",
+                          fontSize: 13,
+                          fontWeight: 700,
+                          opacity: (applyingPromo || !promoCodeInput.trim()) ? 0.6 : 1,
+                          transition: "all 0.15s"
+                        }}
+                      >
+                        {applyingPromo ? "Applying..." : "Apply Code"}
+                      </button>
+                    </form>
+                    {promoMessage && (
+                      <div
+                        style={{
+                          marginTop: 12,
+                          padding: 10,
+                          borderRadius: 8,
+                          fontSize: 12,
+                          fontWeight: 500,
+                          background: promoMessageType === "success" ? "rgba(16,185,129,0.12)" : "rgba(239,68,68,0.12)",
+                          color: promoMessageType === "success" ? "#10b981" : "#ef4444",
+                          border: `1px solid ${promoMessageType === "success" ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.2)"}`
+                        }}
+                      >
+                        {promoMessage}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
