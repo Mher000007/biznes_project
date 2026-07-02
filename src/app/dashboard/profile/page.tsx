@@ -4,16 +4,13 @@ import dynamic from "next/dynamic";
 import { CATEGORIES, ARMENIAN_CITIES } from "@/lib/constants";
 import { useAuth } from "@/context/AuthContext";
 import { getBusinessProfile, saveBusinessProfile } from "@/lib/auth";
-import { 
-  Save, CheckCircle, Plus, X, Image as ImageIcon, Star, Phone, Mail, Globe, 
-  MapPin, Clock, Camera, Trash2, Eye, ChevronRight, ChevronLeft, Award, PlusCircle, Sparkles, Smartphone,
-  Settings, Grid as GridIcon, User as UserIcon, BadgeCheck, Compass, ArrowLeft, Calendar, Navigation
-} from "lucide-react";
+import { Save, CheckCircle, Plus, X, Image as ImageIcon, Star, Phone, Mail, Globe, MapPin, Clock, Camera, Trash2, Eye, ChevronRight, ChevronLeft, Award, PlusCircle, Sparkles, Smartphone, Settings, Grid as GridIcon, User as UserIcon, BadgeCheck, Compass, ArrowLeft, Calendar, Navigation, Lock } from "lucide-react";
 import axios from "axios";
 import styles from "@/components/dashboard/Dashboard.module.scss";
 import profileStyles from "@/components/business/BusinessProfile.module.scss";
 import { useI18n } from "@/i18n";
 import { getApiUrl } from "@/lib/utils";
+import { useSearchParams, useRouter } from "next/navigation";
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -73,8 +70,16 @@ export default function DashboardProfilePage() {
   // Track the MongoDB ObjectId of the category so we can send it back on save
   const [categoryId, setCategoryId] = useState<string | null>(null);
 
-  // Layout Tab State
-  const [activeFormTab, setActiveFormTab] = useState<"identity" | "info" | "stories" | "hours" | "services" | null>("identity");
+  // Layout Tab State (from search query param)
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const rawTab = searchParams.get("tab") || "branding";
+  const activeFormTab = rawTab === "branding" ? "identity" : rawTab === "credentials" ? "info" : rawTab === "stories" ? "stories" : rawTab === "hours" ? "hours" : "identity";
+
+  const handleTabChange = (tabId: string) => {
+    router.push(`/dashboard/profile?tab=${tabId}`);
+  };
+
   const [activePreviewTab, setActivePreviewTab] = useState<"about" | "gallery">("about");
   
   // Simulated Phone Screen Story overlay
@@ -648,22 +653,22 @@ export default function DashboardProfilePage() {
         </div>
       </div>
 
-      {/* Builder Navigation Tabs (Full Width) */}
-      <div className="flex items-center justify-start md:justify-center gap-1 border-b border-[hsl(var(--border))] overflow-x-auto pb-px mb-8">
+      {/* Mobile/Fallback Builder Navigation Tabs (Hidden on Desktop) */}
+      <div className="lg:hidden flex items-center justify-start gap-1 border-b border-[hsl(var(--border))] overflow-x-auto pb-px mb-8">
         {[
-          { id: "identity", label: t.builder.tabs.branding, icon: Sparkles },
-          { id: "info", label: t.builder.tabs.credentials, icon: Award },
+          { id: "branding", label: t.builder.tabs.branding, icon: Sparkles },
+          { id: "credentials", label: t.builder.tabs.credentials, icon: Lock },
           { id: "stories", label: t.builder.tabs.stories, icon: Camera },
           { id: "hours", label: t.builder.tabs.hours, icon: Clock },
-          { id: "services", label: t.builder.services.billingTitle, icon: Award }
         ].map((tab) => {
           const Icon = tab.icon;
+          const isActive = rawTab === tab.id;
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveFormTab(prev => prev === tab.id ? null : (tab.id as any))}
-              className={`flex items-center gap-2 px-5 py-3.5 text-xs font-semibold whitespace-nowrap border-b-2 transition-all cursor-pointer ${
-                activeFormTab === tab.id
+              onClick={() => handleTabChange(tab.id)}
+              className={`flex items-center gap-2 px-4 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-all cursor-pointer ${
+                isActive
                   ? "border-[hsl(var(--primary))] text-[hsl(var(--foreground))]"
                   : "border-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
               }`}
@@ -1089,131 +1094,6 @@ export default function DashboardProfilePage() {
               </div>
             )}
 
-            {/* TAB 6: SERVICES & PLAN */}
-            {activeFormTab === "services" && (
-              <div className="space-y-6 animate-scale-in">
-                {/* Subscriptions */}
-                <div>
-                  <div className="mb-4">
-                    <h3 className="text-base font-bold text-[hsl(var(--foreground))]">{t.builder.services.billingTitle}</h3>
-                    <p className="text-xs text-[hsl(var(--muted-foreground))]">{t.builder.services.billingSubtitle}</p>
-                  </div>
-
-                  <div className={styles.activeSubscriptionBox}>
-                    <div>
-                      <span className="text-xs text-[hsl(var(--muted-foreground))] uppercase font-bold tracking-wider">{t.builder.services.activePlan}</span>
-                      <div className={styles.planTitle}>{activePlan === "starter" ? t.builder.services.plans.starterTitle : activePlan === "standard" ? t.builder.services.plans.standardTitle : t.builder.services.plans.premiumTitle}</div>
-                      {activeSubscription ? (
-                        <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 4 }}>
-                          <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-                            Status: <strong style={{ color: activeSubscription.status === 'active' ? '#10b981' : '#ef4444', textTransform: 'capitalize' }}>{activeSubscription.status}</strong>
-                          </span>
-                          <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-                            Valid until: <strong>{new Date(activeSubscription.endDate).toLocaleDateString()}</strong>
-                          </span>
-                          {activeSubscription.isGifted && (
-                            <div style={{ marginTop: 4, display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(124,58,237,0.12)", color: "#c084fc", padding: "4px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700, width: "fit-content" }}>
-                              🎁 Gifted by Admin {activeSubscription.giftReason ? `(${activeSubscription.giftReason})` : ''}
-                            </div>
-                          )}
-                          {activeSubscription.promoCode && (
-                            <div style={{ marginTop: 4, display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(16,185,129,0.12)", color: "#34d399", padding: "4px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700, width: "fit-content" }}>
-                              🎟️ Activated via Promo Code: {activeSubscription.promoCode}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className={styles.planDetails}>{t.builder.services.billingDate}</div>
-                      )}
-                    </div>
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))] shrink-0">
-                      <Award className="h-5 w-5" />
-                    </div>
-                  </div>
-
-                  <div className={styles.planCardGrid}>
-                    <div onClick={() => handlePlanUpgrade("starter")} className={`${styles.planCard} ${activePlan === "starter" ? styles.active : ""}`}>
-                      <h4>{t.builder.services.plans.starter}</h4>
-                      <div className="price">0 AMD</div>
-                      {activePlan !== "starter" && <button type="button" className={styles.btnUpgrade}>{t.builder.services.plans.downgrade}</button>}
-                    </div>
-
-                    <div onClick={() => handlePlanUpgrade("standard")} className={`${styles.planCard} ${activePlan === "standard" ? styles.active : ""}`}>
-                      <h4>{t.builder.services.plans.standard}</h4>
-                      <div className="price">20,000 AMD</div>
-                      {activePlan !== "standard" && <button type="button" className={styles.btnUpgrade}>{t.builder.services.plans.select}</button>}
-                    </div>
-
-                    <div onClick={() => handlePlanUpgrade("premium")} className={`${styles.planCard} ${activePlan === "premium" ? styles.active : ""}`}>
-                      <h4>{t.builder.services.plans.premium}</h4>
-                      <div className="price">50,000 AMD</div>
-                      {activePlan !== "premium" && <button type="button" className={styles.btnUpgrade}>{t.builder.services.plans.upgrade}</button>}
-                    </div>
-                  </div>
-
-                  {/* Promo Code Redemption */}
-                  <div style={{ marginTop: 24, padding: 20, borderRadius: 16, background: "var(--bg-secondary)", border: "1px solid var(--border-dark-soft)" }}>
-                    <h4 className="text-sm font-bold mb-1 text-[hsl(var(--foreground))]">Have a promo code?</h4>
-                    <p className="text-xs text-[hsl(var(--muted-foreground))] mb-4">Enter a code below to activate special subscription discounts or free plans.</p>
-                    <form onSubmit={handlePromoApply} style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                      <input
-                        type="text"
-                        placeholder="ENTER PROMO CODE"
-                        value={promoCodeInput}
-                        onChange={e => setPromoCodeInput(e.target.value.toUpperCase())}
-                        style={{
-                          flex: 1,
-                          minWidth: 180,
-                          padding: "10px 14px",
-                          borderRadius: 10,
-                          border: "1px solid var(--border-dark-soft)",
-                          background: "var(--bg-primary)",
-                          color: "var(--text-primary)",
-                          fontSize: 13,
-                          fontWeight: 700,
-                          letterSpacing: "1px",
-                          outline: "none"
-                        }}
-                      />
-                      <button
-                        type="submit"
-                        disabled={applyingPromo || !promoCodeInput.trim()}
-                        style={{
-                          padding: "10px 20px",
-                          borderRadius: 10,
-                          background: "linear-gradient(90deg, #10b981, #059669)",
-                          border: "none",
-                          color: "#fff",
-                          cursor: (applyingPromo || !promoCodeInput.trim()) ? "not-allowed" : "pointer",
-                          fontSize: 13,
-                          fontWeight: 700,
-                          opacity: (applyingPromo || !promoCodeInput.trim()) ? 0.6 : 1,
-                          transition: "all 0.15s"
-                        }}
-                      >
-                        {applyingPromo ? "Applying..." : "Apply Code"}
-                      </button>
-                    </form>
-                    {promoMessage && (
-                      <div
-                        style={{
-                          marginTop: 12,
-                          padding: 10,
-                          borderRadius: 8,
-                          fontSize: 12,
-                          fontWeight: 500,
-                          background: promoMessageType === "success" ? "rgba(16,185,129,0.12)" : "rgba(239,68,68,0.12)",
-                          color: promoMessageType === "success" ? "#10b981" : "#ef4444",
-                          border: `1px solid ${promoMessageType === "success" ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.2)"}`
-                        }}
-                      >
-                        {promoMessage}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
         )}
