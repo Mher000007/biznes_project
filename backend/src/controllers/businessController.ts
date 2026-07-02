@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import Business from '../models/Business.js';
 import Category from '../models/Category.js';
 import Subscription from '../models/Subscription.js';
+import BusinessLocation from '../models/BusinessLocation.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { triggerOnboardingWebhook } from '../utils/n8n.js';
 
@@ -84,9 +85,11 @@ export const getBusinesses = asyncHandler(async (req: Request, res: Response): P
 
   const populatedBusinesses = await Promise.all(businesses.map(async (biz) => {
     const sub = await Subscription.findOne({ business: biz._id, status: 'active' });
+    const locations = await BusinessLocation.find({ business: biz._id }).sort({ isPrimary: -1, createdAt: 1 });
     const plan = sub ? sub.plan : 'starter';
     const bizObj = biz.toObject() as any;
     bizObj.plan = plan;
+    bizObj.locations = locations;
     return bizObj;
   }));
 
@@ -114,10 +117,12 @@ export const getBusinessById = asyncHandler(async (req: Request, res: Response):
   }
 
   const sub = await Subscription.findOne({ business: business._id, status: 'active' });
+  const locations = await BusinessLocation.find({ business: business._id }).sort({ isPrimary: -1, createdAt: 1 });
   const plan = sub ? sub.plan : 'starter';
 
   const bizObj = business.toObject() as any;
   bizObj.plan = plan;
+  bizObj.locations = locations;
 
   res.status(200).json({
     success: true,
@@ -142,10 +147,12 @@ export const getBusinessBySlug = asyncHandler(
     }
 
     const sub = await Subscription.findOne({ business: business._id, status: 'active' });
+    const locations = await BusinessLocation.find({ business: business._id }).sort({ isPrimary: -1, createdAt: 1 });
     const plan = sub ? sub.plan : 'starter';
 
     const bizObj = business.toObject() as any;
     bizObj.plan = plan;
+    bizObj.locations = locations;
 
     res.status(200).json({
       success: true,

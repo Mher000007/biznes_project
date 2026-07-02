@@ -7,6 +7,7 @@ import LeafletMap, { LeafletMarkerItem } from "@/components/map/LeafletMap";
 // Strict Location Interface
 export interface LocationItem {
   id: string | number;
+  companyId?: string | number;
   lat: number;
   lng: number;
   name: string;
@@ -46,6 +47,7 @@ export default function MapWorkspace({
 
     return {
       id: loc.id,
+      companyId: loc.companyId,
       lat: loc.lat,
       lng: loc.lng,
       popupContent,

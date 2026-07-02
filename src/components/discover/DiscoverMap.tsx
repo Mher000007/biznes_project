@@ -32,51 +32,78 @@ export default function DiscoverMap({
   const coordinateRegistry: Record<string, number> = {};
 
   // Map businesses to strict LocationItem structure with coordinates correction
-  const locations: LocationItem[] = (businesses || []).map((biz) => {
-    let lat = biz.latitude;
-    let lng = biz.longitude;
+  const locations: LocationItem[] = (businesses || []).flatMap((biz) => {
+    const allLocations: LocationItem[] = [];
 
-    const cityLower = (biz.city || "").toLowerCase().trim();
-    // Default Yerevan center coordinates check
-    const isDefaultCoords = 
-      lat === undefined || 
-      lng === undefined || 
-      (Math.abs(lat - 40.1872) < 0.0001 && Math.abs(lng - 44.5152) < 0.0001);
+    const getJitteredCoords = (rawLat: any, rawLng: any, city: string) => {
+      let lat = rawLat;
+      let lng = rawLng;
+      const cityLower = (city || "").toLowerCase().trim();
+      
+      const isDefaultCoords = 
+        lat === undefined || 
+        lng === undefined || 
+        (Math.abs(lat - 40.1872) < 0.0001 && Math.abs(lng - 44.5152) < 0.0001);
 
-    if (isDefaultCoords && cityLower && CITY_COORDINATES[cityLower]) {
-      const cityCoords = CITY_COORDINATES[cityLower];
-      lat = cityCoords[0];
-      lng = cityCoords[1];
-    } else {
-      lat = lat || 40.1792;
-      lng = lng || 44.5152;
-    }
+      if (isDefaultCoords && cityLower && CITY_COORDINATES[cityLower]) {
+        const cityCoords = CITY_COORDINATES[cityLower];
+        lat = cityCoords[0];
+        lng = cityCoords[1];
+      } else {
+        lat = lat || 40.1792;
+        lng = lng || 44.5152;
+      }
 
-    // Apply spiral jittering offset to exact duplicates so they remain distinct
-    const coordKey = `${lat.toFixed(5)},${lng.toFixed(5)}`;
-    if (coordinateRegistry[coordKey] !== undefined) {
-      coordinateRegistry[coordKey] += 1;
-      const count = coordinateRegistry[coordKey];
-      // Spiral pattern offset
-      const angle = count * 0.8; 
-      const radius = 0.00015 * count; // increasing distance
-      lat += Math.cos(angle) * radius;
-      lng += Math.sin(angle) * radius;
-    } else {
-      coordinateRegistry[coordKey] = 0;
-    }
+      const coordKey = `${lat.toFixed(5)},${lng.toFixed(5)}`;
+      if (coordinateRegistry[coordKey] !== undefined) {
+        coordinateRegistry[coordKey] += 1;
+        const count = coordinateRegistry[coordKey];
+        const angle = count * 0.8; 
+        const radius = 0.00015 * count; 
+        lat += Math.cos(angle) * radius;
+        lng += Math.sin(angle) * radius;
+      } else {
+        coordinateRegistry[coordKey] = 0;
+      }
+      return { lat, lng };
+    };
 
-    return {
+    const primaryCoords = getJitteredCoords(biz.latitude || biz.coordinates?.latitude, biz.longitude || biz.coordinates?.longitude, biz.city);
+    
+    // Add primary location
+    allLocations.push({
       id: biz.id || biz._id,
-      lat,
-      lng,
+      companyId: biz.id || biz._id,
+      lat: primaryCoords.lat,
+      lng: primaryCoords.lng,
       name: biz.name,
       addressDetails: biz.address ? `${biz.address}, ${biz.city}` : biz.city,
       category: biz.category?.name,
       slug: biz.slug,
-      rating: biz.ratingAvg || 0,
+      rating: biz.ratingAvg || biz.rating || 0,
       reviewCount: biz.reviewCount || 0,
-    };
+    });
+
+    // Add branch locations
+    if (biz.locations && Array.isArray(biz.locations)) {
+      biz.locations.forEach((branch: any) => {
+        const branchCoords = getJitteredCoords(branch.coordinates?.latitude, branch.coordinates?.longitude, branch.city);
+        allLocations.push({
+          id: branch._id,
+          companyId: biz.id || biz._id,
+          lat: branchCoords.lat,
+          lng: branchCoords.lng,
+          name: `${biz.name} - ${branch.name}`,
+          addressDetails: `${branch.address}, ${branch.city}`,
+          category: biz.category?.name,
+          slug: biz.slug,
+          rating: biz.ratingAvg || biz.rating || 0,
+          reviewCount: biz.reviewCount || 0,
+        });
+      });
+    }
+
+    return allLocations;
   });
 
   return (

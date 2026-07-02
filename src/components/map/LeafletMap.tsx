@@ -58,6 +58,7 @@ function buildHoveredIcon(): L.DivIcon {
 
 export interface LeafletMarkerItem {
   id: string | number;
+  companyId?: string | number;
   lat: number;
   lng: number;
   popupContent?: string;
@@ -113,8 +114,12 @@ export default function LeafletMap({
 
   // Registry: id → Leaflet marker instance (to swap icons without rebuilding)
   const markerRegistryRef = useRef<Map<string | number, L.Marker>>(new Map());
+  const markerCompanyRegistryRef = useRef<Map<string | number, string | number>>(new Map());
+  
   // Tracks the currently highlighted id so we can restore it on the next hover
   const prevHoveredIdRef = useRef<string | number | null>(null);
+
+  const [internalHoveredCompanyId, setInternalHoveredCompanyId] = useState<string | number | null>(null);
 
   // Store latest bounds fn so ResizeObserver / fullscreen can call it
   const fitBoundsFnRef = useRef<((animate: boolean) => void) | null>(null);
@@ -198,6 +203,7 @@ export default function LeafletMap({
 
     markersGroup.clearLayers();
     markerRegistryRef.current.clear();
+    markerCompanyRegistryRef.current.clear();
 
     const bounds = L.latLngBounds([]);
     const validList: [number, number][] = [];
@@ -255,8 +261,14 @@ export default function LeafletMap({
           });
         }
 
+        if (!readonly && m.companyId) {
+          marker.on("mouseover", () => setInternalHoveredCompanyId(m.companyId!));
+          marker.on("mouseout", () => setInternalHoveredCompanyId(null));
+        }
+
         marker.addTo(markersGroup);
         markerRegistryRef.current.set(m.id, marker);
+        markerCompanyRegistryRef.current.set(m.id, m.companyId || m.id);
         bounds.extend([lat, lng]);
         validList.push([lat, lng]);
       });
@@ -283,7 +295,7 @@ export default function LeafletMap({
     fitBoundsFnRef.current = doFitBounds;
 
     // Initial fit (only on first load — skip if a hover is already active)
-    if (!prevHoveredIdRef.current) {
+    if (!hoveredLocationId && !internalHoveredCompanyId) {
       doFitBounds(true);
     }
 
@@ -293,7 +305,7 @@ export default function LeafletMap({
         const m = mapRef.current;
         if (!m) return;
         const { x, y } = m.getSize();
-        if (x > 0 && y > 0 && !prevHoveredIdRef.current) {
+        if (x > 0 && y > 0 && !hoveredLocationId && !internalHoveredCompanyId) {
           m.invalidateSize({ animate: false });
         }
       }, delay)
@@ -308,20 +320,31 @@ export default function LeafletMap({
   useEffect(() => {
     const map = mapRef.current;
     const registry = markerRegistryRef.current;
+    const companyRegistry = markerCompanyRegistryRef.current;
 
-    // Restore previous hovered marker icon
-    if (prevHoveredIdRef.current !== null) {
-      const prev = registry.get(prevHoveredIdRef.current);
-      if (prev) prev.setIcon(buildDefaultIcon());
-    }
+    // Reset all markers to default
+    registry.forEach((marker) => {
+      marker.setIcon(buildDefaultIcon());
+    });
 
-    if (hoveredLocationId !== null && hoveredLocationId !== undefined) {
-      const target = registry.get(hoveredLocationId);
-      if (target && map) {
-        // Swap to pulsing icon
-        target.setIcon(buildHoveredIcon());
-        // Smooth flyTo
-        const { lat, lng } = target.getLatLng();
+    const activeCompanyId = internalHoveredCompanyId || 
+      (hoveredLocationId ? companyRegistry.get(hoveredLocationId) : null);
+
+    if (activeCompanyId) {
+      let targetForFlyTo: L.Marker | null = null;
+      
+      registry.forEach((marker, id) => {
+        if (companyRegistry.get(id) === activeCompanyId) {
+          marker.setIcon(buildHoveredIcon());
+          if (id === hoveredLocationId) {
+             targetForFlyTo = marker;
+          }
+        }
+      });
+      
+      // If triggered by external hover (list card), fly to the primary marker matching ID
+      if (hoveredLocationId && targetForFlyTo && map) {
+        const { lat, lng } = targetForFlyTo.getLatLng();
         map.flyTo([lat, lng], Math.max(map.getZoom(), 14), {
           animate: true,
           duration: 0.55,
@@ -329,9 +352,9 @@ export default function LeafletMap({
         });
       }
     }
-
+    // Track prev ID so we can optimize next render if needed
     prevHoveredIdRef.current = hoveredLocationId ?? null;
-  }, [hoveredLocationId]);
+  }, [hoveredLocationId, internalHoveredCompanyId]);
 
   // ── 4. Fullscreen toggle ──────────────────────────────────────────────────
   useEffect(() => {

@@ -50,8 +50,8 @@ export default function RegisterPage() {
 
   // Dynamic steps setup
   const stepsList = currentUser 
-    ? ["Business Details", "Contact & Address", "Select Subscription"]
-    : ["Account Setup", "Business Details", "Contact & Address", "Select Subscription"];
+    ? ["Business Details", "Contact & Address"]
+    : ["Account Setup", "Business Details", "Contact & Address"];
 
   // Step 0 (if !currentUser) - Account setup credentials
   const [accountUsername, setAccountUsername] = useState("");
@@ -84,9 +84,7 @@ export default function RegisterPage() {
     { name: "Tire Balancing", price: "4000", description: "Computerized wheel balancing", duration: "15 mins" }
   ]);
 
-  // Subscription setup
-  const [selectedPlan, setSelectedPlan] = useState<"starter" | "standard" | "premium">("standard");
-
+  // Subscription setup removed
   const canProceed = () => {
     if (!currentUser) {
       switch (step) {
@@ -171,14 +169,14 @@ export default function RegisterPage() {
     }
 
     // 2. Format services/menu
-    const formattedServices = category !== "horeca" ? serviceItems.map(item => ({
+    const formattedServices = category !== "horeca" ? serviceItems.filter(i => i.name.trim() !== "").map(item => ({
       name: item.name,
       description: item.description,
       price: Number(item.price) || 0,
       duration: item.duration
     })) : [];
 
-    const formattedMenu = category === "horeca" ? menuItems.map(item => ({
+    const formattedMenu = category === "horeca" ? menuItems.filter(i => i.name.trim() !== "").map(item => ({
       name: item.name,
       description: item.description,
       price: Number(item.price) || 0,
@@ -221,16 +219,15 @@ export default function RegisterPage() {
       });
 
       if (response.data?.success && response.data.data?._id) {
-        const businessId = response.data.data._id;
-        await axios.post(`${apiURL}/subscriptions/subscribe`, {
-          businessId,
-          plan: selectedPlan
-        }, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {}
-        });
+        // Business created successfully (subscription will be picked later from dashboard)
       }
     } catch (err: any) {
       console.warn("Backend DB onboarding failed, proceeding with localStorage fallback", err.message);
+      if (err.response?.status === 401) {
+        setSaveError("Your session is invalid or expired. Please refresh the page to log in again.");
+        setLoading(false);
+        return;
+      }
     }
 
     // 4. Fallback localStorage sync
@@ -282,7 +279,6 @@ export default function RegisterPage() {
           <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-6 text-left space-y-3.5 shadow-md">
             <div className="flex justify-between border-b border-[hsl(var(--border))] pb-2"><span className="text-[hsl(var(--muted-foreground))]">Business Name</span><span className="font-semibold">{name}</span></div>
             <div className="flex justify-between border-b border-[hsl(var(--border))] pb-2"><span className="text-[hsl(var(--muted-foreground))]">Username Login</span><span className="font-semibold text-blue-600">{currentUser?.username || accountUsername}</span></div>
-            <div className="flex justify-between border-b border-[hsl(var(--border))] pb-2"><span className="text-[hsl(var(--muted-foreground))]">Tier Package</span><span className="font-semibold text-[hsl(var(--primary))] capitalize">{selectedPlan}</span></div>
             <div className="flex justify-between"><span className="text-[hsl(var(--muted-foreground))]">Status</span><span className="inline-flex items-center gap-1 font-bold text-amber-500"><Star className="h-3 w-3 fill-amber-500 animate-spin" /> Pending Approval</span></div>
           </div>
           <div className="mt-8">
@@ -443,59 +439,7 @@ export default function RegisterPage() {
           </div>
         )}
 
-        {/* Step: Subscription package selection */}
-        {((!currentUser && step === 3) || (currentUser && step === 2)) && (
-          <div className="space-y-4 text-center">
-            <p className="text-sm text-[hsl(var(--muted-foreground))] mb-6">
-              Choose a subscription package modeled for the Armenian market to complete onboarding.
-            </p>
-            <div className={styles.planGrid}>
-              {/* Plan 1 */}
-              <div onClick={() => setSelectedPlan("starter")} className={`${styles.planCard} ${selectedPlan === "starter" ? styles.active : ""}`}>
-                <div className={styles.planName}>Starter</div>
-                <div className={styles.planPrice}>0 AMD<span>/mo</span></div>
-                <ul className={styles.planFeatures}>
-                  <li>7% booking commission</li>
-                  <li>Up to 5 services</li>
-                  <li>Standard calendar</li>
-                  <li>Email support</li>
-                </ul>
-              </div>
-
-              {/* Plan 2 */}
-              <div onClick={() => setSelectedPlan("standard")} className={`${styles.planCard} ${selectedPlan === "standard" ? styles.active : ""}`}>
-                <div className={styles.recommendedBadge}>Best Value</div>
-                <div className={styles.planName}>Standard (Pro)</div>
-                <div className={styles.planPrice}>20,000 AMD<span>/mo</span></div>
-                <ul className={styles.planFeatures}>
-                  <li>2% booking commission</li>
-                  <li>Unlimited services</li>
-                  <li>CRM base integration</li>
-                  <li>Auto-reminders, Promocodes</li>
-                  <li>24/7 Priority support</li>
-                </ul>
-              </div>
-
-              {/* Plan 3 */}
-              <div onClick={() => setSelectedPlan("premium")} className={`${styles.planCard} ${selectedPlan === "premium" ? styles.active : ""}`}>
-                <div className={styles.planName}>Premium (Ent)</div>
-                <div className={styles.planPrice}>50,000 AMD<span>/mo</span></div>
-                <ul className={styles.planFeatures}>
-                  <li>0% commission</li>
-                  <li>Multi-location listings</li>
-                  <li>VIP listing promotion</li>
-                  <li>Analytics dashboard</li>
-                  <li>Custom layouts toggle</li>
-                  <li>Dedicated account manager</li>
-                </ul>
-              </div>
-            </div>
-            <div className="mt-8 flex items-center justify-center gap-2 text-xs text-[hsl(var(--muted-foreground))] bg-[hsl(var(--muted))]/40 py-2.5 px-4 rounded-xl">
-              <ShieldCheck className="h-4 w-4 text-green-600 shrink-0" />
-              <span>You can cancel or upgrade your plan anytime inside the vendor settings dashboard.</span>
-            </div>
-          </div>
-        )}
+        {/* Step: Subscription package selection removed */}
 
         {/* Navigation Buttons */}
         <div className={styles.navigation}>

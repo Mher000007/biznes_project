@@ -580,6 +580,9 @@ section:has(.relative.rounded-2xl.overflow-hidden.group) {
   background: $bg-global !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
   transition: padding 0.35s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.35s ease, box-shadow 0.35s ease, border-radius 0.35s ease;
+  position: sticky;
+  top: 64px;
+  z-index: 40;
 
   // Active story rings
   .bg-gradient-to-tr {

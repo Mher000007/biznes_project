@@ -66,7 +66,6 @@ const businessSchema = new Schema<IBusiness>({
   },
   description: {
     type: String,
-    required: [true, 'Please provide a description'],
   },
   category: {
     type: Schema.Types.ObjectId,

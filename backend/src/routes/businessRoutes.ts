@@ -9,6 +9,12 @@ import {
   getMyBusinesses,
   rateBusiness,
 } from '../controllers/businessController.js';
+import {
+  getLocations,
+  addLocation,
+  updateLocation,
+  deleteLocation,
+} from '../controllers/businessLocationController.js';
 import { authenticate } from '../middleware/auth.js';
 import reviewRoutes from './reviewRoutes.js';
 
@@ -31,5 +37,11 @@ router.post('/:id/rate', rateBusiness);
 
 // ── Nested review routes → /businesses/:businessId/reviews ───────────────────
 router.use('/:businessId/reviews', reviewRoutes);
+
+// ── Locations routes ─────────────────────────────────────────────────────────
+router.get('/:businessId/locations', getLocations);
+router.post('/:businessId/locations', authenticate, addLocation);
+router.put('/locations/:id', authenticate, updateLocation);
+router.delete('/locations/:id', authenticate, deleteLocation);
 
 export default router;
