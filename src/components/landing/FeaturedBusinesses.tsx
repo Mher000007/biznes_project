@@ -28,7 +28,7 @@ export default function FeaturedBusinesses() {
     async function loadTopRestaurants() {
       try {
         const api = getApiUrl();
-        const res = await axios.get(`${api}/businesses?category=horeca&limit=10`);
+        const res = await axios.get(`${api}/businesses?category=horeca&limit=5&sort=-rating`);
         if (res.data?.success && res.data.data?.length > 0) {
           const mapped: RankedBusiness[] = res.data.data.map((b: any) => ({
             id: b._id || b.id,

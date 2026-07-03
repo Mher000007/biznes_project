@@ -259,14 +259,14 @@ export default function ChatWidget() {
       {/* FAB Button */}
       <button
         onClick={() => dispatch(toggleChat())}
-        className={`fixed bottom-4 right-4 sm:right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full gradient-primary text-white shadow-xl shadow-[hsl(var(--primary))]/30 transition-all hover:scale-105 hover:shadow-2xl ${
+        className={`fixed bottom-4 right-4 sm:right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-green-500/10 backdrop-blur-md border border-green-500/30 text-green-600 shadow-lg shadow-green-500/10 transition-all hover:scale-110 hover:bg-green-500/20 ${
           isOpen ? "scale-0 opacity-0" : "scale-100 opacity-100"
         }`}
         aria-label="Open AI chat"
       >
-        <MessageCircle className="h-6 w-6" />
+        <MessageCircle className="h-7 w-7" strokeWidth={2} />
         {/* Pulse ring */}
-        <span className="absolute inset-0 rounded-full gradient-primary animate-ping opacity-20" />
+        <span className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-20 pointer-events-none" />
       </button>
     </>
   );

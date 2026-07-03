@@ -59,37 +59,7 @@ export const CATEGORIES: Category[] = [
   },
 ];
 
-export const ARMENIAN_CITIES = [
-  "Yerevan",
-  "Gyumri",
-  "Vanadzor",
-  "Vagharshapat",
-  "Abovyan",
-  "Kapan",
-  "Hrazdan",
-  "Armavir",
-  "Artashat",
-  "Ijevan",
-  "Sevan",
-  "Goris",
-  "Dilijan",
-  "Jermuk",
-  "Ashtarak",
-];
 
-export const ARMENIAN_REGIONS = [
-  "Yerevan",
-  "Aragatsotn",
-  "Ararat",
-  "Armavir",
-  "Gegharkunik",
-  "Kotayk",
-  "Lori",
-  "Shirak",
-  "Syunik",
-  "Tavush",
-  "Vayots Dzor",
-];
 
 export const EMPLOYEE_RANGES = ["1-10", "11-50", "51-200", "200+"];
 

@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { getApiUrl } from "@/lib/utils";
 import axios from "axios";
 import { MapPin, Plus, Trash2, Edit2, Star, Clock, Phone } from "lucide-react";
+import { LocationSelect } from "@/components/ui/LocationSelect";
 
 interface Location {
   _id: string;
@@ -194,28 +195,13 @@ export default function DashboardLocations() {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">City / Region *</label>
-                <select
+                <LocationSelect
+                  required
                   className="w-full form-input"
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                  required
-                >
-                  <option value="">Select City</option>
-                  <option value="Yerevan">Yerevan</option>
-                  <option value="Gyumri">Gyumri</option>
-                  <option value="Vanadzor">Vanadzor</option>
-                  <option value="Dilijan">Dilijan</option>
-                  <option value="Sevan">Sevan</option>
-                  <option value="Tsaghkadzor">Tsaghkadzor</option>
-                  <option value="Abovyan">Abovyan</option>
-                  <option value="Hrazdan">Hrazdan</option>
-                  <option value="Echmiadzin">Echmiadzin</option>
-                  <option value="Goris">Goris</option>
-                  <option value="Kapan">Kapan</option>
-                  <option value="Jermuk">Jermuk</option>
-                  <option value="Alaverdi">Alaverdi</option>
-                  <option value="Artashat">Artashat</option>
-                </select>
+                  placeholder="Select City"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Street Address *</label>

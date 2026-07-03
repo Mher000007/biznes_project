@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { CATEGORIES, ARMENIAN_CITIES } from "@/lib/constants";
+import { CATEGORIES } from "@/lib/constants";
+import { LocationSelect } from "@/components/ui/LocationSelect";
 import { saveBusinessProfile } from "@/lib/auth";
 import { useAuth } from "@/context/AuthContext";
 import { Building2, CheckCircle, ChevronRight, ChevronLeft, ShieldCheck, Sparkles, Star } from "lucide-react";
@@ -401,10 +402,11 @@ export default function RegisterPage() {
           <div className="space-y-4">
             <div className={styles.formGroup}>
               <label>City *</label>
-              <select value={city} onChange={e => setCity(e.target.value)}>
-                <option value="">Select Armenian City</option>
-                {ARMENIAN_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
+              <LocationSelect 
+                value={city} 
+                onChange={e => setCity(e.target.value)} 
+                placeholder="Select Region/City/Village" 
+              />
             </div>
             <div className={styles.formGroup}>
               <label>Interactive Map Location Picker</label>

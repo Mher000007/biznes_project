@@ -2,7 +2,8 @@
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import { setCategory, setCity, resetFilters } from "@/store/slices/filterSlice";
-import { CATEGORIES, ARMENIAN_CITIES } from "@/lib/constants";
+import { CATEGORIES } from "@/lib/constants";
+import { LocationSelect } from "@/components/ui/LocationSelect";
 import { SlidersHorizontal, X } from "lucide-react";
 
 export default function FilterPanel() {
@@ -42,16 +43,13 @@ export default function FilterPanel() {
       {/* City */}
       <div>
         <label className="block text-xs font-medium mb-2 text-[hsl(var(--muted-foreground))]">City</label>
-        <select
+        <LocationSelect
           value={filters.city}
           onChange={(e) => dispatch(setCity(e.target.value))}
           className="w-full rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]/20"
-        >
-          <option value="">All Cities</option>
-          {ARMENIAN_CITIES.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
+          placeholder="All Cities"
+          disablePlaceholder={false}
+        />
       </div>
     </div>
   );

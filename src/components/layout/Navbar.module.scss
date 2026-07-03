@@ -30,7 +30,7 @@
 }
 
 .logoImage {
-  height:  7rem;
+  height: 7rem;
   width: auto;
   object-fit: contain;
   filter: brightness(0) !important;
@@ -144,16 +144,11 @@
   height: 100%;
   border: none !important;
   background: transparent !important;
-  padding: 0 20px 0 0 !important; // override default select styles
+  padding: 0 !important;
   font-size: 14px;
   color: $text-primary;
   outline: none;
   cursor: pointer;
-  appearance: none; // remove default arrow
-  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23666666' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E") !important;
-  background-position: right center !important;
-  background-repeat: no-repeat !important;
-  background-size: 16px !important;
 
   & option {
     background-color: $bg-primary;
@@ -386,7 +381,7 @@
   :global(.hidden.lg\:inline-flex.text-\[13px\]) {
     color: rgba(255, 255, 255, 0.7) !important;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-    
+
     &:hover {
       color: #FFFFFF !important;
     }
@@ -406,7 +401,7 @@
 
   .inputField {
     color: #FFFFFF !important;
-    
+
     &::placeholder {
       color: rgba(255, 255, 255, 0.5) !important;
     }

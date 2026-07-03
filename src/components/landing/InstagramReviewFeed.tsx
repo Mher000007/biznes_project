@@ -163,7 +163,7 @@ export default function InstagramReviewFeed() {
                 parsed.forEach((r: any) => {
                   if (r._id && r._id.startsWith("local-")) {
                     const mockBiz = MOCK_BUSINESSES.find((b) => b.slug === slug);
-                    
+
                     let imageToShow = r.image;
                     if (!imageToShow && mockBiz?.images && mockBiz.images.length > 0) {
                       imageToShow = mockBiz.images[0];
@@ -215,7 +215,7 @@ export default function InstagramReviewFeed() {
 
       // Merge user reviews with fallback reviews
       const merged: ReviewCardData[] = [...userReviews];
-      
+
       FALLBACK_REVIEWS.forEach((fallback) => {
         if (merged.length < 6) {
           const hasDuplicate = merged.some((m) => m.biz.slug === fallback.biz.slug);
@@ -234,7 +234,7 @@ export default function InstagramReviewFeed() {
       }
 
       setReviews(merged);
-      
+
       // initialize liked map
       const initialLikedMap: Record<string, { liked: boolean; count: number }> = {};
       merged.forEach((r) => {
@@ -250,7 +250,7 @@ export default function InstagramReviewFeed() {
   const handleLike = async (reviewId: string, businessId: string) => {
     const isLiked = likedMap[reviewId]?.liked;
     const currentCount = likedMap[reviewId]?.count ?? 0;
-    
+
     // Toggle state locally
     setLikedMap((prev) => ({
       ...prev,
@@ -335,7 +335,7 @@ export default function InstagramReviewFeed() {
                 </div>
 
                 {/* Main 1:1 Photo */}
-                <div 
+                <div
                   className="relative w-full aspect-square bg-[hsl(var(--muted))] overflow-hidden border-y border-[hsl(var(--border))] cursor-pointer group"
                   onDoubleClick={() => {
                     const isLiked = likedMap[review.id]?.liked;
@@ -360,17 +360,15 @@ export default function InstagramReviewFeed() {
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => handleLike(review.id, review.businessId)}
-                        className={`p-1 select-none transition-transform duration-200 ${
-                          isAnimating ? "scale-125" : "active:scale-90"
-                        }`}
+                        className={`p-1 select-none transition-transform duration-200 ${isAnimating ? "scale-125" : "active:scale-90"
+                          }`}
                         aria-label={reviewLiked ? "Unlike" : "Like"}
                       >
                         <Heart
-                          className={`h-5 w-5 transition-colors ${
-                            reviewLiked
+                          className={`h-5 w-5 transition-colors ${reviewLiked
                               ? "fill-pink-500 text-pink-500"
                               : "text-[hsl(var(--foreground))]"
-                          }`}
+                            }`}
                         />
                       </button>
                       <span className="text-[13px] font-semibold text-[hsl(var(--foreground))] ml-1">

@@ -5,7 +5,8 @@ import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store/store";
 import { setQuery, setCity, setCategory, setRatingMin, setVerifiedOnly, setSortBy, resetFilters } from "@/store/slices/filterSlice";
 import { MOCK_BUSINESSES } from "@/data/mock-businesses";
-import { CATEGORIES, ARMENIAN_CITIES, SORT_OPTIONS } from "@/lib/constants";
+import { CATEGORIES, SORT_OPTIONS } from "@/lib/constants";
+import { LocationSelect } from "@/components/ui/LocationSelect";
 import BusinessCard from "@/components/discover/BusinessCard";
 import { Building2, Loader2, Map as MapIcon, List as ListIcon } from "lucide-react";
 import axios from "axios";
@@ -86,7 +87,7 @@ function DiscoverContent() {
 
   const [businesses, setBusinesses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Track hovered business to highlight on map
   const [hoveredBusinessId, setHoveredBusinessId] = useState<string | null>(null);
 
@@ -166,9 +167,8 @@ function DiscoverContent() {
       <div className={styles.mainContainer}>
         {/* Left Column (60%): Listing feed */}
         <div
-          className={`${styles.feedColumn} ${
-            mobileView === "map" ? styles.hiddenMobile : ""
-          }`}
+          className={`${styles.feedColumn} ${mobileView === "map" ? styles.hiddenMobile : ""
+            }`}
         >
           <div className={styles.feedHeader}>
             <h1 className="text-xl font-bold tracking-tight text-[#111111] mb-1">
@@ -192,40 +192,28 @@ function DiscoverContent() {
               {/* "All" Reset Button */}
               <button
                 onClick={() => dispatch(resetFilters())}
-                className={`${styles.categoryButton} ${
-                  (!filters.category &&
-                   !filters.city &&
-                   filters.ratingMin === 0 &&
-                   !filters.verifiedOnly &&
-                   !filters.query &&
-                   filters.sortBy === "popular")
-                    ? styles.active
-                    : ""
-                }`}
+                className={`${styles.categoryButton} ${(!filters.category &&
+                  !filters.city &&
+                  filters.ratingMin === 0 &&
+                  !filters.verifiedOnly &&
+                  !filters.query &&
+                  filters.sortBy === "popular")
+                  ? styles.active
+                  : ""
+                  }`}
               >
                 All
               </button>
 
               {/* Location Selector Dropdown */}
               <div className="relative inline-block">
-                <select
+                <LocationSelect
                   value={filters.city}
                   onChange={(e) => dispatch(setCity(e.target.value))}
-                  className={`${styles.categoryButton} ${filters.city ? styles.active : ""} !pr-8 bg-none cursor-pointer appearance-none outline-none`}
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='${filters.city ? "%23101012" : "%23666666"}' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
-                    backgroundPosition: "right 10px center",
-                    backgroundRepeat: "no-repeat",
-                    backgroundSize: "14px",
-                  }}
-                >
-                  <option value="" className="bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">All Locations</option>
-                  {ARMENIAN_CITIES.map((city) => (
-                    <option key={city} value={city} className="bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
-                      {city}
-                    </option>
-                  ))}
-                </select>
+                  className={`${styles.categoryButton} ${filters.city ? styles.active : ""} cursor-pointer`}
+                  placeholder="All Locations"
+                  disablePlaceholder={false}
+                />
               </div>
 
               {/* Rating Selector Dropdown */}
@@ -317,9 +305,8 @@ function DiscoverContent() {
 
         {/* Right Column (40%): Sticky interactive map */}
         <div
-          className={`${styles.mapColumn} ${
-            mobileView === "list" ? styles.hiddenMobile : ""
-          }`}
+          className={`${styles.mapColumn} ${mobileView === "list" ? styles.hiddenMobile : ""
+            }`}
         >
           <DiscoverMap
             businesses={filtered}

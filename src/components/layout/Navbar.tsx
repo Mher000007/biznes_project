@@ -7,6 +7,7 @@ import ThemeToggle from "./ThemeToggle";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { useI18n } from "@/i18n";
 import { useAuth } from "@/context/AuthContext";
+import { LocationSelect } from "@/components/ui/LocationSelect";
 import styles from "./Navbar.module.scss";
 
 export default function Navbar() {
@@ -70,28 +71,13 @@ export default function Navbar() {
           <div className={styles.divider}></div>
           <div className={styles.inputWrapper}>
             <MapPin className={styles.inputIcon} />
-            <select
+            <LocationSelect
               className={styles.selectField}
               value={navLocation}
               onChange={(e) => setNavLocation(e.target.value)}
-            >
-              <option value="">All Locations</option>
-              <option value="Yerevan">Yerevan</option>
-              <option value="Gyumri">Gyumri</option>
-              <option value="Vanadzor">Vanadzor</option>
-              <option value="Vagharshapat">Vagharshapat</option>
-              <option value="Abovyan">Abovyan</option>
-              <option value="Kapan">Kapan</option>
-              <option value="Hrazdan">Hrazdan</option>
-              <option value="Armavir">Armavir</option>
-              <option value="Artashat">Artashat</option>
-              <option value="Ijevan">Ijevan</option>
-              <option value="Sevan">Sevan</option>
-              <option value="Goris">Goris</option>
-              <option value="Dilijan">Dilijan</option>
-              <option value="Jermuk">Jermuk</option>
-              <option value="Ashtarak">Ashtarak</option>
-            </select>
+              placeholder="All Locations"
+              disablePlaceholder={false}
+            />
           </div>
         </div>
         <button type="submit" className={styles.searchButton}>
@@ -163,9 +149,11 @@ export default function Navbar() {
           </Link>
         )}
 
-        <Link href="/register" className={styles.registerButton}>
-          {t.nav.getStarted}
-        </Link>
+        {(!currentUser || currentUser.role !== "business_owner") && (
+          <Link href="/register" className={styles.registerButton}>
+            {t.nav.getStarted}
+          </Link>
+        )}
 
         {/* Mobile controls */}
         <div className={styles.mobileControls}>
@@ -250,15 +238,17 @@ export default function Navbar() {
             </Link>
           )}
 
-          <div className="mt-3">
-            <Link
-              href="/register"
-              onClick={() => setIsOpen(false)}
-              className="h-10 flex items-center justify-center rounded-lg bg-black text-white text-sm font-medium w-full"
-            >
-              {t.nav.getStarted}
-            </Link>
-          </div>
+          {(!currentUser || currentUser.role !== "business_owner") && (
+            <div className="mt-3">
+              <Link
+                href="/register"
+                onClick={() => setIsOpen(false)}
+                className="h-10 flex items-center justify-center rounded-lg bg-black text-white text-sm font-medium w-full"
+              >
+                {t.nav.getStarted}
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </header>

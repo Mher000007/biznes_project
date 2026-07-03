@@ -6,10 +6,11 @@ import Subscription from '../models/Subscription.js';
 import BusinessLocation from '../models/BusinessLocation.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { triggerOnboardingWebhook } from '../utils/n8n.js';
+import { isValidCity } from '../utils/locationValidator.js';
 
 // Get all businesses
 export const getBusinesses = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const { category, city, search, featured, maxPrice, premiumOnly, page = 1, limit = 10 } = req.query;
+  const { category, city, search, featured, maxPrice, premiumOnly, sort, page = 1, limit = 10 } = req.query;
 
   const filter: any = { active: true }; // Allow unverified for now during dev, or verified: true. Let's keep active: true for easy developer testing of onboarded businesses!
 
@@ -74,12 +75,19 @@ export const getBusinesses = asyncHandler(async (req: Request, res: Response): P
   const limitNum = parseInt(limit as string) || 10;
   const skip = (pageNum - 1) * limitNum;
 
-  const businesses = await Business.find(filter)
+  let businessesQuery = Business.find(filter)
     .populate('category', 'name slug icon')
     .populate('owner', 'name email')
     .skip(skip)
-    .limit(limitNum)
-    .sort({ featured: -1, createdAt: -1 });
+    .limit(limitNum);
+
+  if (sort === '-rating') {
+    businessesQuery = businessesQuery.sort({ rating: -1, reviewCount: -1, featured: -1 });
+  } else {
+    businessesQuery = businessesQuery.sort({ featured: -1, createdAt: -1 });
+  }
+
+  const businesses = await businessesQuery;
 
   const total = await Business.countDocuments(filter);
 
@@ -201,6 +209,14 @@ export const createBusiness = asyncHandler(
       return;
     }
 
+    if (!isValidCity(city)) {
+      res.status(400).json({
+        success: false,
+        message: `Invalid city/region selected: ${city}`,
+      });
+      return;
+    }
+
     // Resolve category ObjectId if needed
     let categoryId = category;
     if (!mongoose.Types.ObjectId.isValid(category)) {
@@ -283,6 +299,14 @@ export const updateBusiness = asyncHandler(
     }
 
     const updateData = { ...req.body };
+
+    if (updateData.city && !isValidCity(updateData.city)) {
+      res.status(400).json({
+        success: false,
+        message: `Invalid city/region selected: ${updateData.city}`,
+      });
+      return;
+    }
 
     // Resolve category ObjectId if needed
     if (updateData.category) {

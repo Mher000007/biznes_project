@@ -39,10 +39,10 @@ export default function DiscoverMap({
       let lat = rawLat;
       let lng = rawLng;
       const cityLower = (city || "").toLowerCase().trim();
-      
-      const isDefaultCoords = 
-        lat === undefined || 
-        lng === undefined || 
+
+      const isDefaultCoords =
+        lat === undefined ||
+        lng === undefined ||
         (Math.abs(lat - 40.1872) < 0.0001 && Math.abs(lng - 44.5152) < 0.0001);
 
       if (isDefaultCoords && cityLower && CITY_COORDINATES[cityLower]) {
@@ -58,8 +58,8 @@ export default function DiscoverMap({
       if (coordinateRegistry[coordKey] !== undefined) {
         coordinateRegistry[coordKey] += 1;
         const count = coordinateRegistry[coordKey];
-        const angle = count * 0.8; 
-        const radius = 0.00015 * count; 
+        const angle = count * 0.8;
+        const radius = 0.00015 * count;
         lat += Math.cos(angle) * radius;
         lng += Math.sin(angle) * radius;
       } else {
@@ -69,7 +69,7 @@ export default function DiscoverMap({
     };
 
     const primaryCoords = getJitteredCoords(biz.latitude || biz.coordinates?.latitude, biz.longitude || biz.coordinates?.longitude, biz.city);
-    
+
     // Add primary location
     allLocations.push({
       id: biz.id || biz._id,

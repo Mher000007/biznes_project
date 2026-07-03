@@ -1,7 +1,8 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
-import { CATEGORIES, ARMENIAN_CITIES } from "@/lib/constants";
+import { CATEGORIES } from "@/lib/constants";
+import { LocationSelect } from "@/components/ui/LocationSelect";
 import { useAuth } from "@/context/AuthContext";
 import { getBusinessProfile, saveBusinessProfile } from "@/lib/auth";
 import { Save, CheckCircle, Plus, X, Image as ImageIcon, Star, Phone, Mail, Globe, MapPin, Clock, Camera, Trash2, Eye, ChevronRight, ChevronLeft, Award, PlusCircle, Sparkles, Smartphone, Settings, Grid as GridIcon, User as UserIcon, BadgeCheck, Compass, ArrowLeft, Calendar, Navigation, Lock } from "lucide-react";
@@ -1025,9 +1026,11 @@ export default function DashboardProfilePage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1">{t.builder.hours.city}</label>
-                    <select value={city} onChange={e=>setCity(e.target.value)} className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]">
-                      {ARMENIAN_CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                    </select>
+                    <LocationSelect 
+                      value={city} 
+                      onChange={e=>setCity(e.target.value)} 
+                      className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-[hsl(var(--background))] text-[hsl(var(--foreground))]" 
+                    />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1">{t.builder.hours.address}</label>

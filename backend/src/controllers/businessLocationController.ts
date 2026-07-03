@@ -3,6 +3,7 @@ import BusinessLocation from '../models/BusinessLocation.js';
 import Business from '../models/Business.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { AuthRequest } from '../middleware/auth.js';
+import { isValidCity } from '../utils/locationValidator.js';
 
 // @desc    Get all locations for a business
 // @route   GET /api/businesses/:businessId/locations
@@ -51,6 +52,11 @@ export const addLocation = asyncHandler(async (req: AuthRequest, res: Response) 
     }
   }
 
+  if (req.body.city && !isValidCity(req.body.city)) {
+    res.status(400).json({ success: false, message: `Invalid city/region selected: ${req.body.city}` });
+    return;
+  }
+
   const location = await BusinessLocation.create({
     ...req.body,
     business: businessId,
@@ -87,6 +93,11 @@ export const updateLocation = asyncHandler(async (req: AuthRequest, res: Respons
       { business: location.business, isPrimary: true },
       { isPrimary: false }
     );
+  }
+
+  if (req.body.city && !isValidCity(req.body.city)) {
+    res.status(400).json({ success: false, message: `Invalid city/region selected: ${req.body.city}` });
+    return;
   }
 
   location = await BusinessLocation.findByIdAndUpdate(id, req.body, {
