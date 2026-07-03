@@ -36,22 +36,24 @@ export default function DiscoverMap({
     const allLocations: LocationItem[] = [];
 
     const getJitteredCoords = (rawLat: any, rawLng: any, city: string) => {
-      let lat = rawLat;
-      let lng = rawLng;
+      let lat = parseFloat(rawLat as string);
+      let lng = parseFloat(rawLng as string);
       const cityLower = (city || "").toLowerCase().trim();
 
-      const isDefaultCoords =
-        lat === undefined ||
-        lng === undefined ||
-        (Math.abs(lat - 40.1872) < 0.0001 && Math.abs(lng - 44.5152) < 0.0001);
+      if (!isFinite(lat) || !isFinite(lng)) {
+        lat = 40.1792;
+        lng = 44.5152;
+      }
+
+      const isDefaultCoords = (Math.abs(lat - 40.1872) < 0.0001 && Math.abs(lng - 44.5152) < 0.0001);
 
       if (isDefaultCoords && cityLower && CITY_COORDINATES[cityLower]) {
         const cityCoords = CITY_COORDINATES[cityLower];
         lat = cityCoords[0];
         lng = cityCoords[1];
-      } else {
-        lat = lat || 40.1792;
-        lng = lng || 44.5152;
+      } else if (isDefaultCoords) {
+        lat = 40.1792;
+        lng = 44.5152;
       }
 
       const coordKey = `${lat.toFixed(5)},${lng.toFixed(5)}`;
@@ -65,6 +67,13 @@ export default function DiscoverMap({
       } else {
         coordinateRegistry[coordKey] = 0;
       }
+      
+      // Final safety check
+      if (!isFinite(lat) || !isFinite(lng)) {
+        lat = 40.1792;
+        lng = 44.5152;
+      }
+      
       return { lat, lng };
     };
 

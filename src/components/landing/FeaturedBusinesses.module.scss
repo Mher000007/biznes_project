@@ -63,9 +63,11 @@
   text-decoration: none;
   transition: color 0.2s;
 }
+
 .viewAll:hover {
   color: hsl(var(--foreground));
 }
+
 .viewAllIcon {
   width: 1rem;
   height: 1rem;
@@ -83,15 +85,22 @@
   justify-content: center;
   padding: 3rem 0;
 }
+
 .loader {
   width: 1.5rem;
   height: 1.5rem;
   color: hsl(var(--muted-foreground));
   animation: spin 1s linear infinite;
 }
+
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ─── Ranking list ─── */
@@ -136,12 +145,15 @@
 .rankGold {
   border-left: 4px solid hsl(40, 90%, 55%);
 }
+
 .rankGold::before {
   background: linear-gradient(90deg, hsla(40, 90%, 55%, 0.06), transparent);
 }
+
 .rankGold:hover::before {
   opacity: 1;
 }
+
 .rankGold:hover {
   border-color: hsla(40, 90%, 55%, 0.3);
 }
@@ -150,12 +162,15 @@
 .rankSilver {
   border-left: 4px solid hsl(210, 12%, 65%);
 }
+
 .rankSilver::before {
   background: linear-gradient(90deg, hsla(210, 12%, 65%, 0.06), transparent);
 }
+
 .rankSilver:hover::before {
   opacity: 1;
 }
+
 .rankSilver:hover {
   border-color: hsla(210, 12%, 65%, 0.3);
 }
@@ -164,12 +179,15 @@
 .rankBronze {
   border-left: 4px solid hsl(25, 60%, 50%);
 }
+
 .rankBronze::before {
   background: linear-gradient(90deg, hsla(25, 60%, 50%, 0.06), transparent);
 }
+
 .rankBronze:hover::before {
   opacity: 1;
 }
+
 .rankBronze:hover {
   border-color: hsla(25, 60%, 50%, 0.3);
 }
@@ -178,6 +196,7 @@
 .rankDefault {
   border-left: 4px solid hsl(var(--muted));
 }
+
 .rankDefault:hover {
   border-color: hsla(var(--accent), 0.3);
 }
@@ -398,10 +417,12 @@
     width: 2.5rem;
     height: 2.5rem;
   }
+
   .trophyIcon {
     width: 1.25rem;
     height: 1.25rem;
   }
+
   .title {
     font-size: 1.25rem;
   }

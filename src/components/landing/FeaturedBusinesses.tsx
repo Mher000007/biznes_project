@@ -51,7 +51,7 @@ export default function FeaturedBusinesses() {
       } catch (err) {
         console.warn("Failed to load restaurants from backend, using static data", err);
       }
-      
+
       // Fallback: filter mock businesses by HoReCa category
       const horeca = MOCK_BUSINESSES
         .filter((b) => b.category?.slug === "horeca")

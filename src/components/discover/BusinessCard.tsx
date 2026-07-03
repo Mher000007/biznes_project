@@ -10,7 +10,7 @@ function getOpenStatus(operatingHours?: any[]) {
   }
   const now = new Date();
   const day = now.getDay(); // 0 is Sunday, 1-6 Mon-Sat
-  
+
   // Find operating hours for today (day matches, handling both 0 and 7 for Sunday if needed)
   const todayHours = operatingHours.find(
     (h) => h.day === day || (day === 0 && h.day === 7) || (day === 7 && h.day === 0)
@@ -22,7 +22,7 @@ function getOpenStatus(operatingHours?: any[]) {
 
   const currentHour = now.getHours();
   const currentMin = now.getMinutes();
-  
+
   const [openH, openM] = todayHours.openTime.split(":").map(Number);
   const [closeH, closeM] = todayHours.closeTime.split(":").map(Number);
 
@@ -64,16 +64,15 @@ export default function BusinessCard({ business }: { business: Business }) {
               {business.name}
             </Link>
             {business.isVerified && (
-              <BadgeCheck className={`h-5 w-5 shrink-0 ${
-                business.plan === "premium" || business.plan === "standard"
+              <BadgeCheck className={`h-5 w-5 shrink-0 ${business.plan === "premium" || business.plan === "standard"
                   ? styles.verifiedBadgeGold
                   : styles.verifiedBadgeStarter
-              }`} />
+                }`} />
             )}
           </div>
 
           <div className={styles.category}>{business.category.name}</div>
-          
+
           <p className={styles.description}>{business.shortDescription}</p>
 
           <div className={styles.ratingRow}>
@@ -115,9 +114,8 @@ export default function BusinessCard({ business }: { business: Business }) {
         <div className={styles.footerRow}>
           <div className={styles.statusBadge}>
             <span
-              className={`${styles.statusDot} ${
-                !status.isOpen ? styles.closed : ""
-              }`}
+              className={`${styles.statusDot} ${!status.isOpen ? styles.closed : ""
+                }`}
             />
             {status.text}
           </div>

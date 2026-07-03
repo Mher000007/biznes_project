@@ -72,7 +72,7 @@ export default function StoryViewer({
         localStorage.setItem("armbiz-viewed-stories", JSON.stringify(viewedIds));
         onStoriesViewedUpdate();
       }
-      
+
       const viewerId = localStorage.getItem("armbiz-viewer-session") || Math.random().toString(36).substring(2);
       if (!localStorage.getItem("armbiz-viewer-session")) {
         localStorage.setItem("armbiz-viewer-session", viewerId);
@@ -175,8 +175,8 @@ export default function StoryViewer({
 
   const handleMouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
     setIsPaused(false);
-    if (videoRef.current) videoRef.current.play().catch(() => {});
-    
+    if (videoRef.current) videoRef.current.play().catch(() => { });
+
     const holdDuration = Date.now() - touchStartTime.current;
     if (holdDuration < 250) {
       // It was a tap, not a long press hold
@@ -200,7 +200,7 @@ export default function StoryViewer({
 
   const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
     setIsPaused(false);
-    if (videoRef.current) videoRef.current.play().catch(() => {});
+    if (videoRef.current) videoRef.current.play().catch(() => { });
 
     const holdDuration = Date.now() - touchStartTime.current;
     if (holdDuration < 250) {
@@ -231,13 +231,13 @@ export default function StoryViewer({
   };
 
   return (
-    <div 
+    <div
       onClick={onClose}
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/95 backdrop-blur-md transition-opacity duration-300"
     >
-      
+
       {/* Desktop navigation side buttons */}
-      <button 
+      <button
         onClick={(e) => { e.stopPropagation(); handlePrev(); }}
         className="hidden md:flex absolute left-8 lg:left-24 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors cursor-pointer shrink-0"
       >
@@ -245,7 +245,7 @@ export default function StoryViewer({
       </button>
 
       {/* Main story player card */}
-      <div 
+      <div
         onClick={(e) => e.stopPropagation()}
         className="relative w-full max-w-[480px] h-full sm:h-[80vh] sm:max-h-[850px] sm:rounded-2xl overflow-hidden bg-neutral-950 flex flex-col justify-between shadow-2xl select-none"
         onMouseDown={handleMouseDown}
@@ -262,9 +262,9 @@ export default function StoryViewer({
 
             return (
               <div key={s._id} className="h-1 flex-1 bg-white/20 rounded-full overflow-hidden">
-                <div 
+                <div
                   className="h-full bg-white transition-all ease-linear"
-                  style={{ 
+                  style={{
                     width: `${barVal}%`,
                     transitionDuration: idx === storyIndex ? "50ms" : "0ms"
                   }}
@@ -275,7 +275,7 @@ export default function StoryViewer({
         </div>
 
         {/* Top business header metadata overlay */}
-        <div 
+        <div
           onMouseDown={(e) => e.stopPropagation()}
           onMouseUp={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
@@ -284,10 +284,10 @@ export default function StoryViewer({
         >
           <div className="flex items-center gap-2.5">
             {activeGroup.business.logo ? (
-              <img 
-                src={activeGroup.business.logo} 
+              <img
+                src={activeGroup.business.logo}
                 className="w-9 h-9 rounded-full object-cover border border-white/20 shadow"
-                alt="" 
+                alt=""
               />
             ) : (
               <div className="w-9 h-9 rounded-full bg-violet-600 flex items-center justify-center text-white text-sm font-bold border border-white/20 shadow">
@@ -309,7 +309,7 @@ export default function StoryViewer({
             {isPaused && (
               <Pause className="w-4 h-4 text-white/70 animate-pulse" />
             )}
-            <button 
+            <button
               onClick={(e) => { e.stopPropagation(); onClose(); }}
               className="p-1.5 bg-black/30 hover:bg-black/50 text-white/80 hover:text-white rounded-full transition-colors cursor-pointer"
             >
@@ -342,7 +342,7 @@ export default function StoryViewer({
         </div>
 
         {/* Story Caption and Action CTA Button overlay */}
-        <div 
+        <div
           onMouseDown={(e) => e.stopPropagation()}
           onMouseUp={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
@@ -370,7 +370,7 @@ export default function StoryViewer({
       </div>
 
       {/* Desktop navigation right side button */}
-      <button 
+      <button
         onClick={(e) => { e.stopPropagation(); handleNext(); }}
         className="hidden md:flex absolute right-8 lg:right-24 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors cursor-pointer shrink-0"
       >

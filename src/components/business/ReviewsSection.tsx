@@ -257,7 +257,14 @@ export default function ReviewsSection({
   const [helpfulSet, setHelpfulSet] = useState<Set<string>>(new Set());
   const [image, setImage] = useState<string | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
-  const [guestName, setGuestName] = useState("");
+  const [guestName, setGuestName] = useState(currentUser?.name || "");
+
+  // Update guestName if currentUser loads asynchronously
+  useEffect(() => {
+    if (currentUser?.name && !guestName) {
+      setGuestName(currentUser.name);
+    }
+  }, [currentUser, guestName]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -405,7 +412,7 @@ export default function ReviewsSection({
             rating: selectedRating, 
             comment: comment.trim(), 
             image: image || undefined,
-            authorName: token ? undefined : guestName.trim()
+            authorName: guestName.trim() || undefined
           },
           { headers }
         );
@@ -544,7 +551,6 @@ export default function ReviewsSection({
           </div>
         ) : (
           <form onSubmit={handleSubmit} className={styles.form} noValidate>
-            {!currentUser && (
               <div className={styles.guestNameField}>
                 <label className={styles.label} htmlFor="guest-name">
                   Your Name *
@@ -559,7 +565,6 @@ export default function ReviewsSection({
                   required
                 />
               </div>
-            )}
 
             {/* Star selector */}
             <div className={styles.starSelector}>

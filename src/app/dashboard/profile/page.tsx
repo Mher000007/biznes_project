@@ -82,7 +82,7 @@ export default function DashboardProfilePage() {
   };
 
   const [activePreviewTab, setActivePreviewTab] = useState<"about" | "gallery">("about");
-  
+
   // Simulated Phone Screen Story overlay
   const [openStoryIndex, setOpenStoryIndex] = useState<number | null>(null);
 
@@ -251,7 +251,7 @@ export default function DashboardProfilePage() {
       try {
         const apiURL = getApiUrl();
         const token = typeof window !== 'undefined' ? window.localStorage.getItem('token') : null;
-        
+
         const res = await axios.get(`${apiURL}/businesses/me/all`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         });
@@ -334,7 +334,7 @@ export default function DashboardProfilePage() {
           if (mockProfile.foundedYear) setFoundedYear(mockProfile.foundedYear);
           if (mockProfile.latitude) setLat(mockProfile.latitude);
           if (mockProfile.longitude) setLng(mockProfile.longitude);
-          
+
           setLogoUrl(mockProfile.logo && !isDefaultImage(mockProfile.logo) ? mockProfile.logo : "");
           if (mockProfile.coverUrl) {
             if (Array.isArray(mockProfile.coverUrl)) {
@@ -412,7 +412,7 @@ export default function DashboardProfilePage() {
     try {
       const apiURL = getApiUrl();
       const token = typeof window !== 'undefined' ? window.localStorage.getItem('token') : null;
-      
+
       const listRes = await axios.get(`${apiURL}/businesses/me/all`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
@@ -631,7 +631,7 @@ export default function DashboardProfilePage() {
             {t.builder.subtitle}
           </p>
         </div>
-        
+
         <div className="flex items-center gap-3">
           {saved && !saveError && (
             <span className="flex items-center gap-1.5 text-xs text-emerald-600 font-semibold bg-emerald-50 dark:bg-emerald-950/30 px-3 py-1.5 rounded-full border border-emerald-200 dark:border-emerald-900 animate-fade-in">
@@ -668,11 +668,10 @@ export default function DashboardProfilePage() {
             <button
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
-              className={`flex items-center gap-2 px-4 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-all cursor-pointer ${
-                isActive
+              className={`flex items-center gap-2 px-4 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-all cursor-pointer ${isActive
                   ? "border-[hsl(var(--primary))] text-[hsl(var(--foreground))]"
                   : "border-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
-              }`}
+                }`}
             >
               <Icon className="h-4 w-4" />
               {tab.label}
@@ -683,428 +682,427 @@ export default function DashboardProfilePage() {
 
       {/* SPLIT-SCREEN LAYOUT: EDITOR PANEL ON LEFT, PREVIEW MOCKUP ON RIGHT */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
-        
+
         {/* EDITING PANELS */}
         {activeFormTab && (
           <div className="col-span-12 xl:col-span-5 space-y-6">
             <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl p-6 shadow-sm min-h-[480px]">
-            {/* TAB 1: BRANDING IDENTITY */}
-            {activeFormTab === "identity" && (
-              <div className="space-y-6 animate-scale-in">
-                <div>
-                  <h3 className="text-base font-bold text-[hsl(var(--foreground))] mb-1">{t.builder.branding.title}</h3>
-                  <p className="text-xs text-[hsl(var(--muted-foreground))]">{t.builder.branding.subtitle}</p>
-                </div>
-
-                <div className="space-y-4">
+              {/* TAB 1: BRANDING IDENTITY */}
+              {activeFormTab === "identity" && (
+                <div className="space-y-6 animate-scale-in">
                   <div>
-                    <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1.5">{t.builder.branding.noteBubble}</label>
-                    <input 
-                      value={noteText} 
-                      onChange={e => setNoteText(e.target.value)} 
-                      placeholder={`${t.builder.branding.noteBubble}...`}
-                      type="text" 
-                      className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]" 
-                    />
+                    <h3 className="text-base font-bold text-[hsl(var(--foreground))] mb-1">{t.builder.branding.title}</h3>
+                    <p className="text-xs text-[hsl(var(--muted-foreground))]">{t.builder.branding.subtitle}</p>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1.5">{t.builder.branding.logoUrl}</label>
-                    <div className="flex gap-2">
-                      <input 
-                        value={logoUrl} 
-                        onChange={e => setLogoUrl(e.target.value)} 
-                        placeholder="Avatar/Logo URL"
-                        type="text" 
-                        className="flex-1 rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]" 
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1.5">{t.builder.branding.noteBubble}</label>
+                      <input
+                        value={noteText}
+                        onChange={e => setNoteText(e.target.value)}
+                        placeholder={`${t.builder.branding.noteBubble}...`}
+                        type="text"
+                        className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]"
                       />
-                      <button 
-                        type="button" 
-                        onClick={() => logoInputRef.current?.click()}
-                        className="px-3 py-2 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] transition-colors border border-[hsl(var(--border))] flex items-center gap-1 font-semibold"
-                      >
-                        <Camera className="h-3.5 w-3.5" /> Upload
-                      </button>
-                      <button 
-                        type="button" 
-                        onClick={() => setLogoUrl("https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=150&auto=format&fit=crop")}
-                        className="px-3 py-2 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] transition-colors border border-[hsl(var(--border))]"
-                      >
-                        {t.builder.branding.reset}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1.5">{t.builder.branding.coverUrl}</label>
-                    <div className="flex gap-2">
-                      <input 
-                        value={newCoverUrl} 
-                        onChange={e => setNewCoverUrl(e.target.value)} 
-                        placeholder="Facebook cover-style banner URL"
-                        type="text" 
-                        className="flex-1 rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]" 
-                      />
-                      <button 
-                        type="button" 
-                        onClick={() => {
-                          if (newCoverUrl.trim()) {
-                            setCoverUrls([...coverUrls, newCoverUrl.trim()]);
-                            setNewCoverUrl("");
-                          }
-                        }}
-                        className="px-3 py-2 bg-[hsl(var(--primary))] text-white rounded-lg text-xs hover:opacity-90 transition-colors font-semibold font-semibold"
-                      >
-                        Add
-                      </button>
-                      <button 
-                        type="button" 
-                        onClick={() => coverInputRef.current?.click()}
-                        className="px-3 py-2 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] transition-colors border border-[hsl(var(--border))] flex items-center gap-1 font-semibold"
-                      >
-                        <Camera className="h-3.5 w-3.5" /> Upload
-                      </button>
                     </div>
 
-                    {coverUrls.length > 0 && (
-                      <div className="grid grid-cols-3 gap-3 mt-3">
-                        {coverUrls.map((url, index) => (
-                          <div key={index} className="relative group aspect-video rounded-xl border border-[hsl(var(--border))] overflow-hidden bg-slate-900 shadow-sm">
-                            <img src={url} alt="" className="h-full w-full object-cover transition-transform group-hover:scale-105" />
-                            <button 
-                              type="button" 
-                              onClick={() => setCoverUrls(coverUrls.filter((_, idx) => idx !== index))}
-                              className="absolute top-1.5 right-1.5 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                     {coverUrls.length === 0 && (
-                      <p className="text-[11px] text-[hsl(var(--muted-foreground))] italic mt-1.5">No cover images added. Please add at least one.</p>
-                    )}
-                    <input 
-                      type="file" 
-                      ref={coverInputRef}
-                      onChange={handleCoverUpload}
-                      accept="image/*"
-                      className="hidden" 
-                    />
-                  </div>
-
-                  {/* Divider */}
-                  <hr className="border-[hsl(var(--border))]/60 my-4" />
-
-                  {/* Showcase Gallery Upload (Interior/Salon Photos) */}
-                  <div>
-                    <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1.5">{t.builder.gallery.title} (Սրահի նկարներ)</label>
-                    <p className="text-[11px] text-[hsl(var(--muted-foreground))] mb-2">{t.builder.gallery.subtitle}</p>
-                    <div className="flex gap-2 mb-3">
-                      <input 
-                        type="text" 
-                        placeholder={t.builder.gallery.placeholder} 
-                        value={newGalleryUrl} 
-                        onChange={e => setNewGalleryUrl(e.target.value)} 
-                        className="flex-1 rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]" 
-                      />
-                      <button 
-                        type="button" 
-                        onClick={() => galleryInputRef.current?.click()}
-                        className="flex items-center gap-1 px-3 py-2 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] border border-[hsl(var(--border))] transition-colors font-semibold"
-                      >
-                        <Camera className="h-3.5 w-3.5" /> Upload
-                      </button>
-                      <button 
-                        type="button" 
-                        onClick={addGalleryItem}
-                        className="flex items-center gap-1.5 px-4 py-2 bg-[hsl(var(--primary))] text-white font-semibold rounded-lg text-xs hover:opacity-90 font-semibold"
-                      >
-                        <Plus className="h-4 w-4" /> {t.builder.gallery.addPhoto}
-                      </button>
-                    </div>
-
-                    <input 
-                      type="file" 
-                      ref={galleryInputRef} 
-                      onChange={handleGalleryUpload} 
-                      accept="image/*" 
-                      multiple 
-                      className="hidden" 
-                    />
-
-                    {gallery.length > 0 && (
-                      <div className="grid grid-cols-3 gap-3">
-                        {gallery.map((url, i) => (
-                          <div key={i} className="relative group aspect-square rounded-xl border border-[hsl(var(--border))] overflow-hidden bg-slate-900 shadow-sm">
-                            <img src={url} alt="" className="h-full w-full object-cover transition-transform group-hover:scale-105" />
-                            <button 
-                              type="button" 
-                              onClick={() => removeGalleryItem(url)}
-                              className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {gallery.length === 0 && (
-                      <p className="text-[11px] text-[hsl(var(--muted-foreground))] italic">No salon/interior images added yet.</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="border border-dashed border-[hsl(var(--border))] bg-[hsl(var(--surface-strong))] rounded-xl p-4 flex gap-4 items-center">
-                  <div className="p-3 bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))] rounded-full shrink-0">
-                    <Sparkles className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-[hsl(var(--foreground))]">{t.builder.branding.demoTitle}</h4>
-                    <p className="text-[11px] text-[hsl(var(--muted-foreground))] mt-0.5">
-                      {t.builder.branding.demoDesc}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* TAB 2: CREDENTIALS INFO */}
-            {activeFormTab === "info" && (
-              <div className="space-y-5 animate-scale-in">
-                <div>
-                  <h3 className="text-base font-bold text-[hsl(var(--foreground))] mb-1">{t.builder.credentials.title}</h3>
-                  <p className="text-xs text-[hsl(var(--muted-foreground))]">{t.builder.credentials.subtitle}</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1">{t.builder.credentials.name}</label>
-                    <input value={name} onChange={e=>setName(e.target.value)} type="text" className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1">{t.builder.credentials.category}</label>
-                    <select value={category} onChange={e => {
-                      setCategory(e.target.value);
-                      setCategoryId(null); // Clear categoryId so categoryValue resolves to the new selected category slug
-                    }} className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]">
-                      {CATEGORIES.map((c) => <option key={c.id} value={c.slug}>{c.name}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1">{t.builder.credentials.bio}</label>
-                  <textarea rows={3} value={description} onChange={e=>setDescription(e.target.value)} className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))] resize-none" />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1">{t.builder.credentials.email}</label>
-                    <input type="email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1">{t.builder.credentials.phone}</label>
-                    <input type="tel" value={phone} onChange={e=>setPhone(e.target.value)} className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1">{t.builder.credentials.website}</label>
-                    <input type="url" value={website} onChange={e=>setWebsite(e.target.value)} className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1">Founded Year (e.g. 1997)</label>
-                    <input 
-                      type="text" 
-                      value={foundedYear} 
-                      onChange={e => {
-                        const val = e.target.value;
-                        if (val === "") {
-                          setFoundedYear("");
-                          return;
-                        }
-                        const numericVal = parseInt(val, 10);
-                        if (!isNaN(numericVal)) {
-                          if (numericVal > CURRENT_YEAR) {
-                            setFoundedYear(CURRENT_YEAR.toString());
-                          } else {
-                            setFoundedYear(val);
-                          }
-                        }
-                      }} 
-                      className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]" 
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* TAB 3: HIGHLIGHTS ONLY */}
-            {activeFormTab === "stories" && (
-              <div className="space-y-6 animate-scale-in">
-
-                {/* Highlights Editor */}
-                <div>
-                  <h3 className="text-base font-bold text-[hsl(var(--foreground))] mb-1">{t.builder.stories.highlightsTitle}</h3>
-                  <p className="text-xs text-[hsl(var(--muted-foreground))]">{t.builder.stories.highlightsSubtitle}</p>
-
-                  <div className="grid grid-cols-1 gap-2 mt-3">
-                    <input 
-                      type="text" 
-                      placeholder={t.builder.stories.highlightsPlaceholder} 
-                      value={newHighlightTitle} 
-                      onChange={e => setNewHighlightTitle(e.target.value)} 
-                      className="w-full rounded-lg border border-[hsl(var(--border))] px-2.5 py-1.5 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]" 
-                    />
-                    <div className="flex gap-2">
-                      <input 
-                        type="text" 
-                        placeholder={t.builder.stories.imgPlaceholder} 
-                        value={newHighlightImg} 
-                        onChange={e => setNewHighlightImg(e.target.value)} 
-                        className="flex-1 rounded-lg border border-[hsl(var(--border))] px-2.5 py-1.5 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]" 
-                      />
-                      <button 
-                        type="button" 
-                        onClick={() => highlightInputRef.current?.click()}
-                        className="px-2.5 py-1.5 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] transition-colors border border-[hsl(var(--border))] flex items-center gap-1 font-semibold"
-                      >
-                        <Camera className="h-3.5 w-3.5" /> Upload
-                      </button>
-                      <button 
-                        type="button" 
-                        onClick={addHighlightItem}
-                        className="px-3 py-1.5 bg-[hsl(var(--primary))] text-white font-semibold rounded-lg text-xs hover:opacity-90 font-semibold"
-                      >
-                        {t.builder.stories.add}
-                      </button>
-                    </div>
-                    <input 
-                      type="file" 
-                      ref={highlightInputRef} 
-                      onChange={handleHighlightUpload} 
-                      accept="image/*" 
-                      className="hidden" 
-                    />
-                  </div>
-
-                  {/* Highlights list */}
-                  <div className="flex gap-3 overflow-x-auto py-3 mt-2">
-                    {highlights.map(h => (
-                      <div key={h.id} className="relative group flex flex-col items-center shrink-0 w-16">
-                        <img src={h.imageUrl} className="h-10 w-10 object-cover rounded-full border border-[hsl(var(--border))]" alt="" />
-                        <span className="text-[10px] mt-1 text-[hsl(var(--muted-foreground))] truncate w-full text-center">{h.title}</span>
-                        <button 
-                          type="button" 
-                          onClick={() => removeHighlightItem(h.id)}
-                          className="absolute -top-1 -right-1 p-0.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                    <div>
+                      <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1.5">{t.builder.branding.logoUrl}</label>
+                      <div className="flex gap-2">
+                        <input
+                          value={logoUrl}
+                          onChange={e => setLogoUrl(e.target.value)}
+                          placeholder="Avatar/Logo URL"
+                          type="text"
+                          className="flex-1 rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => logoInputRef.current?.click()}
+                          className="px-3 py-2 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] transition-colors border border-[hsl(var(--border))] flex items-center gap-1 font-semibold"
                         >
-                          <X className="h-2.5 w-2.5" />
+                          <Camera className="h-3.5 w-3.5" /> Upload
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setLogoUrl("https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=150&auto=format&fit=crop")}
+                          className="px-3 py-2 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] transition-colors border border-[hsl(var(--border))]"
+                        >
+                          {t.builder.branding.reset}
                         </button>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
+                    </div>
 
-
-
-            {/* TAB 5: HOURS & LOCATION */}
-            {activeFormTab === "hours" && (
-              <div className="space-y-6 animate-scale-in">
-                <div>
-                  <h3 className="text-base font-bold text-[hsl(var(--foreground))] mb-1">{t.builder.hours.title}</h3>
-                  <p className="text-xs text-[hsl(var(--muted-foreground))]">{t.builder.hours.subtitle}</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1">{t.builder.hours.city}</label>
-                    <LocationSelect 
-                      value={city} 
-                      onChange={e=>setCity(e.target.value)} 
-                      className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-[hsl(var(--background))] text-[hsl(var(--foreground))]" 
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1">{t.builder.hours.address}</label>
-                    <input value={address} onChange={e=>setAddress(e.target.value)} type="text" className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]" />
-                  </div>
-                </div>
-
-                <LocationPicker 
-                  lat={lat} 
-                  lng={lng} 
-                  onLocationChange={(newLat, newLng, newAddr) => { 
-                    setLat(newLat); 
-                    setLng(newLng); 
-                    if (newAddr) {
-                      setAddress(newAddr.split(',').slice(0, 2).join(',').trim());
-                    }
-                  }} 
-                />
-
-                <div className="border-t border-[hsl(var(--border))] pt-4">
-                  <h3 className="text-base font-bold text-[hsl(var(--foreground))] mb-3">{t.builder.hours.schedule}</h3>
-                  
-                  <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
-                    {operatingHours.map((d, index) => (
-                      <div key={d.day} className="flex items-center justify-between border-b border-[hsl(var(--border))]/40 pb-2">
-                        <span className="text-xs font-semibold text-[hsl(var(--foreground))] w-24">{d.day}</span>
-                        
-                        <div className="flex items-center gap-4">
-                          <label className="flex items-center gap-2 text-xs cursor-pointer select-none">
-                            <input 
-                              type="checkbox" 
-                              checked={!d.closed} 
-                              onChange={() => toggleDayClosed(index)} 
-                              className="rounded border-[hsl(var(--border))] text-[hsl(var(--primary))] focus:ring-[hsl(var(--primary))]" 
-                            />
-                            <span>{t.builder.hours.open}</span>
-                          </label>
-
-                          {!d.closed && (
-                            <div className="flex items-center gap-2">
-                              <input 
-                                type="text" 
-                                value={d.open} 
-                                onChange={e => updateDayHours(index, "open", e.target.value)} 
-                                className="w-16 rounded border border-[hsl(var(--border))] px-2 py-1 text-center text-xs outline-none bg-transparent text-[hsl(var(--foreground))]" 
-                              />
-                              <span className="text-xs text-[hsl(var(--muted-foreground))]">-</span>
-                              <input 
-                                type="text" 
-                                value={d.close} 
-                                onChange={e => updateDayHours(index, "close", e.target.value)} 
-                                className="w-16 rounded border border-[hsl(var(--border))] px-2 py-1 text-center text-xs outline-none bg-transparent text-[hsl(var(--foreground))]" 
-                              />
-                            </div>
-                          )}
-                          {d.closed && (
-                            <span className="text-xs font-semibold text-red-500 w-[140px] text-center">{t.builder.hours.closed}</span>
-                          )}
-                        </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1.5">{t.builder.branding.coverUrl}</label>
+                      <div className="flex gap-2">
+                        <input
+                          value={newCoverUrl}
+                          onChange={e => setNewCoverUrl(e.target.value)}
+                          placeholder="Facebook cover-style banner URL"
+                          type="text"
+                          className="flex-1 rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (newCoverUrl.trim()) {
+                              setCoverUrls([...coverUrls, newCoverUrl.trim()]);
+                              setNewCoverUrl("");
+                            }
+                          }}
+                          className="px-3 py-2 bg-[hsl(var(--primary))] text-white rounded-lg text-xs hover:opacity-90 transition-colors font-semibold font-semibold"
+                        >
+                          Add
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => coverInputRef.current?.click()}
+                          className="px-3 py-2 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] transition-colors border border-[hsl(var(--border))] flex items-center gap-1 font-semibold"
+                        >
+                          <Camera className="h-3.5 w-3.5" /> Upload
+                        </button>
                       </div>
-                    ))}
+
+                      {coverUrls.length > 0 && (
+                        <div className="grid grid-cols-3 gap-3 mt-3">
+                          {coverUrls.map((url, index) => (
+                            <div key={index} className="relative group aspect-video rounded-xl border border-[hsl(var(--border))] overflow-hidden bg-slate-900 shadow-sm">
+                              <img src={url} alt="" className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+                              <button
+                                type="button"
+                                onClick={() => setCoverUrls(coverUrls.filter((_, idx) => idx !== index))}
+                                className="absolute top-1.5 right-1.5 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {coverUrls.length === 0 && (
+                        <p className="text-[11px] text-[hsl(var(--muted-foreground))] italic mt-1.5">No cover images added. Please add at least one.</p>
+                      )}
+                      <input
+                        type="file"
+                        ref={coverInputRef}
+                        onChange={handleCoverUpload}
+                        accept="image/*"
+                        className="hidden"
+                      />
+                    </div>
+
+                    {/* Divider */}
+                    <hr className="border-[hsl(var(--border))]/60 my-4" />
+
+                    {/* Showcase Gallery Upload (Interior/Salon Photos) */}
+                    <div>
+                      <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1.5">{t.builder.gallery.title} (Սրահի նկարներ)</label>
+                      <p className="text-[11px] text-[hsl(var(--muted-foreground))] mb-2">{t.builder.gallery.subtitle}</p>
+                      <div className="flex gap-2 mb-3">
+                        <input
+                          type="text"
+                          placeholder={t.builder.gallery.placeholder}
+                          value={newGalleryUrl}
+                          onChange={e => setNewGalleryUrl(e.target.value)}
+                          className="flex-1 rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => galleryInputRef.current?.click()}
+                          className="flex items-center gap-1 px-3 py-2 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] border border-[hsl(var(--border))] transition-colors font-semibold"
+                        >
+                          <Camera className="h-3.5 w-3.5" /> Upload
+                        </button>
+                        <button
+                          type="button"
+                          onClick={addGalleryItem}
+                          className="flex items-center gap-1.5 px-4 py-2 bg-[hsl(var(--primary))] text-white font-semibold rounded-lg text-xs hover:opacity-90 font-semibold"
+                        >
+                          <Plus className="h-4 w-4" /> {t.builder.gallery.addPhoto}
+                        </button>
+                      </div>
+
+                      <input
+                        type="file"
+                        ref={galleryInputRef}
+                        onChange={handleGalleryUpload}
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                      />
+
+                      {gallery.length > 0 && (
+                        <div className="grid grid-cols-3 gap-3">
+                          {gallery.map((url, i) => (
+                            <div key={i} className="relative group aspect-square rounded-xl border border-[hsl(var(--border))] overflow-hidden bg-slate-900 shadow-sm">
+                              <img src={url} alt="" className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+                              <button
+                                type="button"
+                                onClick={() => removeGalleryItem(url)}
+                                className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {gallery.length === 0 && (
+                        <p className="text-[11px] text-[hsl(var(--muted-foreground))] italic">No salon/interior images added yet.</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="border border-dashed border-[hsl(var(--border))] bg-[hsl(var(--surface-strong))] rounded-xl p-4 flex gap-4 items-center">
+                    <div className="p-3 bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))] rounded-full shrink-0">
+                      <Sparkles className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-[hsl(var(--foreground))]">{t.builder.branding.demoTitle}</h4>
+                      <p className="text-[11px] text-[hsl(var(--muted-foreground))] mt-0.5">
+                        {t.builder.branding.demoDesc}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
+              {/* TAB 2: CREDENTIALS INFO */}
+              {activeFormTab === "info" && (
+                <div className="space-y-5 animate-scale-in">
+                  <div>
+                    <h3 className="text-base font-bold text-[hsl(var(--foreground))] mb-1">{t.builder.credentials.title}</h3>
+                    <p className="text-xs text-[hsl(var(--muted-foreground))]">{t.builder.credentials.subtitle}</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1">{t.builder.credentials.name}</label>
+                      <input value={name} onChange={e => setName(e.target.value)} type="text" className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1">{t.builder.credentials.category}</label>
+                      <select value={category} onChange={e => {
+                        setCategory(e.target.value);
+                        setCategoryId(null); // Clear categoryId so categoryValue resolves to the new selected category slug
+                      }} className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]">
+                        {CATEGORIES.map((c) => <option key={c.id} value={c.slug}>{c.name}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1">{t.builder.credentials.bio}</label>
+                    <textarea rows={3} value={description} onChange={e => setDescription(e.target.value)} className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))] resize-none" />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1">{t.builder.credentials.email}</label>
+                      <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1">{t.builder.credentials.phone}</label>
+                      <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1">{t.builder.credentials.website}</label>
+                      <input type="url" value={website} onChange={e => setWebsite(e.target.value)} className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1">Founded Year (e.g. 1997)</label>
+                      <input
+                        type="text"
+                        value={foundedYear}
+                        onChange={e => {
+                          const val = e.target.value;
+                          if (val === "") {
+                            setFoundedYear("");
+                            return;
+                          }
+                          const numericVal = parseInt(val, 10);
+                          if (!isNaN(numericVal)) {
+                            if (numericVal > CURRENT_YEAR) {
+                              setFoundedYear(CURRENT_YEAR.toString());
+                            } else {
+                              setFoundedYear(val);
+                            }
+                          }
+                        }}
+                        className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 3: HIGHLIGHTS ONLY */}
+              {activeFormTab === "stories" && (
+                <div className="space-y-6 animate-scale-in">
+
+                  {/* Highlights Editor */}
+                  <div>
+                    <h3 className="text-base font-bold text-[hsl(var(--foreground))] mb-1">{t.builder.stories.highlightsTitle}</h3>
+                    <p className="text-xs text-[hsl(var(--muted-foreground))]">{t.builder.stories.highlightsSubtitle}</p>
+
+                    <div className="grid grid-cols-1 gap-2 mt-3">
+                      <input
+                        type="text"
+                        placeholder={t.builder.stories.highlightsPlaceholder}
+                        value={newHighlightTitle}
+                        onChange={e => setNewHighlightTitle(e.target.value)}
+                        className="w-full rounded-lg border border-[hsl(var(--border))] px-2.5 py-1.5 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]"
+                      />
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder={t.builder.stories.imgPlaceholder}
+                          value={newHighlightImg}
+                          onChange={e => setNewHighlightImg(e.target.value)}
+                          className="flex-1 rounded-lg border border-[hsl(var(--border))] px-2.5 py-1.5 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => highlightInputRef.current?.click()}
+                          className="px-2.5 py-1.5 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] transition-colors border border-[hsl(var(--border))] flex items-center gap-1 font-semibold"
+                        >
+                          <Camera className="h-3.5 w-3.5" /> Upload
+                        </button>
+                        <button
+                          type="button"
+                          onClick={addHighlightItem}
+                          className="px-3 py-1.5 bg-[hsl(var(--primary))] text-white font-semibold rounded-lg text-xs hover:opacity-90 font-semibold"
+                        >
+                          {t.builder.stories.add}
+                        </button>
+                      </div>
+                      <input
+                        type="file"
+                        ref={highlightInputRef}
+                        onChange={handleHighlightUpload}
+                        accept="image/*"
+                        className="hidden"
+                      />
+                    </div>
+
+                    {/* Highlights list */}
+                    <div className="flex gap-3 overflow-x-auto py-3 mt-2">
+                      {highlights.map(h => (
+                        <div key={h.id} className="relative group flex flex-col items-center shrink-0 w-16">
+                          <img src={h.imageUrl} className="h-10 w-10 object-cover rounded-full border border-[hsl(var(--border))]" alt="" />
+                          <span className="text-[10px] mt-1 text-[hsl(var(--muted-foreground))] truncate w-full text-center">{h.title}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeHighlightItem(h.id)}
+                            className="absolute -top-1 -right-1 p-0.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                          >
+                            <X className="h-2.5 w-2.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+
+
+              {/* TAB 5: HOURS & LOCATION */}
+              {activeFormTab === "hours" && (
+                <div className="space-y-6 animate-scale-in">
+                  <div>
+                    <h3 className="text-base font-bold text-[hsl(var(--foreground))] mb-1">{t.builder.hours.title}</h3>
+                    <p className="text-xs text-[hsl(var(--muted-foreground))]">{t.builder.hours.subtitle}</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1">{t.builder.hours.city}</label>
+                      <LocationSelect
+                        value={city}
+                        onChange={e => setCity(e.target.value)}
+                        className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1">{t.builder.hours.address}</label>
+                      <input value={address} onChange={e => setAddress(e.target.value)} type="text" className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]" />
+                    </div>
+                  </div>
+
+                  <LocationPicker
+                    lat={lat}
+                    lng={lng}
+                    onLocationChange={(newLat, newLng, newAddr) => {
+                      setLat(newLat);
+                      setLng(newLng);
+                      if (newAddr) {
+                        setAddress(newAddr.split(',').slice(0, 2).join(',').trim());
+                      }
+                    }}
+                  />
+
+                  <div className="border-t border-[hsl(var(--border))] pt-4">
+                    <h3 className="text-base font-bold text-[hsl(var(--foreground))] mb-3">{t.builder.hours.schedule}</h3>
+
+                    <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
+                      {operatingHours.map((d, index) => (
+                        <div key={d.day} className="flex items-center justify-between border-b border-[hsl(var(--border))]/40 pb-2">
+                          <span className="text-xs font-semibold text-[hsl(var(--foreground))] w-24">{d.day}</span>
+
+                          <div className="flex items-center gap-4">
+                            <label className="flex items-center gap-2 text-xs cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                checked={!d.closed}
+                                onChange={() => toggleDayClosed(index)}
+                                className="rounded border-[hsl(var(--border))] text-[hsl(var(--primary))] focus:ring-[hsl(var(--primary))]"
+                              />
+                              <span>{t.builder.hours.open}</span>
+                            </label>
+
+                            {!d.closed && (
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="text"
+                                  value={d.open}
+                                  onChange={e => updateDayHours(index, "open", e.target.value)}
+                                  className="w-16 rounded border border-[hsl(var(--border))] px-2 py-1 text-center text-xs outline-none bg-transparent text-[hsl(var(--foreground))]"
+                                />
+                                <span className="text-xs text-[hsl(var(--muted-foreground))]">-</span>
+                                <input
+                                  type="text"
+                                  value={d.close}
+                                  onChange={e => updateDayHours(index, "close", e.target.value)}
+                                  className="w-16 rounded border border-[hsl(var(--border))] px-2 py-1 text-center text-xs outline-none bg-transparent text-[hsl(var(--foreground))]"
+                                />
+                              </div>
+                            )}
+                            {d.closed && (
+                              <span className="text-xs font-semibold text-red-500 w-[140px] text-center">{t.builder.hours.closed}</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </div>
           </div>
-        </div>
         )}
 
         {/* CLIENT-SIDE INTERACTIVE LIVE PREVIEW */}
-        <div className={`col-span-12 flex flex-col w-full mx-auto mt-10 ${
-          activeFormTab ? "xl:col-span-7 xl:mt-0" : "xl:col-span-12"
-        }`}>
+        <div className={`col-span-12 flex flex-col w-full mx-auto mt-10 ${activeFormTab ? "xl:col-span-7 xl:mt-0" : "xl:col-span-12"
+          }`}>
           <div className="flex items-center justify-between w-full mb-3 gap-2">
             <div className="flex items-center gap-2 text-xs font-semibold text-[hsl(var(--muted-foreground))]">
               <Eye className="h-4 w-4" /> {t.builder.preview.liveTitle}
@@ -1121,14 +1119,14 @@ export default function DashboardProfilePage() {
           {/* Live Business Profile Preview Canvas */}
           <div className="w-full relative flex flex-col bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-2xl p-4 md:p-6 shadow-sm overflow-hidden animate-scale-in">
             <div className={profileStyles.profileContainer} style={{ padding: "0", maxWidth: "100%" }}>
-              
+
               {/* Cover / Media Gallery */}
               <div className={profileStyles.coverGallery} style={{ height: "180px", borderRadius: "1rem", marginBottom: "1.5rem", position: "relative" }}>
                 {previewCoverImage ? (
-                  <img 
-                    src={previewCoverImage} 
-                    className={profileStyles.sliderImage} 
-                    alt="" 
+                  <img
+                    src={previewCoverImage}
+                    className={profileStyles.sliderImage}
+                    alt=""
                   />
                 ) : (
                   <span className={profileStyles.initialLogo} style={{ fontSize: "3rem" }}>{name ? name[0] : "A"}</span>
@@ -1142,11 +1140,10 @@ export default function DashboardProfilePage() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <h1 style={{ fontSize: "1.5rem", fontWeight: 800, marginBottom: "0.25rem", display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
                       {name || "Business Name"}
-                      <span className={`${profileStyles.verifiedBadge} ${
-                        activePlan === "premium" || activePlan === "standard"
+                      <span className={`${profileStyles.verifiedBadge} ${activePlan === "premium" || activePlan === "standard"
                           ? profileStyles.verifiedGold
                           : profileStyles.verifiedStarter
-                      }`} style={{ fontSize: "0.65rem", padding: "0.15rem 0.45rem" }}>
+                        }`} style={{ fontSize: "0.65rem", padding: "0.15rem 0.45rem" }}>
                         <BadgeCheck className="h-3 w-3" /> Verified Partner
                       </span>
                     </h1>
@@ -1166,7 +1163,7 @@ export default function DashboardProfilePage() {
                   </div>
                 </div>
 
-                <button 
+                <button
                   type="button"
                   className="btn-primary py-2 px-4 rounded-xl text-xs font-semibold shadow-md shrink-0 cursor-default"
                 >
@@ -1204,18 +1201,17 @@ export default function DashboardProfilePage() {
                       {gallery.length} {gallery.length === 1 ? "photo" : "photos"}
                     </span>
                   </div>
-                  <div className={`${profileStyles.bentoGrid} ${
-                    gallery.length === 1 ? profileStyles.grid1 :
-                    gallery.length === 2 ? profileStyles.grid2 :
-                    gallery.length === 3 ? profileStyles.grid3 :
-                    gallery.length === 4 ? profileStyles.grid4 :
-                    profileStyles.grid5
-                  }`}>
+                  <div className={`${profileStyles.bentoGrid} ${gallery.length === 1 ? profileStyles.grid1 :
+                      gallery.length === 2 ? profileStyles.grid2 :
+                        gallery.length === 3 ? profileStyles.grid3 :
+                          gallery.length === 4 ? profileStyles.grid4 :
+                            profileStyles.grid5
+                    }`}>
                     {gallery.slice(0, 5).map((url: string, index: number) => {
                       const isLastAndMore = index === 4 && gallery.length > 5;
                       return (
-                        <div 
-                          key={index} 
+                        <div
+                          key={index}
                           className={profileStyles.galleryItem}
                           onClick={() => setZoomImageIdx(index)}
                           style={{ cursor: "zoom-in" }}
@@ -1262,7 +1258,7 @@ export default function DashboardProfilePage() {
                   <div className={profileStyles.navigatorCard} style={{ padding: "1rem", borderRadius: "1rem" }}>
                     <h3 style={{ fontSize: "0.85rem", fontWeight: 700, marginBottom: "0.25rem" }}>Directions Finder</h3>
                     <p style={{ fontSize: "0.75rem", marginBottom: "0.75rem" }}>Select your favorite navigator engine to compute live routes to the location.</p>
-                    <a 
+                    <a
                       href={`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -1271,7 +1267,7 @@ export default function DashboardProfilePage() {
                     >
                       <Compass className="h-3.5 w-3.5" /> Open in Google Maps
                     </a>
-                    <a 
+                    <a
                       href={`https://yandex.com/maps/?rtext=~${lat},${lng}`}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -1310,7 +1306,7 @@ export default function DashboardProfilePage() {
       {/* FULLSCREEN PREVIEW OVERLAY */}
       {isFullscreenPreview && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-md p-4 md:p-8 flex items-start justify-center animate-fade-in select-none">
-          <button 
+          <button
             type="button"
             onClick={() => setIsFullscreenPreview(false)}
             className="fixed top-6 right-6 z-50 p-2.5 bg-black/60 hover:bg-black/80 text-white rounded-full transition-colors border border-white/10 cursor-pointer shadow-lg"
@@ -1320,7 +1316,7 @@ export default function DashboardProfilePage() {
 
           <div className="w-full max-w-5xl bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-2xl overflow-hidden shadow-2xl relative my-8 flex flex-col text-[hsl(var(--foreground))] p-6 md:p-10">
             <div className={profileStyles.profileContainer} style={{ padding: "0", maxWidth: "100%", width: "100%" }}>
-              
+
               {/* Back Link */}
               <div className={profileStyles.backLink} style={{ cursor: "default" }}>
                 <ArrowLeft className="h-4 w-4" /> Back to Directory
@@ -1329,10 +1325,10 @@ export default function DashboardProfilePage() {
               {/* Cover / Media Gallery */}
               <div className={profileStyles.coverGallery}>
                 {previewCoverImage ? (
-                  <img 
-                    src={previewCoverImage} 
-                    className={profileStyles.sliderImage} 
-                    alt="" 
+                  <img
+                    src={previewCoverImage}
+                    className={profileStyles.sliderImage}
+                    alt=""
                   />
                 ) : (
                   <span className={profileStyles.initialLogo}>{name ? name[0] : "A"}</span>
@@ -1346,11 +1342,10 @@ export default function DashboardProfilePage() {
                   <div className="flex items-center gap-3 flex-wrap">
                     <h1>
                       {name || "Business Name"}
-                      <span className={`${profileStyles.verifiedBadge} ${
-                        activePlan === "premium" || activePlan === "standard"
+                      <span className={`${profileStyles.verifiedBadge} ${activePlan === "premium" || activePlan === "standard"
                           ? profileStyles.verifiedGold
                           : profileStyles.verifiedStarter
-                      }`}>
+                        }`}>
                         <BadgeCheck className="h-3.5 w-3.5" /> Verified Partner
                       </span>
                     </h1>
@@ -1370,8 +1365,8 @@ export default function DashboardProfilePage() {
                   </div>
                 </div>
 
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="btn-primary py-3.5 px-6 rounded-xl text-sm font-semibold shadow-lg shrink-0 cursor-default"
                 >
                   Book Appointment
@@ -1408,18 +1403,17 @@ export default function DashboardProfilePage() {
                       {gallery.length} {gallery.length === 1 ? "photo" : "photos"}
                     </span>
                   </div>
-                  <div className={`${profileStyles.bentoGrid} ${
-                    gallery.length === 1 ? profileStyles.grid1 :
-                    gallery.length === 2 ? profileStyles.grid2 :
-                    gallery.length === 3 ? profileStyles.grid3 :
-                    gallery.length === 4 ? profileStyles.grid4 :
-                    profileStyles.grid5
-                  }`}>
+                  <div className={`${profileStyles.bentoGrid} ${gallery.length === 1 ? profileStyles.grid1 :
+                      gallery.length === 2 ? profileStyles.grid2 :
+                        gallery.length === 3 ? profileStyles.grid3 :
+                          gallery.length === 4 ? profileStyles.grid4 :
+                            profileStyles.grid5
+                    }`}>
                     {gallery.slice(0, 5).map((url: string, index: number) => {
                       const isLastAndMore = index === 4 && gallery.length > 5;
                       return (
-                        <div 
-                          key={index} 
+                        <div
+                          key={index}
                           className={profileStyles.galleryItem}
                           onClick={() => setZoomImageIdx(index)}
                           style={{ cursor: "zoom-in" }}
@@ -1467,7 +1461,7 @@ export default function DashboardProfilePage() {
                   <div className={profileStyles.navigatorCard}>
                     <h3>Directions Finder</h3>
                     <p>Select your favorite navigator engine to compute live routes to the location.</p>
-                    <a 
+                    <a
                       href={`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -1476,7 +1470,7 @@ export default function DashboardProfilePage() {
                     >
                       <Compass className="h-4 w-4" /> Open in Google Maps
                     </a>
-                    <a 
+                    <a
                       href={`https://yandex.com/maps/?rtext=~${lat},${lng}`}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -1514,13 +1508,13 @@ export default function DashboardProfilePage() {
 
       {/* GALLERY LIGHTBOX ZOOM */}
       {zoomImageIdx !== null && gallery.length > 0 && (
-        <div 
-          className={profileStyles.lightboxOverlay} 
+        <div
+          className={profileStyles.lightboxOverlay}
           onClick={() => setZoomImageIdx(null)}
         >
           <div className={profileStyles.galleryLightboxContent} onClick={(e) => e.stopPropagation()}>
-            <button 
-              onClick={() => setZoomImageIdx(null)} 
+            <button
+              onClick={() => setZoomImageIdx(null)}
               className={profileStyles.lightboxClose}
               aria-label="Close lightbox"
             >
@@ -1528,10 +1522,10 @@ export default function DashboardProfilePage() {
             </button>
 
             <div className={profileStyles.lightboxMediaWrapper}>
-              <img 
-                src={gallery[zoomImageIdx]} 
-                alt={`Gallery ${zoomImageIdx + 1}`} 
-                className={profileStyles.galleryLightboxImage} 
+              <img
+                src={gallery[zoomImageIdx]}
+                alt={`Gallery ${zoomImageIdx + 1}`}
+                className={profileStyles.galleryLightboxImage}
               />
               <div className={profileStyles.lightboxText}>
                 <h3>{name || "Business Name"}</h3>
@@ -1541,7 +1535,7 @@ export default function DashboardProfilePage() {
 
             {gallery.length > 1 && (
               <>
-                <button 
+                <button
                   onClick={(e) => {
                     e.stopPropagation();
                     setZoomImageIdx((zoomImageIdx - 1 + gallery.length) % gallery.length);
@@ -1551,7 +1545,7 @@ export default function DashboardProfilePage() {
                 >
                   <ChevronLeft className="h-6 w-6" />
                 </button>
-                <button 
+                <button
                   onClick={(e) => {
                     e.stopPropagation();
                     setZoomImageIdx((zoomImageIdx + 1) % gallery.length);
@@ -1568,12 +1562,12 @@ export default function DashboardProfilePage() {
       )}
 
       {/* Hidden File Input for Logo Upload */}
-      <input 
-        type="file" 
+      <input
+        type="file"
         ref={logoInputRef}
         onChange={handleLogoUpload}
         accept="image/*"
-        className="hidden" 
+        className="hidden"
       />
     </div>
   );

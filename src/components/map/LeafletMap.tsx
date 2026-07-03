@@ -129,8 +129,8 @@ export default function LeafletMap({
     if (!containerRef.current || mapRef.current) return;
 
     const safeCenter: [number, number] = [
-      isNaN(Number(center[0])) ? 40.1872 : Number(center[0]),
-      isNaN(Number(center[1])) ? 44.5152 : Number(center[1]),
+      !isFinite(Number(center[0])) ? 40.1872 : Number(center[0]),
+      !isFinite(Number(center[1])) ? 44.5152 : Number(center[1]),
     ];
 
     const map = L.map(containerRef.current, {
@@ -152,9 +152,6 @@ export default function LeafletMap({
     }).addTo(map);
     tileLayerRef.current = tileLayer;
 
-    L.control.attribution({ position: "bottomright", prefix: false })
-      .addAttribution(tileLayerAttribution)
-      .addTo(map);
 
     if (!readonly) {
       map.on("focus", () => map.scrollWheelZoom.enable());
@@ -201,6 +198,7 @@ export default function LeafletMap({
     const markersGroup = markersGroupRef.current;
     if (!map || !markersGroup) return;
 
+    map.stop(); // Stop any ongoing flyTo/zoom animations before clearing layers
     markersGroup.clearLayers();
     markerRegistryRef.current.clear();
     markerCompanyRegistryRef.current.clear();
@@ -212,7 +210,7 @@ export default function LeafletMap({
       markers.forEach((m) => {
         const lat = Number(m.lat);
         const lng = Number(m.lng);
-        if (isNaN(lat) || isNaN(lng)) return;
+        if (!isFinite(lat) || !isFinite(lng)) return;
 
         const marker = L.marker([lat, lng], {
           draggable: m.draggable && !readonly,
@@ -275,8 +273,8 @@ export default function LeafletMap({
     }
 
     const safeCenter: [number, number] = [
-      isNaN(Number(center[0])) ? 40.1872 : Number(center[0]),
-      isNaN(Number(center[1])) ? 44.5152 : Number(center[1]),
+      !isFinite(Number(center[0])) ? 40.1872 : Number(center[0]),
+      !isFinite(Number(center[1])) ? 44.5152 : Number(center[1]),
     ];
 
     const doFitBounds = (animate: boolean) => {
@@ -344,12 +342,14 @@ export default function LeafletMap({
       
       // If triggered by external hover (list card), fly to the primary marker matching ID
       if (hoveredLocationId && targetForFlyTo && map) {
-        const { lat, lng } = targetForFlyTo.getLatLng();
-        map.flyTo([lat, lng], Math.max(map.getZoom(), 14), {
-          animate: true,
-          duration: 0.55,
-          easeLinearity: 0.2,
-        });
+        const { lat, lng } = (targetForFlyTo as L.Marker).getLatLng();
+        if (typeof lat === 'number' && typeof lng === 'number' && isFinite(lat) && isFinite(lng)) {
+          map.flyTo([lat, lng], Math.max(map.getZoom(), 14), {
+            animate: true,
+            duration: 0.55,
+            easeLinearity: 0.2,
+          });
+        }
       }
     }
     // Track prev ID so we can optimize next render if needed

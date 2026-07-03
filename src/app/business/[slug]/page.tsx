@@ -97,21 +97,21 @@ export default function BusinessProfilePage() {
   // Keyboard navigation for gallery lightbox
   useEffect(() => {
     if (activeGalleryIdx === null) return;
-    
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setActiveGalleryIdx(null);
       } else if (e.key === "ArrowLeft") {
-        setActiveGalleryIdx(prev => 
+        setActiveGalleryIdx(prev =>
           prev !== null && galleryImages.length > 0 ? (prev - 1 + galleryImages.length) % galleryImages.length : null
         );
       } else if (e.key === "ArrowRight") {
-        setActiveGalleryIdx(prev => 
+        setActiveGalleryIdx(prev =>
           prev !== null && galleryImages.length > 0 ? (prev + 1) % galleryImages.length : null
         );
       }
     };
-    
+
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [activeGalleryIdx, galleryImages]);
@@ -133,7 +133,7 @@ export default function BusinessProfilePage() {
         if (res.data?.success && res.data?.data) {
           const allGroups = res.data.data;
           setActiveStoriesGroups(allGroups);
-          
+
           // Find the group index for the current business slug
           const idx = allGroups.findIndex((g: any) => g.business.slug === slug);
           if (idx !== -1) {
@@ -320,7 +320,7 @@ export default function BusinessProfilePage() {
             if (mockInqMap[slug] !== undefined) {
               updatedInqs = mockInqMap[slug];
             }
-          } catch (e) {}
+          } catch (e) { }
 
           const mockReviewKey = "armbiz-mock-reviews";
           try {
@@ -329,7 +329,7 @@ export default function BusinessProfilePage() {
               updatedRating = mockReviewsMap[slug].ratingAvg;
               updatedReviewsCount = mockReviewsMap[slug].reviewCount;
             }
-          } catch (e) {}
+          } catch (e) { }
         }
 
         // Map mock structures to DB structures
@@ -392,7 +392,7 @@ export default function BusinessProfilePage() {
 
   // Handle Navigator Direction Redirects
   const handleDirections = (provider: 'google' | 'yandex') => {
-    const url = provider === 'google' 
+    const url = provider === 'google'
       ? `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
       : `https://yandex.com/maps/?rtext=~${lat},${lng}`;
     window.open(url, '_blank');
@@ -445,7 +445,7 @@ export default function BusinessProfilePage() {
           console.error("Error updating local storage profile inquiryCount", e);
         }
       }
-      
+
       // Also increment mock inquiries just in case they are looking at a mock business
       const mockInqKey = "armbiz-mock-inquiries";
       try {
@@ -453,7 +453,7 @@ export default function BusinessProfilePage() {
         const currentInq = mockInqMap[slug] !== undefined ? mockInqMap[slug] : 0;
         mockInqMap[slug] = currentInq + 1;
         window.localStorage.setItem(mockInqKey, JSON.stringify(mockInqMap));
-      } catch (e) {}
+      } catch (e) { }
 
       // Save booking request to local storage so it is persisted offline/locally
       try {
@@ -532,10 +532,10 @@ export default function BusinessProfilePage() {
       {/* Cover / Media Gallery */}
       <div className={styles.coverGallery}>
         {coverImage ? (
-          <img 
-            src={coverImage} 
-            alt={`${business.name} Cover`} 
-            className={styles.sliderImage} 
+          <img
+            src={coverImage}
+            alt={`${business.name} Cover`}
+            className={styles.sliderImage}
           />
         ) : (
           <span className={styles.initialLogo}>{business.name ? business.name[0] : "B"}</span>
@@ -545,28 +545,27 @@ export default function BusinessProfilePage() {
 
       {/* Profile Header Details */}
       <div className={styles.profileHeader}>
-        
+
         {/* Instagram-style Logo Avatar (Story indicator) */}
         <div className="flex items-center justify-center shrink-0">
-          <div 
+          <div
             onClick={() => {
               if (matchingGroupIdx !== null) {
                 setShowStoryViewer(true);
               }
             }}
-            className={`w-20 h-20 rounded-full shrink-0 flex items-center justify-center overflow-hidden ${
-              matchingGroupIdx !== null 
-                ? "p-[3px] bg-gradient-to-tr from-pink-500 via-purple-500 to-yellow-500 cursor-pointer hover:scale-105 transition-all shadow" 
+            className={`w-20 h-20 rounded-full shrink-0 flex items-center justify-center overflow-hidden ${matchingGroupIdx !== null
+                ? "p-[3px] bg-gradient-to-tr from-pink-500 via-purple-500 to-yellow-500 cursor-pointer hover:scale-105 transition-all shadow"
                 : "border border-[hsl(var(--border))]/60 p-[2px]"
-            }`}
+              }`}
             title={matchingGroupIdx !== null ? "Click to view active stories" : undefined}
           >
             <div className="w-full h-full rounded-full bg-[hsl(var(--background))] p-[2px] overflow-hidden relative">
               {business.logo || business.logoUrl ? (
-                <img 
-                  src={business.logo || business.logoUrl} 
-                  className="w-full h-full rounded-full object-cover" 
-                  alt={business.name} 
+                <img
+                  src={business.logo || business.logoUrl}
+                  className="w-full h-full rounded-full object-cover"
+                  alt={business.name}
                 />
               ) : (
                 <div className="w-full h-full rounded-full bg-violet-600 flex items-center justify-center text-white text-xl font-bold uppercase">
@@ -582,11 +581,10 @@ export default function BusinessProfilePage() {
             <h1>
               {business.name}
               {(business.isVerified || business.verified) && (
-                <span className={`${styles.verifiedBadge} ${
-                  business.plan === "premium" || business.plan === "standard"
+                <span className={`${styles.verifiedBadge} ${business.plan === "premium" || business.plan === "standard"
                     ? styles.verifiedGold
                     : styles.verifiedStarter
-                }`}>
+                  }`}>
                   <BadgeCheck className="h-3.5 w-3.5" /> Verified Partner
                 </span>
               )}
@@ -595,10 +593,10 @@ export default function BusinessProfilePage() {
           <p className="text-[hsl(var(--muted-foreground))] mt-1 text-base">{business.shortDescription || business.description}</p>
           <div className="flex items-center gap-4 flex-wrap text-sm text-[hsl(var(--muted-foreground))] mt-4">
             {business.address ? (
-              <a 
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(business.address + ', ' + business.city + ', Armenia')}`} 
-                target="_blank" 
-                rel="noreferrer" 
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(business.address + ', ' + business.city + ', Armenia')}`}
+                target="_blank"
+                rel="noreferrer"
                 className="flex items-center gap-1 hover:text-[hsl(var(--foreground))] transition-colors"
               >
                 <MapPin className="h-4 w-4 text-[hsl(var(--primary))]" /> {business.address}, {business.city}, Armenia
@@ -607,7 +605,7 @@ export default function BusinessProfilePage() {
               <span className="flex items-center gap-1"><MapPin className="h-4 w-4 text-[hsl(var(--primary))]" /> {business.city}, Armenia</span>
             )}
             <span className="flex items-center gap-1">
-              <Star className="h-4 w-4 fill-amber-400 text-amber-400" /> 
+              <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
               {(liveRating > 0 ? liveRating : (business.ratingAvg !== undefined ? (typeof business.ratingAvg === 'number' ? business.ratingAvg : 0) : 0)).toFixed(1)}{' '}
               ({liveReviewCount > 0 ? liveReviewCount : (business.reviewCount !== undefined ? business.reviewCount : 0)} review{(liveReviewCount || business.reviewCount || 0) !== 1 ? 's' : ''})
             </span>
@@ -618,8 +616,8 @@ export default function BusinessProfilePage() {
         </div>
 
         {/* Global Instant Booking Trigger */}
-        <button 
-          onClick={() => openBooking({ name: "General Appointment", price: 0 })} 
+        <button
+          onClick={() => openBooking({ name: "General Appointment", price: 0 })}
           className="btn-primary py-3.5 px-6 rounded-xl text-sm font-semibold shadow-lg shrink-0"
         >
           Book Appointment
@@ -657,30 +655,29 @@ export default function BusinessProfilePage() {
             <span className={styles.photoCount}>
               {galleryImages.length} {
                 locale === "hy" ? "լուսանկար" :
-                locale === "ru" ? "фото" :
-                galleryImages.length === 1 ? "photo" : "photos"
+                  locale === "ru" ? "фото" :
+                    galleryImages.length === 1 ? "photo" : "photos"
               }
             </span>
           </div>
-          <div className={`${styles.bentoGrid} ${
-            galleryImages.length === 1 ? styles.grid1 :
-            galleryImages.length === 2 ? styles.grid2 :
-            galleryImages.length === 3 ? styles.grid3 :
-            galleryImages.length === 4 ? styles.grid4 :
-            styles.grid5
-          }`}>
+          <div className={`${styles.bentoGrid} ${galleryImages.length === 1 ? styles.grid1 :
+              galleryImages.length === 2 ? styles.grid2 :
+                galleryImages.length === 3 ? styles.grid3 :
+                  galleryImages.length === 4 ? styles.grid4 :
+                    styles.grid5
+            }`}>
             {galleryImages.slice(0, 5).map((url: string, index: number) => {
               const isLastAndMore = index === 4 && galleryImages.length > 5;
               return (
-                <div 
-                  key={index} 
+                <div
+                  key={index}
                   className={styles.galleryItem}
                   onClick={() => setActiveGalleryIdx(index)}
                 >
-                  <img 
-                    src={url} 
-                    alt={`${business.name} Interior ${index + 1}`} 
-                    loading="lazy" 
+                  <img
+                    src={url}
+                    alt={`${business.name} Interior ${index + 1}`}
+                    loading="lazy"
                   />
                   {isLastAndMore ? (
                     <div className={styles.morePhotosOverlay}>
@@ -710,11 +707,11 @@ export default function BusinessProfilePage() {
             <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] divide-y divide-[hsl(var(--border))]">
               {(business.operatingHours && business.operatingHours.length > 0
                 ? business.operatingHours.map((h: any) => ({
-                    day: h.dayName || h.day,
-                    open: h.openTime || h.open,
-                    close: h.closeTime || h.close,
-                    closed: h.isClosed ?? h.closed
-                  }))
+                  day: h.dayName || h.day,
+                  open: h.openTime || h.open,
+                  close: h.closeTime || h.close,
+                  closed: h.isClosed ?? h.closed
+                }))
                 : DEFAULT_HOURS
               ).map((h: any) => (
                 <div key={h.day} className="flex items-center justify-between px-4 py-2.5 text-sm">
@@ -733,24 +730,12 @@ export default function BusinessProfilePage() {
 
           {/* Live Location Map */}
           <div className="mb-4">
-            <BusinessMap 
-              lat={lat} 
-              lng={lng} 
-              name={business.name} 
-              address={business.address || ""} 
+            <BusinessMap
+              lat={lat}
+              lng={lng}
+              name={business.name}
+              address={business.address || ""}
             />
-          </div>
-
-          {/* Navigator direction links */}
-          <div className={styles.navigatorCard}>
-            <h3>Directions Finder</h3>
-            <p>Select your favorite navigator engine to compute live routes to the location.</p>
-            <button onClick={() => handleDirections('google')} className={`${styles.btnNavigator} ${styles.google}`}>
-              <Compass className="h-4 w-4" /> Open in Google Maps
-            </button>
-            <button onClick={() => handleDirections('yandex')} className={`${styles.btnNavigator} ${styles.yandex}`}>
-              <Compass className="h-4 w-4" /> Open in Yandex Navigator
-            </button>
           </div>
 
 
@@ -759,10 +744,10 @@ export default function BusinessProfilePage() {
             <h3>Contact Information</h3>
             <div className="space-y-3">
               {business.address && (
-                <a 
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(business.address + ', ' + business.city + ', Armenia')}`} 
-                  target="_blank" 
-                  rel="noreferrer" 
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(business.address + ', ' + business.city + ', Armenia')}`}
+                  target="_blank"
+                  rel="noreferrer"
                   className={styles.contactItem}
                 >
                   <MapPin className="h-4 w-4 text-[hsl(var(--primary))]" /> {business.address}, {business.city}
@@ -823,45 +808,45 @@ export default function BusinessProfilePage() {
 
                 <div>
                   <label className="block text-xs font-semibold mb-1">Your Full Name *</label>
-                  <input 
-                    required 
-                    type="text" 
-                    value={customerName} 
-                    onChange={e => setCustomerName(e.target.value)} 
-                    placeholder="Enter your name" 
-                    className="w-full border border-[hsl(var(--border))] rounded-lg px-3 py-2 text-sm bg-transparent outline-none focus:border-[hsl(var(--primary))]" 
+                  <input
+                    required
+                    type="text"
+                    value={customerName}
+                    onChange={e => setCustomerName(e.target.value)}
+                    placeholder="Enter your name"
+                    className="w-full border border-[hsl(var(--border))] rounded-lg px-3 py-2 text-sm bg-transparent outline-none focus:border-[hsl(var(--primary))]"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold mb-1">Phone Number *</label>
-                  <input 
-                    required 
-                    type="tel" 
-                    value={customerPhone} 
-                    onChange={e => setCustomerPhone(e.target.value)} 
-                    placeholder="+374 XX XXXXXX" 
-                    className="w-full border border-[hsl(var(--border))] rounded-lg px-3 py-2 text-sm bg-transparent outline-none focus:border-[hsl(var(--primary))]" 
+                  <input
+                    required
+                    type="tel"
+                    value={customerPhone}
+                    onChange={e => setCustomerPhone(e.target.value)}
+                    placeholder="+374 XX XXXXXX"
+                    className="w-full border border-[hsl(var(--border))] rounded-lg px-3 py-2 text-sm bg-transparent outline-none focus:border-[hsl(var(--primary))]"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold mb-1">Date *</label>
-                    <input 
-                      required 
-                      type="date" 
-                      value={bookingDate} 
-                      onChange={e => setBookingDate(e.target.value)} 
+                    <input
+                      required
+                      type="date"
+                      value={bookingDate}
+                      onChange={e => setBookingDate(e.target.value)}
                       min={new Date().toISOString().split('T')[0]}
-                      className="w-full border border-[hsl(var(--border))] rounded-lg px-3 py-2 text-sm bg-transparent outline-none focus:border-[hsl(var(--primary))]" 
+                      className="w-full border border-[hsl(var(--border))] rounded-lg px-3 py-2 text-sm bg-transparent outline-none focus:border-[hsl(var(--primary))]"
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold mb-1">Preferred Time Slot *</label>
-                    <select 
-                      required 
-                      value={bookingTime} 
+                    <select
+                      required
+                      value={bookingTime}
                       onChange={e => setBookingTime(e.target.value)}
                       className="w-full border border-[hsl(var(--border))] rounded-lg px-3 py-2 text-sm bg-transparent outline-none focus:border-[hsl(var(--primary))]"
                     >
@@ -873,17 +858,17 @@ export default function BusinessProfilePage() {
 
                 <div>
                   <label className="block text-xs font-semibold mb-1">Special Notes / Requests</label>
-                  <textarea 
-                    rows={2} 
-                    value={bookingNotes} 
-                    onChange={e => setBookingNotes(e.target.value)} 
-                    placeholder="e.g. Dietary preferences or vehicle details..." 
-                    className="w-full border border-[hsl(var(--border))] rounded-lg px-3 py-2 text-sm bg-transparent outline-none resize-none focus:border-[hsl(var(--primary))]" 
+                  <textarea
+                    rows={2}
+                    value={bookingNotes}
+                    onChange={e => setBookingNotes(e.target.value)}
+                    placeholder="e.g. Dietary preferences or vehicle details..."
+                    className="w-full border border-[hsl(var(--border))] rounded-lg px-3 py-2 text-sm bg-transparent outline-none resize-none focus:border-[hsl(var(--primary))]"
                   />
                 </div>
 
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={bookingLoading}
                   className="btn-primary w-full py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 mt-6"
                 >
@@ -900,8 +885,8 @@ export default function BusinessProfilePage() {
         <div className={styles.lightboxOverlay} onClick={() => { setActiveHighlight(null); setActiveHighlightIdx(-1); }}>
           <div className={styles.lightboxContent} onClick={(e) => e.stopPropagation()}>
             {/* Close */}
-            <button 
-              onClick={() => { setActiveHighlight(null); setActiveHighlightIdx(-1); }} 
+            <button
+              onClick={() => { setActiveHighlight(null); setActiveHighlightIdx(-1); }}
               className={styles.lightboxClose}
               aria-label="Close stories"
             >
@@ -911,10 +896,10 @@ export default function BusinessProfilePage() {
             {/* Slider media */}
             <div className={styles.lightboxMediaWrapper}>
               {activeHighlight.imageUrl ? (
-                <img 
-                  src={activeHighlight.imageUrl} 
-                  alt={activeHighlight.title} 
-                  className={styles.lightboxImage} 
+                <img
+                  src={activeHighlight.imageUrl}
+                  alt={activeHighlight.title}
+                  className={styles.lightboxImage}
                 />
               ) : (
                 <div className={styles.lightboxPlaceholder}>
@@ -932,7 +917,7 @@ export default function BusinessProfilePage() {
             {/* Nav Arrows */}
             {business.highlights.length > 1 && (
               <>
-                <button 
+                <button
                   onClick={(e) => {
                     e.stopPropagation();
                     const prevIdx = (activeHighlightIdx - 1 + business.highlights.length) % business.highlights.length;
@@ -944,7 +929,7 @@ export default function BusinessProfilePage() {
                 >
                   <ChevronLeft className="h-6 w-6" />
                 </button>
-                <button 
+                <button
                   onClick={(e) => {
                     e.stopPropagation();
                     const nextIdx = (activeHighlightIdx + 1) % business.highlights.length;
@@ -979,7 +964,7 @@ export default function BusinessProfilePage() {
           groups={activeStoriesGroups}
           initialGroupIndex={matchingGroupIdx}
           onClose={() => setShowStoryViewer(false)}
-          onStoriesViewedUpdate={() => {}}
+          onStoriesViewedUpdate={() => { }}
         />
       )}
 
@@ -987,13 +972,13 @@ export default function BusinessProfilePage() {
 
       {/* ── Gallery Fullscreen Lightbox Modal ── */}
       {activeGalleryIdx !== null && galleryImages.length > 0 && (
-        <div 
-          className={styles.lightboxOverlay} 
+        <div
+          className={styles.lightboxOverlay}
           onClick={() => setActiveGalleryIdx(null)}
         >
           <div className={styles.galleryLightboxContent} onClick={(e) => e.stopPropagation()}>
-            <button 
-              onClick={() => setActiveGalleryIdx(null)} 
+            <button
+              onClick={() => setActiveGalleryIdx(null)}
               className={styles.lightboxClose}
               aria-label="Close lightbox"
             >
@@ -1001,10 +986,10 @@ export default function BusinessProfilePage() {
             </button>
 
             <div className={styles.lightboxMediaWrapper}>
-              <img 
-                src={galleryImages[activeGalleryIdx]} 
-                alt={`${business.name} Interior ${activeGalleryIdx + 1}`} 
-                className={styles.galleryLightboxImage} 
+              <img
+                src={galleryImages[activeGalleryIdx]}
+                alt={`${business.name} Interior ${activeGalleryIdx + 1}`}
+                className={styles.galleryLightboxImage}
               />
               <div className={styles.lightboxText}>
                 <h3>{business.name}</h3>
@@ -1014,7 +999,7 @@ export default function BusinessProfilePage() {
 
             {galleryImages.length > 1 && (
               <>
-                <button 
+                <button
                   onClick={(e) => {
                     e.stopPropagation();
                     setActiveGalleryIdx((activeGalleryIdx - 1 + galleryImages.length) % galleryImages.length);
@@ -1024,7 +1009,7 @@ export default function BusinessProfilePage() {
                 >
                   <ChevronLeft className="h-6 w-6" />
                 </button>
-                <button 
+                <button
                   onClick={(e) => {
                     e.stopPropagation();
                     setActiveGalleryIdx((activeGalleryIdx + 1) % galleryImages.length);
