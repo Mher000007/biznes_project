@@ -65,8 +65,8 @@ export default function BusinessCard({ business }: { business: Business }) {
             </Link>
             {business.isVerified && (
               <BadgeCheck className={`h-5 w-5 shrink-0 ${business.plan === "premium" || business.plan === "standard"
-                  ? styles.verifiedBadgeGold
-                  : styles.verifiedBadgeStarter
+                ? styles.verifiedBadgeGold
+                : styles.verifiedBadgeStarter
                 }`} />
             )}
           </div>

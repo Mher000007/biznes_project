@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useMemo } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import LeafletMap, { LeafletMarkerItem } from "@/components/map/LeafletMap";
@@ -32,34 +32,38 @@ export default function MapWorkspace({
   const theme = useSelector((s: RootState) => s.ui.theme);
 
   // Yerevan default fallback center coordinates
-  const center: [number, number] = locations.length > 0
-    ? [locations[0].lat, locations[0].lng]
-    : [40.1872, 44.5152];
+  const center: [number, number] = useMemo(() => {
+    return locations.length > 0
+      ? [locations[0].lat, locations[0].lng]
+      : [40.1872, 44.5152];
+  }, [locations]);
 
   // Convert locations data to LeafletMap compatible markers
-  const markers: LeafletMarkerItem[] = locations.map((loc) => {
-    const popupContent = `
-      <div class="popup-content">
-        <h4 class="popup-content__title">${loc.name}</h4>
-        ${loc.category ? `<p class="popup-content__category">${loc.category}</p>` : ""}
-        ${loc.addressDetails ? `<p class="popup-content__address">${loc.addressDetails}</p>` : ""}
-      </div>
-    `;
+  const markers: LeafletMarkerItem[] = useMemo(() => {
+    return locations.map((loc) => {
+      const popupContent = `
+        <div class="popup-content">
+          <h4 class="popup-content__title">${loc.name}</h4>
+          ${loc.category ? `<p class="popup-content__category">${loc.category}</p>` : ""}
+          ${loc.addressDetails ? `<p class="popup-content__address">${loc.addressDetails}</p>` : ""}
+        </div>
+      `;
 
-    return {
-      id: loc.id,
-      companyId: loc.companyId,
-      lat: loc.lat,
-      lng: loc.lng,
-      popupContent,
-      slug: loc.slug,
-      name: loc.name,
-      category: loc.category,
-      rating: loc.rating,
-      reviewCount: loc.reviewCount,
-      plan: loc.plan,
-    };
-  });
+      return {
+        id: loc.id,
+        companyId: loc.companyId,
+        lat: loc.lat,
+        lng: loc.lng,
+        popupContent,
+        slug: loc.slug,
+        name: loc.name,
+        category: loc.category,
+        rating: loc.rating,
+        reviewCount: loc.reviewCount,
+        plan: loc.plan,
+      };
+    });
+  }, [locations]);
 
   const tileLayerUrl = theme === "dark"
     ? "https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png"

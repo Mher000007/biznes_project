@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { transliterateArmenian } from './transliterate.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,23 +12,30 @@ const locationsData = JSON.parse(rawData);
 
 const validCityNames = new Set<string>();
 
+const addCity = (name: string) => {
+  if (!name) return;
+  validCityNames.add(name.toLowerCase());
+  validCityNames.add(transliterateArmenian(name, 'en').toLowerCase());
+  validCityNames.add(transliterateArmenian(name, 'ru').toLowerCase());
+};
+
 for (const region of locationsData) {
   if (region.type === 'capital') {
-    validCityNames.add(region.name.toLowerCase());
+    addCity(region.name);
     if (region.districts) {
       for (const d of region.districts) {
-        validCityNames.add(`${d} (${region.name})`.toLowerCase());
+        addCity(`${d} (${region.name})`);
       }
     }
   } else {
     if (region.cities) {
       for (const c of region.cities) {
-        validCityNames.add(c.toLowerCase());
+        addCity(c);
       }
     }
     if (region.villages) {
       for (const v of region.villages) {
-        validCityNames.add(v.toLowerCase());
+        addCity(v);
       }
     }
   }

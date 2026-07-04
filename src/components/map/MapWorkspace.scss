@@ -55,13 +55,13 @@
 
     a {
       background-color: var(--bg-secondary) !important;
-      color: var(--text-primary) !important;
+      color: var(--accent-booking) !important;
       border-bottom: 1px solid var(--border-light) !important;
       transition: background-color 0.2s ease, color 0.2s ease;
 
       &:hover {
         background-color: var(--bg-global) !important;
-        color: var(--accent-booking) !important; // Green accent color
+        color: var(--accent-highlight) !important; // Yellow/gold on hover for contrast
       }
 
       &.leaflet-disabled {
@@ -172,7 +172,7 @@
   height: 34px;
   border-radius: 8px;
   background-color: var(--card, #161618);
-  color: var(--foreground, #ffffff);
+  color: var(--accent-booking, #00c853);
   border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
   display: flex;
@@ -183,7 +183,7 @@
 
   &:hover {
     background-color: var(--accent, #202024);
-    color: var(--primary, #00e676);
+    color: var(--accent-highlight, #ffb300);
     transform: scale(1.05);
   }
 
