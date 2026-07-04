@@ -4,10 +4,10 @@ import styles from "./About.module.scss";
 import { useI18n } from "@/i18n";
 
 const MOCK_CARDS = [
-  { icon: "🍕", title: "Lavash Restaurant", sub: "★ 4.9 · Yerevan", color: "hsla(20,90%,55%,0.12)" },
-  { icon: "☕", title: "Cascade Lounge", sub: "★ 4.7 · Yerevan", color: "hsla(210,80%,55%,0.12)" },
+  { icon: "🍕", title: "Lavash Restaurant", sub: "★ 4.9 · Yerevan", color: "hsla(145,65%,45%,0.12)" },
+  { icon: "☕", title: "Cascade Lounge", sub: "★ 4.7 · Yerevan", color: "hsla(145,65%,45%,0.12)" },
   { icon: "🏨", title: "Dilijan Resort", sub: "★ 4.9 · Dilijan", color: "hsla(145,65%,45%,0.12)" },
-  { icon: "🍷", title: "Dolmama", sub: "★ 4.8 · Yerevan", color: "hsla(330,70%,55%,0.12)" },
+  { icon: "🍷", title: "Dolmama", sub: "★ 4.8 · Yerevan", color: "hsla(145,65%,45%,0.12)" },
 ];
 
 export default function AboutClient() {
@@ -47,17 +47,15 @@ export default function AboutClient() {
             <p className={styles.storyText}>{t.about.story.p3}</p>
           </div>
 
-          <div className={styles.storyVisual}>
-            <div className={styles.storyVisualInner}>
-              {MOCK_CARDS.map((c) => (
-                <div key={c.title} className={styles.miniCard}>
-                  <div className={styles.miniCardIcon} style={{ background: c.color }}>
-                    {c.icon}
-                  </div>
-                  <div className={styles.miniCardSub}>{c.sub}</div>
+          <div className={styles.storyVisualInner}>
+            {MOCK_CARDS.map((c) => (
+              <div key={c.title} className={styles.miniCard}>
+                <div className={styles.miniCardIcon} style={{ background: c.color }}>
+                  {c.icon}
                 </div>
-              ))}
-            </div>
+                <div className={styles.miniCardSub}>{c.sub}</div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -81,7 +79,7 @@ export default function AboutClient() {
             return (
               <div key={f.title} className={styles.featureCard}>
                 <div className={styles.featureIconWrap} style={{ background: bgs[i] }}>
-                  <span style={{ fontSize: "1.25rem" }}>{icons[i]}</span>
+                  <span className={styles.featureIcon}>{icons[i]}</span>
                 </div>
                 <h3 className={styles.featureTitle}>{f.title}</h3>
                 <p className={styles.featureDesc}>{f.desc}</p>

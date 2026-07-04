@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Montserrat, JetBrains_Mono } from "next/font/google";
 import "../styles/leaflet.css";
 import "./globals.scss";
 
@@ -10,8 +10,8 @@ import ChatWidget from "@/components/chat/ChatWidget";
 import { I18nProvider } from "@/i18n";
 import { AuthProvider } from "@/context/AuthContext";
 
-const inter = Inter({
-  variable: "--font-inter",
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
   subsets: ["latin", "cyrillic"],
 });
 
@@ -32,8 +32,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
-      <body className="min-h-screen flex flex-col font-[family-name:var(--font-inter)] antialiased">
+    <html lang="en" className={`${montserrat.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
+      <body className="min-h-screen flex flex-col font-[family-name:var(--font-montserrat)] antialiased">
         <StoreProvider>
           <AuthProvider>
             <I18nProvider>

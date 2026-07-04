@@ -212,6 +212,11 @@
   justify-content: center;
   border: 1px solid hsl(var(--border));
   box-shadow: 0 24px 60px hsla(220, 30%, 20%, 0.08);
+
+  :global(.dark) & {
+    background: linear-gradient(135deg, hsl(220, 30%, 12%), hsl(260, 25%, 10%));
+    box-shadow: 0 24px 60px hsla(0, 0%, 0%, 0.4);
+  }
 }
 
 .storyVisualInner {
@@ -235,6 +240,12 @@
 
   &:nth-child(2) { transform: translateY(12px); }
   &:nth-child(4) { transform: translateY(12px); }
+
+  :global(.dark) & {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  }
 }
 
 .miniCardIcon {
@@ -251,11 +262,19 @@
   font-size: 0.75rem;
   font-weight: 700;
   color: #1a1a2e;
+
+  :global(.dark) & {
+    color: hsl(var(--foreground));
+  }
 }
 
 .miniCardSub {
   font-size: 0.65rem;
-  color: #888;
+  color: hsl(145, 75%, 45%);
+
+  :global(.dark) & {
+    color: hsl(145, 80%, 50%);
+  }
 }
 
 /* ─── Feature cards ─────────────────────────────────────────────────────────── */
@@ -324,6 +343,16 @@
   align-items: center;
   justify-content: center;
   font-size: 1.25rem;
+}
+
+.featureIcon {
+  display: inline-block;
+  animation: float-icon 3s ease-in-out infinite;
+}
+
+@keyframes float-icon {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
 }
 
 .featureTitle {
