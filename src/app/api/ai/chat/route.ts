@@ -203,7 +203,7 @@ export async function POST(request: NextRequest) {
   }
   else if (lower.match(/^(hi|hello|hey|barev|privet)/)) {
     intent = "greeting";
-    content = `Barev! 👋 I'm your ArmenBiz AI assistant. I can calculate menu combinations and look up service rates under specific budgets.\n\nTry asking me:\n• "Find a car service under 10,000 AMD for an oil change."\n• "Recommend a restaurant for 4 people with a budget of 30,000 AMD."`;
+    content = `Barev! 👋 I'm your Findy AI assistant. I can calculate menu combinations and look up service rates under specific budgets.\n\nTry asking me:\n• "Find a car service under 10,000 AMD for an oil change."\n• "Recommend a restaurant for 4 people with a budget of 30,000 AMD."`;
   }
   else {
     // Default search fallback

@@ -15,25 +15,25 @@ const ADMIN_USER_KEY = "admin-user";
 
 /* ── Dark theme color palette ── */
 const C = {
-  bg:        "#1e1e2e",
-  surface:   "#252538",
-  card:      "#2a2a42",
-  border:    "rgba(255,255,255,0.09)",
-  text:      "#e8e8f8",
-  muted:     "rgba(220,220,255,0.55)",
-  faint:     "rgba(200,200,255,0.28)",
-  violet:    "#c4b5fd",
+  bg: "#1e1e2e",
+  surface: "#252538",
+  card: "#2a2a42",
+  border: "rgba(255,255,255,0.09)",
+  text: "#e8e8f8",
+  muted: "rgba(220,220,255,0.55)",
+  faint: "rgba(200,200,255,0.28)",
+  violet: "#c4b5fd",
   violetDim: "rgba(167,139,250,0.22)",
-  green:     "#86efac",
-  greenDim:  "rgba(134,239,172,0.15)",
-  amber:     "#fcd34d",
-  amberDim:  "rgba(252,211,77,0.15)",
-  red:       "#fca5a5",
-  redDim:    "rgba(252,165,165,0.15)",
-  sky:       "#7dd3fc",
-  pink:      "#f9a8d4",
-  emerald:   "#6ee7b7",
-  yellow:    "#fde68a",
+  green: "#86efac",
+  greenDim: "rgba(134,239,172,0.15)",
+  amber: "#fcd34d",
+  amberDim: "rgba(252,211,77,0.15)",
+  red: "#fca5a5",
+  redDim: "rgba(252,165,165,0.15)",
+  sky: "#7dd3fc",
+  pink: "#f9a8d4",
+  emerald: "#6ee7b7",
+  yellow: "#fde68a",
 };
 
 
@@ -121,11 +121,11 @@ function authHeaders() {
 
 /* ─────────────── LOGIN SCREEN ─────────────── */
 function AdminLogin({ onLogin }: { onLogin: (token: string) => void }) {
-  const [email, setEmail]       = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError]       = useState("");
-  const [loading, setLoading]   = useState(false);
-  const [showPw, setShowPw]     = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [showPw, setShowPw] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -157,8 +157,10 @@ function AdminLogin({ onLogin }: { onLogin: (token: string) => void }) {
   };
 
   return (
-    <div data-admin-panel="1" style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center",
-      justifyContent: "center", padding: 24 }}>
+    <div data-admin-panel="1" style={{
+      minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center",
+      justifyContent: "center", padding: 24
+    }}>
       <div style={{ width: "100%", maxWidth: 420 }}>
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: 32 }}>
@@ -172,44 +174,56 @@ function AdminLogin({ onLogin }: { onLogin: (token: string) => void }) {
         </div>
 
         {/* Card */}
-        <div style={{ background: C.surface, borderRadius: 20, padding: 28,
-          border: `1px solid ${C.border}`, boxShadow: "0 24px 64px rgba(0,0,0,0.5)" }}>
+        <div style={{
+          background: C.surface, borderRadius: 20, padding: 28,
+          border: `1px solid ${C.border}`, boxShadow: "0 24px 64px rgba(0,0,0,0.5)"
+        }}>
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div>
-              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
-                letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>Email</label>
+              <label style={{
+                display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
+                letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8
+              }}>Email</label>
               <input type="email" value={email} onChange={e => setEmail(e.target.value)}
                 placeholder="admin@armbiz.am" required style={inp} />
             </div>
             <div>
-              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
-                letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>Password</label>
+              <label style={{
+                display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
+                letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8
+              }}>Password</label>
               <div style={{ position: "relative" }}>
                 <input type={showPw ? "text" : "password"} value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••" required style={{ ...inp, paddingRight: 44 }} />
                 <button type="button" onClick={() => setShowPw(!showPw)}
-                  style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
-                    background: "none", border: "none", color: C.faint, cursor: "pointer", padding: 0 }}>
+                  style={{
+                    position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+                    background: "none", border: "none", color: C.faint, cursor: "pointer", padding: 0
+                  }}>
                   {showPw ? <X size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
 
             {error && (
-              <div style={{ background: C.redDim, border: "1px solid rgba(248,113,113,0.25)",
-                borderRadius: 12, padding: "12px 16px", display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{
+                background: C.redDim, border: "1px solid rgba(248,113,113,0.25)",
+                borderRadius: 12, padding: "12px 16px", display: "flex", alignItems: "center", gap: 8
+              }}>
                 <AlertOctagon size={16} color={C.red} style={{ flexShrink: 0 }} />
                 <p style={{ fontSize: 13, color: C.red, margin: 0 }}>{error}</p>
               </div>
             )}
 
             <button type="submit" disabled={loading}
-              style={{ padding: "13px 0", borderRadius: 12, fontWeight: 700, fontSize: 14,
+              style={{
+                padding: "13px 0", borderRadius: 12, fontWeight: 700, fontSize: 14,
                 color: "#fff", border: "none", cursor: loading ? "not-allowed" : "pointer",
                 background: "linear-gradient(90deg,#7c3aed,#4f46e5)",
                 boxShadow: "0 4px 20px rgba(124,58,237,0.35)",
-                opacity: loading ? 0.65 : 1, transition: "opacity 0.2s" }}>
+                opacity: loading ? 0.65 : 1, transition: "opacity 0.2s"
+              }}>
               {loading ? "Authenticating…" : "Access Portal"}
             </button>
           </form>
@@ -222,10 +236,14 @@ function AdminLogin({ onLogin }: { onLogin: (token: string) => void }) {
 /* ─────────────── STAT CARD ─────────────── */
 function StatCard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color: string }) {
   return (
-    <div style={{ background: C.card, borderRadius: 16, padding: "20px 22px",
-      border: `1px solid ${C.border}` }}>
-      <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase",
-        letterSpacing: "0.08em", margin: "0 0 8px" }}>{label}</p>
+    <div style={{
+      background: C.card, borderRadius: 16, padding: "20px 22px",
+      border: `1px solid ${C.border}`
+    }}>
+      <p style={{
+        fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase",
+        letterSpacing: "0.08em", margin: "0 0 8px"
+      }}>{label}</p>
       <p style={{ fontSize: 28, fontWeight: 900, color, margin: 0 }}>{value}</p>
       {sub && <p style={{ fontSize: 12, color: C.faint, marginTop: 4 }}>{sub}</p>}
     </div>
@@ -234,34 +252,34 @@ function StatCard({ label, value, sub, color }: { label: string; value: string |
 
 /* ─────────────── ADMIN DASHBOARD ─────────────── */
 function AdminDashboard({ onLogout }: { onLogout: () => void }) {
-  const [tab, setTab]                   = useState<TabKey>("overview");
-  const [stats, setStats]               = useState<Stats | null>(null);
-  const [businesses, setBusinesses]     = useState<Business[]>([]);
-  const [bookings, setBookings]         = useState<Booking[]>([]);
+  const [tab, setTab] = useState<TabKey>("overview");
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
-  const [reviews, setReviews]           = useState<Review[]>([]);
-  const [allUsers, setAllUsers]         = useState<User[]>([]);
-  const [loadingData, setLoadingData]   = useState(false);
-  const [bizSubTab, setBizSubTab]       = useState<"pending" | "verified" | "all">("pending");
-  const [resolvingId, setResolvingId]   = useState<string | null>(null);
-  const [adminReply, setAdminReply]     = useState("");
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [loadingData, setLoadingData] = useState(false);
+  const [bizSubTab, setBizSubTab] = useState<"pending" | "verified" | "all">("pending");
+  const [resolvingId, setResolvingId] = useState<string | null>(null);
+  const [adminReply, setAdminReply] = useState("");
   const [resolveAction, setResolveAction] = useState<"keep" | "delete" | null>(null);
 
-  const [promos, setPromos]             = useState<PromoCode[]>([]);
-  const [gifts, setGifts]               = useState<SubscriptionGift[]>([]);
-  const [promoSubTab, setPromoSubTab]   = useState<"active" | "inactive" | "all">("active");
-  const [planSubTab, setPlanSubTab]     = useState<"subscriptions" | "gifts">("subscriptions");
-  
+  const [promos, setPromos] = useState<PromoCode[]>([]);
+  const [gifts, setGifts] = useState<SubscriptionGift[]>([]);
+  const [promoSubTab, setPromoSubTab] = useState<"active" | "inactive" | "all">("active");
+  const [planSubTab, setPlanSubTab] = useState<"subscriptions" | "gifts">("subscriptions");
+
   // Gifting subscription state
   const [giftModalOpen, setGiftModalOpen] = useState(false);
   const [giftingBusiness, setGiftingBusiness] = useState<Business | null>(null);
-  const [giftPlan, setGiftPlan]         = useState<'starter' | 'standard' | 'premium'>('standard');
+  const [giftPlan, setGiftPlan] = useState<'starter' | 'standard' | 'premium'>('standard');
   const [giftDurationValue, setGiftDurationValue] = useState(1);
-  const [giftDurationUnit, setGiftDurationUnit]   = useState<'days' | 'months' | 'permanent'>('months');
-  const [giftReason, setGiftReason]     = useState("");
+  const [giftDurationUnit, setGiftDurationUnit] = useState<'days' | 'months' | 'permanent'>('months');
+  const [giftReason, setGiftReason] = useState("");
   const [giftActionType, setGiftActionType] = useState<'extend' | 'overwrite'>('overwrite');
   const [giftingInProgress, setGiftingInProgress] = useState(false);
-  const [giftError, setGiftError]       = useState("");
+  const [giftError, setGiftError] = useState("");
 
   // Promo code creation state
   const [createPromoModalOpen, setCreatePromoModalOpen] = useState(false);
@@ -270,12 +288,12 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [newPromoDiscountType, setNewPromoDiscountType] = useState<'percent' | 'amount' | 'free'>('free');
   const [newPromoDiscountValue, setNewPromoDiscountValue] = useState(0);
   const [newPromoDurationValue, setNewPromoDurationValue] = useState(1);
-  const [newPromoDurationUnit, setNewPromoDurationUnit]   = useState<'days' | 'months' | 'permanent'>('months');
+  const [newPromoDurationUnit, setNewPromoDurationUnit] = useState<'days' | 'months' | 'permanent'>('months');
   const [newPromoMaxUses, setNewPromoMaxUses] = useState<number | ''>('');
   const [newPromoStartDate, setNewPromoStartDate] = useState("");
   const [newPromoExpiryDate, setNewPromoExpiryDate] = useState("");
   const [newPromoRestrictedBusinesses, setNewPromoRestrictedBusinesses] = useState<string[]>([]);
-  const [promoError, setPromoError]     = useState("");
+  const [promoError, setPromoError] = useState("");
   const [promoSuccess, setPromoSuccess] = useState("");
   const [creatingPromo, setCreatingPromo] = useState(false);
 
@@ -293,14 +311,14 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         axios.get(`${API}/admin/promos`, { headers: h }),
         axios.get(`${API}/admin/gifts`, { headers: h }),
       ]);
-      if (statsRes.data?.success)   setStats(statsRes.data.data);
-      if (bizRes.data?.success)     setBusinesses(bizRes.data.data);
-      if (bookRes.data?.success)    setBookings(bookRes.data.data);
-      if (subRes.data?.success)     setSubscriptions(subRes.data.data);
-      if (revRes.data?.success)     setReviews(revRes.data.data);
-      if (usersRes.data?.success)   setAllUsers(usersRes.data.data);
-      if (promosRes.data?.success)  setPromos(promosRes.data.data);
-      if (giftsRes.data?.success)   setGifts(giftsRes.data.data);
+      if (statsRes.data?.success) setStats(statsRes.data.data);
+      if (bizRes.data?.success) setBusinesses(bizRes.data.data);
+      if (bookRes.data?.success) setBookings(bookRes.data.data);
+      if (subRes.data?.success) setSubscriptions(subRes.data.data);
+      if (revRes.data?.success) setReviews(revRes.data.data);
+      if (usersRes.data?.success) setAllUsers(usersRes.data.data);
+      if (promosRes.data?.success) setPromos(promosRes.data.data);
+      if (giftsRes.data?.success) setGifts(giftsRes.data.data);
     } catch (err) {
       console.error("Admin data load failed:", err);
     }
@@ -450,45 +468,53 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   };
 
   const filteredBiz = businesses.filter(b => {
-    if (bizSubTab === "pending")  return !b.verified;
+    if (bizSubTab === "pending") return !b.verified;
     if (bizSubTab === "verified") return b.verified;
     return true;
   });
 
   type TabDef = { key: TabKey; label: string; Icon: React.ElementType };
   const tabs: TabDef[] = [
-    { key: "overview",       label: "Overview",    Icon: BarChart3 },
-    { key: "businesses",     label: "Businesses",  Icon: Building2 },
-    { key: "bookings",       label: "Bookings",    Icon: CalendarDays },
-    { key: "subscriptions",  label: "Plans",       Icon: Gem },
-    { key: "reviews",        label: "Reports",     Icon: Flag },
-    { key: "users",          label: "Users",       Icon: Users },
-    { key: "promocodes",     label: "Promo Codes", Icon: Tag },
+    { key: "overview", label: "Overview", Icon: BarChart3 },
+    { key: "businesses", label: "Businesses", Icon: Building2 },
+    { key: "bookings", label: "Bookings", Icon: CalendarDays },
+    { key: "subscriptions", label: "Plans", Icon: Gem },
+    { key: "reviews", label: "Reports", Icon: Flag },
+    { key: "users", label: "Users", Icon: Users },
+    { key: "promocodes", label: "Promo Codes", Icon: Tag },
   ];
 
   const tabBtn = (t: TabDef) => {
     const active = tab === t.key;
     return (
       <button key={t.key} onClick={() => setTab(t.key)}
-        style={{ display: "flex", alignItems: "center", gap: 6,
+        style={{
+          display: "flex", alignItems: "center", gap: 6,
           padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer",
           fontSize: 12, fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0,
           background: active ? C.violetDim : "rgba(255,255,255,0.05)",
           color: active ? C.violet : C.text,
-          transition: "all 0.15s" }}>
+          transition: "all 0.15s"
+        }}>
         <t.Icon size={14} />
         {t.label}
         {t.key === "businesses" && stats?.pendingBusinesses ? (
-          <span style={{ background: C.amber, color: "#1a1a1a", fontSize: 9, fontWeight: 800,
-            padding: "2px 6px", borderRadius: 99 }}>{stats.pendingBusinesses}</span>
+          <span style={{
+            background: C.amber, color: "#1a1a1a", fontSize: 9, fontWeight: 800,
+            padding: "2px 6px", borderRadius: 99
+          }}>{stats.pendingBusinesses}</span>
         ) : null}
         {t.key === "reviews" && stats?.flaggedReviews ? (
-          <span style={{ background: C.red, color: "#fff", fontSize: 9, fontWeight: 800,
-            padding: "2px 6px", borderRadius: 99 }}>{stats.flaggedReviews}</span>
+          <span style={{
+            background: C.red, color: "#fff", fontSize: 9, fontWeight: 800,
+            padding: "2px 6px", borderRadius: 99
+          }}>{stats.flaggedReviews}</span>
         ) : null}
         {t.key === "users" && allUsers.length > 0 ? (
-          <span style={{ background: "#7c3aed", color: "#fff", fontSize: 9, fontWeight: 800,
-            padding: "2px 6px", borderRadius: 99 }}>{allUsers.length}</span>
+          <span style={{
+            background: "#7c3aed", color: "#fff", fontSize: 9, fontWeight: 800,
+            padding: "2px 6px", borderRadius: 99
+          }}>{allUsers.length}</span>
         ) : null}
       </button>
     );
@@ -496,9 +522,11 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
   const btnSm = (label: string, onClick: () => void, color: string, dim: string, icon?: React.ReactNode) => (
     <button onClick={onClick}
-      style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px",
+      style={{
+        display: "flex", alignItems: "center", gap: 6, padding: "7px 14px",
         borderRadius: 8, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700,
-        background: color, color: "#fff", transition: "opacity 0.15s" }}
+        background: color, color: "#fff", transition: "opacity 0.15s"
+      }}
       onMouseEnter={e => (e.currentTarget.style.opacity = "0.85")}
       onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
       {icon}{label}
@@ -507,8 +535,10 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
   const iconBtn = (onClick: () => void, icon: React.ReactNode, color: string, dim: string, title?: string) => (
     <button onClick={onClick} title={title}
-      style={{ background: dim, border: "none", color, padding: 8, borderRadius: 8,
-        cursor: "pointer", display: "flex", transition: "opacity 0.15s" }}
+      style={{
+        background: dim, border: "none", color, padding: 8, borderRadius: 8,
+        cursor: "pointer", display: "flex", transition: "opacity 0.15s"
+      }}
       onMouseEnter={e => (e.currentTarget.style.opacity = "0.75")}
       onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
       {icon}
@@ -523,16 +553,20 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   );
 
   const emptyState = (Icon: React.ElementType, msg: string) => (
-    <div style={{ textAlign: "center", padding: "64px 0", background: C.card,
-      borderRadius: 16, border: `1px solid ${C.border}` }}>
+    <div style={{
+      textAlign: "center", padding: "64px 0", background: C.card,
+      borderRadius: 16, border: `1px solid ${C.border}`
+    }}>
       <Icon size={40} color={C.faint} style={{ marginBottom: 12 }} />
       <p style={{ fontSize: 14, fontWeight: 600, color: C.muted }}>{msg}</p>
     </div>
   );
 
   return (
-    <div data-admin-panel="1" style={{ minHeight: "100vh", background: C.bg, color: C.text, display: "flex", flexDirection: "column",
-      colorScheme: "dark" }}>
+    <div data-admin-panel="1" style={{
+      minHeight: "100vh", background: C.bg, color: C.text, display: "flex", flexDirection: "column",
+      colorScheme: "dark"
+    }}>
       <style>{`
         html, body, main { background: ${C.bg} !important; color: ${C.text} !important; color-scheme: dark; }
         * { box-sizing: border-box; }
@@ -545,11 +579,15 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       `}</style>
 
       {/* ── TOP BAR ── */}
-      <header style={{ position: "sticky", top: 0, zIndex: 50,
+      <header style={{
+        position: "sticky", top: 0, zIndex: 50,
         background: C.bg, borderBottom: `1px solid ${C.border}`,
-        backdropFilter: "blur(12px)" }}>
-        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 24px",
-          display: "flex", alignItems: "center", justifyContent: "space-between", height: 52 }}>
+        backdropFilter: "blur(12px)"
+      }}>
+        <div style={{
+          maxWidth: 1280, margin: "0 auto", padding: "0 24px",
+          display: "flex", alignItems: "center", justifyContent: "space-between", height: 52
+        }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <img src="/logo.png" alt="Findy Logo" style={{ height: "34px", objectFit: "contain" }} />
             <span style={{ fontSize: 15, fontWeight: 800, color: "#00E676", letterSpacing: "1.5px", textTransform: "uppercase" }}>
@@ -559,15 +597,19 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             {loadingData && <RefreshCw size={14} color={C.violet} style={{ animation: "spin 1s linear infinite" }} />}
             <button onClick={load}
-              style={{ padding: 7, borderRadius: 8, background: "rgba(255,255,255,0.06)",
-                border: "none", color: C.muted, cursor: "pointer" }}
+              style={{
+                padding: 7, borderRadius: 8, background: "rgba(255,255,255,0.06)",
+                border: "none", color: C.muted, cursor: "pointer"
+              }}
               title="Refresh">
               <RefreshCw size={14} />
             </button>
             <button onClick={onLogout}
-              style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px",
+              style={{
+                display: "flex", alignItems: "center", gap: 6, padding: "6px 12px",
                 borderRadius: 8, background: "none", border: "none", color: C.muted,
-                cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
+                cursor: "pointer", fontSize: 12, fontWeight: 600
+              }}>
               <LogOut size={14} /> Sign out
             </button>
           </div>
@@ -575,18 +617,24 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       </header>
 
       {/* ── TAB NAV ── */}
-      <nav style={{ position: "sticky", top: 52, zIndex: 40,
-        background: C.surface, borderBottom: `1px solid ${C.border}` }}>
-        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "8px 16px",
+      <nav style={{
+        position: "sticky", top: 52, zIndex: 40,
+        background: C.surface, borderBottom: `1px solid ${C.border}`
+      }}>
+        <div style={{
+          maxWidth: 1280, margin: "0 auto", padding: "8px 16px",
           display: "flex", gap: 4, overflowX: "auto",
-          scrollbarWidth: "none", msOverflowStyle: "none" } as React.CSSProperties}>
+          scrollbarWidth: "none", msOverflowStyle: "none"
+        } as React.CSSProperties}>
           {tabs.map(tabBtn)}
         </div>
       </nav>
 
       {/* ── CONTENT ── */}
-      <main style={{ flex: 1, maxWidth: 1280, width: "100%", margin: "0 auto",
-        padding: "24px 24px 64px" }}>
+      <main style={{
+        flex: 1, maxWidth: 1280, width: "100%", margin: "0 auto",
+        padding: "24px 24px 64px"
+      }}>
 
         {/* OVERVIEW */}
         {tab === "overview" && stats && (
@@ -595,11 +643,11 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px,1fr))", gap: 16 }}>
               <StatCard label="Total Businesses" value={stats.totalBusinesses} sub={`${stats.verifiedBusinesses} verified`} color={C.violet} />
               <StatCard label="Pending Approval" value={stats.pendingBusinesses} sub="Awaiting review" color={C.amber} />
-              <StatCard label="Total Bookings"   value={stats.totalBookings}   sub={`${stats.confirmedBookings} confirmed`} color={C.emerald} />
-              <StatCard label="Active Plans"     value={stats.activeSubscriptions} sub="Subscriptions" color={C.sky} />
-              <StatCard label="Total Users"      value={stats.totalUsers}      sub="Registered accounts" color={C.pink} />
-              <StatCard label="Reviews"          value={stats.totalReviews}    sub={`${stats.flaggedReviews} flagged`} color="#fb923c" />
-              <StatCard label="Revenue (AMD)"    value={`֏${stats.totalRevenue.toLocaleString()}`} sub="Active subscriptions" color={C.yellow} />
+              <StatCard label="Total Bookings" value={stats.totalBookings} sub={`${stats.confirmedBookings} confirmed`} color={C.emerald} />
+              <StatCard label="Active Plans" value={stats.activeSubscriptions} sub="Subscriptions" color={C.sky} />
+              <StatCard label="Total Users" value={stats.totalUsers} sub="Registered accounts" color={C.pink} />
+              <StatCard label="Reviews" value={stats.totalReviews} sub={`${stats.flaggedReviews} flagged`} color="#fb923c" />
+              <StatCard label="Revenue (AMD)" value={`֏${stats.totalRevenue.toLocaleString()}`} sub="Active subscriptions" color={C.yellow} />
               <StatCard label="Cancelled Bookings" value={stats.cancelledBookings} color={C.red} />
             </div>
           </div>
@@ -608,22 +656,28 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         {/* BUSINESSES */}
         {tab === "businesses" && (
           <div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
-              flexWrap: "wrap", gap: 12, marginBottom: 20 }}>
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              flexWrap: "wrap", gap: 12, marginBottom: 20
+            }}>
               <div>
                 <h2 style={{ fontSize: 18, fontWeight: 800, color: C.text, margin: 0 }}>Businesses</h2>
                 <p style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>Review, verify, and moderate registered businesses.</p>
               </div>
-              <div style={{ display: "flex", background: "rgba(255,255,255,0.05)",
-                borderRadius: 10, padding: 4, gap: 2 }}>
-                {(["pending","verified","all"] as const).map(m => (
+              <div style={{
+                display: "flex", background: "rgba(255,255,255,0.05)",
+                borderRadius: 10, padding: 4, gap: 2
+              }}>
+                {(["pending", "verified", "all"] as const).map(m => (
                   <button key={m} onClick={() => setBizSubTab(m)}
-                    style={{ padding: "5px 14px", borderRadius: 7, border: "none",
+                    style={{
+                      padding: "5px 14px", borderRadius: 7, border: "none",
                       cursor: "pointer", fontSize: 12, fontWeight: 700,
                       textTransform: "capitalize",
                       background: bizSubTab === m ? "rgba(255,255,255,0.1)" : "transparent",
                       color: bizSubTab === m ? C.text : C.muted,
-                      transition: "all 0.15s" }}>
+                      transition: "all 0.15s"
+                    }}>
                     {m}
                   </button>
                 ))}
@@ -632,16 +686,20 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             {filteredBiz.length === 0 ? emptyState(Building2, "No businesses found") : (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {filteredBiz.map(b => (
-                  <div key={b._id} style={{ background: C.card, borderRadius: 16, padding: 20,
+                  <div key={b._id} style={{
+                    background: C.card, borderRadius: 16, padding: 20,
                     border: `1px solid ${C.border}`, display: "flex",
                     justifyContent: "space-between", alignItems: "center",
-                    flexWrap: "wrap", gap: 16 }}>
+                    flexWrap: "wrap", gap: 16
+                  }}>
                     <div>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{ fontWeight: 700, fontSize: 14, color: C.text }}>{b.name}</span>
-                        <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 99,
+                        <span style={{
+                          fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 99,
                           background: b.verified ? C.greenDim : C.amberDim,
-                          color: b.verified ? C.green : C.amber }}>
+                          color: b.verified ? C.green : C.amber
+                        }}>
                           {b.verified ? "Verified" : "Pending"}
                         </span>
                       </div>
@@ -649,16 +707,22 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                         {b.category?.name || "No Category"} • {b.city}
                       </p>
                       <div style={{ display: "flex", gap: 16, marginTop: 8, flexWrap: "wrap" }}>
-                        <span style={{ display: "flex", alignItems: "center", gap: 4,
-                          fontSize: 12, color: C.muted }}>
+                        <span style={{
+                          display: "flex", alignItems: "center", gap: 4,
+                          fontSize: 12, color: C.muted
+                        }}>
                           <Mail size={13} />{b.email}
                         </span>
-                        {b.phone && <span style={{ display: "flex", alignItems: "center", gap: 4,
-                          fontSize: 12, color: C.muted }}>
+                        {b.phone && <span style={{
+                          display: "flex", alignItems: "center", gap: 4,
+                          fontSize: 12, color: C.muted
+                        }}>
                           <Phone size={13} />{b.phone}
                         </span>}
-                        <span style={{ display: "flex", alignItems: "center", gap: 4,
-                          fontSize: 12, color: C.amber }}>
+                        <span style={{
+                          display: "flex", alignItems: "center", gap: 4,
+                          fontSize: 12, color: C.amber
+                        }}>
                           <Star size={13} fill={C.amber} />{b.rating.toFixed(1)} ({b.reviewCount})
                         </span>
                       </div>
@@ -666,7 +730,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                       {!b.verified
                         ? btnSm("Approve", () => approveBiz(b._id), "#16a34a", C.greenDim, <CheckCircle2 size={13} />)
-                        : btnSm("Suspend", () => rejectBiz(b._id),  "#b45309", C.amberDim, <Ban size={13} />)
+                        : btnSm("Suspend", () => rejectBiz(b._id), "#b45309", C.amberDim, <Ban size={13} />)
                       }
                       {btnSm("Gift Plan", () => {
                         setGiftingBusiness(b);
@@ -691,26 +755,32 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             {bookings.length === 0 ? emptyState(CalendarDays, "No bookings registered") : (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {bookings.map(bk => (
-                  <div key={bk._id} style={{ background: C.card, borderRadius: 16, padding: 20,
+                  <div key={bk._id} style={{
+                    background: C.card, borderRadius: 16, padding: 20,
                     border: `1px solid ${C.border}`, display: "flex",
-                    justifyContent: "space-between", alignItems: "center", gap: 16 }}>
+                    justifyContent: "space-between", alignItems: "center", gap: 16
+                  }}>
                     <div>
                       <span style={{ fontWeight: 700, fontSize: 14, color: C.text }}>{bk.serviceName}</span>
                       <p style={{ fontSize: 12, color: C.muted, margin: "4px 0 0" }}>
                         at {bk.business?.name || "Business"} • {bk.customerName} ({bk.customerPhone})
                       </p>
-                      <p style={{ fontSize: 12, color: C.muted, margin: "4px 0 0",
-                        display: "flex", alignItems: "center", gap: 4 }}>
+                      <p style={{
+                        fontSize: 12, color: C.muted, margin: "4px 0 0",
+                        display: "flex", alignItems: "center", gap: 4
+                      }}>
                         <CalendarDays size={12} /> {bk.date} @ {bk.timeSlot}
                       </p>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <span style={{ fontSize: 10, fontWeight: 800, padding: "3px 10px",
+                      <span style={{
+                        fontSize: 10, fontWeight: 800, padding: "3px 10px",
                         borderRadius: 99, textTransform: "uppercase",
                         background: bk.status === "confirmed" ? C.greenDim
                           : bk.status === "cancelled" ? C.redDim : C.amberDim,
                         color: bk.status === "confirmed" ? C.green
-                          : bk.status === "cancelled" ? C.red : C.amber }}>
+                          : bk.status === "cancelled" ? C.red : C.amber
+                      }}>
                         {bk.status}
                       </span>
                       {iconBtn(() => deleteBook(bk._id), <Trash2 size={14} />, C.red, C.redDim, "Delete booking")}
@@ -724,28 +794,36 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
         {tab === "subscriptions" && (
           <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
-              flexWrap: "wrap", gap: 12, marginBottom: 20 }}>
+            <div style={{
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              flexWrap: "wrap", gap: 12, marginBottom: 20
+            }}>
               <div>
                 <h2 style={{ fontSize: 18, fontWeight: 800, color: C.text, margin: 0 }}>Subscription Plans</h2>
                 <p style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>Track active billing details, premium tiers, and direct gifts.</p>
               </div>
-              <div style={{ display: "flex", background: "rgba(255,255,255,0.05)",
-                borderRadius: 10, padding: 4, gap: 2 }}>
+              <div style={{
+                display: "flex", background: "rgba(255,255,255,0.05)",
+                borderRadius: 10, padding: 4, gap: 2
+              }}>
                 <button onClick={() => setPlanSubTab("subscriptions")}
-                  style={{ padding: "5px 14px", borderRadius: 7, border: "none",
+                  style={{
+                    padding: "5px 14px", borderRadius: 7, border: "none",
                     cursor: "pointer", fontSize: 12, fontWeight: 700,
                     background: planSubTab === "subscriptions" ? "rgba(255,255,255,0.1)" : "transparent",
                     color: planSubTab === "subscriptions" ? C.text : C.muted,
-                    transition: "all 0.15s" }}>
+                    transition: "all 0.15s"
+                  }}>
                   Active Subscriptions
                 </button>
                 <button onClick={() => setPlanSubTab("gifts")}
-                  style={{ padding: "5px 14px", borderRadius: 7, border: "none",
+                  style={{
+                    padding: "5px 14px", borderRadius: 7, border: "none",
                     cursor: "pointer", fontSize: 12, fontWeight: 700,
                     background: planSubTab === "gifts" ? "rgba(255,255,255,0.1)" : "transparent",
                     color: planSubTab === "gifts" ? C.text : C.muted,
-                    transition: "all 0.15s" }}>
+                    transition: "all 0.15s"
+                  }}>
                   Gift History ({gifts.length})
                 </button>
               </div>
@@ -755,9 +833,11 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               subscriptions.length === 0 ? emptyState(Gem, "No active subscriptions") : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                   {subscriptions.map(s => (
-                    <div key={s._id} style={{ background: C.card, borderRadius: 16, padding: 20,
+                    <div key={s._id} style={{
+                      background: C.card, borderRadius: 16, padding: 20,
                       border: `1px solid ${C.border}`, display: "flex",
-                      justifyContent: "space-between", alignItems: "center", gap: 16 }}>
+                      justifyContent: "space-between", alignItems: "center", gap: 16
+                    }}>
                       <div>
                         <span style={{ fontWeight: 700, fontSize: 14, color: C.text, textTransform: "capitalize" }}>
                           {s.plan} Plan
@@ -765,17 +845,21 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                         <p style={{ fontSize: 12, color: C.muted, margin: "4px 0 0" }}>
                           Business: {s.business?.name || "—"} ({s.business?.email})
                         </p>
-                        <p style={{ fontSize: 12, color: C.muted, margin: "4px 0 0",
-                          display: "flex", alignItems: "center", gap: 4 }}>
+                        <p style={{
+                          fontSize: 12, color: C.muted, margin: "4px 0 0",
+                          display: "flex", alignItems: "center", gap: 4
+                        }}>
                           <CalendarDays size={12} />
                           {new Date(s.startDate).toLocaleDateString()} → {new Date(s.endDate).toLocaleDateString()}
                         </p>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                        <span style={{ fontSize: 10, fontWeight: 800, padding: "3px 10px", borderRadius: 99,
+                        <span style={{
+                          fontSize: 10, fontWeight: 800, padding: "3px 10px", borderRadius: 99,
                           textTransform: "uppercase",
                           background: s.status === "active" ? C.greenDim : C.redDim,
-                          color: s.status === "active" ? C.green : C.red }}>
+                          color: s.status === "active" ? C.green : C.red
+                        }}>
                           {s.status}
                         </span>
                         {iconBtn(() => deleteSub(s._id), <Trash2 size={14} />, C.red, C.redDim, "Cancel subscription")}
@@ -788,18 +872,22 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               gifts.length === 0 ? emptyState(Award, "No subscription gifts recorded") : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                   {gifts.map(g => (
-                    <div key={g._id} style={{ background: C.card, borderRadius: 16, padding: 20,
+                    <div key={g._id} style={{
+                      background: C.card, borderRadius: 16, padding: 20,
                       border: `1px solid ${C.border}`, display: "flex",
-                      justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+                      justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap"
+                    }}>
                       <div>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                           <span style={{ fontWeight: 700, fontSize: 14, color: C.text, textTransform: "capitalize" }}>
                             {g.plan} Gift
                           </span>
-                          <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 8px", borderRadius: 99,
+                          <span style={{
+                            fontSize: 9, fontWeight: 800, padding: "2px 8px", borderRadius: 99,
                             background: g.actionType === 'extend' ? C.sky + "22" : g.actionType === 'overwrite' ? C.redDim : C.greenDim,
                             color: g.actionType === 'extend' ? C.sky : g.actionType === 'overwrite' ? C.red : C.green,
-                            textTransform: "uppercase" }}>
+                            textTransform: "uppercase"
+                          }}>
                             {g.actionType}
                           </span>
                         </div>
@@ -833,27 +921,37 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           <div>
             {sectionHead("Review Moderation", "Inspect flagged reviews and respond to business owner report appeals.")}
             {reviews.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "64px 0", background: C.card,
-                borderRadius: 16, border: `1px solid ${C.border}` }}>
+              <div style={{
+                textAlign: "center", padding: "64px 0", background: C.card,
+                borderRadius: 16, border: `1px solid ${C.border}`
+              }}>
                 <CheckCircle size={40} color={C.green} style={{ marginBottom: 12 }} />
                 <p style={{ fontSize: 14, fontWeight: 600, color: C.muted }}>Queue is clear!</p>
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 {reviews.map(r => (
-                  <div key={r._id} style={{ background: C.card, borderRadius: 16, padding: 24,
-                    border: `1px solid ${C.border}` }}>
-                    <div style={{ display: "flex", justifyContent: "space-between",
-                      flexWrap: "wrap", gap: 16, marginBottom: 16 }}>
+                  <div key={r._id} style={{
+                    background: C.card, borderRadius: 16, padding: 24,
+                    border: `1px solid ${C.border}`
+                  }}>
+                    <div style={{
+                      display: "flex", justifyContent: "space-between",
+                      flexWrap: "wrap", gap: 16, marginBottom: 16
+                    }}>
                       <div>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                           <span style={{ fontSize: 12, color: C.muted }}>Flagged on:</span>
                           <span style={{ fontWeight: 700, fontSize: 14, color: C.text }}>{r.business?.name}</span>
-                          <span style={{ fontSize: 11, color: C.red, background: C.redDim,
-                            padding: "2px 8px", borderRadius: 99 }}>Reported</span>
+                          <span style={{
+                            fontSize: 11, color: C.red, background: C.redDim,
+                            padding: "2px 8px", borderRadius: 99
+                          }}>Reported</span>
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6,
-                          fontSize: 12, color: C.muted }}>
+                        <div style={{
+                          display: "flex", alignItems: "center", gap: 8, marginTop: 6,
+                          fontSize: 12, color: C.muted
+                        }}>
                           <span>By: <strong style={{ color: C.text }}>{r.author?.name || "Anonymous"}</strong></span>
                           <span>•</span>
                           <span style={{ color: C.amber }}>Rating: {r.rating} ★</span>
@@ -864,17 +962,21 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                       </div>
                       {resolvingId !== r._id && (
                         <div style={{ display: "flex", gap: 8 }}>
-                          {btnSm("Keep Review",   () => { setResolvingId(r._id); setResolveAction("keep");   }, "#16a34a", C.greenDim)}
+                          {btnSm("Keep Review", () => { setResolvingId(r._id); setResolveAction("keep"); }, "#16a34a", C.greenDim)}
                           {btnSm("Delete Review", () => { setResolvingId(r._id); setResolveAction("delete"); }, "#dc2626", C.redDim)}
                         </div>
                       )}
                     </div>
 
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr",
-                      gap: 16, marginBottom: resolvingId === r._id ? 20 : 0 }}>
+                    <div style={{
+                      display: "grid", gridTemplateColumns: "1fr 1fr",
+                      gap: 16, marginBottom: resolvingId === r._id ? 20 : 0
+                    }}>
                       <div style={{ background: "rgba(255,255,255,0.04)", padding: 14, borderRadius: 10 }}>
-                        <span style={{ fontSize: 10, fontWeight: 700, color: C.muted,
-                          textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>
+                        <span style={{
+                          fontSize: 10, fontWeight: 700, color: C.muted,
+                          textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6
+                        }}>
                           Review Content
                         </span>
                         <p style={{ fontSize: 13, color: C.text, fontStyle: "italic", margin: 0 }}>
@@ -882,8 +984,10 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                         </p>
                       </div>
                       <div style={{ background: C.redDim, padding: 14, borderRadius: 10 }}>
-                        <span style={{ fontSize: 10, fontWeight: 700, color: C.red,
-                          textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>
+                        <span style={{
+                          fontSize: 10, fontWeight: 700, color: C.red,
+                          textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6
+                        }}>
                           Report Reason
                         </span>
                         <p style={{ fontSize: 13, color: C.text, margin: 0 }}>
@@ -904,21 +1008,27 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                           </p>
                           <textarea value={adminReply} onChange={e => setAdminReply(e.target.value)}
                             placeholder="Explain your decision…" rows={3} required
-                            style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`,
+                            style={{
+                              width: "100%", background: C.bg, border: `1px solid ${C.border}`,
                               borderRadius: 8, padding: 12, fontSize: 12, color: C.text,
-                              outline: "none", resize: "vertical", boxSizing: "border-box" }} />
+                              outline: "none", resize: "vertical", boxSizing: "border-box"
+                            }} />
                           <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12 }}>
                             <button type="button"
                               onClick={() => { setResolvingId(null); setResolveAction(null); }}
-                              style={{ padding: "7px 14px", borderRadius: 8, border: "none",
+                              style={{
+                                padding: "7px 14px", borderRadius: 8, border: "none",
                                 background: "rgba(255,255,255,0.06)", color: C.muted,
-                                cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
+                                cursor: "pointer", fontSize: 12, fontWeight: 600
+                              }}>
                               Cancel
                             </button>
                             <button type="submit"
-                              style={{ padding: "7px 14px", borderRadius: 8, border: "none",
+                              style={{
+                                padding: "7px 14px", borderRadius: 8, border: "none",
                                 background: resolveAction === "delete" ? "#dc2626" : "#16a34a",
-                                color: "#fff", cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
+                                color: "#fff", cursor: "pointer", fontSize: 12, fontWeight: 700
+                              }}>
                               Submit Resolution
                             </button>
                           </div>
@@ -942,15 +1052,19 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                   const isAdmin = u.role === "admin";
                   const Icon = isAdmin ? Crown : u.role === "business_owner" ? Briefcase : UserCircle2;
                   const badgeColor = isAdmin ? C.violet : u.role === "business_owner" ? C.sky : C.muted;
-                  const badgeDim   = isAdmin ? C.violetDim : u.role === "business_owner" ? "rgba(56,189,248,0.12)" : "rgba(255,255,255,0.06)";
+                  const badgeDim = isAdmin ? C.violetDim : u.role === "business_owner" ? "rgba(56,189,248,0.12)" : "rgba(255,255,255,0.06)";
                   return (
-                    <div key={u._id} style={{ background: C.card, borderRadius: 16, padding: 18,
+                    <div key={u._id} style={{
+                      background: C.card, borderRadius: 16, padding: 18,
                       border: `1px solid ${C.border}`, display: "flex",
-                      justifyContent: "space-between", alignItems: "center", gap: 16 }}>
+                      justifyContent: "space-between", alignItems: "center", gap: 16
+                    }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                        <div style={{ width: 38, height: 38, borderRadius: 10,
+                        <div style={{
+                          width: 38, height: 38, borderRadius: 10,
                           background: "rgba(255,255,255,0.06)", display: "flex",
-                          alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          alignItems: "center", justifyContent: "center", flexShrink: 0
+                        }}>
                           <Icon size={16} color={C.muted} />
                         </div>
                         <div>
@@ -964,9 +1078,11 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                         </div>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <span style={{ fontSize: 10, fontWeight: 800, padding: "3px 10px",
+                        <span style={{
+                          fontSize: 10, fontWeight: 800, padding: "3px 10px",
                           borderRadius: 99, background: badgeDim, color: badgeColor,
-                          textTransform: "uppercase" }}>
+                          textTransform: "uppercase"
+                        }}>
                           {u.role.replace("_", " ")}
                         </span>
                         {!isAdmin && iconBtn(() => deleteUserById(u._id), <Trash2 size={14} />, C.red, C.redDim, "Delete user")}
@@ -982,23 +1098,29 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         {/* PROMO CODES */}
         {tab === "promocodes" && (
           <div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
-              flexWrap: "wrap", gap: 12, marginBottom: 20 }}>
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              flexWrap: "wrap", gap: 12, marginBottom: 20
+            }}>
               <div>
                 <h2 style={{ fontSize: 18, fontWeight: 800, color: C.text, margin: 0 }}>Promo Codes</h2>
                 <p style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>Generate and manage promotional discount codes for businesses.</p>
               </div>
               <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                <div style={{ display: "flex", background: "rgba(255,255,255,0.05)",
-                  borderRadius: 10, padding: 4, gap: 2 }}>
+                <div style={{
+                  display: "flex", background: "rgba(255,255,255,0.05)",
+                  borderRadius: 10, padding: 4, gap: 2
+                }}>
                   {(["active", "inactive", "all"] as const).map(m => (
                     <button key={m} onClick={() => setPromoSubTab(m)}
-                      style={{ padding: "5px 14px", borderRadius: 7, border: "none",
+                      style={{
+                        padding: "5px 14px", borderRadius: 7, border: "none",
                         cursor: "pointer", fontSize: 12, fontWeight: 700,
                         textTransform: "capitalize",
                         background: promoSubTab === m ? "rgba(255,255,255,0.1)" : "transparent",
                         color: promoSubTab === m ? C.text : C.muted,
-                        transition: "all 0.15s" }}>
+                        transition: "all 0.15s"
+                      }}>
                       {m}
                     </button>
                   ))}
@@ -1027,20 +1149,26 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                     const statusBg = statusText === "Active" ? C.greenDim : statusText === "Inactive" ? "rgba(255,255,255,0.06)" : C.redDim;
 
                     return (
-                      <div key={p._id} style={{ background: C.card, borderRadius: 16, padding: 20,
+                      <div key={p._id} style={{
+                        background: C.card, borderRadius: 16, padding: 20,
                         border: `1px solid ${C.border}`, display: "flex",
-                        justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+                        justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap"
+                      }}>
                         <div>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                             <span style={{ fontSize: 16, fontWeight: 900, color: C.text, letterSpacing: "0.5px" }}>
                               {p.code}
                             </span>
-                            <span style={{ fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 99,
-                              background: statusBg, color: statusColor, textTransform: "uppercase" }}>
+                            <span style={{
+                              fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 99,
+                              background: statusBg, color: statusColor, textTransform: "uppercase"
+                            }}>
                               {statusText}
                             </span>
-                            <span style={{ fontSize: 11, color: C.violet, background: C.violetDim,
-                              padding: "2px 8px", borderRadius: 99, textTransform: "capitalize" }}>
+                            <span style={{
+                              fontSize: 11, color: C.violet, background: C.violetDim,
+                              padding: "2px 8px", borderRadius: 99, textTransform: "capitalize"
+                            }}>
                               Target: {p.plan} Plan
                             </span>
                           </div>
@@ -1091,14 +1219,20 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
       {/* ── GIFT SUBSCRIPTION MODAL ── */}
       {giftModalOpen && giftingBusiness && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 100,
-          background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 20,
-            width: "100%", maxWidth: 500, overflow: "hidden", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
-            
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 100,
+          background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20
+        }}>
+          <div style={{
+            background: C.surface, border: `1px solid ${C.border}`, borderRadius: 20,
+            width: "100%", maxWidth: 500, overflow: "hidden", boxShadow: "0 24px 64px rgba(0,0,0,0.6)"
+          }}>
+
             {/* Modal Header */}
-            <div style={{ padding: "18px 24px", borderBottom: `1px solid ${C.border}`,
-              display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{
+              padding: "18px 24px", borderBottom: `1px solid ${C.border}`,
+              display: "flex", alignItems: "center", justifyContent: "space-between"
+            }}>
               <h3 style={{ fontSize: 16, fontWeight: 800, color: C.text, margin: 0 }}>Gift Subscription Plan</h3>
               <button onClick={() => { setGiftModalOpen(false); setGiftingBusiness(null); }}
                 style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", padding: 4 }}>
@@ -1115,11 +1249,15 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
               {/* Plan Selection */}
               <div>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
-                  textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Target Plan</label>
+                <label style={{
+                  display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
+                  textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
+                }}>Target Plan</label>
                 <select value={giftPlan} onChange={e => setGiftPlan(e.target.value as any)}
-                  style={{ width: "100%", background: C.card, border: `1px solid ${C.border}`,
-                    borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none" }}>
+                  style={{
+                    width: "100%", background: C.card, border: `1px solid ${C.border}`,
+                    borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none"
+                  }}>
                   <option value="starter">Starter Plan (Freemium)</option>
                   <option value="standard">Standard Plan (֏20,000 / mo)</option>
                   <option value="premium">Premium Plan (֏50,000 / mo)</option>
@@ -1129,20 +1267,28 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               {/* Duration selection */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div>
-                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
-                    textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Duration</label>
+                  <label style={{
+                    display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
+                    textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
+                  }}>Duration</label>
                   <input type="number" min={1} disabled={giftDurationUnit === 'permanent'}
                     value={giftDurationUnit === 'permanent' ? '' : giftDurationValue}
                     onChange={e => setGiftDurationValue(Math.max(1, parseInt(e.target.value) || 1))}
-                    style={{ width: "100%", background: C.card, border: `1px solid ${C.border}`,
-                      borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none", boxSizing: "border-box" }} />
+                    style={{
+                      width: "100%", background: C.card, border: `1px solid ${C.border}`,
+                      borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none", boxSizing: "border-box"
+                    }} />
                 </div>
                 <div>
-                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
-                    textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Unit</label>
+                  <label style={{
+                    display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
+                    textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
+                  }}>Unit</label>
                   <select value={giftDurationUnit} onChange={e => setGiftDurationUnit(e.target.value as any)}
-                    style={{ width: "100%", background: C.card, border: `1px solid ${C.border}`,
-                      borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none" }}>
+                    style={{
+                      width: "100%", background: C.card, border: `1px solid ${C.border}`,
+                      borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none"
+                    }}>
                     <option value="days">Days</option>
                     <option value="months">Months</option>
                     <option value="permanent">Permanent (Lifetime)</option>
@@ -1176,12 +1322,16 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
               {/* Internal Comment */}
               <div>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
-                  textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Internal Comment / Reason</label>
+                <label style={{
+                  display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
+                  textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
+                }}>Internal Comment / Reason</label>
                 <textarea rows={3} value={giftReason} onChange={e => setGiftReason(e.target.value)} required
                   placeholder="Partnership deal, compensation, etc. (min 5 chars)"
-                  style={{ width: "100%", background: C.card, border: `1px solid ${C.border}`,
-                    borderRadius: 10, padding: 10, fontSize: 12, color: C.text, outline: "none", resize: "none", boxSizing: "border-box" }} />
+                  style={{
+                    width: "100%", background: C.card, border: `1px solid ${C.border}`,
+                    borderRadius: 10, padding: 10, fontSize: 12, color: C.text, outline: "none", resize: "none", boxSizing: "border-box"
+                  }} />
               </div>
 
               {giftError && (
@@ -1193,14 +1343,18 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               {/* Actions */}
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, borderTop: `1px solid ${C.border}`, paddingTop: 16, marginTop: 4 }}>
                 <button type="button" onClick={() => { setGiftModalOpen(false); setGiftingBusiness(null); }}
-                  style={{ padding: "10px 16px", borderRadius: 10, background: "rgba(255,255,255,0.06)",
-                    border: "none", color: C.text, cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
+                  style={{
+                    padding: "10px 16px", borderRadius: 10, background: "rgba(255,255,255,0.06)",
+                    border: "none", color: C.text, cursor: "pointer", fontSize: 13, fontWeight: 600
+                  }}>
                   Cancel
                 </button>
                 <button type="submit" disabled={giftingInProgress}
-                  style={{ padding: "10px 18px", borderRadius: 10, background: "linear-gradient(90deg,#7c3aed,#4f46e5)",
+                  style={{
+                    padding: "10px 18px", borderRadius: 10, background: "linear-gradient(90deg,#7c3aed,#4f46e5)",
                     border: "none", color: "#fff", cursor: giftingInProgress ? "not-allowed" : "pointer",
-                    fontSize: 13, fontWeight: 700, opacity: giftingInProgress ? 0.7 : 1 }}>
+                    fontSize: 13, fontWeight: 700, opacity: giftingInProgress ? 0.7 : 1
+                  }}>
                   {giftingInProgress ? "Gifting Plan..." : "Gift Plan"}
                 </button>
               </div>
@@ -1211,15 +1365,21 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
       {/* ── CREATE PROMO CODE MODAL ── */}
       {createPromoModalOpen && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 100,
-          background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 20,
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 100,
+          background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20
+        }}>
+          <div style={{
+            background: C.surface, border: `1px solid ${C.border}`, borderRadius: 20,
             width: "100%", maxWidth: 540, overflow: "hidden", maxHeight: "90vh", display: "flex", flexDirection: "column",
-            boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
-            
+            boxShadow: "0 24px 64px rgba(0,0,0,0.6)"
+          }}>
+
             {/* Modal Header */}
-            <div style={{ padding: "18px 24px", borderBottom: `1px solid ${C.border}`,
-              display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{
+              padding: "18px 24px", borderBottom: `1px solid ${C.border}`,
+              display: "flex", alignItems: "center", justifyContent: "space-between"
+            }}>
               <h3 style={{ fontSize: 16, fontWeight: 800, color: C.text, margin: 0 }}>Create Promo Code</h3>
               <button onClick={() => setCreatePromoModalOpen(false)}
                 style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", padding: 4 }}>
@@ -1229,19 +1389,25 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
             {/* Modal Body */}
             <form onSubmit={handleCreatePromoSubmit} style={{ padding: 24, overflowY: "auto", display: "flex", flexDirection: "column", gap: 14 }}>
-              
+
               {/* Promo Code Code */}
               <div>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
-                  textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Promo Code</label>
+                <label style={{
+                  display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
+                  textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
+                }}>Promo Code</label>
                 <div style={{ display: "flex", gap: 10 }}>
                   <input type="text" placeholder="SUMMER2026" required value={newPromoCode}
                     onChange={e => setNewPromoCode(e.target.value.toUpperCase())}
-                    style={{ flex: 1, background: C.card, border: `1px solid ${C.border}`,
-                      borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none" }} />
+                    style={{
+                      flex: 1, background: C.card, border: `1px solid ${C.border}`,
+                      borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none"
+                    }} />
                   <button type="button" onClick={generatePromoCode}
-                    style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(255,255,255,0.06)",
-                      border: "none", color: C.text, cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
+                    style={{
+                      padding: "10px 14px", borderRadius: 10, background: "rgba(255,255,255,0.06)",
+                      border: "none", color: C.text, cursor: "pointer", fontSize: 12, fontWeight: 700
+                    }}>
                     Generate
                   </button>
                 </div>
@@ -1249,11 +1415,15 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
               {/* Plan Selection */}
               <div>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
-                  textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Target Plan</label>
+                <label style={{
+                  display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
+                  textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
+                }}>Target Plan</label>
                 <select value={newPromoPlan} onChange={e => setNewPromoPlan(e.target.value as any)}
-                  style={{ width: "100%", background: C.card, border: `1px solid ${C.border}`,
-                    borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none" }}>
+                  style={{
+                    width: "100%", background: C.card, border: `1px solid ${C.border}`,
+                    borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none"
+                  }}>
                   <option value="starter">Starter Plan (Freemium)</option>
                   <option value="standard">Standard Plan</option>
                   <option value="premium">Premium Plan</option>
@@ -1263,11 +1433,15 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               {/* Discount Type */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div>
-                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
-                    textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Discount Type</label>
+                  <label style={{
+                    display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
+                    textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
+                  }}>Discount Type</label>
                   <select value={newPromoDiscountType} onChange={e => setNewPromoDiscountType(e.target.value as any)}
-                    style={{ width: "100%", background: C.card, border: `1px solid ${C.border}`,
-                      borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none" }}>
+                    style={{
+                      width: "100%", background: C.card, border: `1px solid ${C.border}`,
+                      borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none"
+                    }}>
                     <option value="free">100% Free Plan</option>
                     <option value="percent">Percentage Discount (%)</option>
                     <option value="amount">Fixed Amount Discount (AMD)</option>
@@ -1275,13 +1449,17 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                 </div>
                 {newPromoDiscountType !== 'free' && (
                   <div>
-                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
-                      textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Discount Value</label>
+                    <label style={{
+                      display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
+                      textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
+                    }}>Discount Value</label>
                     <input type="number" min={0} required value={newPromoDiscountValue}
                       onChange={e => setNewPromoDiscountValue(Math.max(0, parseInt(e.target.value) || 0))}
                       placeholder={newPromoDiscountType === 'percent' ? "e.g. 20" : "e.g. 5000"}
-                      style={{ width: "100%", background: C.card, border: `1px solid ${C.border}`,
-                        borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none", boxSizing: "border-box" }} />
+                      style={{
+                        width: "100%", background: C.card, border: `1px solid ${C.border}`,
+                        borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none", boxSizing: "border-box"
+                      }} />
                   </div>
                 )}
               </div>
@@ -1289,20 +1467,28 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               {/* Gift/Promo Duration */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div>
-                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
-                    textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Validity Duration</label>
+                  <label style={{
+                    display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
+                    textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
+                  }}>Validity Duration</label>
                   <input type="number" min={1} disabled={newPromoDurationUnit === 'permanent'}
                     value={newPromoDurationUnit === 'permanent' ? '' : newPromoDurationValue}
                     onChange={e => setNewPromoDurationValue(Math.max(1, parseInt(e.target.value) || 1))}
-                    style={{ width: "100%", background: C.card, border: `1px solid ${C.border}`,
-                      borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none", boxSizing: "border-box" }} />
+                    style={{
+                      width: "100%", background: C.card, border: `1px solid ${C.border}`,
+                      borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none", boxSizing: "border-box"
+                    }} />
                 </div>
                 <div>
-                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
-                    textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Duration Unit</label>
+                  <label style={{
+                    display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
+                    textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
+                  }}>Duration Unit</label>
                   <select value={newPromoDurationUnit} onChange={e => setNewPromoDurationUnit(e.target.value as any)}
-                    style={{ width: "100%", background: C.card, border: `1px solid ${C.border}`,
-                      borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none" }}>
+                    style={{
+                      width: "100%", background: C.card, border: `1px solid ${C.border}`,
+                      borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none"
+                    }}>
                     <option value="days">Days</option>
                     <option value="months">Months</option>
                     <option value="permanent">Permanent (Lifetime)</option>
@@ -1312,43 +1498,59 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
               {/* Max Uses */}
               <div>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
-                  textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Usage Limit (Max Uses)</label>
+                <label style={{
+                  display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
+                  textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
+                }}>Usage Limit (Max Uses)</label>
                 <input type="number" min={1} placeholder="e.g. 10 (Leave blank for unlimited)"
                   value={newPromoMaxUses} onChange={e => setNewPromoMaxUses(e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value) || 1))}
-                  style={{ width: "100%", background: C.card, border: `1px solid ${C.border}`,
-                    borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none", boxSizing: "border-box" }} />
+                  style={{
+                    width: "100%", background: C.card, border: `1px solid ${C.border}`,
+                    borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none", boxSizing: "border-box"
+                  }} />
               </div>
 
               {/* Dates */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div>
-                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
-                    textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Start Date</label>
+                  <label style={{
+                    display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
+                    textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
+                  }}>Start Date</label>
                   <input type="date" value={newPromoStartDate} onChange={e => setNewPromoStartDate(e.target.value)}
-                    style={{ width: "100%", background: C.card, border: `1px solid ${C.border}`,
-                      borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none", boxSizing: "border-box" }} />
+                    style={{
+                      width: "100%", background: C.card, border: `1px solid ${C.border}`,
+                      borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none", boxSizing: "border-box"
+                    }} />
                 </div>
                 <div>
-                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
-                    textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Expiry Date</label>
+                  <label style={{
+                    display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
+                    textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
+                  }}>Expiry Date</label>
                   <input type="date" value={newPromoExpiryDate} onChange={e => setNewPromoExpiryDate(e.target.value)}
-                    style={{ width: "100%", background: C.card, border: `1px solid ${C.border}`,
-                      borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none", boxSizing: "border-box" }} />
+                    style={{
+                      width: "100%", background: C.card, border: `1px solid ${C.border}`,
+                      borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none", boxSizing: "border-box"
+                    }} />
                 </div>
               </div>
 
               {/* Business Restrictions */}
               <div>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
-                  textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Restrict to Specific Businesses</label>
+                <label style={{
+                  display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
+                  textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
+                }}>Restrict to Specific Businesses</label>
                 <select multiple value={newPromoRestrictedBusinesses}
                   onChange={e => {
                     const opts = Array.from(e.target.selectedOptions, option => option.value);
                     setNewPromoRestrictedBusinesses(opts);
                   }}
-                  style={{ width: "100%", background: C.card, border: `1px solid ${C.border}`,
-                    borderRadius: 10, padding: 8, fontSize: 12, color: C.text, outline: "none", height: 90 }}>
+                  style={{
+                    width: "100%", background: C.card, border: `1px solid ${C.border}`,
+                    borderRadius: 10, padding: 8, fontSize: 12, color: C.text, outline: "none", height: 90
+                  }}>
                   {businesses.map(b => (
                     <option key={b._id} value={b._id}>{b.name} ({b.city})</option>
                   ))}
@@ -1373,14 +1575,18 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               {/* Actions */}
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, borderTop: `1px solid ${C.border}`, paddingTop: 16 }}>
                 <button type="button" onClick={() => setCreatePromoModalOpen(false)}
-                  style={{ padding: "10px 16px", borderRadius: 10, background: "rgba(255,255,255,0.06)",
-                    border: "none", color: C.text, cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
+                  style={{
+                    padding: "10px 16px", borderRadius: 10, background: "rgba(255,255,255,0.06)",
+                    border: "none", color: C.text, cursor: "pointer", fontSize: 13, fontWeight: 600
+                  }}>
                   Cancel
                 </button>
                 <button type="submit" disabled={creatingPromo}
-                  style={{ padding: "10px 18px", borderRadius: 10, background: "linear-gradient(90deg,#7c3aed,#4f46e5)",
+                  style={{
+                    padding: "10px 18px", borderRadius: 10, background: "linear-gradient(90deg,#7c3aed,#4f46e5)",
                     border: "none", color: "#fff", cursor: creatingPromo ? "not-allowed" : "pointer",
-                    fontSize: 13, fontWeight: 700, opacity: creatingPromo ? 0.7 : 1 }}>
+                    fontSize: 13, fontWeight: 700, opacity: creatingPromo ? 0.7 : 1
+                  }}>
                   {creatingPromo ? "Creating..." : "Create"}
                 </button>
               </div>
@@ -1396,7 +1602,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
 /* ─────────────── ROOT PAGE ─────────────── */
 export default function AdminSecurePage() {
-  const [authed, setAuthed]     = useState(false);
+  const [authed, setAuthed] = useState(false);
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
@@ -1420,7 +1626,7 @@ export default function AdminSecurePage() {
       .finally(() => setChecking(false));
   }, []);
 
-  const handleLogin  = () => setAuthed(true);
+  const handleLogin = () => setAuthed(true);
   const handleLogout = () => {
     localStorage.removeItem(ADMIN_TOKEN_KEY);
     localStorage.removeItem(ADMIN_USER_KEY);
@@ -1429,12 +1635,16 @@ export default function AdminSecurePage() {
 
   if (checking) {
     return (
-      <div data-admin-panel="1" style={{ minHeight: "100vh", background: "#1e1e2e",
-        display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <svg style={{ width: 32, height: 32, color: "#c4b5fd",
-          animation: "spin 1s linear infinite" }} fill="none" viewBox="0 0 24 24">
-          <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-          <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+      <div data-admin-panel="1" style={{
+        minHeight: "100vh", background: "#1e1e2e",
+        display: "flex", alignItems: "center", justifyContent: "center"
+      }}>
+        <svg style={{
+          width: 32, height: 32, color: "#c4b5fd",
+          animation: "spin 1s linear infinite"
+        }} fill="none" viewBox="0 0 24 24">
+          <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
         </svg>
         <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
       </div>

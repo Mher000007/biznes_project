@@ -285,6 +285,9 @@ export default function LeafletMap({
     const doFitBounds = (animate: boolean) => {
       const m = mapRef.current;
       if (!m) return;
+      const size = m.getSize();
+      if (size.x === 0 || size.y === 0) return; // Prevent NaN errors if container is hidden
+
       m.invalidateSize({ animate: false });
       if (fitAllBounds && validList.length > 1) {
         m.fitBounds(bounds, { padding: [40, 40], maxZoom: 14, animate, duration: animate ? 0.6 : undefined });
@@ -348,13 +351,16 @@ export default function LeafletMap({
       
       // If triggered by external hover (list card), fly to the primary marker matching ID
       if (hoveredLocationId && targetForFlyTo && map) {
-        const { lat, lng } = (targetForFlyTo as L.Marker).getLatLng();
-        if (typeof lat === 'number' && typeof lng === 'number' && isFinite(lat) && isFinite(lng)) {
-          map.flyTo([lat, lng], Math.max(map.getZoom(), 14), {
+        const size = map.getSize();
+        if (size.x > 0 && size.y > 0) {
+          const { lat, lng } = (targetForFlyTo as L.Marker).getLatLng();
+          if (typeof lat === 'number' && typeof lng === 'number' && isFinite(lat) && isFinite(lng)) {
+            map.flyTo([lat, lng], Math.max(map.getZoom(), 14), {
             animate: true,
             duration: 0.55,
             easeLinearity: 0.2,
-          });
+            });
+          }
         }
       }
     }
@@ -368,8 +374,11 @@ export default function LeafletMap({
     if (!map) return;
     document.body.classList.toggle("map-fullscreen-active", isFullscreen);
     const t = setTimeout(() => {
-      map.invalidateSize({ animate: false });
-      if (fitBoundsFnRef.current) fitBoundsFnRef.current(false);
+      const size = map.getSize();
+      if (size.x > 0 && size.y > 0) {
+        map.invalidateSize({ animate: false });
+        if (fitBoundsFnRef.current) fitBoundsFnRef.current(false);
+      }
     }, 150);
     return () => {
       document.body.classList.remove("map-fullscreen-active");
@@ -402,7 +411,7 @@ export default function LeafletMap({
     >
       <div
         ref={containerRef}
-        style={{ width: "100%", height: "100%" }}
+        style={{ width: "100%", height: "100%", position: "relative", zIndex: 1 }}
         className="leaflet-map-wrapper leaflet-container"
       />
       <button

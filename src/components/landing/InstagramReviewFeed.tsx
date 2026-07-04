@@ -5,6 +5,7 @@ import axios from "axios";
 import { Heart, Loader2 } from "lucide-react";
 import { getApiUrl } from "@/lib/utils";
 import { MOCK_BUSINESSES } from "@/data/mock-businesses";
+import { useI18n } from "@/i18n";
 
 interface UserProfile {
   name: string;
@@ -95,6 +96,7 @@ export default function InstagramReviewFeed() {
   const [loading, setLoading] = useState(true);
   const [likedMap, setLikedMap] = useState<Record<string, { liked: boolean; count: number }>>({});
   const [animateMap, setAnimateMap] = useState<Record<string, boolean>>({});
+  const { t } = useI18n();
   const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
@@ -283,7 +285,7 @@ export default function InstagramReviewFeed() {
         <div className="mx-auto max-w-6xl px-5 sm:px-8 text-center">
           <div className="flex flex-col items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-[hsl(var(--muted-foreground))] mb-3" />
-            <p className="text-sm text-[hsl(var(--muted-foreground))]">Loading reviews feed...</p>
+            <p className="text-sm text-[hsl(var(--muted-foreground))]">{t.reviewsFeed?.loading || "Loading reviews feed..."}</p>
           </div>
         </div>
       </section>
@@ -294,8 +296,8 @@ export default function InstagramReviewFeed() {
     <section className="py-16 sm:py-24 border-t border-[hsl(var(--border))]">
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
         <div className="mb-12">
-          <h2 className="text-2xl sm:text-3xl font-semibold mb-2 text-[hsl(var(--foreground))]">Browse recent reviews</h2>
-          <p className="text-base text-[hsl(var(--muted-foreground))]">Explore feedback and photos shared by customers in Armenia</p>
+          <h2 className="text-2xl sm:text-3xl font-semibold mb-2 text-[hsl(var(--foreground))]">{t.reviewsFeed?.title || "Browse recent reviews"}</h2>
+          <p className="text-base text-[hsl(var(--muted-foreground))]">{t.reviewsFeed?.subtitle || "Explore feedback and photos shared by customers in Armenia"}</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 justify-items-center">
@@ -366,8 +368,8 @@ export default function InstagramReviewFeed() {
                       >
                         <Heart
                           className={`h-5 w-5 transition-colors ${reviewLiked
-                              ? "fill-pink-500 text-pink-500"
-                              : "text-[hsl(var(--foreground))]"
+                            ? "fill-pink-500 text-pink-500"
+                            : "text-[hsl(var(--foreground))]"
                             }`}
                         />
                       </button>
@@ -414,7 +416,7 @@ export default function InstagramReviewFeed() {
               onClick={() => setShowAll(true)}
               className="px-6 py-3 border border-[hsl(var(--border))] rounded-full text-sm font-semibold text-[hsl(var(--foreground))] hover:bg-[hsl(var(--accent))] transition-all duration-200 active:scale-95 shadow-sm"
             >
-              Show More
+              {t.reviewsFeed?.showMore || "Show More"}
             </button>
           </div>
         )}

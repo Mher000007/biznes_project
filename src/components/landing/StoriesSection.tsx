@@ -94,11 +94,11 @@ export default function StoriesSection() {
     <div className={`w-full bg-[hsl(var(--background))] border-b border-[hsl(var(--border))]/30 py-2.5 select-none relative z-10 rounded-b-2xl shadow-[0_8px_16px_-6px_rgba(0,0,0,0.05)] stories-section-container ${!isOpen ? "is-collapsed" : ""}`}>
       <div className="mx-auto max-w-6xl px-5 sm:px-8 stories-content-wrapper">
         <div className="flex items-center gap-5 overflow-x-auto scrollbar-none py-1.5 -mx-2 px-2">
-          
+
           {/* "Your Story" circle for logged-in business owners */}
           {isBizOwner && (
-            <Link 
-              href="/dashboard/stories" 
+            <Link
+              href="/dashboard/stories"
               className="flex flex-col items-center gap-1.5 cursor-pointer shrink-0 group"
             >
               <div className="relative w-[68px] h-[68px] rounded-full p-[2px] bg-[hsl(var(--border))] group-hover:bg-[hsl(var(--primary))]/30 transition-colors flex items-center justify-center bg-[hsl(var(--background))]">
@@ -143,9 +143,8 @@ export default function StoriesSection() {
                 </div>
 
                 {/* Business name */}
-                <span className={`text-[10px] font-semibold tracking-tight truncate max-w-[72px] transition-colors ${
-                  viewed ? "text-[hsl(var(--muted-foreground))]" : "text-[hsl(var(--foreground))] font-bold"
-                } group-hover:text-[hsl(var(--foreground))]`}>
+                <span className={`text-[10px] font-semibold tracking-tight truncate max-w-[72px] transition-colors ${viewed ? "text-[hsl(var(--muted-foreground))]" : "text-[hsl(var(--foreground))] font-bold"
+                  } group-hover:text-[hsl(var(--foreground))]`}>
                   {group.business.name}
                 </span>
               </button>

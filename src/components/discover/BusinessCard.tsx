@@ -2,11 +2,12 @@ import Link from "next/link";
 import { Star, MapPin, BadgeCheck } from "lucide-react";
 import type { Business } from "@/types/business";
 import styles from "./BusinessCard.module.scss";
+import { useI18n } from "@/i18n";
 
 // Simple utility to determine if a business is currently open
-function getOpenStatus(operatingHours?: any[]) {
+function getOpenStatus(operatingHours: any[] | undefined, t: any) {
   if (!operatingHours || operatingHours.length === 0) {
-    return { isOpen: true, text: "Open Now" };
+    return { isOpen: true, text: t.business.openNow };
   }
   const now = new Date();
   const day = now.getDay(); // 0 is Sunday, 1-6 Mon-Sat
@@ -17,7 +18,7 @@ function getOpenStatus(operatingHours?: any[]) {
   );
 
   if (!todayHours || todayHours.isClosed || !todayHours.openTime || !todayHours.closeTime) {
-    return { isOpen: false, text: "Closed" };
+    return { isOpen: false, text: t.business.closed };
   }
 
   const currentHour = now.getHours();
@@ -31,16 +32,17 @@ function getOpenStatus(operatingHours?: any[]) {
   const closeVal = closeH * 60 + closeM;
 
   if (currentVal >= openVal && currentVal < closeVal) {
-    return { isOpen: true, text: "Open Now" };
+    return { isOpen: true, text: t.business.openNow };
   }
-  return { isOpen: false, text: "Closed" };
+  return { isOpen: false, text: t.business.closed };
 }
 
-export default function BusinessCard({ business }: { business: Business }) {
-  const status = getOpenStatus(business.operatingHours);
+export default function BusinessCard({ business, viewMode = "list" }: { business: Business, viewMode?: "list" | "grid" }) {
+  const { t } = useI18n();
+  const status = getOpenStatus(business.operatingHours, t);
 
   return (
-    <div className={styles.card}>
+    <div className={viewMode === "grid" ? styles.cardGrid : styles.cardList}>
       {/* Image container */}
       <Link href={`/business/${business.slug}`} className={styles.imageContainer}>
         {business.logoUrl || business.coverImageUrl ? (
@@ -89,7 +91,7 @@ export default function BusinessCard({ business }: { business: Business }) {
               ))}
             </div>
             <span className={styles.reviewCount}>
-              {business.ratingAvg?.toFixed(1) || "0.0"} ({business.reviewCount || 0} reviews)
+              {business.ratingAvg?.toFixed(1) || "0.0"} ({business.reviewCount || 0} {t.business.reviews})
             </span>
           </div>
 
@@ -120,7 +122,7 @@ export default function BusinessCard({ business }: { business: Business }) {
             {status.text}
           </div>
           <Link href={`/business/${business.slug}`} className={styles.actionButton}>
-            Book Now
+            {t.discover?.bookNow || "Book Now"}
           </Link>
         </div>
       </div>

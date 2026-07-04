@@ -236,7 +236,7 @@ export default function SettingsPage() {
 
         {/* Outer Split-Screen Settings Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
+
           {/* LEFT PANEL: Nav Subtabs */}
           <div className="lg:col-span-3 flex flex-col gap-1.5 bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl p-4 shadow-sm">
             <span className="text-[10px] uppercase font-bold text-[hsl(var(--muted-foreground))] tracking-wider px-3 mb-2">Settings Section</span>
@@ -247,11 +247,10 @@ export default function SettingsPage() {
                 <button
                   key={t.id}
                   onClick={() => setActiveSettingsTab(t.id)}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-semibold cursor-pointer transition-colors text-left ${
-                    isActive
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-semibold cursor-pointer transition-colors text-left ${isActive
                       ? "bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))]"
                       : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]/55 hover:text-[hsl(var(--foreground))]"
-                  }`}
+                    }`}
                 >
                   <Icon className="h-4 w-4" />
                   {t.label}
@@ -262,7 +261,7 @@ export default function SettingsPage() {
 
           {/* RIGHT PANEL: Settings Form Content */}
           <div className="lg:col-span-9 space-y-6">
-            
+
             {/* SUBTAB 1: ACCOUNT PROFILE */}
             {activeSettingsTab === "account" && (
               <form onSubmit={handleUpdateProfile} className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl p-6 shadow-sm space-y-6 animate-scale-in">
@@ -329,9 +328,8 @@ export default function SettingsPage() {
                 </div>
 
                 {profileMessage && (
-                  <div className={`p-3 rounded-lg text-xs font-medium ${
-                    profileMessageType === "success" ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : "bg-red-500/10 text-red-500 border border-red-500/20"
-                  }`}>
+                  <div className={`p-3 rounded-lg text-xs font-medium ${profileMessageType === "success" ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : "bg-red-500/10 text-red-500 border border-red-500/20"
+                    }`}>
                     {profileMessage}
                   </div>
                 )}
@@ -410,9 +408,8 @@ export default function SettingsPage() {
                   </div>
 
                   {passwordMessage && (
-                    <div className={`p-3 rounded-lg text-xs font-medium ${
-                      passwordMessageType === "success" ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : "bg-red-500/10 text-red-500 border border-red-500/20"
-                    }`}>
+                    <div className={`p-3 rounded-lg text-xs font-medium ${passwordMessageType === "success" ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : "bg-red-500/10 text-red-500 border border-red-500/20"
+                      }`}>
                       {passwordMessage}
                     </div>
                   )}
@@ -445,11 +442,10 @@ export default function SettingsPage() {
                   <button
                     type="button"
                     onClick={() => setTwoFactorEnabled(!twoFactorEnabled)}
-                    className={`shrink-0 px-4 py-2 text-xs font-bold rounded-lg transition-colors border cursor-pointer ${
-                      twoFactorEnabled
+                    className={`shrink-0 px-4 py-2 text-xs font-bold rounded-lg transition-colors border cursor-pointer ${twoFactorEnabled
                         ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500 hover:bg-emerald-500/20"
                         : "bg-[hsl(var(--muted))]/30 border-[hsl(var(--border))] text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/60"
-                    }`}
+                      }`}
                   >
                     {twoFactorEnabled ? "2FA Active (Toggle Off)" : "Activate 2FA"}
                   </button>
@@ -477,7 +473,7 @@ export default function SettingsPage() {
                       {copiedEmbed ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
                     </button>
                   </div>
-                  
+
                   <div className="flex items-center gap-2 text-[10px] text-[hsl(var(--muted-foreground))]">
                     <Code className="h-3.5 w-3.5 text-[hsl(var(--primary))]" />
                     <span>Copy the iframe markup above and paste it anywhere in your website's HTML templates.</span>
@@ -523,7 +519,7 @@ export default function SettingsPage() {
                     <h3 className="text-base font-bold text-[hsl(var(--foreground))]">Workspace Collaborators</h3>
                     <p className="text-xs text-[hsl(var(--muted-foreground))]">Manage team members and configure role-based access control.</p>
                   </div>
-                  
+
                   <div className="divide-y divide-[hsl(var(--border))]/40 border border-[hsl(var(--border))]/60 rounded-xl overflow-hidden bg-[hsl(var(--background))] text-xs">
                     <div className="flex justify-between items-center px-4 py-3 bg-[hsl(var(--muted))]/20">
                       <span className="font-bold">Member</span>
@@ -605,11 +601,10 @@ export default function SettingsPage() {
                         <div
                           key={th.key}
                           onClick={() => setSelectedTheme(th.key as any)}
-                          className={`rounded-xl border p-4 cursor-pointer flex flex-col items-center justify-center gap-2 text-center transition-all ${
-                            active
+                          className={`rounded-xl border p-4 cursor-pointer flex flex-col items-center justify-center gap-2 text-center transition-all ${active
                               ? "border-[hsl(var(--primary))] bg-[hsl(var(--primary))]/5 text-[hsl(var(--foreground))]"
                               : "border-[hsl(var(--border))] hover:border-[hsl(var(--primary))]/50 text-[hsl(var(--muted-foreground))]"
-                          }`}
+                            }`}
                         >
                           <Icon className="h-5 w-5" />
                           <span className="text-xs font-bold">{th.title}</span>
@@ -658,18 +653,18 @@ export default function SettingsPage() {
               >
                 <X className="h-4 w-4" />
               </button>
-              
+
               <div className="flex items-center gap-3 text-red-600 mb-4">
                 <div className="p-2 rounded-lg bg-red-100 dark:bg-red-950/50">
                   <AlertTriangle className="h-6 w-6" />
                 </div>
                 <h3 className="text-lg font-semibold">Ջնջել բիզնես պրոֆիլը</h3>
               </div>
-              
+
               <p className="text-sm text-[hsl(var(--muted-foreground))] mb-4">
                 Արդյո՞ք ցանկանում եք ջնջել ցանցից Ձեր պրոֆիլը։ Այս գործողությունը անդառնալի է և Ձեր բոլոր տվյալները կորելու են։
               </p>
-              
+
               <div className="space-y-3 mb-6">
                 <label className="block text-xs font-medium text-[hsl(var(--muted-foreground))]">
                   Հաստատելու համար մուտքագրեք Ձեր էլ. հասցեն ({currentUser?.email})
@@ -685,7 +680,7 @@ export default function SettingsPage() {
                   <p className="text-xs font-medium text-red-500">{deleteError}</p>
                 )}
               </div>
-              
+
               <div className="flex items-center justify-end gap-3">
                 <button
                   onClick={() => setShowModal(false)}

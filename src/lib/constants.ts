@@ -2,6 +2,14 @@ import type { Category } from "@/types/business";
 
 export const CATEGORIES: Category[] = [
   {
+    id: "cat-horeca",
+    name: "HoReCa",
+    slug: "horeca",
+    description: "Hotels, restaurants, cafés, and catering services",
+    icon: "UtensilsCrossed",
+    count: 215,
+  },
+  {
     id: "cat-building-material",
     name: "Building Material",
     slug: "building-material",
@@ -16,14 +24,6 @@ export const CATEGORIES: Category[] = [
     description: "Farming, food production, and agritech companies",
     icon: "Wheat",
     count: 98,
-  },
-  {
-    id: "cat-horeca",
-    name: "HoReCa",
-    slug: "horeca",
-    description: "Hotels, restaurants, cafés, and catering services",
-    icon: "UtensilsCrossed",
-    count: 215,
   },
   {
     id: "cat-construction",
@@ -71,7 +71,7 @@ export const SORT_OPTIONS = [
 ];
 
 export const SITE_CONFIG = {
-  name: "ArmenBiz Hub",
+  name: "Findy Hub",
   description:
     "Armenia's premier business directory. Discover, connect, and grow with Armenian entrepreneurs.",
   url: "https://armenbiz.am",

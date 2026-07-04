@@ -6,7 +6,7 @@ import axios from 'axios';
 export const triggerOnboardingWebhook = async (vendorData: any): Promise<boolean> => {
   const url = process.env.N8N_ONBOARDING_WEBHOOK;
   console.log(`[n8n Automation] Triggering Onboarding Workflow for: ${vendorData.name}`);
-  
+
   if (!url) {
     console.log('[n8n Automation] No N8N_ONBOARDING_WEBHOOK configured. Simulating structured email routing:');
     console.log(`  From: ${vendorData.email}`);

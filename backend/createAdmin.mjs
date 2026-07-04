@@ -17,17 +17,17 @@ dotenv.config({ path: join(__dirname, '.env') });
 const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/armbiz';
 
 const userSchema = new mongoose.Schema({
-  name:        { type: String, required: true },
-  username:    { type: String, unique: true, sparse: true, lowercase: true },
-  email:       { type: String, required: true, unique: true, lowercase: true },
-  password:    { type: String, required: true, select: false },
-  phone:       String,
-  avatar:      String,
+  name: { type: String, required: true },
+  username: { type: String, unique: true, sparse: true, lowercase: true },
+  email: { type: String, required: true, unique: true, lowercase: true },
+  password: { type: String, required: true, select: false },
+  phone: String,
+  avatar: String,
   accountType: { type: String, enum: ['personal', 'business'], default: 'personal' },
-  verified:    { type: Boolean, default: false },
-  role:        { type: String, enum: ['user', 'business_owner', 'admin'], default: 'user' },
-  createdAt:   { type: Date, default: Date.now },
-  updatedAt:   { type: Date, default: Date.now },
+  verified: { type: Boolean, default: false },
+  role: { type: String, enum: ['user', 'business_owner', 'admin'], default: 'user' },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
 });
 
 const User = mongoose.models.User || mongoose.model('User', userSchema);

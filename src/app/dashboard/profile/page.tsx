@@ -1437,20 +1437,42 @@ export default function DashboardProfilePage() {
                 {/* Left Column: digital catalogs */}
                 <div>
 
-                  {/* Operating hours */}
-                  <section className="mb-6">
-                    <h2 className="text-lg font-bold mb-3">Operating Hours</h2>
-                    <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] divide-y divide-[hsl(var(--border))]">
-                      {operatingHours.map((h) => (
-                        <div key={h.day} className="flex items-center justify-between px-4 py-2.5 text-sm">
-                          <span className="font-medium">{h.day}</span>
-                          <span className="text-[hsl(var(--muted-foreground))]">
-                            {h.closed ? "Closed" : `${h.open} — ${h.close}`}
-                          </span>
+                  <div className="grid grid-cols-1 md:grid-cols-[1fr_280px] lg:grid-cols-[1fr_300px] gap-6 mb-6 items-stretch">
+                    {/* Operating hours */}
+                    <section className="flex flex-col h-full">
+                      <h2 className="text-lg font-bold mb-3">Operating Hours</h2>
+                      <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] divide-y divide-[hsl(var(--border))] flex-1">
+                        {operatingHours.map((h) => (
+                          <div key={h.day} className="flex items-center justify-between px-4 py-2.5 text-sm">
+                            <span className="font-medium">{h.day}</span>
+                            <span className="text-[hsl(var(--muted-foreground))]">
+                              {h.closed ? "Closed" : `${h.open} — ${h.close}`}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+
+                    {/* Contact Details */}
+                    <section className="flex flex-col h-full">
+                      <h2 className="text-lg font-bold mb-3">Contact Information</h2>
+                      <div className={`${profileStyles.contactCard} !mt-0 flex-1 flex flex-col justify-center`}>
+                        <div className="space-y-3">
+                          <a href={`tel:${phone}`} className={profileStyles.contactItem}>
+                            <Phone className="h-4 w-4 text-[hsl(var(--primary))]" /> {phone}
+                          </a>
+                          <a href={`mailto:${email}`} className={profileStyles.contactItem}>
+                            <Mail className="h-4 w-4 text-[hsl(var(--primary))]" /> {email}
+                          </a>
+                          {website && (
+                            <a href={website} target="_blank" rel="noreferrer" className={profileStyles.contactItem}>
+                              <Globe className="h-4 w-4 text-[hsl(var(--primary))]" /> Visit Website
+                            </a>
+                          )}
                         </div>
-                      ))}
-                    </div>
-                  </section>
+                      </div>
+                    </section>
+                  </div>
                 </div>
 
                 {/* Right Column: sidebar widgets */}
@@ -1481,23 +1503,6 @@ export default function DashboardProfilePage() {
                     </a>
                   </div>
 
-                  {/* Contact Details */}
-                  <div className={profileStyles.contactCard}>
-                    <h3>Contact Information</h3>
-                    <div className="space-y-3">
-                      <a href={`tel:${phone}`} className={profileStyles.contactItem}>
-                        <Phone className="h-4 w-4 text-[hsl(var(--primary))]" /> {phone}
-                      </a>
-                      <a href={`mailto:${email}`} className={profileStyles.contactItem}>
-                        <Mail className="h-4 w-4 text-[hsl(var(--primary))]" /> {email}
-                      </a>
-                      {website && (
-                        <a href={website} target="_blank" rel="noreferrer" className={profileStyles.contactItem}>
-                          <Globe className="h-4 w-4 text-[hsl(var(--primary))]" /> Visit Website
-                        </a>
-                      )}
-                    </div>
-                  </div>
                 </div>
               </div>
 

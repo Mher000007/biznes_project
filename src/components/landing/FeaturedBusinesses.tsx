@@ -6,6 +6,7 @@ import { Star, MapPin, BadgeCheck, Trophy, Crown, Medal, Loader2, UtensilsCrosse
 import { getApiUrl } from "@/lib/utils";
 import axios from "axios";
 import styles from "./FeaturedBusinesses.module.scss";
+import { useI18n } from "@/i18n";
 
 interface RankedBusiness {
   id: string;
@@ -23,6 +24,7 @@ interface RankedBusiness {
 export default function FeaturedBusinesses() {
   const [businesses, setBusinesses] = useState<RankedBusiness[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useI18n();
 
   useEffect(() => {
     async function loadTopRestaurants() {
@@ -123,12 +125,12 @@ export default function FeaturedBusinesses() {
               <Trophy className={styles.trophyIcon} />
             </div>
             <div>
-              <h2 className={styles.title}>Top 5 Restaurants</h2>
-              <p className={styles.subtitle}>Highest rated restaurants on ArmBiz</p>
+              <h2 className={styles.title}>{t.featured.title}</h2>
+              <p className={styles.subtitle}>{t.featured.subtitle}</p>
             </div>
           </div>
           <Link href="/discover?category=horeca" className={styles.viewAll}>
-            View all
+            {t.featured.viewAll}
             <UtensilsCrossed className={styles.viewAllIcon} />
           </Link>
         </div>
@@ -174,7 +176,7 @@ export default function FeaturedBusinesses() {
                   <div className={styles.ratingBlock}>
                     <div className={styles.ratingScore}>{biz.ratingAvg.toFixed(1)}</div>
                     <div className={styles.starsRow}>{renderStars(biz.ratingAvg)}</div>
-                    <div className={styles.reviewCount}>{biz.reviewCount} reviews</div>
+                    <div className={styles.reviewCount}>{biz.reviewCount} {t.business.reviews}</div>
                   </div>
                 </Link>
               );

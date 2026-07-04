@@ -350,7 +350,7 @@
 }
 
 .transparentHeader {
-  background-color: rgba(0, 0, 0, 0.4) !important; // Semi-transparent dark background for the required "slight darkness"
+  background-color: rgba(0, 0, 0, 0.2) !important; // Semi-transparent dark background for the required "slight darkness"
   backdrop-filter: blur(16px) !important;
   -webkit-backdrop-filter: blur(16px) !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
@@ -379,7 +379,7 @@
   // Plain text labels / actions
   .actionButton,
   :global(.hidden.lg\:inline-flex.text-\[13px\]) {
-    color: rgba(255, 255, 255, 0.7) !important;
+    color: #FFFFFF !important;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 
     &:hover {
@@ -403,12 +403,18 @@
     color: #FFFFFF !important;
 
     &::placeholder {
-      color: rgba(255, 255, 255, 0.5) !important;
+      color: #FFFFFF !important;
     }
   }
 
   .selectField {
     color: #FFFFFF !important;
+
+    // Override Tailwind classes for the span and chevron SVG inside
+    span,
+    svg {
+      color: #FFFFFF !important;
+    }
 
     & option {
       background-color: #101012 !important;
@@ -417,7 +423,7 @@
   }
 
   .inputIcon {
-    color: rgba(255, 255, 255, 0.6) !important;
+    color: #FFFFFF !important;
   }
 
   .divider {

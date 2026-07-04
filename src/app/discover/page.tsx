@@ -8,12 +8,13 @@ import { MOCK_BUSINESSES } from "@/data/mock-businesses";
 import { CATEGORIES, SORT_OPTIONS } from "@/lib/constants";
 import { LocationSelect } from "@/components/ui/LocationSelect";
 import BusinessCard from "@/components/discover/BusinessCard";
-import { Building2, Loader2, Map as MapIcon, List as ListIcon } from "lucide-react";
+import { Building2, Loader2, Map as MapIcon, List as ListIcon, LayoutGrid } from "lucide-react";
 import axios from "axios";
 import { getApiUrl } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import styles from "./Discover.module.scss";
+import { useI18n } from "@/i18n";
 
 const API = getApiUrl();
 
@@ -81,12 +82,19 @@ function normalizeBackendBusiness(b: any) {
 }
 
 function DiscoverContent() {
+  const { t } = useI18n();
   const dispatch = useDispatch();
   const searchParams = useSearchParams();
   const filters = useSelector((s: RootState) => s.filters);
 
   const [businesses, setBusinesses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // View mode and pagination state
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
+  const feedColumnRef = useRef<HTMLDivElement>(null);
 
   // Track hovered business to highlight on map
   const [hoveredBusinessId, setHoveredBusinessId] = useState<string | null>(null);
@@ -190,18 +198,43 @@ function DiscoverContent() {
       }
     });
 
+  // Calculate pagination
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const paginatedFiltered = filtered.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+    if (feedColumnRef.current) {
+      feedColumnRef.current.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [filters]);
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    if (feedColumnRef.current) {
+      feedColumnRef.current.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
   return (
     <div className={styles.discoverPage}>
       {/* Main Column Container */}
       <div className={styles.mainContainer}>
         {/* Left Column (60%): Listing feed */}
         <div
+          ref={feedColumnRef}
           className={`${styles.feedColumn} ${mobileView === "map" ? styles.hiddenMobile : ""
             }`}
         >
           <div className={styles.feedHeader}>
             <h1 className="text-xl font-bold tracking-tight text-[#111111] mb-1">
-              Discover Directory
+              {t.discover.directoryTitle || "Discover Directory"}
             </h1>
             <div className={styles.resultsCount}>
               {loading ? (
@@ -231,7 +264,7 @@ function DiscoverContent() {
                   : ""
                   }`}
               >
-                All
+                {t.discover.all || "All"}
               </button>
 
               {/* Location Selector Dropdown */}
@@ -240,7 +273,7 @@ function DiscoverContent() {
                   value={filters.city}
                   onChange={(e) => dispatch(setCity(e.target.value))}
                   className={`${styles.categoryButton} ${filters.city ? styles.active : ""} cursor-pointer`}
-                  placeholder="All Locations"
+                  placeholder={t.discover.allLocations || "All Locations"}
                   disablePlaceholder={false}
                 />
               </div>
@@ -258,10 +291,10 @@ function DiscoverContent() {
                     backgroundSize: "14px",
                   }}
                 >
-                  <option value="0" className="bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">All Ratings</option>
-                  <option value="4.5" className="bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">★ 4.5 & up</option>
-                  <option value="4" className="bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">★ 4.0 & up</option>
-                  <option value="3" className="bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">★ 3.0 & up</option>
+                  <option value="0" className="bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">{t.discover.allRatings || "All Ratings"}</option>
+                  <option value="4.5" className="bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">{t.discover.rating45 || "★ 4.5 & up"}</option>
+                  <option value="4" className="bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">{t.discover.rating40 || "★ 4.0 & up"}</option>
+                  <option value="3" className="bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">{t.discover.rating30 || "★ 3.0 & up"}</option>
                 </select>
               </div>
 
@@ -278,21 +311,36 @@ function DiscoverContent() {
                     backgroundSize: "14px",
                   }}
                 >
-                  {SORT_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value} className="bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
-                      {opt.label}
-                    </option>
-                  ))}
+                  {SORT_OPTIONS.map((opt) => {
+                    const sortKey = opt.value === 'popular' ? 'mostPopular' : opt.value === 'rating' ? 'highestRated' : opt.value === 'newest' ? 'newestFirst' : 'alphabetical';
+                    return (
+                      <option key={opt.value} value={opt.value} className="bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
+                        {(t.discover as any)[sortKey] || opt.label}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
 
-              {/* Verified Only Toggle Button */}
-              <button
-                onClick={() => dispatch(setVerifiedOnly(!filters.verifiedOnly))}
-                className={`${styles.categoryButton} ${filters.verifiedOnly ? styles.active : ""}`}
-              >
-                Verified Only
-              </button>
+              {/* View Toggle Icons */}
+              <div className={styles.viewToggle}>
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={viewMode === "list" ? styles.active : ""}
+                  title="List View"
+                >
+                  <ListIcon className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={viewMode === "grid" ? styles.active : ""}
+                  title="Grid View"
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </button>
+              </div>
+
+
 
               {/* Reset Filters Button */}
               {(filters.category || filters.city || filters.ratingMin > 0 || filters.verifiedOnly || filters.sortBy !== "popular") && (
@@ -312,17 +360,38 @@ function DiscoverContent() {
               <p>Loading premium businesses...</p>
             </div>
           ) : filtered.length > 0 ? (
-            <div className={styles.feedList}>
-              {filtered.map((biz) => (
-                <div
-                  key={biz.id}
-                  onMouseEnter={() => handleMouseEnterCard(biz.id)}
-                  onMouseLeave={handleMouseLeaveCard}
-                >
-                  <BusinessCard business={biz} />
+            <>
+              <div className={viewMode === "grid" ? styles.feedGrid : styles.feedList}>
+                {paginatedFiltered.map((biz) => (
+                  <div
+                    key={biz.id}
+                    onMouseEnter={() => handleMouseEnterCard(biz.id)}
+                    onMouseLeave={handleMouseLeaveCard}
+                  >
+                    <BusinessCard business={biz} viewMode={viewMode} />
+                  </div>
+                ))}
+              </div>
+              
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className={styles.pagination}>
+                  <button 
+                    onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Previous
+                  </button>
+                  <span>Page {currentPage} of {totalPages}</span>
+                  <button 
+                    onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                  </button>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           ) : (
             <div className={styles.centeredState}>
               <Building2 className="h-12 w-12 text-[#666666]/30 mb-4" />

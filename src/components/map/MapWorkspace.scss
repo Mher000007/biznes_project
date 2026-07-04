@@ -55,13 +55,13 @@
 
     a {
       background-color: var(--bg-secondary) !important;
-      color: var(--accent-booking) !important;
+      color: hsla(145, 65%, 45%, 1) !important; // Green accent
       border-bottom: 1px solid var(--border-light) !important;
       transition: background-color 0.2s ease, color 0.2s ease;
 
       &:hover {
-        background-color: var(--bg-global) !important;
-        color: var(--accent-highlight) !important; // Yellow/gold on hover for contrast
+        background-color: hsla(145, 65%, 45%, 0.1) !important; // Light green bg on hover
+        color: hsla(145, 65%, 45%, 1) !important; 
       }
 
       &.leaflet-disabled {
@@ -70,6 +70,11 @@
         opacity: 0.5;
       }
     }
+  }
+
+  /* Map Paths/Polylines Theme (Green Accent) */
+  path.leaflet-interactive {
+    stroke: hsla(145, 65%, 45%, 1) !important;
   }
 
   /* High-contrast premium minimalist popup styling */

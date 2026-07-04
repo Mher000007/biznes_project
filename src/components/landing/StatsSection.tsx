@@ -1,11 +1,12 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { useI18n } from "@/i18n";
 
-const STATS = [
-  { value: 906, suffix: "+", label: "Businesses" },
-  { value: 15, suffix: "", label: "Cities" },
-  { value: 8, suffix: "", label: "Industries" },
-  { value: 25, suffix: "K+", label: "Monthly visitors" },
+const STATS_KEYS = [
+  { value: 906, suffix: "+", key: "businesses" },
+  { value: 15, suffix: "", key: "cities" },
+  { value: 8, suffix: "", key: "industries" },
+  { value: 25, suffix: "K+", key: "visitors" },
 ];
 
 function Counter({ target, suffix }: { target: number; suffix: string }) {
@@ -37,16 +38,19 @@ function Counter({ target, suffix }: { target: number; suffix: string }) {
 }
 
 export default function StatsSection() {
+  const { t } = useI18n();
   return (
     <section className="hidden py-16 sm:py-24 border-t border-[hsl(var(--border))]">
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 sm:gap-12">
-          {STATS.map((stat) => (
-            <div key={stat.label}>
+          {STATS_KEYS.map((stat) => (
+            <div key={stat.key}>
               <div className="text-4xl sm:text-5xl font-semibold text-[hsl(var(--foreground))] mb-2">
                 <Counter target={stat.value} suffix={stat.suffix} />
               </div>
-              <div className="text-sm sm:text-base text-[hsl(var(--muted-foreground))]">{stat.label}</div>
+              <div className="text-sm sm:text-base text-[hsl(var(--muted-foreground))]">
+                {t.stats[stat.key as keyof typeof t.stats]}
+              </div>
             </div>
           ))}
         </div>

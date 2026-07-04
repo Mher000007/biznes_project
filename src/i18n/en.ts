@@ -7,6 +7,11 @@ export const en = {
     about: "About",
     login: "Log in",
     getStarted: "Get started",
+    signOut: "Sign out",
+    hello: "Hi, ",
+    serviceOrBusiness: "Search...",
+    allLocations: "All Locations",
+    searchButton: "Search",
   },
   // Hero
   hero: {
@@ -28,8 +33,8 @@ export const en = {
   },
   // Featured
   featured: {
-    title: "Featured businesses",
-    subtitle: "Top-rated and verified businesses on ArmBiz",
+    title: "Top 5 Restaurants",
+    subtitle: "Highest rated restaurants on Findy",
     viewAll: "View all",
   },
   // Stats
@@ -38,6 +43,13 @@ export const en = {
     cities: "Cities",
     industries: "Industries",
     visitors: "Monthly visitors",
+  },
+  // Reviews Feed
+  reviewsFeed: {
+    loading: "Loading reviews feed...",
+    title: "Browse recent reviews",
+    subtitle: "Explore feedback and photos shared by customers in Armenia",
+    showMore: "Show More",
   },
   // CTA
   cta: {
@@ -100,16 +112,45 @@ export const en = {
   business: {
     verified: "Verified",
     services: "Services",
-    hours: "Working Hours",
-    contact: "Contact",
+    hours: "Opening Hours",
+    contact: "Contact Information",
     about: "About",
     closed: "Closed",
+    openNow: "Open Now",
+    reviews: "reviews",
     gallery: "Interior & Gallery",
+    backToDirectory: "Back to Directory",
+    bookAppointment: "Book Appointment",
+    getDirections: "Get Directions",
+    operatingHours: "Operating Hours",
+    days: {
+      monday: "Monday",
+      tuesday: "Tuesday",
+      wednesday: "Wednesday",
+      thursday: "Thursday",
+      friday: "Friday",
+      saturday: "Saturday",
+      sunday: "Sunday",
+    },
+  },
+  // Reviews Section
+  reviewsSection: {
+    title: "Reviews & Ratings",
+    writeReview: "Write a Review",
+    yourName: "Your Name *",
+    enterName: "Enter your name",
+    yourRating: "Your Rating *",
+    yourReview: "Your Review *",
+    reviewPlaceholder: "Share your honest experience with this business. What did you like? What could be improved? (minimum 10 characters)",
+    addPhoto: "Add Photo (Optional)",
+    uploadPhoto: "Upload Photo",
+    submitReview: "Submit Review",
+    helpful: "Like",
   },
   // Discover
   discover: {
-    title: "Discover Businesses",
-    subtitle: "Browse and search across all industries in Armenia",
+    title: "Directory",
+    subtitle: "Search businesses across all industries in Armenia",
     noResults: "No businesses found matching your criteria.",
     filters: "Filters",
     allCategories: "All Categories",
@@ -117,6 +158,20 @@ export const en = {
     anySize: "Any Size",
     verifiedOnly: "Verified only",
     reset: "Reset filters",
+    clear: "Clear",
+    directoryTitle: "Discover Directory",
+    all: "All",
+    allLocations: "All Locations",
+    allRatings: "All Ratings",
+    rating45: "★ 4.5 & up",
+    rating40: "★ 4.0 & up",
+    rating30: "★ 3.0 & up",
+    mostPopular: "Most Popular",
+    highestRated: "Highest Rated",
+    newestFirst: "Newest First",
+    alphabetical: "Alphabetical",
+    verifiedOnlyButton: "Verified Only",
+    bookNow: "Book Now",
   },
   // Register
   register: {
@@ -154,10 +209,19 @@ export const en = {
   },
   // Chat
   chat: {
-    title: "ArmBiz AI",
-    subtitle: "Your local business assistant",
+    title: "Findy AI",
+    subtitle: "Premium Assistant",
     placeholder: "Ask about businesses...",
-    welcome: "👋 Welcome to ArmBiz AI! I'm your personal assistant for discovering businesses across Armenia.\n\nAsk me anything — find restaurants, book services, or explore local businesses.",
+    welcome: "👋 Welcome to Findy AI! I'm your personal assistant for discovering businesses across Armenia.\n\nAsk me anything — find restaurants, book services, or explore local businesses.",
+    error: "Sorry, something went wrong. Please try again.",
+    assistantName: "Findy Assistant",
+    typing: "Findy AI is typing",
+    quickReplies: {
+      restaurants: "🍽️ Restaurants",
+      tech: "💻 Tech Companies",
+      hotels: "🏨 Hotels & Spas",
+      help: "Help"
+    }
   },
   // Common
   common: {

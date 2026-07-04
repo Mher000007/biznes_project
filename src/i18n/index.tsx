@@ -16,7 +16,7 @@ interface I18nContextType {
   t: Translations;
 }
 
-const I18nContext = createContext<I18nContextType>({ locale: "en", setLocale: () => {}, t: en });
+const I18nContext = createContext<I18nContextType>({ locale: "en", setLocale: () => { }, t: en });
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>("en");

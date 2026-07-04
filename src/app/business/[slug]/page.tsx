@@ -526,7 +526,7 @@ export default function BusinessProfilePage() {
     <div className={styles.profileContainer}>
       {/* Back Link */}
       <Link href="/discover" className={styles.backLink}>
-        <ArrowLeft className="h-4 w-4" /> Back to Directory
+        <ArrowLeft className="h-4 w-4" /> {t.business?.backToDirectory || "Back to Directory"}
       </Link>
 
       {/* Cover / Media Gallery */}
@@ -555,8 +555,8 @@ export default function BusinessProfilePage() {
               }
             }}
             className={`w-20 h-20 rounded-full shrink-0 flex items-center justify-center overflow-hidden ${matchingGroupIdx !== null
-                ? "p-[3px] bg-gradient-to-tr from-pink-500 via-purple-500 to-yellow-500 cursor-pointer hover:scale-105 transition-all shadow"
-                : "border border-[hsl(var(--border))]/60 p-[2px]"
+              ? "p-[3px] bg-gradient-to-tr from-pink-500 via-purple-500 to-yellow-500 cursor-pointer hover:scale-105 transition-all shadow"
+              : "border border-[hsl(var(--border))]/60 p-[2px]"
               }`}
             title={matchingGroupIdx !== null ? "Click to view active stories" : undefined}
           >
@@ -582,8 +582,8 @@ export default function BusinessProfilePage() {
               {business.name}
               {(business.isVerified || business.verified) && (
                 <span className={`${styles.verifiedBadge} ${business.plan === "premium" || business.plan === "standard"
-                    ? styles.verifiedGold
-                    : styles.verifiedStarter
+                  ? styles.verifiedGold
+                  : styles.verifiedStarter
                   }`}>
                   <BadgeCheck className="h-3.5 w-3.5" /> Verified Partner
                 </span>
@@ -620,7 +620,7 @@ export default function BusinessProfilePage() {
           onClick={() => openBooking({ name: "General Appointment", price: 0 })}
           className="btn-primary py-3.5 px-6 rounded-xl text-sm font-semibold shadow-lg shrink-0"
         >
-          Book Appointment
+          {t.business?.bookAppointment || "Book Appointment"}
         </button>
       </div>
 
@@ -661,10 +661,10 @@ export default function BusinessProfilePage() {
             </span>
           </div>
           <div className={`${styles.bentoGrid} ${galleryImages.length === 1 ? styles.grid1 :
-              galleryImages.length === 2 ? styles.grid2 :
-                galleryImages.length === 3 ? styles.grid3 :
-                  galleryImages.length === 4 ? styles.grid4 :
-                    styles.grid5
+            galleryImages.length === 2 ? styles.grid2 :
+              galleryImages.length === 3 ? styles.grid3 :
+                galleryImages.length === 4 ? styles.grid4 :
+                  styles.grid5
             }`}>
             {galleryImages.slice(0, 5).map((url: string, index: number) => {
               const isLastAndMore = index === 4 && galleryImages.length > 5;
@@ -701,28 +701,62 @@ export default function BusinessProfilePage() {
         {/* Left Column: digital catalogs */}
         <div>
 
-          {/* Operating hours */}
-          <section className="mb-6">
-            <h2 className="text-lg font-bold mb-3">Operating Hours</h2>
-            <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] divide-y divide-[hsl(var(--border))]">
-              {(business.operatingHours && business.operatingHours.length > 0
-                ? business.operatingHours.map((h: any) => ({
-                  day: h.dayName || h.day,
-                  open: h.openTime || h.open,
-                  close: h.closeTime || h.close,
-                  closed: h.isClosed ?? h.closed
-                }))
-                : DEFAULT_HOURS
-              ).map((h: any) => (
-                <div key={h.day} className="flex items-center justify-between px-4 py-2.5 text-sm">
-                  <span className="font-medium">{h.day}</span>
-                  <span className="text-[hsl(var(--muted-foreground))]">
-                    {h.closed ? "Closed" : `${h.open} — ${h.close}`}
-                  </span>
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_280px] lg:grid-cols-[1fr_300px] gap-6 mb-6 items-stretch">
+            {/* Operating hours */}
+            <section className="flex flex-col h-full">
+              <h2 className="text-lg font-bold mb-3">{t.business?.operatingHours || "Operating Hours"}</h2>
+              <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] divide-y divide-[hsl(var(--border))] flex-1">
+                {(business.operatingHours && business.operatingHours.length > 0
+                  ? business.operatingHours.map((h: any) => ({
+                    day: h.dayName || h.day,
+                    open: h.openTime || h.open,
+                    close: h.closeTime || h.close,
+                    closed: h.isClosed ?? h.closed
+                  }))
+                  : DEFAULT_HOURS
+                ).map((h: any) => (
+                  <div key={h.day} className="flex items-center justify-between px-4 py-2.5 text-sm">
+                    <span className="font-medium">
+                      {t.business?.days?.[h.day.toLowerCase() as keyof typeof t.business.days] || h.day}
+                    </span>
+                    <span className="text-[hsl(var(--muted-foreground))]">
+                      {h.closed ? (t.business?.closed || "Closed") : `${h.open} — ${h.close}`}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* Contact Details */}
+            <section className="flex flex-col h-full">
+              <h2 className="text-lg font-bold mb-3">{t.business?.contact || "Contact Information"}</h2>
+              <div className={`${styles.contactCard} !mt-0 flex-1 flex flex-col justify-center`}>
+                <div className="space-y-3">
+                  {business.address && (
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(business.address + ', ' + business.city + ', Armenia')}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={styles.contactItem}
+                    >
+                      <MapPin className="h-4 w-4 text-[hsl(var(--primary))]" /> {business.address}, {business.city}
+                    </a>
+                  )}
+                  <a href={`tel:${business.phone}`} className={styles.contactItem}>
+                    <Phone className="h-4 w-4 text-[hsl(var(--primary))]" /> {business.phone}
+                  </a>
+                  <a href={`mailto:${business.email}`} className={styles.contactItem}>
+                    <Mail className="h-4 w-4 text-[hsl(var(--primary))]" /> {business.email}
+                  </a>
+                  {business.website && (
+                    <a href={business.website} target="_blank" rel="noreferrer" className={styles.contactItem}>
+                      <Globe className="h-4 w-4 text-[hsl(var(--primary))]" /> Visit Website
+                    </a>
+                  )}
                 </div>
-              ))}
-            </div>
-          </section>
+              </div>
+            </section>
+          </div>
         </div>
 
         {/* Right Column: sidebar widgets */}
@@ -738,34 +772,6 @@ export default function BusinessProfilePage() {
             />
           </div>
 
-
-          {/* Contact Details */}
-          <div className={styles.contactCard}>
-            <h3>Contact Information</h3>
-            <div className="space-y-3">
-              {business.address && (
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(business.address + ', ' + business.city + ', Armenia')}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className={styles.contactItem}
-                >
-                  <MapPin className="h-4 w-4 text-[hsl(var(--primary))]" /> {business.address}, {business.city}
-                </a>
-              )}
-              <a href={`tel:${business.phone}`} className={styles.contactItem}>
-                <Phone className="h-4 w-4 text-[hsl(var(--primary))]" /> {business.phone}
-              </a>
-              <a href={`mailto:${business.email}`} className={styles.contactItem}>
-                <Mail className="h-4 w-4 text-[hsl(var(--primary))]" /> {business.email}
-              </a>
-              {business.website && (
-                <a href={business.website} target="_blank" rel="noreferrer" className={styles.contactItem}>
-                  <Globe className="h-4 w-4 text-[hsl(var(--primary))]" /> Visit Website
-                </a>
-              )}
-            </div>
-          </div>
         </div>
       </div>
 
@@ -792,7 +798,7 @@ export default function BusinessProfilePage() {
               </div>
             ) : (
               <form onSubmit={handleBookingSubmit} className="space-y-4">
-                <h2>Book Appointment</h2>
+                <h2>{t.business?.bookAppointment || "Book Appointment"}</h2>
                 <div className="p-3 bg-[hsl(var(--muted))]/50 rounded-xl mb-4 text-xs">
                   <div className="flex justify-between font-semibold">
                     <span>Selected:</span>

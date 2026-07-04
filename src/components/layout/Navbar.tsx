@@ -62,7 +62,7 @@ export default function Navbar() {
             <Search className={styles.inputIcon} />
             <input
               type="text"
-              placeholder="Service or business..."
+              placeholder={t.nav.serviceOrBusiness}
               className={styles.inputField}
               value={navQuery}
               onChange={(e) => setNavQuery(e.target.value)}
@@ -75,13 +75,13 @@ export default function Navbar() {
               className={styles.selectField}
               value={navLocation}
               onChange={(e) => setNavLocation(e.target.value)}
-              placeholder="All Locations"
+              placeholder={t.nav.allLocations}
               disablePlaceholder={false}
             />
           </div>
         </div>
         <button type="submit" className={styles.searchButton}>
-          Search
+          {t.nav?.searchButton || "Search"}
         </button>
       </form>
 
@@ -129,15 +129,15 @@ export default function Navbar() {
           <>
             <Link
               href="/dashboard"
-              className="hidden lg:inline-flex text-[13px] font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors cursor-pointer"
+              className={`hidden lg:inline-flex text-[13px] font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors cursor-pointer ${styles.authText}`}
             >
-              Hi, {currentUser.name || currentUser.username}
+              {t.nav.hello}{currentUser.name || currentUser.username}
             </Link>
             <button
               onClick={handleLogout}
-              className="hidden lg:inline-flex h-9 items-center rounded-lg px-4 text-[13px] font-medium border border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors cursor-pointer"
+              className={`hidden lg:inline-flex h-9 items-center rounded-lg px-4 text-[13px] font-medium border border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors cursor-pointer ${styles.authButton}`}
             >
-              Sign out
+              {t.nav.signOut}
             </button>
           </>
         ) : (

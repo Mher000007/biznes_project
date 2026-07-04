@@ -2,18 +2,21 @@
 import Link from "next/link";
 import { Monitor, Wheat, UtensilsCrossed, ShoppingBag, Building2, Landmark, Heart, GraduationCap, Hammer } from "lucide-react";
 import { CATEGORIES } from "@/lib/constants";
+import { useI18n } from "@/i18n";
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Monitor, Wheat, UtensilsCrossed, ShoppingBag, Building2, Landmark, Heart, GraduationCap, Hammer,
 };
 
 export default function CategoriesGrid() {
+  const { t } = useI18n();
+
   return (
     <section className="py-16 sm:py-24 border-t border-[hsl(var(--border))]">
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
         <div className="mb-12">
-          <h2 className="text-2xl sm:text-3xl font-semibold mb-2 text-[hsl(var(--foreground))]">Browse by category</h2>
-          <p className="text-base text-[hsl(var(--muted-foreground))]">Explore businesses across all major industries in Armenia</p>
+          <h2 className="text-2xl sm:text-3xl font-semibold mb-2 text-[hsl(var(--foreground))]">{t.categories.title}</h2>
+          <p className="text-base text-[hsl(var(--muted-foreground))]">{t.categories.subtitle}</p>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-5">
@@ -30,7 +33,7 @@ export default function CategoriesGrid() {
                 </div>
                 <div>
                   <h3 className="text-sm font-medium text-[hsl(var(--foreground))]">{cat.name}</h3>
-                  <p className="text-xs text-[hsl(var(--muted-foreground))]">{cat.count} listed</p>
+                  <p className="text-xs text-[hsl(var(--muted-foreground))]">{cat.count} {t.categories.listed}</p>
                 </div>
               </Link>
             );

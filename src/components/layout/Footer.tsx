@@ -3,8 +3,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CATEGORIES } from "@/lib/constants";
 
+import { useI18n } from "@/i18n";
+
 export default function Footer() {
   const pathname = usePathname();
+  const { t } = useI18n();
 
   if (pathname.startsWith("/admin-secure") || pathname.startsWith("/dashboard")) {
     return null;
@@ -19,34 +22,45 @@ export default function Footer() {
               <img src="/logo.png" alt="Findy Logo" style={{ height: '7rem' }} className="w-auto object-contain" />
             </Link>
             <p className="text-xs text-[hsl(var(--muted-foreground))] leading-relaxed">
-              Armenia&apos;s business directory. Find, connect, grow.
+              {t.footer.tagline}
             </p>
           </div>
 
           <div>
-            <h4 className="text-xs font-medium mb-3">Categories</h4>
+            <h4 className="text-xs font-medium mb-3">{t.nav.categories}</h4>
             <ul className="space-y-2">
               {CATEGORIES.slice(0, 5).map((cat) => (
                 <li key={cat.id}>
-                  <Link href={`/discover?category=${cat.slug}`} className="text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors">{cat.name}</Link>
+                  {cat.slug === 'horeca' ? (
+                    <Link href={`/discover?category=${cat.slug}`} className="text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors">
+                      {cat.name}
+                    </Link>
+                  ) : (
+                    <span className="text-xs text-[hsl(var(--muted-foreground))] opacity-40 cursor-not-allowed select-none blur-sm">
+                      {cat.name}
+                    </span>
+                  )}
                 </li>
               ))}
             </ul>
           </div>
 
           <div>
-            <h4 className="text-xs font-medium mb-3">Product</h4>
+            <h4 className="text-xs font-medium mb-3">{t.footer.product}</h4>
             <ul className="space-y-2">
-              {[["Discover", "/discover"], ["About", "/about"], ["Dashboard", "/dashboard"]].map(([label, href]) => (
-                <li key={href}>
-                  <Link href={href} className="text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors">{label}</Link>
+              {[
+                [t.nav.discover, "/discover"], 
+                [t.nav.about, "/about"]
+              ].map(([label, href]) => (
+                <li key={href as string}>
+                  <Link href={href as string} className="text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors">{label}</Link>
                 </li>
               ))}
             </ul>
           </div>
 
           <div>
-            <h4 className="text-xs font-medium mb-3">Contact</h4>
+            <h4 className="text-xs font-medium mb-3">{t.footer.contact}</h4>
             <ul className="space-y-2 text-xs text-[hsl(var(--muted-foreground))]">
               <li>Yerevan, Armenia</li>
               <li>findyarmenia@gmail.com</li>

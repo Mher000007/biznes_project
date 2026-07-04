@@ -4,6 +4,7 @@ import axios from "axios";
 import { Star, ThumbsUp, MessageSquare, CheckCircle, AlertCircle, Loader2, User, Camera, X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { getApiUrl } from "@/lib/utils";
+import { useI18n } from "@/i18n";
 import styles from "./ReviewsSection.module.scss";
 
 interface Review {
@@ -233,9 +234,10 @@ export default function ReviewsSection({
   businessSlug,
   initialRating = 0,
   initialReviewCount = 0,
-  onRatingUpdate,
+  onRatingUpdate
 }: ReviewsSectionProps) {
   const { currentUser } = useAuth();
+  const { t } = useI18n();
   const isBackend = /^[0-9a-fA-F]{24}$/.test(businessId);
 
   // ── state ──
@@ -306,7 +308,7 @@ export default function ReviewsSection({
     try {
       const apiURL = getApiUrl();
       const res = await axios.get(
-        `${apiURL}/businesses/${businessId}/reviews?page=${p}&limit=5`
+        `${apiURL}/businesses/${businessId}/reviews?page=${p}&limit=3`
       );
       if (res.data?.success) {
         setReviews(res.data.data);
@@ -367,15 +369,19 @@ export default function ReviewsSection({
         }
       });
       setDistribution(baseDist);
+      setTotalPages(Math.ceil(parsed.length / 3) || 1);
     } catch { /* ignore */ }
   }, [businessSlug, initialRating, initialReviewCount, onRatingUpdate]);
 
   useEffect(() => {
-    if (isBackend) {
-      fetchReviews(1);
-    } else {
-      loadLocalReviews();
-    }
+    setTimeout(() => {
+      if (isBackend) {
+        fetchReviews(1);
+      } else {
+        loadLocalReviews();
+        setPage(1);
+      }
+    }, 1500);
   }, [businessId, isBackend, fetchReviews, loadLocalReviews]);
 
   // Sync initial counts when props change
@@ -408,9 +414,9 @@ export default function ReviewsSection({
 
         const res = await axios.post(
           `${apiURL}/businesses/${businessId}/reviews`,
-          { 
-            rating: selectedRating, 
-            comment: comment.trim(), 
+          {
+            rating: selectedRating,
+            comment: comment.trim(),
             image: image || undefined,
             authorName: guestName.trim() || undefined
           },
@@ -516,7 +522,7 @@ export default function ReviewsSection({
       {/* ── Header ── */}
       <div className={styles.header}>
         <MessageSquare className={styles.headerIcon} />
-        <h2 className={styles.title}>Reviews & Ratings</h2>
+        <h2 className={styles.title}>{t.reviewsSection?.title || "Reviews & Ratings"}</h2>
       </div>
 
       {/* ── Summary ── */}
@@ -525,7 +531,7 @@ export default function ReviewsSection({
           <span className={styles.bigRating}>{avgRating > 0 ? avgRating.toFixed(1) : "–"}</span>
           <StarRow value={avgRating} size={22} />
           <span className={styles.reviewMeta}>
-            {reviewCount} review{reviewCount !== 1 ? "s" : ""}
+            {reviewCount} {t.business?.reviews || "reviews"}
           </span>
         </div>
         <div className={styles.summaryRight}>
@@ -540,160 +546,163 @@ export default function ReviewsSection({
         </div>
       </div>
 
-      {/* ── Write Review Form ── */}
-      <div className={styles.formCard}>
-        <h3 className={styles.formTitle}>Write a Review</h3>
+      <div className={styles.contentWrapper}>
+        {/* ── Write Review Form ── */}
+        <div className={styles.formColumn}>
+          <div className={styles.formCard}>
+            <h3 className={styles.formTitle}>{t.reviewsSection?.writeReview || "Write a Review"}</h3>
 
-        {submitSuccess ? (
-          <div className={styles.successBanner}>
-            <CheckCircle size={18} />
-            Your review has been submitted! Thank you for your feedback.
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className={styles.form} noValidate>
-              <div className={styles.guestNameField}>
-                <label className={styles.label} htmlFor="guest-name">
-                  Your Name *
-                </label>
-                <input
-                  type="text"
-                  id="guest-name"
-                  value={guestName}
-                  placeholder="Enter your name"
-                  onChange={(e) => setGuestName(e.target.value)}
-                  className={styles.inputField}
-                  required
-                />
+            {submitSuccess ? (
+              <div className={styles.successBanner}>
+                <CheckCircle size={18} />
+                Your review has been submitted! Thank you for your feedback.
               </div>
-
-            {/* Star selector */}
-            <div className={styles.starSelector}>
-              <label className={styles.label}>Your Rating *</label>
-              <div className={styles.starButtons}>
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    type="button"
-                    className={styles.starBtn}
-                    onMouseEnter={() => setHoverRating(star)}
-                    onMouseLeave={() => setHoverRating(0)}
-                    onClick={() => setSelectedRating(star)}
-                    aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
-                  >
-                    <Star
-                      size={28}
-                      className={`${styles.starIcon} ${
-                        star <= (hoverRating || selectedRating)
-                          ? styles.starActive
-                          : styles.starInactive
-                      }`}
-                    />
-                  </button>
-                ))}
-                {selectedRating > 0 && (
-                  <span className={styles.ratingLabel}>
-                    {["", "Poor", "Fair", "Good", "Very Good", "Excellent"][selectedRating]}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Comment textarea */}
-            <div className={styles.commentField}>
-              <label className={styles.label} htmlFor="review-comment">
-                Your Review *
-              </label>
-              <textarea
-                id="review-comment"
-                rows={4}
-                value={comment}
-                maxLength={MAX_CHARS}
-                placeholder="Share your honest experience with this business. What did you like? What could be improved? (minimum 10 characters)"
-                onChange={(e) => {
-                  setComment(e.target.value);
-                  setCommentLength(e.target.value.length);
-                }}
-                className={styles.textarea}
-                required
-              />
-              <div className={styles.charCount}>
-                <span className={commentLength > MAX_CHARS * 0.9 ? styles.charWarn : ""}>
-                  {commentLength}
-                </span>
-                /{MAX_CHARS}
-              </div>
-            </div>
-
-            {/* Image upload */}
-            <div className={styles.imageUploadField}>
-              <label className={styles.label}>Add Photo (Optional)</label>
-              <div className={styles.fileInputWrapper}>
-                {!image ? (
-                  <label className={styles.uploadTriggerBtn}>
-                    <Camera size={16} />
-                    {imageUploading ? "Processing..." : "Upload Photo"}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      className={styles.fileInputHidden}
-                      disabled={imageUploading}
-                    />
+            ) : (
+              <form onSubmit={handleSubmit} className={styles.form} noValidate>
+                <div className={styles.guestNameField}>
+                  <label className={styles.label} htmlFor="guest-name">
+                    {t.reviewsSection?.yourName || "Your Name *"}
                   </label>
-                ) : (
-                  <div className={styles.imagePreviewContainer}>
-                    <img src={image} alt="Preview" className={styles.previewImage} />
-                    <button
-                      type="button"
-                      onClick={() => setImage(null)}
-                      className={styles.removePreviewBtn}
-                      title="Remove image"
-                    >
-                      <X size={12} />
-                    </button>
+                  <input
+                    type="text"
+                    id="guest-name"
+                    value={guestName}
+                    placeholder={t.reviewsSection?.enterName || "Enter your name"}
+                    onChange={(e) => setGuestName(e.target.value)}
+                    className={styles.inputField}
+                    required
+                  />
+                </div>
+
+                {/* Star selector */}
+                <div className={styles.starSelector}>
+                  <label className={styles.label}>{t.reviewsSection?.yourRating || "Your Rating *"}</label>
+                  <div className={styles.starButtons}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        className={styles.starBtn}
+                        onMouseEnter={() => setHoverRating(star)}
+                        onMouseLeave={() => setHoverRating(0)}
+                        onClick={() => setSelectedRating(star)}
+                        aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
+                      >
+                        <Star
+                          size={28}
+                          className={`${styles.starIcon} ${star <= (hoverRating || selectedRating)
+                              ? styles.starActive
+                              : styles.starInactive
+                            }`}
+                        />
+                      </button>
+                    ))}
+                    {selectedRating > 0 && (
+                      <span className={styles.ratingLabel}>
+                        {["", "Poor", "Fair", "Good", "Very Good", "Excellent"][selectedRating]}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Comment textarea */}
+                <div className={styles.commentField}>
+                  <label className={styles.label} htmlFor="review-comment">
+                    {t.reviewsSection?.yourReview || "Your Review *"}
+                  </label>
+                  <textarea
+                    id="review-comment"
+                    rows={4}
+                    value={comment}
+                    maxLength={MAX_CHARS}
+                    placeholder={t.reviewsSection?.reviewPlaceholder || "Share your honest experience with this business. What did you like? What could be improved? (minimum 10 characters)"}
+                    onChange={(e) => {
+                      setComment(e.target.value);
+                      setCommentLength(e.target.value.length);
+                    }}
+                    className={styles.textarea}
+                    required
+                  />
+                  <div className={styles.charCount}>
+                    <span className={commentLength > MAX_CHARS * 0.9 ? styles.charWarn : ""}>
+                      {commentLength}
+                    </span>
+                    /{MAX_CHARS}
+                  </div>
+                </div>
+
+                {/* Image upload */}
+                <div className={styles.imageUploadField}>
+                  <label className={styles.label}>{t.reviewsSection?.addPhoto || "Add Photo (Optional)"}</label>
+                  <div className={styles.fileInputWrapper}>
+                    {!image ? (
+                      <label className={styles.uploadTriggerBtn}>
+                        <Camera size={16} />
+                        {imageUploading ? "Processing..." : t.reviewsSection?.uploadPhoto || "Upload Photo"}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageChange}
+                          className={styles.fileInputHidden}
+                          disabled={imageUploading}
+                        />
+                      </label>
+                    ) : (
+                      <div className={styles.imagePreviewContainer}>
+                        <img src={image} alt="Preview" className={styles.previewImage} />
+                        <button
+                          type="button"
+                          onClick={() => setImage(null)}
+                          className={styles.removePreviewBtn}
+                          title="Remove image"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Error */}
+                {submitError && (
+                  <div className={styles.errorBanner}>
+                    <AlertCircle size={16} />
+                    {submitError}
                   </div>
                 )}
-              </div>
-            </div>
 
-            {/* Error */}
-            {submitError && (
-              <div className={styles.errorBanner}>
-                <AlertCircle size={16} />
-                {submitError}
-              </div>
+                {/* Submit */}
+                <button
+                  type="submit"
+                  disabled={
+                    submitting ||
+                    !selectedRating ||
+                    comment.trim().length < 10 ||
+                    (!currentUser && !guestName.trim())
+                  }
+                  className={styles.submitBtn}
+                  id="submit-review-btn"
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 size={16} className={styles.spin} />
+                      Submitting…
+                    </>
+                  ) : (
+                    <>
+                      <Star size={16} />
+                      {t.reviewsSection?.submitReview || "Submit Review"}
+                    </>
+                  )}
+                </button>
+              </form>
             )}
+          </div>
+        </div>
 
-            {/* Submit */}
-            <button
-              type="submit"
-              disabled={
-                submitting ||
-                !selectedRating ||
-                comment.trim().length < 10 ||
-                (!currentUser && !guestName.trim())
-              }
-              className={styles.submitBtn}
-              id="submit-review-btn"
-            >
-              {submitting ? (
-                <>
-                  <Loader2 size={16} className={styles.spin} />
-                  Submitting…
-                </>
-              ) : (
-                <>
-                  <Star size={16} />
-                  Submit Review
-                </>
-              )}
-            </button>
-          </form>
-        )}
-      </div>
-
-      {/* ── Review List ── */}
-      <div className={styles.list}>
+        {/* ── Review List ── */}
+        <div className={styles.listColumn}>
+          <div className={styles.list}>
         {loading && (
           <div className={styles.loadingRow}>
             <Loader2 size={20} className={styles.spin} />
@@ -708,72 +717,80 @@ export default function ReviewsSection({
           </div>
         )}
 
-        {reviews.map((review, idx) => (
-          <div
-            key={review._id}
-            className={styles.reviewCard}
-            style={{ animationDelay: `${idx * 0.06}s` }}
-          >
-            <div className={styles.reviewHeader}>
-              <Avatar name={review.author?.name || review.authorName} />
-              <div className={styles.reviewMeta2}>
-                <span className={styles.reviewAuthor}>
-                  {review.author?.name || review.authorName}
-                </span>
-                {review.isVerified && (
-                  <span className={styles.verifiedBadge}>
-                    <CheckCircle size={11} /> Verified
+          {(!isBackend ? reviews.slice((page - 1) * 3, page * 3) : reviews).map((review, idx) => (
+            <div
+              key={review._id}
+              className={styles.reviewCard}
+              style={{ animationDelay: `${idx * 0.06}s` }}
+            >
+              <div className={styles.reviewHeader}>
+                <Avatar name={review.author?.name || review.authorName} />
+                <div className={styles.reviewMeta2}>
+                  <span className={styles.reviewAuthor}>
+                    {review.author?.name || review.authorName}
                   </span>
-                )}
-                <span className={styles.reviewTime}>{timeAgo(review.createdAt)}</span>
+                  {review.isVerified && (
+                    <span className={styles.verifiedBadge}>
+                      <CheckCircle size={11} /> Verified
+                    </span>
+                  )}
+                  <span className={styles.reviewTime}>{timeAgo(review.createdAt)}</span>
+                </div>
+                <StarRow value={review.rating} size={14} />
               </div>
-              <StarRow value={review.rating} size={14} />
+
+              <p className={styles.reviewComment}>{review.comment}</p>
+
+              {review.image && (
+                <div className={styles.reviewImageContainer}>
+                  <img src={review.image} alt="Review upload" className={styles.reviewImage} />
+                </div>
+              )}
+
+              <div className={styles.reviewFooter}>
+                <button
+                  className={`${styles.helpfulBtn} ${helpfulSet.has(review._id) ? styles.helpfulActive : ""}`}
+                  onClick={() => handleHelpful(review._id)}
+                  disabled={helpfulSet.has(review._id)}
+                  aria-label="Mark as helpful"
+                >
+                  <ThumbsUp size={13} />
+                  {t.reviewsSection?.helpful || "Helpful"} {review.helpfulCount > 0 && `(${review.helpfulCount})`}
+                </button>
+              </div>
             </div>
+          ))}
 
-            <p className={styles.reviewComment}>{review.comment}</p>
-
-            {review.image && (
-              <div className={styles.reviewImageContainer}>
-                <img src={review.image} alt="Review upload" className={styles.reviewImage} />
-              </div>
-            )}
-
-            <div className={styles.reviewFooter}>
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className={styles.pagination}>
               <button
-                className={`${styles.helpfulBtn} ${helpfulSet.has(review._id) ? styles.helpfulActive : ""}`}
-                onClick={() => handleHelpful(review._id)}
-                disabled={helpfulSet.has(review._id)}
-                aria-label="Mark as helpful"
+                className={styles.pageBtn}
+                onClick={() => {
+                  if (isBackend) fetchReviews(page - 1);
+                  else setPage(page - 1);
+                }}
+                disabled={page <= 1 || loading}
               >
-                <ThumbsUp size={13} />
-                Helpful {review.helpfulCount > 0 && `(${review.helpfulCount})`}
+                ← Prev
+              </button>
+              <span className={styles.pageInfo}>
+                {page} / {totalPages}
+              </span>
+              <button
+                className={styles.pageBtn}
+                onClick={() => {
+                  if (isBackend) fetchReviews(page + 1);
+                  else setPage(page + 1);
+                }}
+                disabled={page >= totalPages || loading}
+              >
+                Next →
               </button>
             </div>
-          </div>
-        ))}
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className={styles.pagination}>
-            <button
-              className={styles.pageBtn}
-              onClick={() => fetchReviews(page - 1)}
-              disabled={page <= 1 || loading}
-            >
-              ← Prev
-            </button>
-            <span className={styles.pageInfo}>
-              {page} / {totalPages}
-            </span>
-            <button
-              className={styles.pageBtn}
-              onClick={() => fetchReviews(page + 1)}
-              disabled={page >= totalPages || loading}
-            >
-              Next →
-            </button>
-          </div>
-        )}
+          )}
+        </div>
+      </div>
       </div>
     </section>
   );
