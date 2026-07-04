@@ -91,6 +91,7 @@ export default function DiscoverMap({
       slug: biz.slug,
       rating: biz.ratingAvg || biz.rating || 0,
       reviewCount: biz.reviewCount || 0,
+      plan: biz.plan || biz.subscriptionPlan,
     });
 
     // Add branch locations
@@ -108,6 +109,7 @@ export default function DiscoverMap({
           slug: biz.slug,
           rating: biz.ratingAvg || biz.rating || 0,
           reviewCount: biz.reviewCount || 0,
+          plan: biz.plan || biz.subscriptionPlan,
         });
       });
     }

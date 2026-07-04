@@ -1,6 +1,6 @@
 "use client";
 // Force page compile cache reload
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store/store";
 import { setQuery, setCity, setCategory, setRatingMin, setVerifiedOnly, setSortBy, resetFilters } from "@/store/slices/filterSlice";
@@ -90,6 +90,35 @@ function DiscoverContent() {
 
   // Track hovered business to highlight on map
   const [hoveredBusinessId, setHoveredBusinessId] = useState<string | null>(null);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleMouseEnterCard = (id: string) => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    setHoveredBusinessId(id);
+  };
+
+  const handleMouseLeaveCard = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredBusinessId(null);
+    }, 300); // 300ms delay to allow cursor to reach the map
+  };
+
+  const handleMouseEnterMap = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+  };
+
+  const handleMouseLeaveMap = () => {
+    setHoveredBusinessId(null);
+  };
 
   // Mobile View Toggling: "list" or "map"
   const [mobileView, setMobileView] = useState<"list" | "map">("list");
@@ -287,8 +316,8 @@ function DiscoverContent() {
               {filtered.map((biz) => (
                 <div
                   key={biz.id}
-                  onMouseEnter={() => setHoveredBusinessId(biz.id)}
-                  onMouseLeave={() => setHoveredBusinessId(null)}
+                  onMouseEnter={() => handleMouseEnterCard(biz.id)}
+                  onMouseLeave={handleMouseLeaveCard}
                 >
                   <BusinessCard business={biz} />
                 </div>
@@ -307,6 +336,8 @@ function DiscoverContent() {
         <div
           className={`${styles.mapColumn} ${mobileView === "list" ? styles.hiddenMobile : ""
             }`}
+          onMouseEnter={handleMouseEnterMap}
+          onMouseLeave={handleMouseLeaveMap}
         >
           <DiscoverMap
             businesses={filtered}

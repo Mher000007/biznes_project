@@ -16,6 +16,7 @@ export interface LocationItem {
   slug?: string;
   rating?: number;
   reviewCount?: number;
+  plan?: string;
 }
 
 // Map Component Props
@@ -56,6 +57,7 @@ export default function MapWorkspace({
       category: loc.category,
       rating: loc.rating,
       reviewCount: loc.reviewCount,
+      plan: loc.plan,
     };
   });
 

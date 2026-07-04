@@ -311,6 +311,78 @@ export const en = {
     historyEmpty: "Story history is empty.",
     expiresAt: "Expires",
   },
+  // About
+  about: {
+    metaTitle: "About Findy — Armenia's HoReCa Platform",
+    metaDesc: "Findy is Armenia's first specialized platform that unites all HoReCa businesses in one place.",
+    stats: {
+      businesses: "Registered businesses",
+      sector: "Specialized sector",
+      plans: "Subscription plans",
+      availability: "Platform availability"
+    },
+    story: {
+      label: "About us",
+      title: "What is\nFindy?",
+      p1: "Findy is Armenia's first **specialized platform**, uniting all HoReCa businesses (hotels, restaurants, cafes) in one place.",
+      p2: "We have created a platform where you can easily find the nearest cafe, restaurant or hotel, make a reservation directly from the site, explore the menu, services and prices, and navigate via the map based on your location.",
+      p3: "For businesses, Findy is an opportunity to expand their customer base, manage reservations, and become more visible to the right audience."
+    },
+    userFeatures: {
+      chip: "For you",
+      title: "What you get from Findy",
+      sub: "We have created an opportunity where you can easily use the HoReCa sector.",
+      items: [
+        {
+          title: "Easy Search",
+          desc: "Find your nearest cafe, restaurant or hotel in seconds."
+        },
+        {
+          title: "Direct Booking",
+          desc: "Make reservations directly from the platform, without extra steps."
+        },
+        {
+          title: "Menu & Services",
+          desc: "Explore the menu, services and prices in advance."
+        },
+        {
+          title: "Map & Navigation",
+          desc: "Navigate via the interactive map based on your location."
+        },
+        {
+          title: "Reviews & Rating",
+          desc: "Read reviews from real customers and choose reliable ones."
+        },
+        {
+          title: "Verified Businesses",
+          desc: "All organizations go through a verification phase to ensure quality."
+        }
+      ]
+    },
+    bizBenefits: {
+      chip: "For businesses",
+      title: "How Findy helps your business",
+      sub: "Findy is an opportunity for businesses to expand their customer base, manage reservations and become more visible to the right audience.",
+      items: [
+        {
+          title: "Expand your customer base",
+          desc: "For businesses, Findy is an opportunity to expand the customer base."
+        },
+        {
+          title: "Manage reservations",
+          desc: "Receive booking requests directly from the platform and track them."
+        },
+        {
+          title: "Be more visible",
+          desc: "Grow your business with Premium & Pro plans in front of the right audience."
+        },
+        {
+          title: "Analytics & Statistics",
+          desc: "Track visits, bookings and reviews from your dashboard."
+        }
+      ]
+    }
+  },
 };
 
 export type Translations = typeof en;

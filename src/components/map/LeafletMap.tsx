@@ -17,15 +17,19 @@ if (typeof window !== "undefined") {
 
 // ─── Icon builders ────────────────────────────────────────────────────────────
 
-function buildDefaultIcon(): L.DivIcon {
+function buildDefaultIcon(plan?: string): L.DivIcon {
+  const isPremium = plan === 'premium';
+  const fillColor = isPremium ? "#eab308" : "#2563eb";
+  const innerFill = isPremium ? "#eab308" : "#2563eb";
+  
   return L.divIcon({
     html: `
       <svg width="28" height="36" viewBox="0 0 28 36" fill="none" xmlns="http://www.w3.org/2000/svg"
            style="filter:drop-shadow(0 3px 6px rgba(0,0,0,0.30));display:block;">
         <path d="M14 0C6.268 0 0 6.268 0 14c0 9.5 14 22 14 22S28 23.5 28 14C28 6.268 21.732 0 14 0z"
-              fill="#2563eb"/>
+              fill="${fillColor}"/>
         <circle cx="14" cy="14" r="6.5" fill="white" fill-opacity="0.95"/>
-        <rect x="10" y="10" width="8" height="8" rx="0.8" fill="#2563eb"/>
+        <rect x="10" y="10" width="8" height="8" rx="0.8" fill="${innerFill}"/>
         <rect x="12" y="14" width="2" height="4" fill="white"/>
         <rect x="11" y="11" width="2.2" height="2.2" fill="white" fill-opacity="0.75"/>
         <rect x="14.8" y="11" width="2.2" height="2.2" fill="white" fill-opacity="0.75"/>
@@ -68,6 +72,7 @@ export interface LeafletMarkerItem {
   category?: string;
   rating?: number;
   reviewCount?: number;
+  plan?: 'starter' | 'standard' | 'premium' | string;
 }
 
 export interface LeafletMapProps {
@@ -214,7 +219,7 @@ export default function LeafletMap({
 
         const marker = L.marker([lat, lng], {
           draggable: m.draggable && !readonly,
-          icon: buildDefaultIcon(),
+          icon: buildDefaultIcon(m.plan),
         });
 
         // Tooltip (shown on marker hover)
@@ -321,8 +326,9 @@ export default function LeafletMap({
     const companyRegistry = markerCompanyRegistryRef.current;
 
     // Reset all markers to default
-    registry.forEach((marker) => {
-      marker.setIcon(buildDefaultIcon());
+    registry.forEach((marker, id) => {
+      const m = markers.find(m => m.id === id);
+      marker.setIcon(buildDefaultIcon(m?.plan));
     });
 
     const activeCompanyId = internalHoveredCompanyId || 
