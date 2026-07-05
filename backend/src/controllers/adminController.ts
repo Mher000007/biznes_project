@@ -7,6 +7,7 @@ import User from '../models/User.js';
 import PromoCode from '../models/PromoCode.js';
 import SubscriptionGift from '../models/SubscriptionGift.js';
 import AuditLog from '../models/AuditLog.js';
+import Notification from '../models/Notification.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { AuthRequest } from '../middleware/auth.js';
 import { sendReportResolutionEmail } from '../utils/emailService.js';
@@ -547,5 +548,39 @@ export const deletePromoCode = asyncHandler(
     await audit.save();
 
     res.status(200).json({ success: true, message: 'Promo code deleted successfully' });
+  }
+);
+
+// ─── SEND NOTIFICATION ───────────────────────────────────────────────────────
+export const sendNotification = asyncHandler(
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    const { title, message, userIds } = req.body;
+
+    if (!title || !message || !userIds || !Array.isArray(userIds)) {
+      res.status(400).json({ success: false, message: 'Please provide title, message, and userIds array' });
+      return;
+    }
+
+    const isBroadcast = userIds.includes('all');
+    
+    const notification = new Notification({
+      title,
+      message,
+      recipients: isBroadcast ? [] : userIds,
+      broadcast: isBroadcast,
+      readBy: [],
+    });
+
+    await notification.save();
+
+    const audit = new AuditLog({
+      action: 'SEND_NOTIFICATION',
+      performedBy: req.user?.id,
+      targetType: 'User',
+      details: { title, broadcast: isBroadcast, recipientCount: isBroadcast ? 'all' : userIds.length },
+    });
+    await audit.save();
+
+    res.status(201).json({ success: true, message: 'Notification sent successfully', data: notification });
   }
 );

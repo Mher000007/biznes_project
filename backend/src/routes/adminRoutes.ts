@@ -19,6 +19,7 @@ import {
   createPromoCode,
   togglePromoCode,
   deletePromoCode,
+  sendNotification,
 } from '../controllers/adminController.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 
@@ -61,5 +62,8 @@ router.get('/promos', getPromoCodes);
 router.post('/promos', createPromoCode);
 router.put('/promos/:id/toggle', togglePromoCode);
 router.delete('/promos/:id', deletePromoCode);
+
+// Notifications
+router.post('/notifications/send', sendNotification);
 
 export default router;

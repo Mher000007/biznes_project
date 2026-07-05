@@ -7,6 +7,7 @@ import {
   Mail, Phone, Trash2, CheckCircle2,
   X, Ban, RefreshCw, LogOut, CheckCircle, AlertOctagon,
   UserCircle2, Crown, Briefcase, Star, Eye, Tag, Award,
+  MessageSquare, Send, CheckSquare, Square
 } from "lucide-react";
 
 const API = getApiUrl();
@@ -40,10 +41,13 @@ const C = {
 
 interface Business {
   _id: string; name: string; slug: string; email: string;
-  phone?: string; city?: string; verified: boolean; active: boolean;
+  phone?: string; city?: string; address?: string; description?: string;
+  website?: string; verified: boolean; active: boolean;
   rating: number; reviewCount: number; views: number; createdAt: string;
   owner?: { name: string; email: string };
   category?: { name: string };
+  gallery?: string[];
+  operatingHours?: Array<{ day: string; open: string; close: string; closed: boolean }>;
 }
 interface Booking {
   _id: string; customerName: string; customerPhone: string;
@@ -109,7 +113,7 @@ interface PromoCode {
   createdAt: string;
 }
 
-type TabKey = "overview" | "businesses" | "bookings" | "subscriptions" | "reviews" | "users" | "promocodes";
+type TabKey = "overview" | "businesses" | "bookings" | "subscriptions" | "reviews" | "users" | "promocodes" | "messages";
 
 function getToken() {
   return typeof window !== "undefined" ? localStorage.getItem(ADMIN_TOKEN_KEY) : null;
@@ -264,6 +268,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [resolvingId, setResolvingId] = useState<string | null>(null);
   const [adminReply, setAdminReply] = useState("");
   const [resolveAction, setResolveAction] = useState<"keep" | "delete" | null>(null);
+  const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
 
   const [promos, setPromos] = useState<PromoCode[]>([]);
   const [gifts, setGifts] = useState<SubscriptionGift[]>([]);
@@ -296,6 +301,15 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [promoError, setPromoError] = useState("");
   const [promoSuccess, setPromoSuccess] = useState("");
   const [creatingPromo, setCreatingPromo] = useState(false);
+
+  // Messaging state
+  const [selectedMsgUsers, setSelectedMsgUsers] = useState<string[]>([]);
+  const [msgModalOpen, setMsgModalOpen] = useState(false);
+  const [msgTitle, setMsgTitle] = useState("");
+  const [msgContent, setMsgContent] = useState("");
+  const [sendingMsg, setSendingMsg] = useState(false);
+  const [msgSuccess, setMsgSuccess] = useState("");
+  const [msgError, setMsgError] = useState("");
 
   const load = useCallback(async () => {
     setLoadingData(true);
@@ -450,6 +464,47 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     }
   };
 
+  const handleSendMsg = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!msgTitle.trim() || !msgContent.trim() || selectedMsgUsers.length === 0) return;
+    
+    setSendingMsg(true);
+    setMsgError("");
+    setMsgSuccess("");
+    try {
+      const res = await axios.post(
+        `${API}/admin/notifications/send`,
+        { title: msgTitle, message: msgContent, userIds: selectedMsgUsers },
+        { headers: authHeaders() }
+      );
+      if (res.data?.success) {
+        setMsgSuccess("Message sent successfully!");
+        setTimeout(() => {
+          setMsgSuccess("");
+          setMsgTitle("");
+          setMsgContent("");
+          setSelectedMsgUsers([]);
+        }, 1500);
+      }
+    } catch (err: any) {
+      setMsgError(err.response?.data?.message || "Failed to send message");
+    } finally {
+      setSendingMsg(false);
+    }
+  };
+
+  const toggleMsgUser = (id: string) => {
+    setSelectedMsgUsers(prev => prev.includes(id) ? prev.filter(u => u !== id) : [...prev, id]);
+  };
+  
+  const toggleAllMsgUsers = () => {
+    if (selectedMsgUsers.includes('all')) {
+      setSelectedMsgUsers([]);
+    } else {
+      setSelectedMsgUsers(['all']);
+    }
+  };
+
   const generatePromoCode = () => {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     let result = "";
@@ -482,6 +537,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     { key: "reviews", label: "Reports", Icon: Flag },
     { key: "users", label: "Users", Icon: Users },
     { key: "promocodes", label: "Promo Codes", Icon: Tag },
+    { key: "messages", label: "Messages", Icon: MessageSquare },
   ];
 
   const tabBtn = (t: TabDef) => {
@@ -692,7 +748,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                     justifyContent: "space-between", alignItems: "center",
                     flexWrap: "wrap", gap: 16
                   }}>
-                    <div>
+                    <div onClick={() => setSelectedBusiness(b)} style={{ cursor: "pointer", flex: 1 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{ fontWeight: 700, fontSize: 14, color: C.text }}>{b.name}</span>
                         <span style={{
@@ -1086,6 +1142,156 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                           {u.role.replace("_", " ")}
                         </span>
                         {!isAdmin && iconBtn(() => deleteUserById(u._id), <Trash2 size={14} />, C.red, C.redDim, "Delete user")}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* MESSAGES */}
+        {tab === "messages" && (
+          <div style={{ animation: "fadeIn 0.3s ease" }}>
+            {/* Header Section */}
+            <form onSubmit={handleSendMsg} style={{
+              background: `linear-gradient(135deg, ${C.card} 0%, rgba(124, 58, 237, 0.1) 100%)`,
+              borderRadius: 20, padding: 24, marginBottom: 24,
+              border: `1px solid ${C.border}`, boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+              display: "flex", flexDirection: "column", gap: 20
+            }}>
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 20 }}>
+                <div>
+                  <h2 style={{ fontSize: 22, fontWeight: 900, color: "#fff", margin: 0, display: "flex", alignItems: "center", gap: 10 }}>
+                    <MessageSquare size={22} color={C.violet} />
+                    Messaging Hub
+                  </h2>
+                  <p style={{ fontSize: 13, color: C.muted, marginTop: 6, maxWidth: 500, lineHeight: 1.5 }}>
+                    Select users below to send direct notifications. Broadcast system updates or targeted messages directly to their in-app inbox.
+                  </p>
+                </div>
+                
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 12 }}>
+                  <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                    <button type="button" onClick={toggleAllMsgUsers} style={{
+                      display: "flex", alignItems: "center", gap: 8, 
+                      background: selectedMsgUsers.includes('all') ? "rgba(124, 58, 237, 0.15)" : "rgba(255,255,255,0.05)",
+                      border: `1px solid ${selectedMsgUsers.includes('all') ? C.violet : C.border}`, 
+                      borderRadius: 12, padding: "10px 16px", color: selectedMsgUsers.includes('all') ? C.violet : C.text, 
+                      cursor: "pointer", transition: "all 0.2s", fontWeight: 700, fontSize: 13
+                    }}>
+                      {selectedMsgUsers.includes('all') ? <CheckSquare size={16} /> : <Square size={16} />}
+                      Select All Users
+                    </button>
+
+                    <button 
+                      type="submit"
+                      disabled={selectedMsgUsers.length === 0 || sendingMsg}
+                      style={{
+                        padding: "10px 20px", borderRadius: 12, 
+                        background: selectedMsgUsers.length > 0 ? "linear-gradient(135deg, #7c3aed, #4f46e5)" : "rgba(255,255,255,0.1)",
+                        border: "none", color: selectedMsgUsers.length > 0 ? "#fff" : C.muted,
+                        cursor: selectedMsgUsers.length > 0 && !sendingMsg ? "pointer" : "not-allowed",
+                        fontWeight: 800, fontSize: 13, display: "flex", alignItems: "center", gap: 8,
+                        boxShadow: selectedMsgUsers.length > 0 ? "0 4px 12px rgba(124, 58, 237, 0.4)" : "none",
+                        transition: "all 0.2s", opacity: sendingMsg ? 0.7 : 1
+                      }}
+                    >
+                      <Send size={15} />
+                      {sendingMsg ? "Sending..." : "Send"}
+                    </button>
+                  </div>
+                  
+                  {selectedMsgUsers.length > 0 && (
+                    <span style={{ fontSize: 12, color: C.green, fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
+                      <CheckCircle2 size={14} />
+                      {selectedMsgUsers.includes('all') ? 'All Users' : `${selectedMsgUsers.length} User(s)`} Selected
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {msgError && <div style={{ background: C.redDim, color: C.red, padding: "10px 14px", borderRadius: 10, fontSize: 13, border: `1px solid ${C.red}` }}>{msgError}</div>}
+              {msgSuccess && <div style={{ background: C.greenDim, color: C.green, padding: "10px 14px", borderRadius: 10, fontSize: 13, border: `1px solid ${C.green}` }}>{msgSuccess}</div>}
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 16 }}>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: C.faint, marginBottom: 6 }}>Notification Title</label>
+                  <input 
+                    type="text" required value={msgTitle} onChange={e => setMsgTitle(e.target.value)}
+                    style={{ width: "100%", background: "rgba(0,0,0,0.2)", border: `1px solid ${C.border}`, borderRadius: 10, padding: "12px 14px", color: C.text, fontSize: 14 }}
+                    placeholder="E.g., System Update"
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: C.faint, marginBottom: 6 }}>Message Content</label>
+                  <input 
+                    type="text" required value={msgContent} onChange={e => setMsgContent(e.target.value)}
+                    style={{ width: "100%", background: "rgba(0,0,0,0.2)", border: `1px solid ${C.border}`, borderRadius: 10, padding: "12px 14px", color: C.text, fontSize: 14 }}
+                    placeholder="Type your message here..."
+                  />
+                </div>
+              </div>
+            </form>
+
+            {/* Users List */}
+            {allUsers.length === 0 ? emptyState(Users, "No users available") : (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 16 }}>
+                {allUsers.map(u => {
+                  const isSelected = selectedMsgUsers.includes('all') || selectedMsgUsers.includes(u._id);
+                  const Icon = u.role === "admin" ? Crown : u.role === "business_owner" ? Briefcase : UserCircle2;
+                  const badgeColor = u.role === "admin" ? C.violet : u.role === "business_owner" ? C.sky : C.muted;
+                  const badgeBg = u.role === "admin" ? C.violetDim : u.role === "business_owner" ? "rgba(56,189,248,0.12)" : "rgba(255,255,255,0.06)";
+                  
+                  return (
+                    <div key={u._id} 
+                      onClick={() => !selectedMsgUsers.includes('all') && toggleMsgUser(u._id)}
+                      style={{
+                      background: isSelected ? "linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(124, 58, 237, 0.02))" : C.surface, 
+                      borderRadius: 16, padding: "16px 20px",
+                      border: `1px solid ${isSelected ? C.violet : C.border}`, display: "flex",
+                      alignItems: "center", gap: 16,
+                      cursor: selectedMsgUsers.includes('all') ? "default" : "pointer",
+                      boxShadow: isSelected ? "0 4px 20px rgba(124, 58, 237, 0.15)" : "0 2px 8px rgba(0,0,0,0.2)",
+                      transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                      transform: isSelected && !selectedMsgUsers.includes('all') ? "translateY(-2px)" : "none"
+                    }}>
+                      <div style={{ 
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        transition: "all 0.2s transform"
+                      }}>
+                         {isSelected ? <CheckSquare size={20} color={C.violet} /> : <Square size={20} color={C.muted} />}
+                      </div>
+
+                      <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 14 }}>
+                        <div style={{
+                          width: 40, height: 40, borderRadius: 12,
+                          background: isSelected ? C.violetDim : "rgba(255,255,255,0.06)", 
+                          display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                          transition: "all 0.2s"
+                        }}>
+                          <Icon size={18} color={isSelected ? C.violet : C.muted} />
+                        </div>
+                        <div style={{ overflow: "hidden" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ fontWeight: 800, fontSize: 14, color: isSelected ? "#fff" : C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                              {u.name}
+                            </span>
+                          </div>
+                          <p style={{ fontSize: 12, color: C.muted, margin: "2px 0 0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {u.email}
+                          </p>
+                          <div style={{ marginTop: 6 }}>
+                            <span style={{
+                              fontSize: 9, fontWeight: 800, padding: "2px 8px",
+                              borderRadius: 99, background: badgeBg, color: badgeColor,
+                              textTransform: "uppercase", letterSpacing: "0.5px"
+                            }}>
+                              {u.role.replace("_", " ")}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   );
@@ -1591,6 +1797,90 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* BUSINESS DETAILS MODAL */}
+      {selectedBusiness && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 99999,
+          background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)",
+          display: "flex", alignItems: "center", justifyContent: "center", padding: 20
+        }}>
+          <div style={{
+            background: C.surface, borderRadius: 20, width: "100%", maxWidth: 650,
+            maxHeight: "90vh", overflowY: "auto", border: `1px solid ${C.border}`,
+            boxShadow: "0 24px 64px rgba(0,0,0,0.5)", position: "relative"
+          }}>
+            <button onClick={() => setSelectedBusiness(null)}
+              style={{
+                position: "absolute", top: 20, right: 20, background: "rgba(255,255,255,0.1)",
+                border: "none", borderRadius: "50%", padding: 6, color: C.text, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s"
+              }}>
+              <X size={18} />
+            </button>
+            <div style={{ padding: "32px 32px 24px", borderBottom: `1px solid ${C.border}` }}>
+              <h2 style={{ fontSize: 24, fontWeight: 800, margin: "0 0 8px", color: C.text }}>
+                {selectedBusiness.name}
+              </h2>
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+                <span style={{
+                  fontSize: 12, fontWeight: 700, padding: "4px 10px", borderRadius: 99,
+                  background: selectedBusiness.verified ? C.greenDim : C.amberDim,
+                  color: selectedBusiness.verified ? C.green : C.amber, textTransform: "uppercase"
+                }}>
+                  {selectedBusiness.verified ? "Verified" : "Pending"}
+                </span>
+                <span style={{ fontSize: 13, color: C.muted }}>
+                  {selectedBusiness.category?.name || "Uncategorized"}
+                </span>
+              </div>
+            </div>
+
+            <div style={{ padding: 32, display: "flex", flexDirection: "column", gap: 24 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+                <div>
+                  <h3 style={{ fontSize: 12, textTransform: "uppercase", color: C.faint, marginBottom: 8, fontWeight: 700 }}>Contact Info</h3>
+                  <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><Mail size={14} /> {selectedBusiness.email || "N/A"}</p>
+                  <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><Phone size={14} /> {selectedBusiness.phone || "N/A"}</p>
+                  <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><Flag size={14} /> {selectedBusiness.city || "N/A"}</p>
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 12, textTransform: "uppercase", color: C.faint, marginBottom: 8, fontWeight: 700 }}>Owner Info</h3>
+                  <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><UserCircle2 size={14} /> {selectedBusiness.owner?.name || "N/A"}</p>
+                  <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><Mail size={14} /> {selectedBusiness.owner?.email || "N/A"}</p>
+                </div>
+              </div>
+
+              <div>
+                <h3 style={{ fontSize: 12, textTransform: "uppercase", color: C.faint, marginBottom: 8, fontWeight: 700 }}>Additional Data</h3>
+                <div style={{ background: C.card, padding: 16, borderRadius: 12, border: `1px solid ${C.border}`, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+                  <div>
+                    <span style={{ fontSize: 11, color: C.muted, display: "block", marginBottom: 4 }}>RATING</span>
+                    <strong style={{ fontSize: 16, color: C.amber }}>{selectedBusiness.rating?.toFixed(1) || 0}</strong> ({selectedBusiness.reviewCount || 0})
+                  </div>
+                  <div>
+                    <span style={{ fontSize: 11, color: C.muted, display: "block", marginBottom: 4 }}>TOTAL VIEWS</span>
+                    <strong style={{ fontSize: 16, color: C.text }}>{selectedBusiness.views || 0}</strong>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: 11, color: C.muted, display: "block", marginBottom: 4 }}>CREATED AT</span>
+                    <strong style={{ fontSize: 14, color: C.text }}>{new Date(selectedBusiness.createdAt).toLocaleDateString()}</strong>
+                  </div>
+                </div>
+              </div>
+
+              {selectedBusiness.description && (
+                <div>
+                  <h3 style={{ fontSize: 12, textTransform: "uppercase", color: C.faint, marginBottom: 8, fontWeight: 700 }}>Description</h3>
+                  <p style={{ fontSize: 14, color: C.muted, lineHeight: 1.5, margin: 0 }}>
+                    {selectedBusiness.description}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

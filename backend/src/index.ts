@@ -16,6 +16,7 @@ import subscriptionRoutes from './routes/subscriptionRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import storyRoutes from './routes/storyRoutes.js';
 import locationRoutes from './routes/locationRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 import { getAllReviews } from './controllers/reviewController.js';
 
 dotenv.config();
@@ -63,7 +64,8 @@ app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/stories', storyRoutes);
 app.use('/api/locations', locationRoutes);
-app.get('/api/reviews', getAllReviews);
+app.use('/api/notifications', notificationRoutes);
+app.get('/api/reviews/all', getAllReviews);
 
 // 404 handler
 app.use((req: Request, res: Response) => {
