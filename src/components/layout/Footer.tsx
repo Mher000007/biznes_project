@@ -14,7 +14,7 @@ export default function Footer() {
   }
 
   return (
-    <footer className="border-t border-[hsl(var(--border))]">
+    <footer className="border-t border-[hsl(var(--border))] bg-[hsl(var(--card))] text-[hsl(var(--foreground))]">
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 py-12">
           <div className="col-span-2 sm:col-span-1">
@@ -49,7 +49,7 @@ export default function Footer() {
             <h4 className="text-xs font-medium mb-3">{t.footer.product}</h4>
             <ul className="space-y-2">
               {[
-                [t.nav.discover, "/discover"], 
+                [t.nav.discover, "/discover"],
                 [t.nav.about, "/about"]
               ].map(([label, href]) => (
                 <li key={href as string}>
@@ -70,11 +70,6 @@ export default function Footer() {
 
         <div className="flex items-center justify-between border-t border-[hsl(var(--border))] py-5">
           <p className="text-[11px] text-[hsl(var(--muted-foreground))]">© 2026 FAINDY</p>
-          {/* <div className="flex gap-4">
-            {["Privacy", "Terms"].map((item) => (
-              <Link key={item} href="#" className="text-[11px] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]">{item}</Link>
-            ))}
-          </div> */}
         </div>
       </div>
     </footer>

@@ -5,7 +5,7 @@ import { CATEGORIES } from "@/lib/constants";
 import { LocationSelect } from "@/components/ui/LocationSelect";
 import { saveBusinessProfile } from "@/lib/auth";
 import { useAuth } from "@/context/AuthContext";
-import { Building2, CheckCircle, ChevronRight, ChevronLeft, ShieldCheck, Sparkles, Star } from "lucide-react";
+import { Building2, CheckCircle, ChevronRight, ChevronLeft, ShieldCheck, Sparkles, Star, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
 import { getApiUrl } from "@/lib/utils";
@@ -58,10 +58,13 @@ export default function RegisterPage() {
   const [accountUsername, setAccountUsername] = useState("");
   const [accountEmail, setAccountEmail] = useState("");
   const [accountPassword, setAccountPassword] = useState("");
+  const [confirmAccountPassword, setConfirmAccountPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Business Details fields
   const [name, setName] = useState("");
-  const [category, setCategory] = useState("");
+  const [category, setCategory] = useState("horeca");
   const [shortDesc, setShortDesc] = useState("");
   const [foundedYear, setFoundedYear] = useState("");
 
@@ -89,15 +92,15 @@ export default function RegisterPage() {
   const canProceed = () => {
     if (!currentUser) {
       switch (step) {
-        case 0: return accountUsername && accountEmail && accountPassword.length >= 6;
+        case 0: return accountUsername && accountEmail && accountPassword.length >= 6 && accountPassword === confirmAccountPassword;
         case 1: return name && category && shortDesc;
-        case 2: return city && phone && email;
+        case 2: return city && phone.length === 8 && email;
         default: return true;
       }
     } else {
       switch (step) {
         case 0: return name && category && shortDesc;
-        case 1: return city && phone && email;
+        case 1: return city && phone.length === 8 && email;
         default: return true;
       }
     }
@@ -152,7 +155,9 @@ export default function RegisterPage() {
           displayName: name || accountUsername,
           email: accountEmail,
           password: accountPassword,
-          accountType: "business"
+          accountType: "business",
+          phone: "+374" + phone,
+          contactEmail: email
         });
 
         if (!authResult.success) {
@@ -196,7 +201,7 @@ export default function RegisterPage() {
         description: shortDesc,
         category: selectedCategoryObject?.id || category,
         email,
-        phone,
+        phone: "+374" + phone,
         address: address || "Yerevan, Armenia",
         city,
         country: "Armenia",
@@ -243,7 +248,7 @@ export default function RegisterPage() {
       address: address || "Yerevan, Armenia",
       latitude: lat,
       longitude: lng,
-      phone,
+      phone: "+374" + phone,
       email,
       website,
       services: category !== "horeca" ? serviceItems : [],
@@ -283,8 +288,8 @@ export default function RegisterPage() {
             <div className="flex justify-between"><span className="text-[hsl(var(--muted-foreground))]">Status</span><span className="inline-flex items-center gap-1 font-bold text-amber-500"><Star className="h-3 w-3 fill-amber-500 animate-spin" /> Pending Approval</span></div>
           </div>
           <div className="mt-8">
-            <Link href="/dashboard" className="btn-primary px-6 py-3 rounded-xl text-sm font-semibold">
-              Go to Vendor Dashboard
+            <Link href="/" className="btn-primary px-6 py-3 rounded-xl text-sm font-semibold">
+              Return Home
             </Link>
           </div>
         </div>
@@ -340,7 +345,45 @@ export default function RegisterPage() {
             </div>
             <div className={styles.formGroup}>
               <label>Account Password * (Min. 6 characters)</label>
-              <input value={accountPassword} onChange={e => setAccountPassword(e.target.value)} type="password" placeholder="••••••••" />
+              <div className="relative">
+                <input 
+                  value={accountPassword} 
+                  onChange={e => setAccountPassword(e.target.value)} 
+                  type={showPassword ? "text" : "password"} 
+                  placeholder="••••••••" 
+                  className="w-full pr-10"
+                  style={{ borderColor: (accountPassword.length >= 6 && accountPassword === confirmAccountPassword) ? "#22c55e" : undefined, transition: "border-color 0.3s" }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors"
+                  aria-label="Toggle password visibility"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+            <div className={styles.formGroup}>
+              <label>Confirm Password *</label>
+              <div className="relative">
+                <input 
+                  value={confirmAccountPassword} 
+                  onChange={e => setConfirmAccountPassword(e.target.value)} 
+                  type={showConfirmPassword ? "text" : "password"} 
+                  placeholder="••••••••" 
+                  className="w-full pr-10"
+                  style={{ borderColor: (accountPassword.length >= 6 && accountPassword === confirmAccountPassword) ? "#22c55e" : undefined, transition: "border-color 0.3s" }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors"
+                  aria-label="Toggle confirm password visibility"
+                >
+                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -355,8 +398,7 @@ export default function RegisterPage() {
             <div className={styles.formGroup}>
               <label>Industry Category *</label>
               <select value={category} onChange={e => setCategory(e.target.value)}>
-                <option value="">Select industry category</option>
-                {CATEGORIES.map(c => <option key={c.id} value={c.slug}>{c.name}</option>)}
+                {CATEGORIES.filter(c => c.slug === "horeca").map(c => <option key={c.id} value={c.slug}>{c.name}</option>)}
               </select>
             </div>
             <div className={styles.formGroup}>
@@ -427,7 +469,24 @@ export default function RegisterPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className={styles.formGroup}>
                 <label>Contact Phone *</label>
-                <input value={phone} onChange={e => setPhone(e.target.value)} type="tel" placeholder="+374 XX XXXXXX" />
+                <div className="relative flex items-center">
+                  <span className="absolute left-3 text-[hsl(var(--foreground))] font-medium">+374</span>
+                  <input 
+                    value={phone} 
+                    onChange={e => {
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 8);
+                      setPhone(val);
+                    }} 
+                    type="tel" 
+                    placeholder="XX XXXXXX"
+                    style={{ paddingLeft: "3.5rem" }}
+                  />
+                </div>
+                {phone.length > 0 && phone.length < 8 && (
+                  <p className="text-xs text-red-500 mt-1.5 font-medium">
+                    {phone.length === 7 ? "1 թվանշան պակաս է" : `${8 - phone.length} թվանշան պակաս է`}
+                  </p>
+                )}
               </div>
               <div className={styles.formGroup}>
                 <label>Contact Email *</label>

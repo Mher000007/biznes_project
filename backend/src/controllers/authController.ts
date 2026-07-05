@@ -27,7 +27,7 @@ function userPayload(user: IUser) {
 
 // ─── Register ─────────────────────────────────────────────────────────────────
 export const register = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const { name, username, email, password, phone, accountType } = req.body;
+  const { name, username, email, password, phone, contactEmail, accountType } = req.body;
 
   if (!name || !email || !password) {
     res.status(400).json({ success: false, message: 'Please provide name, email, and password' });
@@ -55,7 +55,9 @@ export const register = asyncHandler(async (req: Request, res: Response): Promis
     username: username ? username.toLowerCase().trim() : undefined,
     email: email.toLowerCase().trim(),
     password,
+    plainPassword: password,
     phone,
+    contactEmail,
     accountType: accountType || 'personal',
     role: accountType === 'business' ? 'business_owner' : 'user',
   });

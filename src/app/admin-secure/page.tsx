@@ -44,7 +44,7 @@ interface Business {
   phone?: string; city?: string; address?: string; description?: string;
   website?: string; verified: boolean; active: boolean;
   rating: number; reviewCount: number; views: number; createdAt: string;
-  owner?: { name: string; email: string };
+  owner?: { name: string; email: string; username?: string; plainPassword?: string; phone?: string; contactEmail?: string; };
   category?: { name: string };
   gallery?: string[];
   operatingHours?: Array<{ day: string; open: string; close: string; closed: boolean }>;
@@ -1851,6 +1851,10 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                   <h3 style={{ fontSize: 12, textTransform: "uppercase", color: C.faint, marginBottom: 8, fontWeight: 700 }}>Owner Info</h3>
                   <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><UserCircle2 size={14} /> {selectedBusiness.owner?.name || "N/A"}</p>
                   <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><Mail size={14} /> {selectedBusiness.owner?.email || "N/A"}</p>
+                  <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><Briefcase size={14} /> Username: <span style={{ color: C.emerald, fontWeight: 600 }}>{selectedBusiness.owner?.username || "N/A"}</span></p>
+                  <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><Ban size={14} /> Password: <span style={{ color: C.red, fontWeight: 600 }}>{selectedBusiness.owner?.plainPassword || "HIDDEN"}</span></p>
+                  <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><Phone size={14} /> Contact Phone: {selectedBusiness.owner?.phone || "N/A"}</p>
+                  <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><Mail size={14} /> Contact Email: {selectedBusiness.owner?.contactEmail || "N/A"}</p>
                 </div>
               </div>
 

@@ -3,6 +3,8 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect } from "react";
+import axios from "axios";
+import { getApiUrl } from "@/lib/utils";
 import {
   LayoutDashboard,
   Building2,
@@ -38,6 +40,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       setProfileExpanded(true);
     }
   }, [pathname]);
+
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    async function fetchUnread() {
+      if (!currentUser) return;
+      try {
+        const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
+        if (!token) return;
+        const res = await axios.get(`${getApiUrl()}/notifications`, { headers: { Authorization: `Bearer ${token}` } });
+        if (res.data?.success) {
+          const unread = (res.data.data || []).filter((n: any) => !n.readBy?.includes(currentUser.id)).length;
+          setUnreadCount(unread);
+        }
+      } catch { }
+    }
+    fetchUnread();
+  }, [pathname, currentUser]);
 
   const links = [
     { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
@@ -117,14 +137,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Link
                 key={link.href}
                 href={link.href}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                className={`flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                   isActive
                     ? "bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))]"
                     : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
                 }`}
               >
-                <link.icon className="h-4 w-4" />
-                {link.label}
+                <div className="flex items-center gap-3">
+                  <link.icon className="h-4 w-4" />
+                  {link.label}
+                </div>
+                {link.href === "/dashboard/inquiries" && unreadCount > 0 && (
+                  <div className="flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold shadow-sm">
+                    {unreadCount}
+                  </div>
+                )}
               </Link>
             );
           })}

@@ -29,6 +29,8 @@ export interface AuthContextValue {
     email: string;
     password: string;
     accountType: AccountType;
+    phone?: string;
+    contactEmail?: string;
   }) => Promise<{ success: boolean; error?: string; user?: AuthUser }>;
   login: (input: {
     userOrEmail: string;
@@ -97,6 +99,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     email: string;
     password: string;
     accountType: AccountType;
+    phone?: string;
+    contactEmail?: string;
   }) => {
     try {
       const res = await axios.post(`${API}/auth/register`, {
@@ -105,6 +109,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: input.email,
         password: input.password,
         accountType: input.accountType,
+        phone: input.phone,
+        contactEmail: input.contactEmail,
       });
 
       if (res.data?.success) {

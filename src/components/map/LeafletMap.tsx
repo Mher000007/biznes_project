@@ -21,7 +21,7 @@ function buildDefaultIcon(plan?: string): L.DivIcon {
   const isPremium = plan === 'premium';
   const fillColor = isPremium ? "#eab308" : "#2563eb";
   const innerFill = isPremium ? "#eab308" : "#2563eb";
-  
+
   return L.divIcon({
     html: `
       <svg width="28" height="36" viewBox="0 0 28 36" fill="none" xmlns="http://www.w3.org/2000/svg"
@@ -120,7 +120,7 @@ export default function LeafletMap({
   // Registry: id → Leaflet marker instance (to swap icons without rebuilding)
   const markerRegistryRef = useRef<Map<string | number, L.Marker>>(new Map());
   const markerCompanyRegistryRef = useRef<Map<string | number, string | number>>(new Map());
-  
+
   // Tracks the currently highlighted id so we can restore it on the next hover
   const prevHoveredIdRef = useRef<string | number | null>(null);
 
@@ -161,7 +161,7 @@ export default function LeafletMap({
     if (!readonly) {
       map.on("focus", () => map.scrollWheelZoom.enable());
       map.on("click", () => map.scrollWheelZoom.enable());
-      map.on("blur",  () => map.scrollWheelZoom.disable());
+      map.on("blur", () => map.scrollWheelZoom.disable());
     }
 
     if (onMapClick && !readonly) {
@@ -226,11 +226,10 @@ export default function LeafletMap({
         if (m.name) {
           const starsNum = m.rating ? Math.round(m.rating * 10) / 10 : null;
           const starsHtml = starsNum
-            ? `<span class="marker-tooltip-rating">&#9733; ${starsNum.toFixed(1)}${
-                m.reviewCount
-                  ? ` <span class="marker-tooltip-reviews">(${m.reviewCount})</span>`
-                  : ""
-              }</span>`
+            ? `<span class="marker-tooltip-rating">&#9733; ${starsNum.toFixed(1)}${m.reviewCount
+              ? ` <span class="marker-tooltip-reviews">(${m.reviewCount})</span>`
+              : ""
+            }</span>`
             : "";
           const catHtml = m.category
             ? `<span class="marker-tooltip-category">${m.category}</span>`
@@ -334,21 +333,21 @@ export default function LeafletMap({
       marker.setIcon(buildDefaultIcon(m?.plan));
     });
 
-    const activeCompanyId = internalHoveredCompanyId || 
+    const activeCompanyId = internalHoveredCompanyId ||
       (hoveredLocationId ? companyRegistry.get(hoveredLocationId) : null);
 
     if (activeCompanyId) {
       let targetForFlyTo: L.Marker | null = null;
-      
+
       registry.forEach((marker, id) => {
         if (companyRegistry.get(id) === activeCompanyId) {
           marker.setIcon(buildHoveredIcon());
           if (id === hoveredLocationId) {
-             targetForFlyTo = marker;
+            targetForFlyTo = marker;
           }
         }
       });
-      
+
       // If triggered by external hover (list card), fly to the primary marker matching ID
       if (hoveredLocationId && targetForFlyTo && map) {
         const size = map.getSize();
@@ -356,9 +355,9 @@ export default function LeafletMap({
           const { lat, lng } = (targetForFlyTo as L.Marker).getLatLng();
           if (typeof lat === 'number' && typeof lng === 'number' && isFinite(lat) && isFinite(lng)) {
             map.flyTo([lat, lng], Math.max(map.getZoom(), 14), {
-            animate: true,
-            duration: 0.55,
-            easeLinearity: 0.2,
+              animate: true,
+              duration: 0.55,
+              easeLinearity: 0.2,
             });
           }
         }

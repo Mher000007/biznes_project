@@ -77,16 +77,16 @@
     border-radius: 50%;
     font-size: 0.9rem;
     font-weight: 700;
-    border: 2px solid hsl(var(--border));
+    border: 2px solid hsl(var(--foreground));
     background: hsl(var(--card));
-    color: hsl(var(--muted-foreground));
+    color: hsl(var(--foreground));
     transition: all 0.3s ease;
 
     &.active {
-      border-color: hsl(var(--primary));
-      background: hsl(var(--primary));
-      color: white;
-      box-shadow: 0 0 12px hsla(var(--primary), 0.3);
+      border-color: hsl(var(--foreground));
+      background: hsl(var(--foreground));
+      color: hsl(var(--background));
+      box-shadow: 0 0 12px hsla(var(--foreground), 0.3);
     }
 
     &.completed {
@@ -312,20 +312,20 @@
   align-items: center;
   gap: 0.5rem;
   border: none;
-  background: hsl(var(--primary));
-  color: white;
+  background: hsl(var(--foreground));
+  color: hsl(var(--background));
   padding: 0.75rem 1.5rem;
   border-radius: 0.75rem;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 4px 12px hsla(var(--primary), 0.2);
+  box-shadow: 0 4px 12px hsla(var(--foreground), 0.2);
 
   @include hover-device {
     &:hover {
       opacity: 0.9;
-      box-shadow: 0 6px 16px hsla(var(--primary), 0.3);
+      box-shadow: 0 6px 16px hsla(var(--foreground), 0.3);
     }
   }
 

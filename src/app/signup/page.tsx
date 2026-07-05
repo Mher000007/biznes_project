@@ -51,9 +51,7 @@ export default function SignUpPage() {
       <div className="min-h-screen flex items-center justify-center px-5 py-20">
         <div className="w-full max-w-sm">
           <div className="mb-8">
-            <Link href="/" className="text-base font-bold tracking-tight mb-6 block">
-              arm<span className="gradient-text">biz</span>
-            </Link>
+
             <h1 className="text-xl font-bold tracking-tight mb-1">Create an account</h1>
             <p className="text-sm text-[hsl(var(--muted-foreground))]">Choose how you want to use ArmBiz</p>
           </div>
@@ -86,9 +84,7 @@ export default function SignUpPage() {
     <div className="min-h-screen flex items-center justify-center px-5 py-20">
       <div className="w-full max-w-sm">
         <div className="mb-8">
-          <Link href="/" className="text-base font-bold tracking-tight mb-6 block">
-            arm<span className="gradient-text">biz</span>
-          </Link>
+
           <div className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--muted))] px-2 py-1 text-xs mb-3">
             {accountType === "business" ? <Building2 className="h-3 w-3" /> : <User className="h-3 w-3" />}
             {accountType === "business" ? "Business" : "Personal"}

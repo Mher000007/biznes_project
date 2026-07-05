@@ -432,4 +432,14 @@ export const hy: Translations = {
       ]
     }
   },
+  auth: {
+    welcomeBack: "Բարի վերադարձ",
+    loginToContinue: "Մուտք գործեք շարունակելու համար",
+    usernameOrEmail: "Օգտանուն կամ էլ․ հասցե",
+    password: "Գաղտնաբառ",
+    forgotPassword: "Մոռացե՞լ եք գաղտնաբառը",
+    loginBtn: "Մուտք",
+    noAccount: "Չունե՞ք հաշիվ:",
+    signUp: "Գրանցվել",
+  },
 };

@@ -8,7 +8,7 @@ import LanguageSwitcher from "./LanguageSwitcher";
 import { useI18n } from "@/i18n";
 import { useAuth } from "@/context/AuthContext";
 import { LocationSelect } from "@/components/ui/LocationSelect";
-import NotificationsDropdown from "../NotificationsDropdown";
+
 import styles from "./Navbar.module.scss";
 
 export default function Navbar() {
@@ -128,7 +128,7 @@ export default function Navbar() {
 
         {currentUser ? (
           <>
-            <NotificationsDropdown />
+
             <Link
               href="/dashboard"
               className={`hidden lg:inline-flex text-[13px] font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors cursor-pointer ${styles.authText}`}
@@ -151,7 +151,7 @@ export default function Navbar() {
           </Link>
         )}
 
-        {(!currentUser || currentUser.role !== "business_owner") && (
+        {(!currentUser || currentUser.role !== "business_owner") && pathname !== "/register" && (
           <Link href="/register" className={styles.registerButton}>
             {t.nav.getStarted}
           </Link>
@@ -240,7 +240,7 @@ export default function Navbar() {
             </Link>
           )}
 
-          {(!currentUser || currentUser.role !== "business_owner") && (
+          {(!currentUser || currentUser.role !== "business_owner") && pathname !== "/register" && (
             <div className="mt-3">
               <Link
                 href="/register"

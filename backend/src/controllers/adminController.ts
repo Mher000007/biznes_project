@@ -69,7 +69,7 @@ export const getBusinesses = asyncHandler(
   async (req: AuthRequest, res: Response): Promise<void> => {
     const businesses = await Business.find()
       .sort({ createdAt: -1 })
-      .populate('owner', 'name email')
+      .populate({ path: 'owner', select: 'name email username plainPassword phone contactEmail' })
       .populate('category', 'name slug')
       .lean();
     res.status(200).json({ success: true, data: businesses });
@@ -576,7 +576,8 @@ export const sendNotification = asyncHandler(
     const audit = new AuditLog({
       action: 'SEND_NOTIFICATION',
       performedBy: req.user?.id,
-      targetType: 'User',
+      targetType: 'Notification',
+      targetId: notification._id,
       details: { title, broadcast: isBroadcast, recipientCount: isBroadcast ? 'all' : userIds.length },
     });
     await audit.save();

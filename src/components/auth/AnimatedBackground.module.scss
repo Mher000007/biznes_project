@@ -1,0 +1,70 @@
+.backgroundWrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 0;
+  background-color: transparent;
+  pointer-events: none;
+}
+
+.rotatedContainer {
+  position: absolute;
+  width: 100vw;
+  height: 100vh;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.row {
+  width: 100%;
+  height: 100px;
+  margin-bottom: 100px;
+  /* Increased to reduce the density of rows on screen */
+}
+
+.rowInner {
+  width: 100%;
+  height: 100%;
+  background-image: url('/logo.png');
+  background-repeat: repeat-x;
+  background-size: 180px auto;
+  background-position-y: center;
+  opacity: 0.15;
+  will-change: background-position;
+}
+
+.moveLeft {
+  animation: scrollLeft 50s linear infinite;
+}
+
+.moveRight {
+  animation: scrollRight 50s linear infinite;
+}
+
+@keyframes scrollLeft {
+  0% {
+    background-position-x: 0px;
+  }
+
+  100% {
+    background-position-x: -1800px;
+  }
+
+  /* 180px * 10 = 1800px */
+}
+
+@keyframes scrollRight {
+  0% {
+    background-position-x: 0px;
+  }
+
+  100% {
+    background-position-x: 1800px;
+  }
+}

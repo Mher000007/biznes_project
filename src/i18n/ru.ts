@@ -305,4 +305,14 @@ export const ru: Translations = {
       ]
     }
   },
+  auth: {
+    welcomeBack: "С возвращением",
+    loginToContinue: "Войдите в свой аккаунт, чтобы продолжить",
+    usernameOrEmail: "Имя пользователя или Email",
+    password: "Пароль",
+    forgotPassword: "Забыли пароль?",
+    loginBtn: "Войти",
+    noAccount: "Нет аккаунта?",
+    signUp: "Зарегистрироваться",
+  },
 };

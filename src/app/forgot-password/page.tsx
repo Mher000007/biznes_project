@@ -42,9 +42,7 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen flex items-center justify-center px-5 py-20">
       <div className="w-full max-w-sm">
         <div className="mb-8">
-          <Link href="/" className="text-base font-bold tracking-tight mb-6 block">
-            arm<span className="gradient-text">biz</span>
-          </Link>
+
           <h1 className="text-xl font-bold tracking-tight mb-1">Reset your password</h1>
           <p className="text-sm text-[hsl(var(--muted-foreground))]">Use your username or email to reset your password.</p>
         </div>

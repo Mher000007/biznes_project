@@ -447,6 +447,17 @@ export const en = {
       ]
     }
   },
+  // Auth
+  auth: {
+    welcomeBack: "Welcome back",
+    loginToContinue: "Log in to your account to continue",
+    usernameOrEmail: "Username or Email",
+    password: "Password",
+    forgotPassword: "Forgot password?",
+    loginBtn: "Log in",
+    noAccount: "Don't have an account?",
+    signUp: "Sign up",
+  },
 };
 
 export type Translations = typeof en;
