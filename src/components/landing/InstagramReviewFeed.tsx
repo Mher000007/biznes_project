@@ -105,7 +105,7 @@ export default function InstagramReviewFeed() {
       try {
         const api = getApiUrl();
         // corrected double-path bug (removed extra '/api')
-        const res = await axios.get(`${api}/reviews?limit=12`);
+        const res = await axios.get(`${api}/reviews/all?limit=12`);
         if (res.data?.success && res.data.data?.length > 0) {
           backendReviews = res.data.data.map((r: any) => {
             let imageToShow = r.image;
@@ -296,7 +296,7 @@ export default function InstagramReviewFeed() {
     <section className="py-16 sm:py-24 border-t border-[hsl(var(--border))]">
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
         <div className="mb-12">
-          <h2 className="text-2xl sm:text-3xl font-semibold mb-2 text-[hsl(var(--foreground))]">{t.reviewsFeed?.title || "Browse recent reviews"}</h2>
+          <h2 className="text-2xl sm:text-3xl font-semibold mb-2 text-[hsl(var(--foreground))]">{t.reviewsFeed?.title || "Reviews"}</h2>
           <p className="text-base text-[hsl(var(--muted-foreground))]">{t.reviewsFeed?.subtitle || "Explore feedback and photos shared by customers in Armenia"}</p>
         </div>
 

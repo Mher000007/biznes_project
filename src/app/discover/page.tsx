@@ -7,6 +7,8 @@ import { setQuery, setCity, setCategory, setRatingMin, setVerifiedOnly, setSortB
 import { MOCK_BUSINESSES } from "@/data/mock-businesses";
 import { CATEGORIES, SORT_OPTIONS } from "@/lib/constants";
 import { LocationSelect } from "@/components/ui/LocationSelect";
+import { RatingSelect } from "@/components/ui/RatingSelect";
+import { SortSelect } from "@/components/ui/SortSelect";
 import BusinessCard from "@/components/discover/BusinessCard";
 import { Building2, Loader2, Map as MapIcon, List as ListIcon, LayoutGrid } from "lucide-react";
 import axios from "axios";
@@ -233,9 +235,7 @@ function DiscoverContent() {
             }`}
         >
           <div className={styles.feedHeader}>
-            <h1 className="text-xl font-bold tracking-tight text-[#111111] mb-1">
-              {t.discover.directoryTitle || "Discover Directory"}
-            </h1>
+
             <div className={styles.resultsCount}>
               {loading ? (
                 <span>Loading directory...</span>
@@ -280,46 +280,20 @@ function DiscoverContent() {
 
               {/* Rating Selector Dropdown */}
               <div className="relative inline-block">
-                <select
+                <RatingSelect
                   value={filters.ratingMin || 0}
-                  onChange={(e) => dispatch(setRatingMin(Number(e.target.value)))}
-                  className={`${styles.categoryButton} ${filters.ratingMin > 0 ? styles.active : ""} !pr-8 bg-none cursor-pointer appearance-none outline-none`}
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='${filters.ratingMin > 0 ? "%23101012" : "%23666666"}' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
-                    backgroundPosition: "right 10px center",
-                    backgroundRepeat: "no-repeat",
-                    backgroundSize: "14px",
-                  }}
-                >
-                  <option value="0" className="bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">{t.discover.allRatings || "All Ratings"}</option>
-                  <option value="4.5" className="bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">{t.discover.rating45 || "★ 4.5 & up"}</option>
-                  <option value="4" className="bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">{t.discover.rating40 || "★ 4.0 & up"}</option>
-                  <option value="3" className="bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">{t.discover.rating30 || "★ 3.0 & up"}</option>
-                </select>
+                  onChange={(val) => dispatch(setRatingMin(val))}
+                  className={`${styles.categoryButton} ${filters.ratingMin > 0 ? styles.active : ""} cursor-pointer`}
+                />
               </div>
 
               {/* Sort By Selector Dropdown */}
               <div className="relative inline-block">
-                <select
+                <SortSelect
                   value={filters.sortBy}
-                  onChange={(e) => dispatch(setSortBy(e.target.value as any))}
-                  className={`${styles.categoryButton} ${filters.sortBy !== "popular" ? styles.active : ""} !pr-8 bg-none cursor-pointer appearance-none outline-none`}
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='${filters.sortBy !== "popular" ? "%23101012" : "%23666666"}' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
-                    backgroundPosition: "right 10px center",
-                    backgroundRepeat: "no-repeat",
-                    backgroundSize: "14px",
-                  }}
-                >
-                  {SORT_OPTIONS.map((opt) => {
-                    const sortKey = opt.value === 'popular' ? 'mostPopular' : opt.value === 'rating' ? 'highestRated' : opt.value === 'newest' ? 'newestFirst' : 'alphabetical';
-                    return (
-                      <option key={opt.value} value={opt.value} className="bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
-                        {(t.discover as any)[sortKey] || opt.label}
-                      </option>
-                    );
-                  })}
-                </select>
+                  onChange={(val) => dispatch(setSortBy(val as any))}
+                  className={`${styles.categoryButton} ${filters.sortBy !== "popular" ? styles.active : ""} cursor-pointer`}
+                />
               </div>
 
               {/* View Toggle Icons */}
@@ -357,7 +331,7 @@ function DiscoverContent() {
           {loading ? (
             <div className={styles.centeredState}>
               <Loader2 className={styles.loaderIcon} />
-              <p>Loading premium businesses...</p>
+              <p>Loading ...</p>
             </div>
           ) : filtered.length > 0 ? (
             <>

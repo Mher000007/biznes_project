@@ -2,7 +2,7 @@ export const en = {
   // Navbar
   nav: {
     home: "Home",
-    discover: "Discover",
+    discover: "Catalog",
     categories: "Categories",
     about: "About",
     login: "Log in",
@@ -47,8 +47,8 @@ export const en = {
   // Reviews Feed
   reviewsFeed: {
     loading: "Loading reviews feed...",
-    title: "Browse recent reviews",
-    subtitle: "Explore feedback and photos shared by customers in Armenia",
+    title: "Reviews",
+    subtitle: "Feedback and photos shared by customers",
     showMore: "Show More",
   },
   // CTA
@@ -171,7 +171,7 @@ export const en = {
     newestFirst: "Newest First",
     alphabetical: "Alphabetical",
     verifiedOnlyButton: "Verified Only",
-    bookNow: "Book Now",
+    bookNow: "Visit",
   },
   // Register
   register: {

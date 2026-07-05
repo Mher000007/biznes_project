@@ -1,15 +1,15 @@
 import type { Translations } from "./en";
 export const ru: Translations = {
-  nav: { home: "Главная", discover: "изучать", categories: "Категории", about: "О нас", login: "Войти", getStarted: "Начать", signOut: "Выйти", hello: "Привет, ", serviceOrBusiness: "Поиск ...", allLocations: "Все локации", searchButton: "Найти" },
+  nav: { home: "Главная", discover: "Каталог", categories: "Категории", about: "О нас", login: "Войти", getStarted: "Начать", signOut: "Выйти", hello: "Привет, ", serviceOrBusiness: "Поиск ...", allLocations: "Все локации", searchButton: "Найти" },
   hero: { title: "Найдите нужный рестораныв Армении", subtitle: "Более 900 проверенных компаний во всех отраслях. Находите услуги, читайте отзывы, связывайтесь напрямую.", searchPlaceholder: "Поиск компаний...", search: "Найти", businesses: "компаний", cities: "городов", industries: "отраслей" },
   categories: { title: "Поиск по категориям", subtitle: "Все основные отрасли бизнеса Армении", listed: "в списке", allCategories: "Все категории", allSubtitle: "Просмотрите все отрасли" },
   featured: { title: "Топ-5 ресторанов", subtitle: "Рестораны с самым высоким рейтингом на Findy", viewAll: "Все" },
   stats: { businesses: "Компаний", cities: "Городов", industries: "Отраслей", visitors: "Посетителей в месяц" },
-  reviewsFeed: { loading: "Загрузка отзывов...", title: "Последние отзывы", subtitle: "Изучите отзывы и фото клиентов в Армении", showMore: "Показать больше" },
+  reviewsFeed: { loading: "Загрузка отзывов...", title: "Последние отзывы", subtitle: "отзывы и фото клиентов ", showMore: "Показать больше" },
   cta: { title: "Добавьте свой бизнес", subtitle: "Присоединяйтесь к 900+ компаниям на Findy. Создайте профиль, управляйте бронированиями.", getStarted: "Начать бесплатно", browse: "Каталог" },
   footer: { tagline: "Бизнес-каталог Армении. Найди, свяжись, расти.", product: "Продукт", contact: "Контакты", privacy: "Конфиденциальность", terms: "Условия" },
   auth: { createAccount: "Создать аккаунт", chooseType: "Как вы хотите использовать Findy", personal: "Личный аккаунт", personalDesc: "Поиск, отзывы, бронирование", business: "Бизнес аккаунт", businessDesc: "Разместите компанию и управляйте", haveAccount: "Есть аккаунт?", noAccount: "Нет аккаунта?", login: "Войти", signup: "Регистрация", welcomeBack: "С возвращением", loginSubtitle: "Войдите в свой аккаунт", name: "Имя", email: "Эл. почта", password: "Пароль", forgot: "Забыли?", continue: "Далее", back: "Назад", businessSetup: "Далее настроим профиль компании", personalSetup: "Введите данные для начала" },
-  dashboard: { title: "Панель управления", welcome: "С возвращением! Обзор вашего бизнеса.", publish: "Опубликовать", publishing: "Публикация...", liveOn: "На ArmBiz", edit: "Редактировать", unpublished: "Есть изменения", totalViews: "Просмотры", inquiries: "Запросы", avgRating: "Рейтинг", profileRank: "Позиция", recentInquiries: "Последние запросы", viewAll: "Все", overview: "Обзор", profile: "Профиль", settings: "Настройки" },
+  dashboard: { title: "Панель управления", welcome: "С возвращением! Обзор вашего бизнеса.", publish: "Опубликовать", publishing: "Публикация...", liveOn: "На findy", edit: "Редактировать", unpublished: "Есть изменения", totalViews: "Просмотры", inquiries: "Запросы", avgRating: "Рейтинг", profileRank: "Позиция", recentInquiries: "Последние запросы", viewAll: "Все", overview: "Обзор", profile: "Профиль", settings: "Настройки" },
   business: {
     verified: "Проверено",
     services: "Услуги",
@@ -70,7 +70,7 @@ export const ru: Translations = {
     newestFirst: "Сначала новые",
     alphabetical: "По алфавиту",
     verifiedOnlyButton: "Только проверенные",
-    bookNow: "Забронировать сейчас",
+    bookNow: "Посетить",
   },
   register: { title: "Регистрация бизнеса", subtitle: "Создайте профессиональный профиль", businessName: "Название", category: "Категория", companySize: "Размер", shortDesc: "Краткое описание", fullDesc: "Полное описание", foundedYear: "Год основания", city: "Город", address: "Адрес", phone: "Телефон", website: "Сайт", serviceName: "Название услуги", price: "Цена", description: "Описание", duration: "Длительность", addService: "Добавить услугу", businessPhotos: "Фото", dragDrop: "Перетащите фото сюда", browseFiles: "Выбрать файлы", socialLinks: "Соцсети", tags: "Теги", preview: "Предпросмотр", submit: "Отправить", next: "Далее", back: "Назад", optional: "Этот шаг необязателен — можно заполнить позже.", complete: "Регистрация завершена!", underReview: "Ваш профиль на проверке. Мы уведомим вас.", pendingReview: "На проверке", steps: ["Информация", "Контакты", "Услуги"] },
   chat: {

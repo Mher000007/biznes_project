@@ -122,7 +122,7 @@ export default function BusinessCard({ business, viewMode = "list" }: { business
             {status.text}
           </div>
           <Link href={`/business/${business.slug}`} className={styles.actionButton}>
-            {t.discover?.bookNow || "Book Now"}
+            {t.discover?.bookNow || "Visit"}
           </Link>
         </div>
       </div>

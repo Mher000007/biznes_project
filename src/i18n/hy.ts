@@ -3,7 +3,7 @@ import type { Translations } from "./en";
 export const hy: Translations = {
   nav: {
     home: "Գլխավոր",
-    discover: "Ուսումնասիրել",
+    discover: "Ցուցակ",
     categories: "Կատեգորիաներ",
     about: "Մեր մասին",
     login: "Մուտք",
@@ -15,7 +15,7 @@ export const hy: Translations = {
     searchButton: "Որոնել",
   },
   hero: {
-    title: "Գտեք ճիշտ բիզնեսը Հայաստանում",
+    title: "Գտեք ճիշտ ռեստորան Հայաստանում",
     subtitle: "Որոնեք 900+ ստուգված ընկերությունները բոլոր արդյունաբերության մեջ: Հայտնաբերեք ծառայությունները, կարդացեք մեկնաբանությունները և կապվեք անմիջապես:",
     searchPlaceholder: "Որոնել ...",
     search: "Որոնել",
@@ -43,8 +43,8 @@ export const hy: Translations = {
   },
   reviewsFeed: {
     loading: "Բեռնվում են կարծիքները...",
-    title: "Դիտեք վերջին կարծիքները",
-    subtitle: "Բացահայտեք հաճախորդների թողած արձագանքները և նկարները Հայաստանում",
+    title: "Մեկնաբանություններ",
+    subtitle: " հաճախորդների կարծիքները",
     showMore: "Ցուցադրել ավելին",
   },
   cta: {
@@ -148,7 +148,7 @@ export const hy: Translations = {
     verifiedOnly: "Միայն հաստատվածները",
     reset: "Վերականգնել ֆիլտրերը",
     clear: "Մաքրել",
-    directoryTitle: "Բացահայտիր",
+    directoryTitle: "Ցուցակ",
     all: "Բոլորը",
     allLocations: "Բոլոր վայրերը",
     allRatings: "Բոլոր վարկանիշները",
@@ -160,7 +160,7 @@ export const hy: Translations = {
     newestFirst: "Նախ նորերը",
     alphabetical: "Այբբենական",
     verifiedOnlyButton: "Միայն հաստատվածները",
-    bookNow: "Ամրագրել հիմա",
+    bookNow: "Այցելել",
   },
   register: {
     title: "Գրանցեք ձեր բիզնեսը",
