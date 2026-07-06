@@ -9,6 +9,8 @@ import {
   getMyBusinesses,
   rateBusiness,
   getBusinessAnalytics,
+  getCalendarSummaries,
+  updateDailySummary,
 } from '../controllers/businessController.js';
 import {
   getLocations,
@@ -36,6 +38,8 @@ router.put('/:id', authenticate, updateBusiness);
 router.delete('/:id', authenticate, deleteBusiness);
 router.post('/:id/rate', rateBusiness);
 router.get('/:id/analytics', authenticate, getBusinessAnalytics);
+router.get('/:id/calendar', authenticate, getCalendarSummaries);
+router.post('/:id/calendar/:date', authenticate, updateDailySummary);
 
 // ── Nested review routes → /businesses/:businessId/reviews ───────────────────
 router.use('/:businessId/reviews', reviewRoutes);

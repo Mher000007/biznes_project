@@ -21,7 +21,7 @@ interface Location {
 }
 
 export default function DashboardLocations() {
-  const { currentUser, token } = useAuth();
+  const { currentUser } = useAuth();
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -36,7 +36,7 @@ export default function DashboardLocations() {
     isPrimary: false,
   });
 
-  const businessId = currentUser?.businessId || (currentUser as any)?.business?._id;
+  const businessId = (currentUser as any)?.businessId || (currentUser as any)?.business?._id;
 
   const fetchLocations = async () => {
     if (!businessId) return;
@@ -60,6 +60,7 @@ export default function DashboardLocations() {
     if (!businessId) return;
     
     try {
+      const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
       const payload = { ...formData, coordinates: { latitude: 40.1872, longitude: 44.5152 } }; // basic fallback coords
 
       if (editingId) {
@@ -84,6 +85,7 @@ export default function DashboardLocations() {
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this branch?")) return;
     try {
+      const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
       await axios.delete(`${getApiUrl()}/businesses/locations/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });

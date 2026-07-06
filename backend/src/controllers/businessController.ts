@@ -5,6 +5,7 @@ import Category from '../models/Category.js';
 import Subscription from '../models/Subscription.js';
 import BusinessLocation from '../models/BusinessLocation.js';
 import PageVisit from '../models/PageVisit.js';
+import DailySummary from '../models/DailySummary.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { triggerOnboardingWebhook } from '../utils/n8n.js';
 import { isValidCity } from '../utils/locationValidator.js';
@@ -560,6 +561,44 @@ export const getBusinessAnalytics = asyncHandler(
     res.status(200).json({
       success: true,
       data
+    });
+  }
+);
+
+// ─── Calendar / Daily Summaries ──────────────────────────────────────
+export const getCalendarSummaries = asyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const { id } = req.params;
+    const { month } = req.query; // YYYY-MM
+    
+    const filter: any = { business: new mongoose.Types.ObjectId(id) };
+    if (month && typeof month === 'string') {
+      filter.date = { $regex: `^${month}` }; // Matches "YYYY-MM-DD"
+    }
+
+    const summaries = await DailySummary.find(filter).sort({ date: 1 });
+    
+    res.status(200).json({
+      success: true,
+      data: summaries
+    });
+  }
+);
+
+export const updateDailySummary = asyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const { id, date } = req.params;
+    const { summary, stats } = req.body;
+
+    const summaryDoc = await DailySummary.findOneAndUpdate(
+      { business: new mongoose.Types.ObjectId(id), date },
+      { summary, stats },
+      { new: true, upsert: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      data: summaryDoc
     });
   }
 );

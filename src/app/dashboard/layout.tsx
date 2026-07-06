@@ -18,6 +18,7 @@ import {
   Camera,
   Clock,
   MapPin,
+  Calendar,
 } from "lucide-react";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -61,6 +62,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const links = [
     { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
+    { href: "/dashboard/calendar", label: "Calendar", icon: Calendar },
     { href: "/dashboard/profile", label: "Business Profile", icon: Building2 },
     { href: "/dashboard/locations", label: "My Locations", icon: MapPin },
     { href: "/dashboard/stories", label: "Stories", icon: Sparkles },
