@@ -4,6 +4,7 @@ import Business from '../models/Business.js';
 import Category from '../models/Category.js';
 import Subscription from '../models/Subscription.js';
 import BusinessLocation from '../models/BusinessLocation.js';
+import PageVisit from '../models/PageVisit.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { triggerOnboardingWebhook } from '../utils/n8n.js';
 import { isValidCity } from '../utils/locationValidator.js';
@@ -58,7 +59,7 @@ export const getBusinesses = asyncHandler(async (req: Request, res: Response): P
       { description: searchRegex },
       { tags: searchRegex },
     ];
-    
+
     if (filter.$or) {
       // If we already have a price filter, combine them with $and
       filter.$and = [
@@ -153,6 +154,11 @@ export const getBusinessBySlug = asyncHandler(
       res.status(404).json({ success: false, message: 'Business not found' });
       return;
     }
+
+    // Log the visit asynchronously
+    PageVisit.create({ business: business._id }).catch(err => {
+      console.error("Failed to log page visit:", err);
+    });
 
     const sub = await Subscription.findOne({ business: business._id, status: 'active' });
     const locations = await BusinessLocation.find({ business: business._id }).sort({ isPrimary: -1, createdAt: 1 });
@@ -415,9 +421,59 @@ export const getMyBusinesses = asyncHandler(
       .populate('category', 'name slug')
       .sort({ createdAt: -1 });
 
+    const businessesWithRank = await Promise.all(businesses.map(async (biz) => {
+      const bizObj = biz.toObject() as any;
+      const currentViews = biz.views || 0;
+
+      // Current Rank across all active businesses
+      const higherViewsCount = await Business.countDocuments({
+        active: true,
+        views: { $gt: currentViews }
+      });
+      bizObj.rank = higherViewsCount + 1;
+
+      // Rank 1 day ago to avoid 7-day backfill zeroing
+      const oneDayAgo = new Date();
+      oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+
+      const PageVisit = mongoose.model('PageVisit');
+      const myRecentVisits = await PageVisit.countDocuments({ business: biz._id, timestamp: { $gte: oneDayAgo } });
+      const myViews1DayAgo = currentViews - myRecentVisits;
+
+      const activeBusinesses = await Business.find({ active: true }, '_id views');
+      let higherViews1DayAgoCount = 0;
+
+      const recentVisitsCount = await PageVisit.aggregate([
+        { $match: { timestamp: { $gte: oneDayAgo } } },
+        { $group: { _id: '$business', count: { $sum: 1 } } }
+      ]);
+      const visitMap = new Map(recentVisitsCount.map(v => [v._id.toString(), v.count]));
+
+      for (const b of activeBusinesses) {
+        if (b._id.toString() === biz._id.toString()) continue;
+        const bRecentVisits = visitMap.get(b._id.toString()) || 0;
+        const bViews1DayAgo = (b.views || 0) - bRecentVisits;
+        if (bViews1DayAgo > myViews1DayAgo) {
+          higherViews1DayAgoCount++;
+        }
+      }
+
+      const rank1DayAgo = higherViews1DayAgoCount + 1;
+
+      if (bizObj.rank < rank1DayAgo) bizObj.rankTrend = 'up'; // Rank improved (e.g. 15 -> 8)
+      else if (bizObj.rank > rank1DayAgo) bizObj.rankTrend = 'down'; // Rank worsened (e.g. 8 -> 15)
+      else {
+        // If rank is exactly the same, but we got recent visits, let's show a subtle up trend!
+        if (myRecentVisits > 0) bizObj.rankTrend = 'up';
+        else bizObj.rankTrend = 'flat';
+      }
+
+      return bizObj;
+    }));
+
     res.status(200).json({
       success: true,
-      data: businesses,
+      data: businessesWithRank,
     });
   }
 );
@@ -455,6 +511,55 @@ export const rateBusiness = asyncHandler(
         rating: business.rating,
         reviewCount: business.reviewCount,
       },
+    });
+  }
+);
+
+// ─── GET Business Analytics ──────────────────────────────────────────
+export const getBusinessAnalytics = asyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const { id } = req.params;
+    const { period } = req.query; // '1d', '7d', '1m', '3m', '6m', '1y', 'all'
+
+    let startDate = new Date();
+    if (period === '1d') startDate.setDate(startDate.getDate() - 1);
+    else if (period === '7d') startDate.setDate(startDate.getDate() - 7);
+    else if (period === '14d') startDate.setDate(startDate.getDate() - 14);
+    else if (period === '1m') startDate.setMonth(startDate.getMonth() - 1);
+    else if (period === '3m') startDate.setMonth(startDate.getMonth() - 3);
+    else if (period === '6m') startDate.setMonth(startDate.getMonth() - 6);
+    else if (period === '1y') startDate.setFullYear(startDate.getFullYear() - 1);
+    else if (period === 'all') startDate = new Date(0); // Epoch
+
+    const matchStage: any = { business: new mongoose.Types.ObjectId(id) };
+    if (period !== 'all') {
+      matchStage.timestamp = { $gte: startDate };
+    }
+
+    // Determine grouping based on period
+    let format = "%Y-%m-%d"; // default daily
+    if (period === '1d') format = "%Y-%m-%d %H:00"; // hourly
+    else if (period === '1y' || period === 'all') format = "%Y-%m"; // monthly
+
+    const visits = await PageVisit.aggregate([
+      { $match: matchStage },
+      {
+        $group: {
+          _id: { $dateToString: { format, date: "$timestamp" } },
+          views: { $sum: 1 }
+        }
+      },
+      { $sort: { _id: 1 } }
+    ]);
+
+    const data = visits.map(v => ({
+      date: v._id,
+      views: v.views
+    }));
+
+    res.status(200).json({
+      success: true,
+      data
     });
   }
 );

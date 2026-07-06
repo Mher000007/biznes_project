@@ -1,20 +1,37 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Eye, MessageSquare, Star, TrendingUp, ArrowUpRight, Award, Gem, AlertTriangle, Lock, ShieldAlert, Sparkles, CheckCircle, Bell } from "lucide-react";
+import { Eye, MessageSquare, Star, TrendingUp, TrendingDown, Minus, ArrowUpRight, Award, Gem, AlertTriangle, Lock, ShieldAlert, Sparkles, CheckCircle, Bell, MapPin, BadgeCheck } from "lucide-react";
 import DashboardPublish from "./DashboardPublish";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
 import { getApiUrl } from "@/lib/utils";
 import styles from "@/components/dashboard/Dashboard.module.scss";
+import TotalViewsChart from "@/components/dashboard/TotalViewsChart";
+import dynamic from "next/dynamic";
+import RatingChart from "@/components/dashboard/RatingChart";
+import TopBusinesses from "@/components/dashboard/TopBusinesses";
+
+const LeafletMap = dynamic(() => import("@/components/map/LeafletMap"), { ssr: false });
 
 const API = getApiUrl();
 
-const DEFAULT_STATS = [
-  { label: "Total Views", value: "0", change: "+0%", icon: Eye },
-  { label: "Inquiries", value: "0", change: "+0%", icon: MessageSquare },
-  { label: "Avg. Rating", value: "0.0", change: "+0.0", icon: Star },
-  { label: "Profile Rank", value: "#–", change: "+0", icon: TrendingUp },
+interface StatItem {
+  label: string;
+  value: string;
+  change: string;
+  icon: any;
+  iconColor?: string;
+  iconBg?: string;
+  iconAnimate?: string;
+  badge?: string;
+}
+
+const DEFAULT_STATS: StatItem[] = [
+  { label: "Total Views", value: "0", change: "+0%", icon: Eye, iconColor: "text-cyan-500 fill-cyan-500", iconBg: "bg-cyan-500/10", iconAnimate: "animate-eye-glow" },
+  { label: "Inquiries", value: "0", change: "+0%", icon: MessageSquare, iconColor: "text-blue-500 fill-blue-500", iconBg: "bg-blue-500/10", iconAnimate: "animate-message-pop" },
+  { label: "Avg. Rating", value: "0.0", change: "", icon: Star, iconColor: "text-amber-400 fill-amber-400", iconBg: "bg-amber-400/10", iconAnimate: "animate-gold-twinkle" },
+  { label: "Profile Rank", value: "#–", change: "", icon: TrendingUp },
 ];
 
 interface DashboardInquiry {
@@ -44,8 +61,10 @@ export default function DashboardPage() {
   const displayName = currentUser?.name || currentUser?.username || "User";
 
   const [stats, setStats] = useState(DEFAULT_STATS);
+  const [totalViews, setTotalViews] = useState(0);
   const [loading, setLoading] = useState(true);
   const [businessId, setBusinessId] = useState<string | null>(null);
+  const [userBusinesses, setUserBusinesses] = useState<any[]>([]);
 
   // Subscription & Verification States
   const [activePlan, setActivePlan] = useState<"starter" | "standard" | "premium">("starter");
@@ -125,6 +144,8 @@ export default function DashboardPage() {
           return;
         }
 
+        setUserBusinesses(businesses);
+
         const biz = businesses[0];
         setBusinessId(biz._id);
         setIsVerified(biz.verified || false);
@@ -141,6 +162,7 @@ export default function DashboardPage() {
         }
 
         const views = biz.views || 0;
+        setTotalViews(views);
         const rating = biz.rating || 0;
         let reviewCount = biz.reviewCount || 0;
 
@@ -154,13 +176,36 @@ export default function DashboardPage() {
         } catch { /* bookings endpoint may not exist yet */ }
 
 
-        const rankVal = views > 0 ? `#${Math.max(1, 15 - Math.floor(views / 10))}` : "#–";
+        const rankVal = biz.rank ? `#${biz.rank}` : (views > 0 ? `#${Math.max(1, 15 - Math.floor(views / 10))}` : "#–");
+
+        let rankIcon = TrendingUp;
+        let rankIconColor = "text-[hsl(var(--primary))]";
+        let rankIconBg = "bg-[hsl(var(--primary))]/10";
+        let rankAnimate = "";
+
+        if (biz.rankTrend === 'up') {
+          rankIcon = TrendingUp;
+          rankIconColor = "text-green-600";
+          rankIconBg = "bg-green-600/10";
+          rankAnimate = "animate-bounce";
+        } else if (biz.rankTrend === 'down') {
+          rankIcon = TrendingDown;
+          rankIconColor = "text-red-600";
+          rankIconBg = "bg-red-600/10";
+          rankAnimate = "animate-pulse";
+        } else {
+          rankIcon = Minus;
+          rankIconColor = "text-gray-500";
+          rankIconBg = "bg-gray-500/10";
+        }
+
+        const isTop5 = biz.rank && biz.rank <= 5;
 
         setStats([
-          { label: "Total Views", value: views.toLocaleString(), change: views > 0 ? `+${(views * 0.125).toFixed(1)}%` : "+0%", icon: Eye },
-          { label: "Inquiries", value: bookingCount.toLocaleString(), change: "+0%", icon: MessageSquare },
-          { label: "Avg. Rating", value: `${rating.toFixed(1)} (${reviewCount} review${reviewCount !== 1 ? "s" : ""})`, change: "+0.0", icon: Star },
-          { label: "Profile Rank", value: rankVal, change: "+0", icon: TrendingUp },
+          { label: "Total Views", value: views.toLocaleString(), change: views > 0 ? `+${(views * 0.125).toFixed(1)}%` : "+0%", icon: Eye, iconColor: "text-cyan-500 fill-cyan-500", iconBg: "bg-cyan-500/10", iconAnimate: "animate-eye-glow" },
+          { label: "Inquiries", value: bookingCount.toLocaleString(), change: "+0%", icon: MessageSquare, iconColor: "text-blue-500 fill-blue-500", iconBg: "bg-blue-500/10", iconAnimate: "animate-message-pop" },
+          { label: "Avg. Rating", value: `${rating.toFixed(1)} (${reviewCount} review${reviewCount !== 1 ? "s" : ""})`, change: "", icon: Star, iconColor: "text-amber-400 fill-amber-400", iconBg: "bg-amber-400/10", iconAnimate: "animate-gold-twinkle" },
+          { label: "Profile Rank", value: rankVal, change: "", icon: rankIcon, iconColor: rankIconColor, iconBg: rankIconBg, iconAnimate: rankAnimate, badge: isTop5 ? "Top 5 in Armenia" : undefined },
         ]);
       } catch (err) {
         console.warn("Dashboard data load failed", err);
@@ -189,7 +234,24 @@ export default function DashboardPage() {
         <div>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <div>
-              <h1 className="text-2xl font-bold tracking-tight mb-1">Dashboard</h1>
+              <div className="flex items-center gap-3 mb-1">
+                <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+                {activePlan === "premium" && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-200 to-yellow-400 px-2 py-0.5 text-[0.65rem] font-bold text-amber-950 shadow-sm border border-amber-300 uppercase tracking-wide">
+                    <BadgeCheck className="h-3 w-3" /> Premium Partner
+                  </span>
+                )}
+                {activePlan === "standard" && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-slate-200 to-gray-300 px-2 py-0.5 text-[0.65rem] font-bold text-slate-800 shadow-sm border border-slate-400 uppercase tracking-wide">
+                    <BadgeCheck className="h-3 w-3" /> Standard Partner
+                  </span>
+                )}
+                {activePlan === "starter" && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[0.65rem] font-bold text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 uppercase tracking-wide">
+                    <BadgeCheck className="h-3 w-3" /> Starter
+                  </span>
+                )}
+              </div>
               <p className="text-sm text-[hsl(var(--muted-foreground))]">Welcome back, {displayName}! Here&apos;s your business overview.</p>
             </div>
             <div className="flex items-center gap-3">
@@ -202,18 +264,67 @@ export default function DashboardPage() {
             {stats.map((stat) => (
               <div key={stat.label} className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-5">
                 <div className="flex items-center justify-between mb-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))]">
+                  <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${stat.iconBg || 'bg-[hsl(var(--primary))]/10'} ${stat.iconColor || 'text-[hsl(var(--primary))]'} ${(stat as any).iconAnimate || ''}`}>
                     <stat.icon className="h-4 w-4" />
                   </div>
-                  <span className="flex items-center gap-0.5 text-xs font-medium text-green-600">
-                    {stat.change} <ArrowUpRight className="h-3 w-3" />
-                  </span>
+                  {stat.change && (
+                    <span className="flex items-center gap-0.5 text-xs font-medium text-green-600">
+                      {stat.change} <ArrowUpRight className="h-3 w-3" />
+                    </span>
+                  )}
                 </div>
                 <div className="text-2xl font-bold">{stat.value}</div>
                 <div className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">{stat.label}</div>
               </div>
             ))}
           </div>
+
+          {!loading && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+              <div className="lg:col-span-2">
+                <TotalViewsChart totalViews={totalViews} businessId={businessId || ""} />
+              </div>
+              <div className="lg:col-span-1">
+                {businessId && <RatingChart businessId={businessId} />}
+              </div>
+            </div>
+          )}
+
+          {!loading && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              <div>
+                <TopBusinesses />
+              </div>
+              <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-sm flex flex-col h-full min-h-[400px]">
+                <div className="p-6 border-b border-[hsl(var(--border))]">
+                  <h3 className="text-base font-bold text-[hsl(var(--foreground))] flex items-center gap-2">
+                    <MapPin className="h-5 w-5 text-indigo-500" />
+                    Իմ Բիզնեսների Քարտեզը
+                  </h3>
+                  <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">Ձեր հաստատությունների տեղակայումները</p>
+                </div>
+                <div className="flex-1 relative z-0 rounded-b-2xl overflow-hidden bg-[hsl(var(--muted))]/30">
+                  <LeafletMap
+                    center={[40.1872, 44.5152]}
+                    zoom={12}
+                    markers={userBusinesses
+                      .filter(b => (b.coordinates && b.coordinates.latitude && b.coordinates.longitude) || (b.latitude && b.longitude))
+                      .map(b => ({
+                        id: b._id,
+                        lat: b.coordinates?.latitude || b.latitude,
+                        lng: b.coordinates?.longitude || b.longitude,
+                        name: b.name,
+                        category: b.category?.name,
+                        slug: b.slug,
+                        rating: b.rating,
+                        reviewCount: b.reviewCount
+                      }))}
+                    fitAllBounds={true}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Verification Pending Banner or Subscription Management */}
           {!loading && (

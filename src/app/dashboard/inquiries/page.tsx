@@ -106,7 +106,7 @@ export default function InquiriesPage() {
   const handleMarkAsRead = async (notifId: string) => {
     try {
       await axios.put(`${API}/notifications/${notifId}/read`, {}, { headers: authHeader() });
-      setInquiries(prev => prev.map(inq => 
+      setInquiries(prev => prev.map(inq =>
         inq.id === notifId && inq.type === "notification"
           ? { ...inq, status: "read" }
           : inq
@@ -225,11 +225,10 @@ export default function InquiriesPage() {
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all capitalize ${
-                    activeTab === tab
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all capitalize ${activeTab === tab
                       ? "bg-[hsl(var(--card))] text-[hsl(var(--foreground))] shadow-sm"
                       : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] bg-transparent"
-                  }`}
+                    }`}
                 >
                   {tab}
                   {tab === "notifications" && unreadNotifsCount > 0 && (
@@ -259,19 +258,18 @@ export default function InquiriesPage() {
                       <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                     )}
                     <span className="text-sm font-semibold">{inq.name}</span>
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                      inq.type === "review"
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${inq.type === "review"
                         ? inq.status === "reported" ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 animate-pulse"
                           : inq.status === "resolved_kept" ? "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300"
-                          : inq.status === "resolved_deleted" ? "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300"
-                          : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                            : inq.status === "resolved_deleted" ? "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300"
+                              : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
                         : inq.type === "notification"
                           ? inq.status === "unread" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300" : "bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))]"
-                        : inq.status === "pending" || inq.status === "new" ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
-                        : inq.status === "confirmed" || inq.status === "replied" ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-                        : inq.status === "cancelled" ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300"
-                        : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
-                    }`}>
+                          : inq.status === "pending" || inq.status === "new" ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                            : inq.status === "confirmed" || inq.status === "replied" ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+                              : inq.status === "cancelled" ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300"
+                                : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                      }`}>
                       {inq.type === "review" ? `Review${inq.status && inq.status !== "approved" && inq.status !== "read" ? ` (${inq.status})` : ""}` : inq.type === "notification" ? "Notification" : inq.status}
                     </span>
                     {inq.type === "review" && inq.rating && (
@@ -365,13 +363,13 @@ export default function InquiriesPage() {
             if (activeTab === "notifications") return inq.type === "notification";
             return true;
           }).length === 0 && (
-            <div className="p-8 text-center text-xs text-[hsl(var(--muted-foreground))]">
-              {loading ? "Loading activity…" : activeTab === "bookings" ? "No recent bookings." : activeTab === "reviews" ? "No recent reviews." : activeTab === "notifications" ? "No notifications." : "No recent activity yet."}
-            </div>
-          )}
+              <div className="p-8 text-center text-xs text-[hsl(var(--muted-foreground))]">
+                {loading ? "Loading activity…" : activeTab === "bookings" ? "No recent bookings." : activeTab === "reviews" ? "No recent reviews." : activeTab === "notifications" ? "No notifications." : "No recent activity yet."}
+              </div>
+            )}
         </div>
       </div>
-      
+
       {/* Report Modal */}
       {reportModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -386,14 +384,14 @@ export default function InquiriesPage() {
             />
             {reportError && <div className="text-xs text-red-500 mb-4">{reportError}</div>}
             <div className="flex gap-2 justify-end">
-              <button 
+              <button
                 onClick={handleCloseReportModal}
                 className="px-4 py-2 text-sm font-semibold text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors cursor-pointer"
                 disabled={isSubmittingReport}
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleSubmitReport}
                 className="px-4 py-2 text-sm font-semibold bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] rounded-lg hover:opacity-90 transition-opacity cursor-pointer flex items-center gap-2"
                 disabled={isSubmittingReport || reportReason.trim().length < 5}

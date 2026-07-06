@@ -81,6 +81,11 @@ export const hy: Translations = {
     back: "Հետ",
     businessSetup: "Հետո մենք կսահմանենք ձեր բիզնես պրոֆիլը",
     personalSetup: "Մուտքագրեք ձեր տվյալները սկսելու համար",
+    loginToContinue: "Մուտք գործեք շարունակելու համար",
+    usernameOrEmail: "Օգտանուն կամ էլ․ հասցե",
+    forgotPassword: "Մոռացե՞լ եք գաղտնաբառը",
+    loginBtn: "Մուտք",
+    signUp: "Գրանցվել",
   },
   dashboard: {
     title: "Վահանակ",
@@ -432,14 +437,5 @@ export const hy: Translations = {
       ]
     }
   },
-  auth: {
-    welcomeBack: "Բարի վերադարձ",
-    loginToContinue: "Մուտք գործեք շարունակելու համար",
-    usernameOrEmail: "Օգտանուն կամ էլ․ հասցե",
-    password: "Գաղտնաբառ",
-    forgotPassword: "Մոռացե՞լ եք գաղտնաբառը",
-    loginBtn: "Մուտք",
-    noAccount: "Չունե՞ք հաշիվ:",
-    signUp: "Գրանցվել",
-  },
+
 };

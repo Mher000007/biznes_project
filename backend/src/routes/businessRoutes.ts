@@ -8,6 +8,7 @@ import {
   deleteBusiness,
   getMyBusinesses,
   rateBusiness,
+  getBusinessAnalytics,
 } from '../controllers/businessController.js';
 import {
   getLocations,
@@ -34,6 +35,7 @@ router.get('/:id', getBusinessById);
 router.put('/:id', authenticate, updateBusiness);
 router.delete('/:id', authenticate, deleteBusiness);
 router.post('/:id/rate', rateBusiness);
+router.get('/:id/analytics', authenticate, getBusinessAnalytics);
 
 // ── Nested review routes → /businesses/:businessId/reviews ───────────────────
 router.use('/:businessId/reviews', reviewRoutes);

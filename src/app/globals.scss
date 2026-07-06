@@ -17,6 +17,50 @@
   --breakpoint-2xl: 1440px;
   --breakpoint-3xl: 1920px;
   --breakpoint-4xl: 2560px;
+
+  --animate-gold-twinkle: gold-twinkle 2.5s ease-in-out infinite;
+  @keyframes gold-twinkle {
+    0%, 100% {
+      transform: scale(1) rotate(0deg);
+      filter: drop-shadow(0 0 2px rgba(251, 191, 36, 0.5));
+    }
+    50% {
+      transform: scale(1.15) rotate(5deg);
+      filter: drop-shadow(0 0 8px rgba(251, 191, 36, 1));
+    }
+  }
+
+  --animate-message-pop: message-pop 3s ease-in-out infinite;
+  @keyframes message-pop {
+    0%, 100% {
+      transform: scale(1) rotate(0deg);
+      filter: drop-shadow(0 0 2px rgba(59, 130, 246, 0.3));
+    }
+    10%, 30% {
+      transform: scale(1.1) rotate(-8deg);
+      filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.7));
+    }
+    20%, 40% {
+      transform: scale(1.1) rotate(8deg);
+      filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.7));
+    }
+    50% {
+      transform: scale(1) rotate(0deg);
+      filter: drop-shadow(0 0 2px rgba(59, 130, 246, 0.3));
+    }
+  }
+
+  --animate-eye-glow: eye-glow 2.5s ease-in-out infinite;
+  @keyframes eye-glow {
+    0%, 100% {
+      transform: scale(1);
+      filter: drop-shadow(0 0 2px rgba(6, 182, 212, 0.4));
+    }
+    50% {
+      transform: scale(1.15);
+      filter: drop-shadow(0 0 10px rgba(6, 182, 212, 0.9));
+    }
+  }
 }
 
 /* ========== DYNAMIC VIEWPORT HELPERS ========== */

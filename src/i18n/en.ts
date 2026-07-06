@@ -88,6 +88,11 @@ export const en = {
     back: "Back",
     businessSetup: "We'll set up your business profile next",
     personalSetup: "Enter your details to get started",
+    loginToContinue: "Log in to your account to continue",
+    usernameOrEmail: "Username or Email",
+    forgotPassword: "Forgot password?",
+    loginBtn: "Log in",
+    signUp: "Sign up",
   },
   // Dashboard
   dashboard: {
@@ -447,17 +452,7 @@ export const en = {
       ]
     }
   },
-  // Auth
-  auth: {
-    welcomeBack: "Welcome back",
-    loginToContinue: "Log in to your account to continue",
-    usernameOrEmail: "Username or Email",
-    password: "Password",
-    forgotPassword: "Forgot password?",
-    loginBtn: "Log in",
-    noAccount: "Don't have an account?",
-    signUp: "Sign up",
-  },
+
 };
 
 export type Translations = typeof en;

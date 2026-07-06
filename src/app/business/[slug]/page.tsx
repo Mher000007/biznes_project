@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { MOCK_BUSINESSES } from "@/data/mock-businesses";
 import { Star, MapPin, BadgeCheck, Globe, Phone, Mail, Clock, Users, Calendar, ArrowLeft, Send, X, Compass, ChevronLeft, ChevronRight, CheckCircle, Maximize2 } from "lucide-react";
@@ -160,8 +160,13 @@ export default function BusinessProfilePage() {
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
 
+  const fetchedSlug = useRef<string | null>(null);
+
   // Load Business Details (Try backend first, then local mock fallback)
   useEffect(() => {
+    if (fetchedSlug.current === slug) return;
+    fetchedSlug.current = slug;
+
     async function loadBusiness() {
       setLoading(true);
       try {
