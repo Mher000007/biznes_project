@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { Navigation, MapPin, Loader2 } from "lucide-react";
 import { useI18n } from "@/i18n";
 
-const LocationPicker = dynamic(() => import("@/components/map/LocationPicker"), {
+const LeafletMap = dynamic(() => import("@/components/map/LeafletMap"), {
   ssr: false,
   loading: () => <div className="h-[220px] rounded-xl bg-[hsl(var(--muted))] animate-pulse" />,
 });
@@ -14,14 +14,19 @@ interface BusinessMapProps {
   lng: number;
   name: string;
   address: string;
+  locations?: any[];
 }
 
-export default function BusinessMap({ lat, lng, address }: BusinessMapProps) {
+export default function BusinessMap({ lat, lng, name, address, locations }: BusinessMapProps) {
   const [resolvedAddress, setResolvedAddress] = useState(address);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!address);
   const { t } = useI18n();
 
   useEffect(() => {
+    if (address) {
+      setLoading(false);
+      return;
+    }
     (async () => {
       try {
         const res = await fetch(
@@ -33,13 +38,38 @@ export default function BusinessMap({ lat, lng, address }: BusinessMapProps) {
       } catch { /* keep original */ }
       setLoading(false);
     })();
-  }, [lat, lng]);
+  }, [lat, lng, address]);
+
+  console.log("LOCATIONS:", locations);
+  const mapLocations = [
+    {
+      _id: "primary",
+      name: `${name} (Main)`,
+      address,
+      city: "",
+      coordinates: { latitude: lat, longitude: lng }
+    },
+    ...(locations || [])
+  ];
 
   const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
 
   return (
     <div className="rounded-xl border border-[hsl(var(--border))] overflow-hidden">
-      <LocationPicker lat={lat} lng={lng} readonly height="220px" />
+      <LeafletMap
+        center={[lat, lng]}
+        zoom={14}
+        height="220px"
+        readonly={true}
+        fitAllBounds={true}
+        markers={mapLocations.map(loc => ({
+          id: loc._id,
+          lat: loc.coordinates?.latitude || lat,
+          lng: loc.coordinates?.longitude || lng,
+          name: loc.name || name,
+          popupContent: `<b>${loc.name || name}</b><br/>${loc.address}${loc.city ? `, ${loc.city}` : ""}`
+        }))}
+      />
       <div className="p-3 space-y-2.5 border-t border-[hsl(var(--border))]">
         <div className="flex items-start gap-2">
           <MapPin className="h-3.5 w-3.5 text-[hsl(var(--muted-foreground))] mt-0.5 shrink-0" />

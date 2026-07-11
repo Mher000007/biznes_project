@@ -84,18 +84,15 @@ const businessSchema = new Schema<IBusiness>({
   },
   phone: {
     type: String,
-    required: true,
   },
   website: String,
   logo: String,
   images: [String],
   address: {
     type: String,
-    required: true,
   },
   city: {
     type: String,
-    required: true,
   },
   country: {
     type: String,
@@ -148,6 +145,7 @@ const businessSchema = new Schema<IBusiness>({
     imageUrl: { type: String, required: true },
     title: { type: String, required: true },
     description: String,
+    stories: [{ type: Schema.Types.ObjectId, ref: 'Story' }],
   }],
   layoutConfig: {
     themeColor: { type: String, default: '#0f172a' },

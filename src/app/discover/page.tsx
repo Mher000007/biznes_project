@@ -68,6 +68,7 @@ function normalizeBackendBusiness(b: any) {
     logoUrl: b.logo || "",
     coverImageUrl: (Array.isArray(b.metadata?.coverUrl) ? b.metadata.coverUrl[0] : b.metadata?.coverUrl) || (b.images && b.images.length > 0 ? b.images[0] : "") || b.logo || "",
     images: b.images || [],
+    locations: b.locations || [],
     status: b.active ? "active" : "inactive",
     isFeatured: b.featured || false,
     isVerified: b.verified || false,
@@ -91,7 +92,7 @@ function DiscoverContent() {
 
   const [businesses, setBusinesses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // View mode and pagination state
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [currentPage, setCurrentPage] = useState(1);
@@ -346,18 +347,18 @@ function DiscoverContent() {
                   </div>
                 ))}
               </div>
-              
+
               {/* Pagination Controls */}
               {totalPages > 1 && (
                 <div className={styles.pagination}>
-                  <button 
+                  <button
                     onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
                     disabled={currentPage === 1}
                   >
                     Previous
                   </button>
                   <span>Page {currentPage} of {totalPages}</span>
-                  <button 
+                  <button
                     onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
                     disabled={currentPage === totalPages}
                   >

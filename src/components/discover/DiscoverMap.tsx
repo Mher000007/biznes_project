@@ -69,26 +69,41 @@ export default function DiscoverMap({
         } else {
           coordinateRegistry[coordKey] = 0;
         }
-        
+
         // Final safety check
         if (!isFinite(lat) || !isFinite(lng)) {
           lat = 40.1792;
           lng = 44.5152;
         }
-        
+
         return { lat, lng };
       };
 
-      const primaryCoords = getJitteredCoords(biz.latitude || biz.coordinates?.latitude, biz.longitude || biz.coordinates?.longitude, biz.city);
+      // 1. Find primary location
+      const primaryBranch = biz.locations?.find((loc: any) => loc.isPrimary);
+      let pLat, pLng, pAddress, pCity;
 
-      // Add primary location
+      if (primaryBranch) {
+        pLat = primaryBranch.coordinates?.latitude;
+        pLng = primaryBranch.coordinates?.longitude;
+        pAddress = primaryBranch.address;
+        pCity = primaryBranch.city;
+      } else {
+        pLat = biz.latitude || biz.coordinates?.latitude;
+        pLng = biz.longitude || biz.coordinates?.longitude;
+        pAddress = biz.address;
+        pCity = biz.city;
+      }
+
+      const primaryCoords = getJitteredCoords(pLat, pLng, pCity || biz.city);
+
       allLocations.push({
         id: biz.id || biz._id,
         companyId: biz.id || biz._id,
         lat: primaryCoords.lat,
         lng: primaryCoords.lng,
         name: biz.name,
-        addressDetails: biz.address ? `${biz.address}, ${biz.city}` : biz.city,
+        addressDetails: pAddress ? `${pAddress}, ${pCity || biz.city}` : (pCity || biz.city),
         category: biz.category?.name,
         slug: biz.slug,
         rating: biz.ratingAvg || biz.rating || 0,
@@ -96,9 +111,11 @@ export default function DiscoverMap({
         plan: biz.plan || biz.subscriptionPlan,
       });
 
-      // Add branch locations
+      // 2. Add all non-primary branches
       if (biz.locations && Array.isArray(biz.locations)) {
         biz.locations.forEach((branch: any) => {
+          if (branch.isPrimary) return; // Already added as primary
+
           const branchCoords = getJitteredCoords(branch.coordinates?.latitude, branch.coordinates?.longitude, branch.city);
           allLocations.push({
             id: branch._id,

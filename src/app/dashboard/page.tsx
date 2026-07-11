@@ -243,12 +243,12 @@ export default function DashboardPage() {
                 )}
                 {activePlan === "standard" && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-slate-200 to-gray-300 px-2 py-0.5 text-[0.65rem] font-bold text-slate-800 shadow-sm border border-slate-400 uppercase tracking-wide">
-                    <BadgeCheck className="h-3 w-3" /> Standard Partner
+                    <BadgeCheck className="h-3 w-3" /> Pro Partner
                   </span>
                 )}
                 {activePlan === "starter" && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[0.65rem] font-bold text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 uppercase tracking-wide">
-                    <BadgeCheck className="h-3 w-3" /> Starter
+                  <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.65rem] font-bold text-[hsl(var(--muted-foreground))] border border-[hsl(var(--border))] uppercase tracking-wide">
+                    <BadgeCheck className="h-3 w-3" /> Partner
                   </span>
                 )}
               </div>
@@ -354,7 +354,7 @@ export default function DashboardPage() {
                 <div className="lg:col-span-4 rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-6 shadow-sm flex flex-col justify-between min-h-[300px]">
                   <div>
                     <span className="text-xs text-[hsl(var(--muted-foreground))] uppercase font-bold tracking-wider">Active Plan</span>
-                    <h2 className="text-xl font-black mt-1 text-[hsl(var(--foreground))]">{activePlan === "starter" ? "Starter Plan (Freemium)" : activePlan === "standard" ? "Standard Plan" : "Premium Plan"}</h2>
+                    <h2 className="text-xl font-black mt-1 text-[hsl(var(--foreground))]">{activePlan === "starter" ? "Start Plan (Freemium)" : activePlan === "standard" ? "Pro Plan" : "Premium Plan"}</h2>
 
                     {activeSubscription ? (
                       <div className="mt-6 flex flex-col gap-3">
@@ -403,8 +403,8 @@ export default function DashboardPage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {[
-                      { key: "starter", title: "Starter", price: "0 AMD", desc: "Freemium plan, standard rank listing.", label: "Starter" },
-                      { key: "standard", title: "Standard", price: "20,000 AMD", desc: "Featured rank listing with analytics dashboard.", label: "Standard" },
+                      { key: "starter", title: "Start", price: "0 AMD", desc: "Freemium plan, standard rank listing.", label: "Start" },
+                      { key: "standard", title: "Pro", price: "20,000 AMD", desc: "Featured rank listing with analytics dashboard.", label: "Pro" },
                       { key: "premium", title: "Premium", price: "50,000 AMD", desc: "High priority rank listing, direct support.", label: "Premium" },
                     ].map((p) => {
                       const isActive = activePlan === p.key;

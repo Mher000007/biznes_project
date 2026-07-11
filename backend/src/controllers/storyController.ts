@@ -1,13 +1,14 @@
 import { Response } from 'express';
 import Story from '../models/Story.js';
 import Business from '../models/Business.js';
+import Subscription from '../models/Subscription.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { AuthRequest } from '../middleware/auth.js';
 
 // ─── CREATE story ─────────────────────────────────────────────────────────────
 export const createStory = asyncHandler(
   async (req: AuthRequest, res: Response): Promise<void> => {
-    const { mediaUrl, mediaType, caption } = req.body;
+    const { mediaUrl, mediaType, caption, duration } = req.body;
 
     if (!mediaUrl) {
       res.status(400).json({ success: false, message: 'Please provide mediaUrl' });
@@ -32,8 +33,14 @@ export const createStory = asyncHandler(
       return;
     }
 
-    // Story expires in 24 hours
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const sub = await Subscription.findOne({ business: business._id, status: 'active' });
+    
+    let validDuration = 24;
+    if (sub && sub.plan === 'premium' && duration && !isNaN(Number(duration))) {
+      validDuration = Number(duration);
+    }
+
+    const expiresAt = new Date(Date.now() + validDuration * 60 * 60 * 1000);
 
     const story = await Story.create({
       business: business._id,

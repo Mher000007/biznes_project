@@ -125,6 +125,10 @@ export default function BusinessProfilePage() {
   const [matchingGroupIdx, setMatchingGroupIdx] = useState<number | null>(null);
   const [showStoryViewer, setShowStoryViewer] = useState(false);
 
+  // Highlights Story Viewer State
+  const [showHighlightViewer, setShowHighlightViewer] = useState(false);
+  const [highlightViewerGroups, setHighlightViewerGroups] = useState<any[]>([]);
+
   useEffect(() => {
     const fetchStories = async () => {
       try {
@@ -411,8 +415,26 @@ export default function BusinessProfilePage() {
   };
 
   const openHighlight = (idx: number) => {
-    setActiveHighlight(business.highlights[idx]);
-    setActiveHighlightIdx(idx);
+    const highlight = business.highlights[idx];
+    if (highlight.stories && highlight.stories.length > 0) {
+      // It's a collection of stories! Open StoryViewer.
+      const pseudoGroup = {
+        business: {
+          _id: business.id || business._id,
+          name: highlight.title, // Show highlight title as the group name
+          slug: business.slug,
+          logo: highlight.imageUrl || business.logo || business.logoUrl,
+          verified: business.isVerified || business.verified
+        },
+        stories: highlight.stories
+      };
+      setHighlightViewerGroups([pseudoGroup]);
+      setShowHighlightViewer(true);
+    } else {
+      // Legacy static highlight fallback
+      setActiveHighlight(highlight);
+      setActiveHighlightIdx(idx);
+    }
   };
 
   const handleBookingSubmit = async (e: React.FormEvent) => {
@@ -735,28 +757,127 @@ export default function BusinessProfilePage() {
             {/* Contact Details */}
             <section className="flex flex-col h-full">
               <h2 className="text-lg font-bold mb-3">{t.business?.contact || "Contact Information"}</h2>
-              <div className={`${styles.contactCard} !mt-0 flex-1 flex flex-col justify-center`}>
-                <div className="space-y-3">
-                  {business.address && (
-                    <a
-                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(business.address + ', ' + business.city + ', Armenia')}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className={styles.contactItem}
-                    >
-                      <MapPin className="h-4 w-4 text-[hsl(var(--primary))]" /> {business.address}, {business.city}
-                    </a>
+              <div className={`${styles.contactCard} !mt-0 flex-1 flex flex-col justify-center overflow-y-auto max-h-[300px] custom-scrollbar`}>
+                <div className="space-y-4">
+                  {business.locations && business.locations.length > 0 ? (
+                    <div className="space-y-6">
+                      {/* Addresses Group */}
+                      <div>
+                        <h3 className="text-[10px] font-bold text-[hsl(var(--muted-foreground))] uppercase tracking-widest mb-3">Addresses</h3>
+                        <div className="space-y-3">
+                          {business.locations.map((loc: any, idx: number) => (
+                            <div key={`addr-${idx}`} className="space-y-1.5">
+                              {loc.name && (
+                                <div className="text-xs font-bold text-[hsl(var(--foreground))] flex items-center gap-1.5">
+                                  {loc.name}
+                                  {loc.isPrimary && <span className="text-[9px] font-bold bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))] px-1 py-0 rounded uppercase tracking-wide">Main</span>}
+                                </div>
+                              )}
+                              <div className="flex items-start gap-3">
+                                <MapPin className="h-4 w-4 shrink-0 mt-0.5 text-[hsl(var(--primary))]" />
+                                <div className="min-w-0">
+                                  <a
+                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc.address + (loc.city ? ', ' + loc.city : '') + ', Armenia')}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-[13px] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--primary))] transition-colors line-clamp-2 leading-snug"
+                                    title={loc.address + (loc.city ? `, ${loc.city}` : '')}
+                                  >
+                                    {loc.address}{loc.city ? `, ${loc.city}` : ''}
+                                  </a>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Phones Group */}
+                      {business.locations.some((l: any) => l.phone) && (
+                        <div className="pt-4 border-t border-[hsl(var(--border))]">
+                          <h3 className="text-[10px] font-bold text-[hsl(var(--muted-foreground))] uppercase tracking-widest mb-3">Phone Numbers</h3>
+                          <div className="space-y-3">
+                            {business.locations.filter((l: any) => l.phone).map((loc: any, idx: number) => (
+                              <div key={`phone-${idx}`} className="space-y-1.5">
+                                {loc.name && <div className="text-xs font-bold text-[hsl(var(--foreground))]">{loc.name}</div>}
+                                <div className="flex items-start gap-3">
+                                  <Phone className="h-4 w-4 shrink-0 mt-0.5 text-[hsl(var(--primary))]" />
+                                  <div className="min-w-0">
+                                    <a href={`tel:${loc.phone}`} className="text-[13px] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--primary))] transition-colors">
+                                      {loc.phone}
+                                    </a>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Working Hours Group */}
+                      {business.locations.some((l: any) => l.workingHours) && (
+                        <div className="pt-4 border-t border-[hsl(var(--border))]">
+                          <h3 className="text-[10px] font-bold text-[hsl(var(--muted-foreground))] uppercase tracking-widest mb-3">Working Hours</h3>
+                          <div className="space-y-3">
+                            {business.locations.filter((l: any) => l.workingHours).map((loc: any, idx: number) => (
+                              <div key={`hours-${idx}`} className="space-y-1.5">
+                                {loc.name && <div className="text-xs font-bold text-[hsl(var(--foreground))]">{loc.name}</div>}
+                                <div className="flex items-start gap-3">
+                                  <span className="h-4 w-4 shrink-0 flex items-center justify-center text-[hsl(var(--primary))] mt-0.5">🕒</span>
+                                  <div className="min-w-0">
+                                    <div className="text-[13px] text-[hsl(var(--muted-foreground))]">
+                                      {loc.workingHours}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      {business.address && (
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(business.address + (business.city ? ', ' + business.city : '') + ', Armenia')}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className={`${styles.contactItem} items-start`}
+                        >
+                          <MapPin className="h-4 w-4 shrink-0 mt-0.5 text-[hsl(var(--primary))]" />
+                          <span className="leading-snug">{business.address}{business.city ? `, ${business.city}` : ''}</span>
+                        </a>
+                      )}
+                      <a href={`tel:${business.phone}`} className={styles.contactItem}>
+                        <Phone className="h-4 w-4 shrink-0 text-[hsl(var(--primary))]" /> {business.phone}
+                      </a>
+                    </>
                   )}
-                  <a href={`tel:${business.phone}`} className={styles.contactItem}>
-                    <Phone className="h-4 w-4 text-[hsl(var(--primary))]" /> {business.phone}
-                  </a>
-                  <a href={`mailto:${business.email}`} className={styles.contactItem}>
-                    <Mail className="h-4 w-4 text-[hsl(var(--primary))]" /> {business.email}
-                  </a>
-                  {business.website && (
-                    <a href={business.website} target="_blank" rel="noreferrer" className={styles.contactItem}>
-                      <Globe className="h-4 w-4 text-[hsl(var(--primary))]" /> Visit Website
-                    </a>
+
+                  {/* Common Email and Website */}
+                  {(business.email || business.website) && (
+                    <div className={`pt-4 ${business.locations && business.locations.length > 0 ? 'border-t border-[hsl(var(--border))] mt-6' : ''}`}>
+                      <h3 className="text-[10px] font-bold text-[hsl(var(--muted-foreground))] uppercase tracking-widest mb-3">Online</h3>
+                      <div className="space-y-3">
+                        {business.email && (
+                          <div className="flex items-start gap-3">
+                            <Mail className="h-4 w-4 shrink-0 mt-0.5 text-[hsl(var(--primary))]" />
+                            <a href={`mailto:${business.email}`} className="text-[13px] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--primary))] transition-colors">
+                              {business.email}
+                            </a>
+                          </div>
+                        )}
+                        {business.website && (
+                          <div className="flex items-start gap-3">
+                            <Globe className="h-4 w-4 shrink-0 mt-0.5 text-[hsl(var(--primary))]" />
+                            <a href={business.website} target="_blank" rel="noreferrer" className="text-[13px] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--primary))] transition-colors line-clamp-1">
+                              {business.website}
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
@@ -774,6 +895,7 @@ export default function BusinessProfilePage() {
               lng={lng}
               name={business.name}
               address={business.address || ""}
+              locations={business.locations}
             />
           </div>
 
@@ -975,6 +1097,15 @@ export default function BusinessProfilePage() {
           groups={activeStoriesGroups}
           initialGroupIndex={matchingGroupIdx}
           onClose={() => setShowStoryViewer(false)}
+          onStoriesViewedUpdate={() => { }}
+        />
+      )}
+
+      {showHighlightViewer && highlightViewerGroups.length > 0 && (
+        <StoryViewer
+          groups={highlightViewerGroups}
+          initialGroupIndex={0}
+          onClose={() => setShowHighlightViewer(false)}
           onStoriesViewedUpdate={() => { }}
         />
       )}

@@ -40,6 +40,8 @@ export default function DashboardStoriesPage() {
   const [mediaUrl, setMediaUrl] = useState("");
   const [mediaType, setMediaType] = useState<"image" | "video">("image");
   const [caption, setCaption] = useState("");
+  const [activePlan, setActivePlan] = useState<string>("starter");
+  const [duration, setDuration] = useState<number>(24);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const authHeader = useCallback(() => {
@@ -70,6 +72,16 @@ export default function DashboardStoriesPage() {
         active: biz.active,
       });
 
+      // Fetch subscription plan
+      try {
+        const subRes = await axios.get(`${API}/subscriptions/business/${biz._id}`, h);
+        if (subRes.data?.data) {
+          setActivePlan(subRes.data.data.plan);
+        }
+      } catch (err) {
+        // ignore
+      }
+
       // 2. Fetch business stories history
       const storiesRes = await axios.get(`${API}/stories/my-business`, h);
       if (storiesRes.data?.success) {
@@ -77,10 +89,11 @@ export default function DashboardStoriesPage() {
         const now = new Date();
         
         const active = allStories.filter(s => new Date(s.expiresAt) > now);
-        const expired = allStories.filter(s => new Date(s.expiresAt) <= now);
+        // The user requested that active stories also appear in the archive
+        const archive = allStories;
         
         setActiveStories(active);
-        setArchivedStories(expired);
+        setArchivedStories(archive);
       }
     } catch (err: any) {
       console.error("Failed to load stories dashboard:", err);
@@ -132,7 +145,7 @@ export default function DashboardStoriesPage() {
     try {
       const res = await axios.post(
         `${API}/stories`,
-        { mediaUrl, mediaType, caption },
+        { mediaUrl, mediaType, caption, duration },
         { headers: authHeader() }
       );
 
@@ -274,23 +287,27 @@ export default function DashboardStoriesPage() {
               />
             </div>
 
-            {/* Paste URL Input Alternative */}
+            {/* Duration Select */}
             <div className="space-y-1">
-              <label className="block text-[10px] font-semibold text-[hsl(var(--muted-foreground))]">{t.stories.pasteUrl}</label>
-              <div className="flex items-center bg-[hsl(var(--input))] rounded-lg border-0 px-3">
-                <LinkIcon className="w-3.5 h-3.5 text-[hsl(var(--muted-foreground))] shrink-0" />
-                <input
-                  type="url"
-                  value={mediaUrl.startsWith("data:") ? "" : mediaUrl}
-                  onChange={(e) => {
-                    setMediaUrl(e.target.value);
-                    setMediaType(e.target.value.includes(".mp4") ? "video" : "image");
-                    setError("");
-                  }}
-                  placeholder="https://example.com/image.jpg"
-                  className="bg-transparent text-xs outline-none py-2 px-2.5 w-full text-[hsl(var(--foreground))]"
-                />
-              </div>
+              <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))]">Story Duration</label>
+              <select
+                value={duration}
+                onChange={(e) => setDuration(Number(e.target.value))}
+                disabled={activePlan !== "premium"}
+                className="w-full text-xs rounded-xl bg-[hsl(var(--input))] p-3 outline-none focus:bg-[hsl(var(--card))] border-0 text-[hsl(var(--foreground))] disabled:opacity-50"
+              >
+                <option value={24}>24 Hours {activePlan !== "premium" ? "(Pro)" : ""}</option>
+                {activePlan === "premium" && (
+                  <>
+                    <option value={48}>48 Hours</option>
+                    <option value={72}>3 Days</option>
+                    <option value={168}>1 Week</option>
+                  </>
+                )}
+              </select>
+              {activePlan !== "premium" && (
+                <p className="text-[9px] text-[hsl(var(--primary))] mt-1">Upgrade to Premium for custom durations.</p>
+              )}
             </div>
 
             {/* Caption */}

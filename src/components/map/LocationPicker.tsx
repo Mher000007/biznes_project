@@ -151,6 +151,7 @@ export default function LocationPicker({
           onMapClick={handleMapAction}
           onMarkerDragEnd={(_, flat, flng) => handleMapAction(flat, flng)}
           readonly={readonly}
+          hideFullscreenControl={true}
         />
       </div>
 

@@ -149,7 +149,8 @@ export const getBusinessBySlug = asyncHandler(
       { new: true }
     )
       .populate('category')
-      .populate('owner', 'name email phone');
+      .populate('owner', 'name email phone')
+      .populate('highlights.stories');
 
     if (!business) {
       res.status(404).json({ success: false, message: 'Business not found' });

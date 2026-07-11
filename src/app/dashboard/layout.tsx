@@ -19,6 +19,7 @@ import {
   Clock,
   MapPin,
   Calendar,
+  HeadphonesIcon,
 } from "lucide-react";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -67,6 +68,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: "/dashboard/locations", label: "My Locations", icon: MapPin },
     { href: "/dashboard/stories", label: "Stories", icon: Sparkles },
     { href: "/dashboard/inquiries", label: "Inquiries", icon: MessageSquare },
+    { href: "/dashboard/support", label: "Support Chat", icon: HeadphonesIcon },
     { href: "/dashboard/settings", label: "Settings", icon: Settings },
   ];
 

@@ -3,8 +3,10 @@ import React, { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { CATEGORIES } from "@/lib/constants";
 import { LocationSelect } from "@/components/ui/LocationSelect";
+import BusinessMap from "@/components/map/BusinessMap";
 import { useAuth } from "@/context/AuthContext";
 import { getBusinessProfile, saveBusinessProfile } from "@/lib/auth";
+import Link from "next/link";
 import { Save, CheckCircle, Plus, X, Image as ImageIcon, Star, Phone, Mail, Globe, MapPin, Clock, Camera, Trash2, Eye, ChevronRight, ChevronLeft, Award, PlusCircle, Sparkles, Smartphone, Settings, Grid as GridIcon, User as UserIcon, BadgeCheck, Compass, ArrowLeft, Calendar, Navigation, Lock } from "lucide-react";
 import axios from "axios";
 import styles from "@/components/dashboard/Dashboard.module.scss";
@@ -37,6 +39,7 @@ interface Highlight {
   id: string;
   imageUrl: string;
   title: string;
+  stories?: string[]; // Array of story IDs
 }
 
 const isDefaultImage = (url: string) => {
@@ -215,6 +218,11 @@ export default function DashboardProfilePage() {
   // Instagram-style Highlights State
   const [highlights, setHighlights] = useState<Highlight[]>([]);
 
+  // Story Archive State (for Highlights builder)
+  const [storyArchive, setStoryArchive] = useState<any[]>([]);
+  const [isStoryArchiveModalOpen, setIsStoryArchiveModalOpen] = useState(false);
+  const [selectedArchiveStories, setSelectedArchiveStories] = useState<string[]>([]);
+
   // Gallery Images List State
   const [gallery, setGallery] = useState<string[]>([]);
 
@@ -277,7 +285,8 @@ export default function DashboardProfilePage() {
             .map((h: any, index: number) => ({
               id: index.toString(),
               imageUrl: h.imageUrl,
-              title: h.title
+              title: h.title,
+              stories: h.stories || []
             }))
             .filter((h: any) => !isDefaultHighlight(h))
           );
@@ -297,6 +306,18 @@ export default function DashboardProfilePage() {
             }
           } else {
             setCoverUrls([]);
+          }
+
+          // Fetch Story Archive
+          try {
+            const archiveRes = await axios.get(`${apiURL}/stories/my-business`, {
+              headers: token ? { Authorization: `Bearer ${token}` } : {}
+            });
+            if (archiveRes.data?.success) {
+              setStoryArchive(archiveRes.data.data);
+            }
+          } catch (err) {
+            console.error("Failed to fetch story archive", err);
           }
           setStories(biz.metadata?.stories || []);
           if (biz.metadata?.operatingHours) setOperatingHours(biz.metadata.operatingHours);
@@ -377,21 +398,13 @@ export default function DashboardProfilePage() {
       name,
       description,
       category: categoryValue,
-      city,
-      address,
-      latitude: lat,
-      longitude: lng,
-      coordinates: {
-        latitude: lat,
-        longitude: lng
-      },
       email,
       phone,
       website,
       logo: logoUrl,
       images: gallery,
       services: services.map(s => ({ name: s.name, price: Number(s.price) || 0 })),
-      highlights: highlights.map(h => ({ imageUrl: h.imageUrl, title: h.title })),
+      highlights: highlights.map(h => ({ imageUrl: h.imageUrl, title: h.title, stories: h.stories || [] })),
       layoutConfig: {
         themeColor: '#0f172a',
         displayLogo: true,
@@ -669,8 +682,8 @@ export default function DashboardProfilePage() {
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
               className={`flex items-center gap-2 px-4 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-all cursor-pointer ${isActive
-                  ? "border-[hsl(var(--primary))] text-[hsl(var(--foreground))]"
-                  : "border-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+                ? "border-[hsl(var(--primary))] text-[hsl(var(--foreground))]"
+                : "border-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
                 }`}
             >
               <Icon className="h-4 w-4" />
@@ -857,17 +870,7 @@ export default function DashboardProfilePage() {
                     </div>
                   </div>
 
-                  <div className="border border-dashed border-[hsl(var(--border))] bg-[hsl(var(--surface-strong))] rounded-xl p-4 flex gap-4 items-center">
-                    <div className="p-3 bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))] rounded-full shrink-0">
-                      <Sparkles className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-[hsl(var(--foreground))]">{t.builder.branding.demoTitle}</h4>
-                      <p className="text-[11px] text-[hsl(var(--muted-foreground))] mt-0.5">
-                        {t.builder.branding.demoDesc}
-                      </p>
-                    </div>
-                  </div>
+
                 </div>
               )}
 
@@ -961,35 +964,35 @@ export default function DashboardProfilePage() {
                         className="w-full rounded-lg border border-[hsl(var(--border))] px-2.5 py-1.5 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]"
                       />
                       <div className="flex gap-2">
-                        <input
-                          type="text"
-                          placeholder={t.builder.stories.imgPlaceholder}
-                          value={newHighlightImg}
-                          onChange={e => setNewHighlightImg(e.target.value)}
-                          className="flex-1 rounded-lg border border-[hsl(var(--border))] px-2.5 py-1.5 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]"
-                        />
                         <button
                           type="button"
-                          onClick={() => highlightInputRef.current?.click()}
-                          className="px-2.5 py-1.5 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] transition-colors border border-[hsl(var(--border))] flex items-center gap-1 font-semibold"
+                          onClick={() => setIsStoryArchiveModalOpen(true)}
+                          className="flex-1 px-2.5 py-1.5 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] transition-colors border border-[hsl(var(--border))] flex justify-center items-center gap-2 font-semibold"
                         >
-                          <Camera className="h-3.5 w-3.5" /> Upload
+                          <GridIcon className="h-4 w-4" />
+                          {selectedArchiveStories.length > 0 ? `${selectedArchiveStories.length} stories selected` : "Select from Archive"}
                         </button>
                         <button
                           type="button"
-                          onClick={addHighlightItem}
-                          className="px-3 py-1.5 bg-[hsl(var(--primary))] text-white font-semibold rounded-lg text-xs hover:opacity-90 font-semibold"
+                          onClick={() => {
+                            if (!newHighlightTitle || selectedArchiveStories.length === 0) return;
+                            const firstSelected = storyArchive.find((s: any) => s._id === selectedArchiveStories[0]);
+                            const newHighlight = {
+                              id: Date.now().toString(),
+                              title: newHighlightTitle,
+                              imageUrl: firstSelected?.mediaUrl || "",
+                              stories: [...selectedArchiveStories]
+                            };
+                            setHighlights([...highlights, newHighlight]);
+                            setNewHighlightTitle("");
+                            setSelectedArchiveStories([]);
+                          }}
+                          disabled={!newHighlightTitle || selectedArchiveStories.length === 0}
+                          className="px-4 py-1.5 bg-[hsl(var(--primary))] text-white font-semibold rounded-lg text-xs hover:opacity-90 disabled:opacity-50"
                         >
                           {t.builder.stories.add}
                         </button>
                       </div>
-                      <input
-                        type="file"
-                        ref={highlightInputRef}
-                        onChange={handleHighlightUpload}
-                        accept="image/*"
-                        className="hidden"
-                      />
                     </div>
 
                     {/* Highlights list */}
@@ -1022,39 +1025,14 @@ export default function DashboardProfilePage() {
                     <p className="text-xs text-[hsl(var(--muted-foreground))]">{t.builder.hours.subtitle}</p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1">{t.builder.hours.city}</label>
-                      <LocationSelect
-                        value={city}
-                        onChange={e => setCity(e.target.value)}
-                        className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1">{t.builder.hours.address}</label>
-                      <input value={address} onChange={e => setAddress(e.target.value)} type="text" className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]" />
-                    </div>
-                  </div>
 
-                  <LocationPicker
-                    lat={lat}
-                    lng={lng}
-                    onLocationChange={(newLat, newLng, newAddr) => {
-                      setLat(newLat);
-                      setLng(newLng);
-                      if (newAddr) {
-                        setAddress(newAddr.split(',').slice(0, 2).join(',').trim());
-                      }
-                    }}
-                  />
 
-                  <div className="border-t border-[hsl(var(--border))] pt-4">
+                  <div className="border-[hsl(var(--border))] pt-2">
                     <h3 className="text-base font-bold text-[hsl(var(--foreground))] mb-3">{t.builder.hours.schedule}</h3>
 
-                    <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
+                    <div className="space-y-2.5">
                       {operatingHours.map((d, index) => (
-                        <div key={d.day} className="flex items-center justify-between border-b border-[hsl(var(--border))]/40 pb-2">
+                        <div key={d.day} className="flex items-center justify-between border-b border-[hsl(var(--border))]/40 pb-2 last:border-0 last:pb-0">
                           <span className="text-xs font-semibold text-[hsl(var(--foreground))] w-24">{d.day}</span>
 
                           <div className="flex items-center gap-4">
@@ -1141,8 +1119,8 @@ export default function DashboardProfilePage() {
                     <h1 style={{ fontSize: "1.5rem", fontWeight: 800, marginBottom: "0.25rem", display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
                       {name || "Business Name"}
                       <span className={`${profileStyles.verifiedBadge} ${activePlan === "premium" || activePlan === "standard"
-                          ? profileStyles.verifiedGold
-                          : profileStyles.verifiedStarter
+                        ? profileStyles.verifiedGold
+                        : profileStyles.verifiedStarter
                         }`} style={{ fontSize: "0.65rem", padding: "0.15rem 0.45rem" }}>
                         <BadgeCheck className="h-3 w-3" /> Verified Partner
                       </span>
@@ -1202,10 +1180,10 @@ export default function DashboardProfilePage() {
                     </span>
                   </div>
                   <div className={`${profileStyles.bentoGrid} ${gallery.length === 1 ? profileStyles.grid1 :
-                      gallery.length === 2 ? profileStyles.grid2 :
-                        gallery.length === 3 ? profileStyles.grid3 :
-                          gallery.length === 4 ? profileStyles.grid4 :
-                            profileStyles.grid5
+                    gallery.length === 2 ? profileStyles.grid2 :
+                      gallery.length === 3 ? profileStyles.grid3 :
+                        gallery.length === 4 ? profileStyles.grid4 :
+                          profileStyles.grid5
                     }`}>
                     {gallery.slice(0, 5).map((url: string, index: number) => {
                       const isLastAndMore = index === 4 && gallery.length > 5;
@@ -1254,28 +1232,13 @@ export default function DashboardProfilePage() {
                 <div className="space-y-4">
 
 
-                  {/* Navigator direction links */}
-                  <div className={profileStyles.navigatorCard} style={{ padding: "1rem", borderRadius: "1rem" }}>
-                    <h3 style={{ fontSize: "0.85rem", fontWeight: 700, marginBottom: "0.25rem" }}>Directions Finder</h3>
-                    <p style={{ fontSize: "0.75rem", marginBottom: "0.75rem" }}>Select your favorite navigator engine to compute live routes to the location.</p>
-                    <a
-                      href={`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`${profileStyles.btnNavigator} ${profileStyles.google}`}
-                      style={{ padding: "0.5rem", fontSize: "0.75rem", display: "flex", textDecoration: "none" }}
-                    >
-                      <Compass className="h-3.5 w-3.5" /> Open in Google Maps
-                    </a>
-                    <a
-                      href={`https://yandex.com/maps/?rtext=~${lat},${lng}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`${profileStyles.btnNavigator} ${profileStyles.yandex}`}
-                      style={{ padding: "0.5rem", fontSize: "0.75rem", display: "flex", textDecoration: "none" }}
-                    >
-                      <Compass className="h-3.5 w-3.5" /> Open in Yandex Navigator
-                    </a>
+                  <div className="mb-4">
+                    <BusinessMap
+                      lat={lat}
+                      lng={lng}
+                      name={name || "Your Business"}
+                      address={address || ""}
+                    />
                   </div>
 
                   {/* Contact Details */}
@@ -1302,6 +1265,84 @@ export default function DashboardProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* STORY ARCHIVE MODAL */}
+      {isStoryArchiveModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-2xl p-6 shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col relative">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-[hsl(var(--foreground))]">Story Archive</h2>
+              <button
+                onClick={() => setIsStoryArchiveModalOpen(false)}
+                className="p-2 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-full hover:bg-[hsl(var(--border))] transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <p className="text-sm text-[hsl(var(--muted-foreground))] mb-4">Select stories to include in this Highlight collection. The first selected story will be used as the cover image.</p>
+
+            <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar pr-2 pb-4">
+              {storyArchive.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-48 text-center text-[hsl(var(--muted-foreground))]">
+                  <GridIcon className="h-10 w-10 mb-2 opacity-20" />
+                  <p>No stories found in your archive.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                  {storyArchive.map((story) => {
+                    const isSelected = selectedArchiveStories.includes(story._id);
+                    const selectedIndex = selectedArchiveStories.indexOf(story._id);
+                    return (
+                      <div
+                        key={story._id}
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedArchiveStories(prev => prev.filter(id => id !== story._id));
+                          } else {
+                            setSelectedArchiveStories(prev => [...prev, story._id]);
+                          }
+                        }}
+                        className={`relative aspect-[9/16] rounded-xl overflow-hidden cursor-pointer border-2 transition-all ${isSelected ? 'border-[hsl(var(--primary))] scale-[0.98] shadow-lg' : 'border-transparent hover:border-[hsl(var(--border))]'}`}
+                      >
+                        {story.mediaType === 'video' ? (
+                          <video src={story.mediaUrl} className="w-full h-full object-cover" />
+                        ) : (
+                          <img src={story.mediaUrl} className="w-full h-full object-cover" alt="Story" />
+                        )}
+
+                        {/* Selected Indicator */}
+                        {isSelected && (
+                          <div className="absolute top-2 right-2 h-6 w-6 rounded-full bg-[hsl(var(--primary))] text-white flex items-center justify-center text-xs font-bold border-2 border-white shadow-sm z-10">
+                            {selectedIndex + 1}
+                          </div>
+                        )}
+
+                        {/* Expiration overlay */}
+                        {new Date(story.expiresAt) < new Date() && (
+                          <div className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded bg-black/60 text-[10px] text-white backdrop-blur-md">
+                            Archived
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="pt-4 border-t border-[hsl(var(--border))] flex justify-end gap-3 mt-auto">
+              <button
+                type="button"
+                onClick={() => setIsStoryArchiveModalOpen(false)}
+                className="px-4 py-2 rounded-xl text-sm font-semibold bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] hover:bg-[hsl(var(--border))]"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* FULLSCREEN PREVIEW OVERLAY */}
       {isFullscreenPreview && (
@@ -1343,8 +1384,8 @@ export default function DashboardProfilePage() {
                     <h1>
                       {name || "Business Name"}
                       <span className={`${profileStyles.verifiedBadge} ${activePlan === "premium" || activePlan === "standard"
-                          ? profileStyles.verifiedGold
-                          : profileStyles.verifiedStarter
+                        ? profileStyles.verifiedGold
+                        : profileStyles.verifiedStarter
                         }`}>
                         <BadgeCheck className="h-3.5 w-3.5" /> Verified Partner
                       </span>
@@ -1404,10 +1445,10 @@ export default function DashboardProfilePage() {
                     </span>
                   </div>
                   <div className={`${profileStyles.bentoGrid} ${gallery.length === 1 ? profileStyles.grid1 :
-                      gallery.length === 2 ? profileStyles.grid2 :
-                        gallery.length === 3 ? profileStyles.grid3 :
-                          gallery.length === 4 ? profileStyles.grid4 :
-                            profileStyles.grid5
+                    gallery.length === 2 ? profileStyles.grid2 :
+                      gallery.length === 3 ? profileStyles.grid3 :
+                        gallery.length === 4 ? profileStyles.grid4 :
+                          profileStyles.grid5
                     }`}>
                     {gallery.slice(0, 5).map((url: string, index: number) => {
                       const isLastAndMore = index === 4 && gallery.length > 5;
@@ -1479,28 +1520,13 @@ export default function DashboardProfilePage() {
                 <div className={profileStyles.sidebar}>
 
 
-                  {/* Navigator direction links */}
-                  <div className={profileStyles.navigatorCard}>
-                    <h3>Directions Finder</h3>
-                    <p>Select your favorite navigator engine to compute live routes to the location.</p>
-                    <a
-                      href={`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`${profileStyles.btnNavigator} ${profileStyles.google}`}
-                      style={{ textDecoration: "none", display: "flex" }}
-                    >
-                      <Compass className="h-4 w-4" /> Open in Google Maps
-                    </a>
-                    <a
-                      href={`https://yandex.com/maps/?rtext=~${lat},${lng}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`${profileStyles.btnNavigator} ${profileStyles.yandex}`}
-                      style={{ textDecoration: "none", display: "flex" }}
-                    >
-                      <Compass className="h-4 w-4" /> Open in Yandex Navigator
-                    </a>
+                  <div className="mb-4">
+                    <BusinessMap
+                      lat={lat}
+                      lng={lng}
+                      name={name || "Your Business"}
+                      address={address || ""}
+                    />
                   </div>
 
                 </div>

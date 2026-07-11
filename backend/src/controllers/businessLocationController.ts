@@ -62,6 +62,16 @@ export const addLocation = asyncHandler(async (req: AuthRequest, res: Response) 
     business: businessId,
   });
 
+  // Sync to Business model if primary
+  if (location.isPrimary) {
+    await Business.findByIdAndUpdate(businessId, {
+      address: location.address,
+      city: location.city,
+      coordinates: location.coordinates,
+      phone: location.phone
+    });
+  }
+
   res.status(201).json({
     success: true,
     data: location,
@@ -104,6 +114,16 @@ export const updateLocation = asyncHandler(async (req: AuthRequest, res: Respons
     new: true,
     runValidators: true,
   });
+
+  // Sync to Business model if primary
+  if (location && location.isPrimary) {
+    await Business.findByIdAndUpdate(location.business, {
+      address: location.address,
+      city: location.city,
+      coordinates: location.coordinates,
+      phone: location.phone
+    });
+  }
 
   res.status(200).json({
     success: true,

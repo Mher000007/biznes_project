@@ -7,7 +7,7 @@ import {
   Mail, Phone, Trash2, CheckCircle2,
   X, Ban, RefreshCw, LogOut, CheckCircle, AlertOctagon,
   UserCircle2, Crown, Briefcase, Star, Eye, Tag, Award,
-  MessageSquare, Send, CheckSquare, Square
+  MessageSquare, Send, CheckSquare, Square, HeadphonesIcon
 } from "lucide-react";
 
 const API = getApiUrl();
@@ -15,6 +15,8 @@ const ADMIN_TOKEN_KEY = "admin-token";
 const ADMIN_USER_KEY = "admin-user";
 
 /* ── Dark theme color palette ── */
+import AdminLiveChat from "./AdminLiveChat";
+
 const C = {
   bg: "#1e1e2e",
   surface: "#252538",
@@ -113,7 +115,7 @@ interface PromoCode {
   createdAt: string;
 }
 
-type TabKey = "overview" | "businesses" | "bookings" | "subscriptions" | "reviews" | "users" | "promocodes" | "messages";
+type TabKey = "overview" | "businesses" | "bookings" | "subscriptions" | "reviews" | "users" | "promocodes" | "messages" | "livechat";
 
 function getToken() {
   return typeof window !== "undefined" ? localStorage.getItem(ADMIN_TOKEN_KEY) : null;
@@ -537,7 +539,8 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     { key: "reviews", label: "Reports", Icon: Flag },
     { key: "users", label: "Users", Icon: Users },
     { key: "promocodes", label: "Promo Codes", Icon: Tag },
-    { key: "messages", label: "Messages", Icon: MessageSquare },
+    { key: "messages", label: "Notifications", Icon: MessageSquare },
+    { key: "livechat", label: "Live Chat", Icon: HeadphonesIcon },
   ];
 
   const tabBtn = (t: TabDef) => {
@@ -1421,6 +1424,13 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           </div>
         )}
 
+        {/* LIVE CHAT */}
+        {tab === "livechat" && (
+          <div style={{ animation: "fadeIn 0.3s ease" }}>
+            <AdminLiveChat />
+          </div>
+        )}
+
       </main>
 
       {/* ── GIFT SUBSCRIPTION MODAL ── */}
@@ -1464,8 +1474,8 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                     width: "100%", background: C.card, border: `1px solid ${C.border}`,
                     borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none"
                   }}>
-                  <option value="starter">Starter Plan (Freemium)</option>
-                  <option value="standard">Standard Plan (֏20,000 / mo)</option>
+                  <option value="starter">Start Plan (Freemium)</option>
+                  <option value="standard">Pro Plan (֏20,000 / mo)</option>
                   <option value="premium">Premium Plan (֏50,000 / mo)</option>
                 </select>
               </div>
@@ -1630,8 +1640,8 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                     width: "100%", background: C.card, border: `1px solid ${C.border}`,
                     borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none"
                   }}>
-                  <option value="starter">Starter Plan (Freemium)</option>
-                  <option value="standard">Standard Plan</option>
+                  <option value="starter">Start Plan (Freemium)</option>
+                  <option value="standard">Pro Plan</option>
                   <option value="premium">Premium Plan</option>
                 </select>
               </div>

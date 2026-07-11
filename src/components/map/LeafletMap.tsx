@@ -90,6 +90,7 @@ export interface LeafletMapProps {
   readonly?: boolean;
   fitAllBounds?: boolean;
   hoveredLocationId?: string | number | null;
+  hideFullscreenControl?: boolean;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -109,6 +110,7 @@ export default function LeafletMap({
   readonly = false,
   fitAllBounds = false,
   hoveredLocationId = null,
+  hideFullscreenControl = false,
 }: LeafletMapProps) {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -342,26 +344,58 @@ export default function LeafletMap({
       registry.forEach((marker, id) => {
         if (companyRegistry.get(id) === activeCompanyId) {
           marker.setIcon(buildHoveredIcon());
+          marker.setOpacity(1); // Ensure it's visible
           if (id === hoveredLocationId) {
             targetForFlyTo = marker;
           }
+        } else {
+          // Hide all other markers
+          marker.setOpacity(0);
         }
       });
 
-      // If triggered by external hover (list card), fly to the primary marker matching ID
-      if (hoveredLocationId && targetForFlyTo && map) {
+      // If triggered by external hover (list card), fly to the markers
+      if (hoveredLocationId && map) {
         const size = map.getSize();
         if (size.x > 0 && size.y > 0) {
-          const { lat, lng } = (targetForFlyTo as L.Marker).getLatLng();
-          if (typeof lat === 'number' && typeof lng === 'number' && isFinite(lat) && isFinite(lng)) {
-            map.flyTo([lat, lng], Math.max(map.getZoom(), 14), {
-              animate: true,
-              duration: 0.55,
-              easeLinearity: 0.2,
-            });
+          // Collect all markers for the active company
+          const companyMarkersLatLng: [number, number][] = [];
+          registry.forEach((marker, id) => {
+            if (companyRegistry.get(id) === activeCompanyId) {
+              const { lat, lng } = marker.getLatLng();
+              if (isFinite(lat) && isFinite(lng)) {
+                companyMarkersLatLng.push([lat, lng]);
+              }
+            }
+          });
+
+          if (companyMarkersLatLng.length > 0) {
+            if (companyMarkersLatLng.length === 1) {
+              map.flyTo(companyMarkersLatLng[0], Math.max(map.getZoom(), 14), {
+                animate: true,
+                duration: 0.55,
+                easeLinearity: 0.2,
+              });
+            } else {
+              // We need to use the Leaflet `latLngBounds` constructor directly. 
+              // Since L is global inside LeafletMap (imported from 'leaflet'), we can use it.
+              // Wait, L might not be directly available, we can just map to Leaflet latLngs and use map.flyToBounds.
+              const boundsObj = companyMarkersLatLng; // flyToBounds accepts LatLngBoundsExpression which is LatLngTuple[]
+              map.flyToBounds(boundsObj, {
+                animate: true,
+                duration: 0.55,
+                padding: [50, 50],
+                maxZoom: 14
+              });
+            }
           }
         }
       }
+    } else {
+      // If no active hover, ensure all markers are visible
+      registry.forEach((marker) => {
+        marker.setOpacity(1);
+      });
     }
     // Track prev ID so we can optimize next render if needed
     prevHoveredIdRef.current = hoveredLocationId ?? null;
@@ -413,14 +447,16 @@ export default function LeafletMap({
         style={{ width: "100%", height: "100%", position: "relative", zIndex: 1 }}
         className="leaflet-map-wrapper leaflet-container"
       />
-      <button
-        type="button"
-        onClick={() => setIsFullscreen((prev) => !prev)}
-        className="leaflet-fullscreen-toggle-btn"
-        title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-      >
-        {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-      </button>
+      {!hideFullscreenControl && (
+        <button
+          type="button"
+          onClick={() => setIsFullscreen((prev) => !prev)}
+          className="leaflet-fullscreen-toggle-btn"
+          title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+        >
+          {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+        </button>
+      )}
     </div>
   );
 }
