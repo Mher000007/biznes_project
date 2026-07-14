@@ -17,6 +17,7 @@ interface DashboardInquiry {
   timeSlot?: string;
   price?: number;
   notes?: string;
+  locationAddress?: string;
   rating?: number;
   type?: "booking" | "review" | "notification";
   createdAt?: string;
@@ -35,6 +36,7 @@ export default function InquiriesPage() {
   const [activeTab, setActiveTab] = useState<"all" | "bookings" | "reviews" | "notifications">("all");
   const [loading, setLoading] = useState(true);
   const [businessId, setBusinessId] = useState<string | null>(null);
+  const [filterRating, setFilterRating] = useState<number | null>(null);
 
   // Report modal state
   const [reportModalOpen, setReportModalOpen] = useState(false);
@@ -138,19 +140,23 @@ export default function InquiriesPage() {
           const bookingsRes = await axios.get(`${API}/bookings/business/${biz._id}`, { headers: authHeader() });
           if (bookingsRes.data?.success) {
             allItems.push(
-              ...(bookingsRes.data.data || []).map((b: any) => ({
-                id: b._id,
-                name: b.customerName,
-                subject: `Appointment — ${b.serviceName}`,
-                time: new Date(b.date || b.createdAt).toLocaleDateString(),
-                status: b.status || "pending",
-                phone: b.customerPhone,
-                timeSlot: b.timeSlot,
-                price: b.totalPrice,
-                notes: b.notes,
-                type: "booking" as const,
-                createdAt: b.createdAt || b.date,
-              }))
+              ...(bookingsRes.data.data || []).map((b: any) => {
+                const locObj = biz.locations?.find((l: any) => String(l._id || l.id) === String(b.locationId));
+                return {
+                  id: b._id,
+                  name: b.customerName,
+                  subject: `Appointment — ${b.serviceName}`,
+                  time: new Date(b.date || b.createdAt).toLocaleDateString(),
+                  status: b.status || "pending",
+                  phone: b.customerPhone,
+                  timeSlot: b.timeSlot,
+                  price: b.totalPrice,
+                  notes: b.notes,
+                  locationAddress: locObj ? locObj.address : undefined,
+                  type: "booking" as const,
+                  createdAt: b.createdAt || b.date,
+                };
+              })
             );
           }
         } catch { /* bookings endpoint may not exist yet */ }
@@ -221,32 +227,74 @@ export default function InquiriesPage() {
           <div className="flex gap-1.5 text-xs bg-[hsl(var(--muted))]/50 p-1 rounded-xl self-start sm:self-center">
             {(() => {
               const unreadNotifsCount = inquiries.filter(inq => inq.type === "notification" && inq.status === "unread").length;
-              return (["all", "bookings", "reviews", "notifications"] as const).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all capitalize ${activeTab === tab
+              const pendingBookingsCount = inquiries.filter(inq => inq.type === "booking" && (inq.status === "pending" || inq.status === "new")).length;
+
+              const getBadgeCount = (tab: string) => {
+                if (tab === "notifications") return unreadNotifsCount;
+                if (tab === "bookings") return pendingBookingsCount;
+                if (tab === "all") return unreadNotifsCount + pendingBookingsCount;
+                return 0;
+              };
+
+              return (["all", "bookings", "reviews", "notifications"] as const).map((tab) => {
+                const count = getBadgeCount(tab);
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all capitalize ${activeTab === tab
                       ? "bg-[hsl(var(--card))] text-[hsl(var(--foreground))] shadow-sm"
                       : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] bg-transparent"
-                    }`}
-                >
-                  {tab}
-                  {tab === "notifications" && unreadNotifsCount > 0 && (
-                    <span className="flex items-center justify-center min-w-[18px] h-4 px-1 rounded-full bg-emerald-500 text-white text-[9px] font-bold">
-                      {unreadNotifsCount}
-                    </span>
-                  )}
-                </button>
-              ));
+                      }`}
+                  >
+                    {tab}
+                    {count > 0 && (
+                      <span className="flex items-center justify-center min-w-[18px] h-4 px-1 rounded-full bg-emerald-500 text-white text-[9px] font-bold">
+                        {count}
+                      </span>
+                    )}
+                  </button>
+                );
+              });
             })()}
           </div>
         </div>
+
+        {activeTab === "reviews" && (
+          <div className="flex flex-wrap items-center gap-2 px-5 py-3 border-b border-[hsl(var(--border))]">
+            <span className="text-xs font-medium text-[hsl(var(--muted-foreground))]">Filter by rating:</span>
+            {[5, 4, 3, 2, 1].map((star) => (
+              <button
+                key={star}
+                onClick={() => setFilterRating(filterRating === star ? null : star)}
+                className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors border ${filterRating === star
+                    ? "bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))] border-[hsl(var(--primary))]"
+                    : "bg-[hsl(var(--card))] text-[hsl(var(--foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))]"
+                  }`}
+              >
+                {star} <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+              </button>
+            ))}
+            {filterRating !== null && (
+              <button
+                onClick={() => setFilterRating(null)}
+                className="text-[10px] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] underline ml-2"
+              >
+                Clear Filter
+              </button>
+            )}
+          </div>
+        )}
 
         <div className="divide-y divide-[hsl(var(--border))]">
           {inquiries
             .filter((inq) => {
               if (activeTab === "bookings") return inq.type === "booking";
-              if (activeTab === "reviews") return inq.type === "review";
+              if (activeTab === "reviews") {
+                if (inq.type !== "review") return false;
+                if (filterRating !== null && inq.rating !== filterRating) return false;
+                return true;
+              }
               if (activeTab === "notifications") return inq.type === "notification";
               return true;
             })
@@ -259,16 +307,16 @@ export default function InquiriesPage() {
                     )}
                     <span className="text-sm font-semibold">{inq.name}</span>
                     <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${inq.type === "review"
-                        ? inq.status === "reported" ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 animate-pulse"
-                          : inq.status === "resolved_kept" ? "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300"
-                            : inq.status === "resolved_deleted" ? "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300"
-                              : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
-                        : inq.type === "notification"
-                          ? inq.status === "unread" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300" : "bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))]"
-                          : inq.status === "pending" || inq.status === "new" ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
-                            : inq.status === "confirmed" || inq.status === "replied" ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-                              : inq.status === "cancelled" ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300"
-                                : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                      ? inq.status === "reported" ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 animate-pulse"
+                        : inq.status === "resolved_kept" ? "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300"
+                          : inq.status === "resolved_deleted" ? "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300"
+                            : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                      : inq.type === "notification"
+                        ? inq.status === "unread" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300" : "bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))]"
+                        : inq.status === "pending" || inq.status === "new" ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                          : inq.status === "confirmed" || inq.status === "replied" ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+                            : inq.status === "cancelled" ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300"
+                              : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
                       }`}>
                       {inq.type === "review" ? `Review${inq.status && inq.status !== "approved" && inq.status !== "read" ? ` (${inq.status})` : ""}` : inq.type === "notification" ? "Notification" : inq.status}
                     </span>
@@ -282,10 +330,11 @@ export default function InquiriesPage() {
                   </div>
                   <p className="text-xs font-medium text-[hsl(var(--foreground))] mb-2">{inq.subject}</p>
 
-                  {inq.type === "booking" && (inq.phone || inq.timeSlot || inq.price || inq.notes) && (
+                  {inq.type === "booking" && (inq.phone || inq.timeSlot || inq.price || inq.notes || inq.locationAddress) && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-[11px] text-[hsl(var(--muted-foreground))] bg-[hsl(var(--muted))]/30 p-2.5 rounded-xl border border-[hsl(var(--border))]/40 max-w-xl">
                       {inq.phone && <div className="flex items-center gap-1"><span className="font-semibold text-[hsl(var(--foreground))]">Phone:</span><span>{inq.phone}</span></div>}
                       {inq.timeSlot && <div className="flex items-center gap-1"><span className="font-semibold text-[hsl(var(--foreground))]">Time Slot:</span><span>{inq.timeSlot}</span></div>}
+                      {inq.locationAddress && <div className="flex items-center gap-1 sm:col-span-2"><span className="font-semibold text-[hsl(var(--foreground))]">Location:</span><span className="truncate" title={inq.locationAddress}>{inq.locationAddress}</span></div>}
                       {inq.price !== undefined && inq.price > 0 && <div className="flex items-center gap-1"><span className="font-semibold text-[hsl(var(--foreground))]">Price:</span><span className="text-emerald-600 font-medium">{inq.price.toLocaleString()} AMD</span></div>}
                       {inq.notes && (
                         <div className="sm:col-span-2 border-t border-[hsl(var(--border))]/20 pt-1.5 mt-0.5">
@@ -359,7 +408,11 @@ export default function InquiriesPage() {
 
           {inquiries.filter((inq) => {
             if (activeTab === "bookings") return inq.type === "booking";
-            if (activeTab === "reviews") return inq.type === "review";
+            if (activeTab === "reviews") {
+              if (inq.type !== "review") return false;
+              if (filterRating !== null && inq.rating !== filterRating) return false;
+              return true;
+            }
             if (activeTab === "notifications") return inq.type === "notification";
             return true;
           }).length === 0 && (

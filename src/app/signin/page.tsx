@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { Eye, EyeOff } from "lucide-react";
@@ -14,7 +14,20 @@ export default function SignInPage() {
   const [userOrEmail, setUserOrEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("armbiz_remember_me");
+    if (saved) {
+      try {
+        const { userOrEmail: savedEmail, password: savedPassword } = JSON.parse(saved);
+        if (savedEmail) setUserOrEmail(savedEmail);
+        if (savedPassword) setPassword(savedPassword);
+        setRememberMe(true);
+      } catch (e) { }
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,6 +37,12 @@ export default function SignInPage() {
     if (!result.success) {
       setError(result.error ?? "Unable to sign in.");
       return;
+    }
+
+    if (rememberMe) {
+      localStorage.setItem("armbiz_remember_me", JSON.stringify({ userOrEmail, password }));
+    } else {
+      localStorage.removeItem("armbiz_remember_me");
     }
 
     router.push("/dashboard");
@@ -80,6 +99,18 @@ export default function SignInPage() {
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
+          </div>
+          <div className="flex items-center gap-2 mt-2">
+            <input
+              type="checkbox"
+              id="rememberMe"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="h-4 w-4 rounded border-[hsl(var(--border))] text-primary focus:ring-primary accent-primary cursor-pointer"
+            />
+            <label htmlFor="rememberMe" className="text-sm font-medium text-[hsl(var(--muted-foreground))] cursor-pointer select-none">
+              {(t.auth as any).rememberMe || "Remember me"}
+            </label>
           </div>
           <button type="submit" className="w-full h-11 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90 transition-colors mt-2 shadow-md hover:shadow-lg">
             {t.auth.loginBtn}

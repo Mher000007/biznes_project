@@ -51,11 +51,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       try {
         const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
         if (!token) return;
-        const res = await axios.get(`${getApiUrl()}/notifications`, { headers: { Authorization: `Bearer ${token}` } });
-        if (res.data?.success) {
-          const unread = (res.data.data || []).filter((n: any) => !n.readBy?.includes(currentUser.id)).length;
-          setUnreadCount(unread);
-        }
+        
+        let count = 0;
+
+        // Fetch notifications
+        try {
+          const res = await axios.get(`${getApiUrl()}/notifications`, { headers: { Authorization: `Bearer ${token}` } });
+          if (res.data?.success) {
+            count += (res.data.data || []).filter((n: any) => !n.readBy?.includes(currentUser.id)).length;
+          }
+        } catch { }
+
+        // Fetch pending bookings
+        try {
+          const bizRes = await axios.get(`${getApiUrl()}/businesses/me/all`, { headers: { Authorization: `Bearer ${token}` } });
+          if (bizRes.data?.success && bizRes.data.data?.length > 0) {
+            const bizId = bizRes.data.data[0]._id;
+            const bookRes = await axios.get(`${getApiUrl()}/bookings/business/${bizId}`, { headers: { Authorization: `Bearer ${token}` } });
+            if (bookRes.data?.success) {
+              count += (bookRes.data.data || []).filter((b: any) => b.status === "pending" || b.status === "new").length;
+            }
+          }
+        } catch { }
+
+        setUnreadCount(count);
       } catch { }
     }
     fetchUnread();

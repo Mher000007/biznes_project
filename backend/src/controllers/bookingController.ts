@@ -6,7 +6,7 @@ import { triggerBookingWebhook } from '../utils/n8n.js';
 
 // Create Booking
 export const createBooking = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const { businessId, customerName, customerPhone, date, timeSlot, serviceName, totalPrice, notes } = req.body;
+  const { businessId, customerName, customerPhone, date, timeSlot, serviceName, totalPrice, notes, locationId } = req.body;
 
   if (!businessId || !customerName || !customerPhone || !date || !timeSlot || !serviceName || totalPrice === undefined) {
     res.status(400).json({ success: false, message: 'Please provide all required fields' });
@@ -33,6 +33,7 @@ export const createBooking = asyncHandler(async (req: Request, res: Response): P
     serviceName,
     totalPrice,
     notes,
+    locationId: locationId || undefined,
     status: 'pending',
   });
 

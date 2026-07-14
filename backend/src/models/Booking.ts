@@ -8,6 +8,7 @@ export interface IBooking extends Document {
   timeSlot: string;
   serviceName: string;
   totalPrice: number;
+  locationId?: mongoose.Types.ObjectId;
   status: 'pending' | 'confirmed' | 'cancelled';
   webhookTriggered: boolean;
   notes?: string;
@@ -46,6 +47,10 @@ const bookingSchema = new Schema<IBooking>({
   totalPrice: {
     type: Number,
     required: [true, 'Please provide total price'],
+  },
+  locationId: {
+    type: Schema.Types.ObjectId,
+    ref: 'BusinessLocation',
   },
   status: {
     type: String,

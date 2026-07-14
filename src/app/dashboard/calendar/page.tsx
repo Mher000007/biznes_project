@@ -41,6 +41,7 @@ export default function CalendarPage() {
     avgRating: ""
   });
   const [saving, setSaving] = useState(false);
+  const [inquiries, setInquiries] = useState<any[]>([]);
 
   // Load business & summaries
   useEffect(() => {
@@ -68,6 +69,14 @@ export default function CalendarPage() {
         });
         if (sumRes.data?.success) {
           setSummaries(sumRes.data.data || []);
+        }
+
+        // 3. Fetch inquiries
+        const inqRes = await axios.get(`${getApiUrl()}/inquiries/business/${bId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (inqRes.data?.success) {
+          setInquiries(inqRes.data.data || []);
         }
       } catch (err) {
         console.error("Error loading calendar data", err);
@@ -312,17 +321,7 @@ export default function CalendarPage() {
             </div>
 
             <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-5">
-              <div className="group">
-                <label className="block text-sm font-semibold mb-2 text-[hsl(var(--foreground))] transition-colors">
-                  Notes / Summary
-                </label>
-                <textarea
-                  className="w-full bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-colors min-h-[110px] resize-y custom-scrollbar"
-                  placeholder="Enter day's summary, meetings, insights..."
-                  value={modalSummary}
-                  onChange={e => setModalSummary(e.target.value)}
-                />
-              </div>
+
 
               <div className="group">
                 <label className="block text-sm font-semibold mb-3 text-[hsl(var(--foreground))] transition-colors">
@@ -330,8 +329,16 @@ export default function CalendarPage() {
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-[hsl(var(--muted))]/20 border border-[hsl(var(--border))] rounded-xl p-3 flex flex-col items-center justify-center text-center">
-                    <span className="block text-[11px] uppercase tracking-wider font-semibold text-[hsl(var(--muted-foreground))] mb-1">Total Bookings</span>
-                    <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{fixedStats.totalBookings || "0"}</span>
+                    <span className="block text-[11px] uppercase tracking-wider font-semibold text-[hsl(var(--muted-foreground))] mb-1">Total Inquiries</span>
+                    <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
+                      {inquiries.filter(i => {
+                        if (!selectedDate) return false;
+                        const d = new Date(i.createdAt);
+                        return d.getFullYear() === selectedDate.getFullYear() &&
+                          d.getMonth() === selectedDate.getMonth() &&
+                          d.getDate() === selectedDate.getDate();
+                      }).length}
+                    </span>
                   </div>
                   <div className="bg-[hsl(var(--muted))]/20 border border-[hsl(var(--border))] rounded-xl p-3 flex flex-col items-center justify-center text-center">
                     <span className="block text-[11px] uppercase tracking-wider font-semibold text-[hsl(var(--muted-foreground))] mb-1">Reviews</span>

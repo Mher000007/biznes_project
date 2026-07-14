@@ -65,6 +65,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [businessId, setBusinessId] = useState<string | null>(null);
   const [userBusinesses, setUserBusinesses] = useState<any[]>([]);
+  const [bookingBreakdown, setBookingBreakdown] = useState<any[]>([]);
+  const [showInquiriesPopover, setShowInquiriesPopover] = useState(false);
 
   // Subscription & Verification States
   const [activePlan, setActivePlan] = useState<"starter" | "standard" | "premium">("starter");
@@ -168,13 +170,35 @@ export default function DashboardPage() {
 
         // Load bookings
         let bookingCount = 0;
+        let breakdown: any[] = [];
         try {
           const bookingsRes = await axios.get(`${API}/bookings/business/${biz._id}`, { headers: authHeader() });
           if (bookingsRes.data?.success) {
-            bookingCount = (bookingsRes.data.data || []).length;
+            const allBookings = bookingsRes.data.data || [];
+            bookingCount = allBookings.length;
+            
+            // Group by locationId
+            const countsMap = allBookings.reduce((acc: any, b: any) => {
+              const locId = b.locationId || "unspecified";
+              acc[locId] = (acc[locId] || 0) + 1;
+              return acc;
+            }, {});
+            
+            // Map locationIds to addresses
+            if (biz.locations && biz.locations.length > 0) {
+              breakdown = Object.keys(countsMap).map(locId => {
+                const locObj = biz.locations.find((l: any) => (l._id || l.id || l.address) === locId);
+                return {
+                  address: locObj ? locObj.address : "Այլ / Ընդհանուր",
+                  count: countsMap[locId]
+                };
+              });
+            } else {
+              breakdown = [{ address: "Ընդհանուր", count: bookingCount }];
+            }
           }
         } catch { /* bookings endpoint may not exist yet */ }
-
+        setBookingBreakdown(breakdown);
 
         const rankVal = biz.rank ? `#${biz.rank}` : (views > 0 ? `#${Math.max(1, 15 - Math.floor(views / 10))}` : "#–");
 
@@ -259,10 +283,13 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Stats grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
             {stats.map((stat) => (
-              <div key={stat.label} className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-5">
+              <div 
+                key={stat.label} 
+                className={`rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-5 relative ${stat.label === "Inquiries" ? "cursor-pointer hover:border-[hsl(var(--primary))] transition-colors" : ""}`}
+                onClick={() => { if (stat.label === "Inquiries") setShowInquiriesPopover(!showInquiriesPopover); }}
+              >
                 <div className="flex items-center justify-between mb-3">
                   <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${stat.iconBg || 'bg-[hsl(var(--primary))]/10'} ${stat.iconColor || 'text-[hsl(var(--primary))]'} ${(stat as any).iconAnimate || ''}`}>
                     <stat.icon className="h-4 w-4" />
@@ -275,6 +302,22 @@ export default function DashboardPage() {
                 </div>
                 <div className="text-2xl font-bold">{stat.value}</div>
                 <div className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">{stat.label}</div>
+
+                {/* Click Popover for Inquiries Breakdown */}
+                {stat.label === "Inquiries" && bookingBreakdown.length > 0 && showInquiriesPopover && (
+                  <div className="absolute left-1/2 -translate-x-1/2 bottom-[105%] mb-2 w-max min-w-[220px] max-w-[300px] p-3 bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl shadow-xl z-50 animate-in fade-in slide-in-from-bottom-2">
+                    <h4 className="text-xs font-bold text-[hsl(var(--foreground))] mb-2 border-b border-[hsl(var(--border))] pb-2">Ամրագրումներ ըստ հասցեի</h4>
+                    <ul className="flex flex-col gap-2">
+                      {bookingBreakdown.map((item, idx) => (
+                        <li key={idx} className="flex items-center justify-between text-xs gap-4">
+                          <span className="text-[hsl(var(--muted-foreground))] truncate max-w-[200px]" title={item.address}>{item.address}</span>
+                          <span className="font-bold text-[hsl(var(--primary))] bg-[hsl(var(--primary))]/10 px-2 py-0.5 rounded">{item.count}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="absolute left-1/2 -bottom-1.5 -translate-x-1/2 w-3 h-3 rotate-45 bg-[hsl(var(--card))] border-b border-r border-[hsl(var(--border))]"></div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -291,38 +334,8 @@ export default function DashboardPage() {
           )}
 
           {!loading && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-              <div>
-                <TopBusinesses />
-              </div>
-              <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-sm flex flex-col h-full min-h-[400px]">
-                <div className="p-6 border-b border-[hsl(var(--border))]">
-                  <h3 className="text-base font-bold text-[hsl(var(--foreground))] flex items-center gap-2">
-                    <MapPin className="h-5 w-5 text-indigo-500" />
-                    Իմ Բիզնեսների Քարտեզը
-                  </h3>
-                  <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">Ձեր հաստատությունների տեղակայումները</p>
-                </div>
-                <div className="flex-1 relative z-0 rounded-b-2xl overflow-hidden bg-[hsl(var(--muted))]/30">
-                  <LeafletMap
-                    center={[40.1872, 44.5152]}
-                    zoom={12}
-                    markers={userBusinesses
-                      .filter(b => (b.coordinates && b.coordinates.latitude && b.coordinates.longitude) || (b.latitude && b.longitude))
-                      .map(b => ({
-                        id: b._id,
-                        lat: b.coordinates?.latitude || b.latitude,
-                        lng: b.coordinates?.longitude || b.longitude,
-                        name: b.name,
-                        category: b.category?.name,
-                        slug: b.slug,
-                        rating: b.rating,
-                        reviewCount: b.reviewCount
-                      }))}
-                    fitAllBounds={true}
-                  />
-                </div>
-              </div>
+            <div className="mb-8">
+              <TopBusinesses />
             </div>
           )}
 

@@ -178,7 +178,15 @@ export default function LeafletMap({
     const sizeTimer = setTimeout(() => map.invalidateSize(), 100);
     return () => {
       clearTimeout(sizeTimer);
-      map.remove();
+      if (map) {
+        try {
+          map.stop();
+          map.off();
+          map.remove();
+        } catch (e) {
+          console.error("Leaflet cleanup error", e);
+        }
+      }
       mapRef.current = null;
       tileLayerRef.current = null;
       markersGroupRef.current = null;

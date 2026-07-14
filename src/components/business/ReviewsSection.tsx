@@ -591,8 +591,8 @@ export default function ReviewsSection({
                         <Star
                           size={28}
                           className={`${styles.starIcon} ${star <= (hoverRating || selectedRating)
-                              ? styles.starActive
-                              : styles.starInactive
+                            ? styles.starActive
+                            : styles.starInactive
                             }`}
                         />
                       </button>
@@ -703,94 +703,94 @@ export default function ReviewsSection({
         {/* ── Review List ── */}
         <div className={styles.listColumn}>
           <div className={styles.list}>
-        {loading && (
-          <div className={styles.loadingRow}>
-            <Loader2 size={20} className={styles.spin} />
-            Loading reviews…
-          </div>
-        )}
-
-        {!loading && reviews.length === 0 && (
-          <div className={styles.emptyState}>
-            <MessageSquare size={40} className={styles.emptyIcon} />
-            <p>No reviews yet. Be the first to share your experience!</p>
-          </div>
-        )}
-
-          {(!isBackend ? reviews.slice((page - 1) * 3, page * 3) : reviews).map((review, idx) => (
-            <div
-              key={review._id}
-              className={styles.reviewCard}
-              style={{ animationDelay: `${idx * 0.06}s` }}
-            >
-              <div className={styles.reviewHeader}>
-                <Avatar name={review.author?.name || review.authorName} />
-                <div className={styles.reviewMeta2}>
-                  <span className={styles.reviewAuthor}>
-                    {review.author?.name || review.authorName}
-                  </span>
-                  {review.isVerified && (
-                    <span className={styles.verifiedBadge}>
-                      <CheckCircle size={11} /> Verified
-                    </span>
-                  )}
-                  <span className={styles.reviewTime}>{timeAgo(review.createdAt)}</span>
-                </div>
-                <StarRow value={review.rating} size={14} />
+            {loading && (
+              <div className={styles.loadingRow}>
+                <Loader2 size={20} className={styles.spin} />
+                Loading reviews…
               </div>
+            )}
 
-              <p className={styles.reviewComment}>{review.comment}</p>
+            {!loading && reviews.length === 0 && (
+              <div className={styles.emptyState}>
+                <MessageSquare size={40} className={styles.emptyIcon} />
+                <p>No reviews yet. Be the first to share your experience!</p>
+              </div>
+            )}
 
-              {review.image && (
-                <div className={styles.reviewImageContainer}>
-                  <img src={review.image} alt="Review upload" className={styles.reviewImage} />
+            {(!isBackend ? reviews.slice((page - 1) * 3, page * 3) : reviews).map((review, idx) => (
+              <div
+                key={review._id}
+                className={styles.reviewCard}
+                style={{ animationDelay: `${idx * 0.06}s` }}
+              >
+                <div className={styles.reviewHeader}>
+                  <Avatar name={review.author?.name || review.authorName} />
+                  <div className={styles.reviewMeta2}>
+                    <span className={styles.reviewAuthor}>
+                      {review.author?.name || review.authorName}
+                    </span>
+                    {review.isVerified && (
+                      <span className={styles.verifiedBadge}>
+                        <CheckCircle size={11} /> Verified
+                      </span>
+                    )}
+                    <span className={styles.reviewTime}>{timeAgo(review.createdAt)}</span>
+                  </div>
+                  <StarRow value={review.rating} size={14} />
                 </div>
-              )}
 
-              <div className={styles.reviewFooter}>
+                <p className={styles.reviewComment}>{review.comment}</p>
+
+                {review.image && (
+                  <div className={styles.reviewImageContainer}>
+                    <img src={review.image} alt="Review upload" className={styles.reviewImage} />
+                  </div>
+                )}
+
+                <div className={styles.reviewFooter}>
+                  <button
+                    className={`${styles.helpfulBtn} ${helpfulSet.has(review._id) ? styles.helpfulActive : ""}`}
+                    onClick={() => handleHelpful(review._id)}
+                    disabled={helpfulSet.has(review._id)}
+                    aria-label="Mark as helpful"
+                  >
+                    <ThumbsUp size={13} />
+                    {t.reviewsSection?.helpful || "Helpful"} {review.helpfulCount > 0 && `(${review.helpfulCount})`}
+                  </button>
+                </div>
+              </div>
+            ))}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className={styles.pagination}>
                 <button
-                  className={`${styles.helpfulBtn} ${helpfulSet.has(review._id) ? styles.helpfulActive : ""}`}
-                  onClick={() => handleHelpful(review._id)}
-                  disabled={helpfulSet.has(review._id)}
-                  aria-label="Mark as helpful"
+                  className={styles.pageBtn}
+                  onClick={() => {
+                    if (isBackend) fetchReviews(page - 1);
+                    else setPage(page - 1);
+                  }}
+                  disabled={page <= 1 || loading}
                 >
-                  <ThumbsUp size={13} />
-                  {t.reviewsSection?.helpful || "Helpful"} {review.helpfulCount > 0 && `(${review.helpfulCount})`}
+                  ← Prev
+                </button>
+                <span className={styles.pageInfo}>
+                  {page} / {totalPages}
+                </span>
+                <button
+                  className={styles.pageBtn}
+                  onClick={() => {
+                    if (isBackend) fetchReviews(page + 1);
+                    else setPage(page + 1);
+                  }}
+                  disabled={page >= totalPages || loading}
+                >
+                  Next →
                 </button>
               </div>
-            </div>
-          ))}
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className={styles.pagination}>
-              <button
-                className={styles.pageBtn}
-                onClick={() => {
-                  if (isBackend) fetchReviews(page - 1);
-                  else setPage(page - 1);
-                }}
-                disabled={page <= 1 || loading}
-              >
-                ← Prev
-              </button>
-              <span className={styles.pageInfo}>
-                {page} / {totalPages}
-              </span>
-              <button
-                className={styles.pageBtn}
-                onClick={() => {
-                  if (isBackend) fetchReviews(page + 1);
-                  else setPage(page + 1);
-                }}
-                disabled={page >= totalPages || loading}
-              >
-                Next →
-              </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
       </div>
     </section>
   );

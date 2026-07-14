@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { MOCK_BUSINESSES } from "@/data/mock-businesses";
-import { Star, MapPin, BadgeCheck, Globe, Phone, Mail, Clock, Users, Calendar, ArrowLeft, Send, X, Compass, ChevronLeft, ChevronRight, CheckCircle, Maximize2 } from "lucide-react";
+import { Star, MapPin, BadgeCheck, Globe, Phone, Mail, Clock, Users, Calendar, ArrowLeft, Send, X, Compass, ChevronLeft, ChevronRight, CheckCircle, Maximize2, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
 import { getApiUrl } from "@/lib/utils";
@@ -76,6 +76,12 @@ const isDefaultHighlight = (h: any) => {
     (title === "Reviews" && url.includes("photo-1522071820081-009f0129c71c"))
   );
 };
+const formatAddress = (address: string, city: string) => {
+  if (!address) return city || '';
+  const parts = address.split(',').map((p: string) => p.trim()).filter(Boolean);
+  const short = parts.slice(0, 2).join(', ');
+  return city && !short.includes(city) ? `${short}, ${city}` : short;
+};
 
 export default function BusinessProfilePage() {
   const { slug } = useParams() as { slug: string };
@@ -125,6 +131,8 @@ export default function BusinessProfilePage() {
   const [matchingGroupIdx, setMatchingGroupIdx] = useState<number | null>(null);
   const [showStoryViewer, setShowStoryViewer] = useState(false);
 
+
+
   // Highlights Story Viewer State
   const [showHighlightViewer, setShowHighlightViewer] = useState(false);
   const [highlightViewerGroups, setHighlightViewerGroups] = useState<any[]>([]);
@@ -160,9 +168,46 @@ export default function BusinessProfilePage() {
   const [customerPhone, setCustomerPhone] = useState("");
   const [bookingDate, setBookingDate] = useState("");
   const [bookingTime, setBookingTime] = useState("");
+  const [bookingLocation, setBookingLocation] = useState("");
+  const [isLocDropdownOpen, setIsLocDropdownOpen] = useState(false);
   const [bookingNotes, setBookingNotes] = useState("");
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
+
+  // Prevent background scrolling when Booking Modal is open
+  useEffect(() => {
+    if (isBookingOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isBookingOpen]);
+
+  // Resolve today's operating hours for time selection validation
+  const todayOperatingHours = React.useMemo(() => {
+    if (!bookingDate) return null;
+
+    // Parse the date (YYYY-MM-DD) carefully to avoid timezone shift
+    const [y, m, d] = bookingDate.split('-').map(Number);
+    const localDate = new Date(y, m - 1, d);
+    const dayName = localDate.toLocaleDateString("en-US", { weekday: 'long' });
+
+    // Resolve operating hours layout
+    const hours = business?.operatingHours && business.operatingHours.length > 0
+      ? business.operatingHours.map((h: any) => ({
+        day: h.dayName || h.day,
+        open: h.openTime || h.open,
+        close: h.closeTime || h.close,
+        closed: h.closed === true || h.isClosed === true || (!h.openTime && !h.open && !h.closeTime && !h.close)
+      }))
+      : DEFAULT_HOURS;
+
+    const todayHours = hours.find((h: any) => h.day?.toLowerCase() === dayName.toLowerCase());
+    return todayHours || null;
+  }, [bookingDate, business]);
 
   const fetchedSlug = useRef<string | null>(null);
 
@@ -441,15 +486,22 @@ export default function BusinessProfilePage() {
     e.preventDefault();
     setBookingLoading(true);
 
+    if (business.locations && business.locations.length > 0 && !bookingLocation) {
+      alert("Please select a branch/location before booking.");
+      setBookingLoading(false);
+      return;
+    }
+
     const bookingPayload = {
       businessId: business.id || business._id,
       customerName,
-      customerPhone,
+      customerPhone: `+374${customerPhone}`,
       date: bookingDate,
       timeSlot: bookingTime,
       serviceName: selectedService?.name || "General Service",
       totalPrice: selectedService?.price || 0,
-      notes: bookingNotes
+      notes: bookingNotes,
+      locationId: bookingLocation || undefined
     };
 
     // Increment local storage inquiryCount for this business
@@ -518,8 +570,6 @@ export default function BusinessProfilePage() {
     }
   };
 
-  // Default time slots for Armenian service listings
-  const TIME_SLOTS = ["10:00", "11:30", "13:00", "14:30", "16:00", "17:30", "19:00", "20:30"];
 
   // Extract cover image
   const coverImage = (() => {
@@ -732,7 +782,7 @@ export default function BusinessProfilePage() {
             {/* Operating hours */}
             <section className="flex flex-col h-full">
               <h2 className="text-lg font-bold mb-3">{t.business?.operatingHours || "Operating Hours"}</h2>
-              <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] divide-y divide-[hsl(var(--border))] flex-1">
+              <div className="flex flex-col gap-1 flex-1">
                 {(business.operatingHours && business.operatingHours.length > 0
                   ? business.operatingHours.map((h: any) => ({
                     day: h.dayName || h.day,
@@ -741,38 +791,57 @@ export default function BusinessProfilePage() {
                     closed: h.isClosed ?? h.closed
                   }))
                   : DEFAULT_HOURS
-                ).map((h: any) => (
-                  <div key={h.day} className="flex items-center justify-between px-4 py-2.5 text-sm">
-                    <span className="font-medium">
-                      {t.business?.days?.[h.day.toLowerCase() as keyof typeof t.business.days] || h.day}
-                    </span>
-                    <span className="text-[hsl(var(--muted-foreground))]">
-                      {h.closed ? (t.business?.closed || "Closed") : `${h.open} — ${h.close}`}
-                    </span>
-                  </div>
-                ))}
+                ).map((h: any) => {
+                  const isToday = h.day?.toLowerCase() === new Date().toLocaleDateString("en-US", { weekday: 'long' }).toLowerCase();
+
+                  return (
+                    <div
+                      key={h.day}
+                      className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-all duration-300 ${isToday ? 'bg-[hsl(var(--primary))]/10 border border-[hsl(var(--primary))]/20 shadow-sm' : 'hover:bg-[hsl(var(--muted))]/60 border border-transparent hover:scale-[1.01]'}`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        {isToday ? (
+                          <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[hsl(var(--primary))] opacity-60"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-[hsl(var(--primary))]"></span>
+                          </span>
+                        ) : (
+                          <span className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--border))]"></span>
+                        )}
+                        <span className={`text-[14px] ${isToday ? 'font-bold text-[hsl(var(--primary))]' : 'font-medium text-[hsl(var(--foreground))]'}`}>
+                          {t.business?.days?.[h.day.toLowerCase() as keyof typeof t.business.days] || h.day}
+                        </span>
+                      </div>
+
+                      {h.closed ? (
+                        <span className="text-[11px] font-bold tracking-wider uppercase px-2 py-1 rounded bg-red-500/10 text-red-500">
+                          {t.business?.closed || "Closed"}
+                        </span>
+                      ) : (
+                        <div className={`flex items-center text-[14px] font-semibold tracking-tight ${isToday ? 'text-[hsl(var(--primary))]' : 'text-[hsl(var(--muted-foreground))]'}`}>
+                          <span className="tabular-nums">{h.open}</span>
+                          <span className="mx-1.5 opacity-40 font-normal">—</span>
+                          <span className="tabular-nums">{h.close}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </section>
 
             {/* Contact Details */}
             <section className="flex flex-col h-full">
               <h2 className="text-lg font-bold mb-3">{t.business?.contact || "Contact Information"}</h2>
-              <div className={`${styles.contactCard} !mt-0 flex-1 flex flex-col justify-center overflow-y-auto max-h-[300px] custom-scrollbar`}>
+              <div className={`${styles.contactCard} !mt-0 flex-1 flex flex-col justify-center`}>
                 <div className="space-y-4">
                   {business.locations && business.locations.length > 0 ? (
                     <div className="space-y-6">
                       {/* Addresses Group */}
                       <div>
-                        <h3 className="text-[10px] font-bold text-[hsl(var(--muted-foreground))] uppercase tracking-widest mb-3">Addresses</h3>
                         <div className="space-y-3">
                           {business.locations.map((loc: any, idx: number) => (
                             <div key={`addr-${idx}`} className="space-y-1.5">
-                              {loc.name && (
-                                <div className="text-xs font-bold text-[hsl(var(--foreground))] flex items-center gap-1.5">
-                                  {loc.name}
-                                  {loc.isPrimary && <span className="text-[9px] font-bold bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))] px-1 py-0 rounded uppercase tracking-wide">Main</span>}
-                                </div>
-                              )}
                               <div className="flex items-start gap-3">
                                 <MapPin className="h-4 w-4 shrink-0 mt-0.5 text-[hsl(var(--primary))]" />
                                 <div className="min-w-0">
@@ -783,7 +852,7 @@ export default function BusinessProfilePage() {
                                     className="text-[13px] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--primary))] transition-colors line-clamp-2 leading-snug"
                                     title={loc.address + (loc.city ? `, ${loc.city}` : '')}
                                   >
-                                    {loc.address}{loc.city ? `, ${loc.city}` : ''}
+                                    {formatAddress(loc.address, loc.city)}
                                   </a>
                                 </div>
                               </div>
@@ -795,11 +864,9 @@ export default function BusinessProfilePage() {
                       {/* Phones Group */}
                       {business.locations.some((l: any) => l.phone) && (
                         <div className="pt-4 border-t border-[hsl(var(--border))]">
-                          <h3 className="text-[10px] font-bold text-[hsl(var(--muted-foreground))] uppercase tracking-widest mb-3">Phone Numbers</h3>
                           <div className="space-y-3">
                             {business.locations.filter((l: any) => l.phone).map((loc: any, idx: number) => (
                               <div key={`phone-${idx}`} className="space-y-1.5">
-                                {loc.name && <div className="text-xs font-bold text-[hsl(var(--foreground))]">{loc.name}</div>}
                                 <div className="flex items-start gap-3">
                                   <Phone className="h-4 w-4 shrink-0 mt-0.5 text-[hsl(var(--primary))]" />
                                   <div className="min-w-0">
@@ -821,7 +888,6 @@ export default function BusinessProfilePage() {
                           <div className="space-y-3">
                             {business.locations.filter((l: any) => l.workingHours).map((loc: any, idx: number) => (
                               <div key={`hours-${idx}`} className="space-y-1.5">
-                                {loc.name && <div className="text-xs font-bold text-[hsl(var(--foreground))]">{loc.name}</div>}
                                 <div className="flex items-start gap-3">
                                   <span className="h-4 w-4 shrink-0 flex items-center justify-center text-[hsl(var(--primary))] mt-0.5">🕒</span>
                                   <div className="min-w-0">
@@ -846,7 +912,7 @@ export default function BusinessProfilePage() {
                           className={`${styles.contactItem} items-start`}
                         >
                           <MapPin className="h-4 w-4 shrink-0 mt-0.5 text-[hsl(var(--primary))]" />
-                          <span className="leading-snug">{business.address}{business.city ? `, ${business.city}` : ''}</span>
+                          <span className="leading-snug">{formatAddress(business.address, business.city)}</span>
                         </a>
                       )}
                       <a href={`tel:${business.phone}`} className={styles.contactItem}>
@@ -858,7 +924,6 @@ export default function BusinessProfilePage() {
                   {/* Common Email and Website */}
                   {(business.email || business.website) && (
                     <div className={`pt-4 ${business.locations && business.locations.length > 0 ? 'border-t border-[hsl(var(--border))] mt-6' : ''}`}>
-                      <h3 className="text-[10px] font-bold text-[hsl(var(--muted-foreground))] uppercase tracking-widest mb-3">Online</h3>
                       <div className="space-y-3">
                         {business.email && (
                           <div className="flex items-start gap-3">
@@ -953,15 +1018,67 @@ export default function BusinessProfilePage() {
 
                 <div>
                   <label className="block text-xs font-semibold mb-1">Phone Number *</label>
-                  <input
-                    required
-                    type="tel"
-                    value={customerPhone}
-                    onChange={e => setCustomerPhone(e.target.value)}
-                    placeholder="+374 XX XXXXXX"
-                    className="w-full border border-[hsl(var(--border))] rounded-lg px-3 py-2 text-sm bg-transparent outline-none focus:border-[hsl(var(--primary))]"
-                  />
+                  <div className="flex w-full border border-[hsl(var(--border))] rounded-lg bg-transparent overflow-hidden focus-within:border-[hsl(var(--primary))] focus-within:ring-1 focus-within:ring-[hsl(var(--primary))] transition-all">
+                    <div className="px-3 py-2 bg-[hsl(var(--muted))]/50 text-sm font-medium border-r border-[hsl(var(--border))] flex items-center justify-center text-[hsl(var(--foreground))] select-none">
+                      +374
+                    </div>
+                    <input
+                      required
+                      type="tel"
+                      minLength={8}
+                      maxLength={8}
+                      value={customerPhone}
+                      onChange={e => {
+                        const val = e.target.value.replace(/\D/g, '').slice(0, 8);
+                        setCustomerPhone(val);
+                      }}
+                      placeholder="XX XXXXXX"
+                      className="flex-1 px-3 py-2 text-sm bg-transparent outline-none w-full"
+                    />
+                  </div>
                 </div>
+
+                {business.locations && business.locations.length > 0 && (
+                  <div className="relative">
+                    <label className="block text-xs font-semibold mb-1">Branch / Location *</label>
+                    <button
+                      type="button"
+                      onClick={() => setIsLocDropdownOpen(!isLocDropdownOpen)}
+                      className="w-full flex items-center justify-between border border-[hsl(var(--border))] rounded-lg px-3 py-2.5 text-sm bg-[hsl(var(--muted))]/20 hover:bg-[hsl(var(--muted))]/40 transition-all focus:border-[hsl(var(--primary))] outline-none"
+                    >
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <MapPin className="h-4 w-4 shrink-0 text-[hsl(var(--primary))]" />
+                        <span className={`truncate ${bookingLocation ? "text-[hsl(var(--foreground))] font-medium" : "text-[hsl(var(--muted-foreground))]"}`}>
+                          {bookingLocation
+                            ? business.locations.find((l: any) => (l._id || l.id || l.address) === bookingLocation)?.address || "Branch Selected"
+                            : "Select a branch"}
+                        </span>
+                      </div>
+                      <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${isLocDropdownOpen ? "rotate-180 text-[hsl(var(--primary))]" : "text-[hsl(var(--muted-foreground))]"}`} />
+                    </button>
+                    {isLocDropdownOpen && (
+                      <div className="absolute top-[65px] left-0 w-full bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl shadow-lg z-50 overflow-hidden py-1 max-h-52 overflow-y-auto animate-in fade-in slide-in-from-top-1">
+                        {business.locations.map((loc: any) => (
+                          <button
+                            key={loc._id || loc.id || loc.address}
+                            type="button"
+                            onClick={() => {
+                              setBookingLocation(loc._id || loc.id || loc.address);
+                              setIsLocDropdownOpen(false);
+                            }}
+                            className={`w-full flex items-start flex-col px-3 py-2 text-sm transition-colors hover:bg-[hsl(var(--muted))] ${bookingLocation === (loc._id || loc.id || loc.address) ? "bg-[hsl(var(--primary))]/10 border-l-2 border-[hsl(var(--primary))]" : "border-l-2 border-transparent"
+                              }`}
+                          >
+                            <span className={`font-semibold ${bookingLocation === (loc._id || loc.id || loc.address) ? "text-[hsl(var(--primary))]" : "text-[hsl(var(--foreground))]"}`}>
+                              {loc.address}
+                            </span>
+                            {loc.city && <span className="text-[11px] text-[hsl(var(--muted-foreground))] mt-0.5">{loc.city}</span>}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -970,22 +1087,47 @@ export default function BusinessProfilePage() {
                       required
                       type="date"
                       value={bookingDate}
-                      onChange={e => setBookingDate(e.target.value)}
+                      onChange={e => {
+                        setBookingDate(e.target.value);
+                        setBookingTime(""); // Reset time if date changes
+                      }}
                       min={new Date().toISOString().split('T')[0]}
                       className="w-full border border-[hsl(var(--border))] rounded-lg px-3 py-2 text-sm bg-transparent outline-none focus:border-[hsl(var(--primary))]"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold mb-1">Preferred Time Slot *</label>
-                    <select
-                      required
-                      value={bookingTime}
-                      onChange={e => setBookingTime(e.target.value)}
-                      className="w-full border border-[hsl(var(--border))] rounded-lg px-3 py-2 text-sm bg-transparent outline-none focus:border-[hsl(var(--primary))]"
-                    >
-                      <option value="">Select time</option>
-                      {TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-semibold">Preferred Time *</label>
+                      {todayOperatingHours && !todayOperatingHours.closed && todayOperatingHours.open && (
+                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))]">
+                          {todayOperatingHours.open} - {todayOperatingHours.close}
+                        </span>
+                      )}
+                    </div>
+                    {!bookingDate ? (
+                      <div className="w-full flex items-center gap-2 border border-dashed border-[hsl(var(--border))] rounded-lg px-3 py-2.5 text-[13px] bg-[hsl(var(--muted))]/10 text-[hsl(var(--muted-foreground))] opacity-80 cursor-not-allowed">
+                        <Clock className="h-4 w-4 shrink-0" />
+                        <span>Please select a date first</span>
+                      </div>
+                    ) : (todayOperatingHours?.closed || !todayOperatingHours?.open || !todayOperatingHours?.close) ? (
+                      <div className="w-full flex items-center gap-2 border border-red-500/20 rounded-lg px-3 py-2.5 text-[13px] bg-red-500/5 text-red-500 font-medium cursor-not-allowed">
+                        <X className="h-4 w-4 shrink-0" />
+                        <span>Business is closed</span>
+                      </div>
+                    ) : (
+                      <div className="relative flex items-center w-full">
+                        <Clock className="absolute left-3 h-4 w-4 text-[hsl(var(--muted-foreground))]" />
+                        <input
+                          required
+                          type="time"
+                          min={todayOperatingHours.open}
+                          max={todayOperatingHours.close}
+                          value={bookingTime}
+                          onChange={e => setBookingTime(e.target.value)}
+                          className="w-full border border-[hsl(var(--border))] rounded-lg pl-9 pr-3 py-2.5 text-[13px] bg-transparent outline-none focus:border-[hsl(var(--primary))] focus:ring-1 focus:ring-[hsl(var(--primary))]/30 transition-all"
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
 

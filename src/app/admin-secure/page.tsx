@@ -266,7 +266,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [loadingData, setLoadingData] = useState(false);
-  const [bizSubTab, setBizSubTab] = useState<"pending" | "verified" | "all">("pending");
+  const [bizSubTab, setBizSubTab] = useState<"pending" | "verified" | "all">("all");
   const [resolvingId, setResolvingId] = useState<string | null>(null);
   const [adminReply, setAdminReply] = useState("");
   const [resolveAction, setResolveAction] = useState<"keep" | "delete" | null>(null);
@@ -727,7 +727,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                 display: "flex", background: "rgba(255,255,255,0.05)",
                 borderRadius: 10, padding: 4, gap: 2
               }}>
-                {(["pending", "verified", "all"] as const).map(m => (
+                {(["all", "verified", "pending"] as const).map(m => (
                   <button key={m} onClick={() => setBizSubTab(m)}
                     style={{
                       padding: "5px 14px", borderRadius: 7, border: "none",
@@ -735,9 +735,17 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                       textTransform: "capitalize",
                       background: bizSubTab === m ? "rgba(255,255,255,0.1)" : "transparent",
                       color: bizSubTab === m ? C.text : C.muted,
-                      transition: "all 0.15s"
+                      transition: "all 0.15s",
+                      display: "flex", alignItems: "center", gap: 6
                     }}>
                     {m}
+                    {m === "pending" && (stats?.pendingBusinesses || 0) > 0 && (
+                      <span style={{
+                        display: "inline-block", width: 6, height: 6, 
+                        borderRadius: "50%", background: C.red,
+                        boxShadow: `0 0 4px ${C.red}`
+                      }}></span>
+                    )}
                   </button>
                 ))}
               </div>

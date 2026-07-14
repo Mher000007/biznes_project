@@ -98,6 +98,7 @@ export default function InstagramReviewFeed() {
   const [animateMap, setAnimateMap] = useState<Record<string, boolean>>({});
   const { t } = useI18n();
   const [showAll, setShowAll] = useState(false);
+  const [filterRating, setFilterRating] = useState<number | null>(null);
 
   useEffect(() => {
     async function loadReviews() {
@@ -292,16 +293,49 @@ export default function InstagramReviewFeed() {
     );
   }
 
+  const filteredReviews = filterRating === null ? reviews : reviews.filter(r => r.rating === filterRating);
+
   return (
     <section className="py-16 sm:py-24 border-t border-[hsl(var(--border))]">
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
         <div className="mb-12">
           <h2 className="text-2xl sm:text-3xl font-semibold mb-2 text-[hsl(var(--foreground))]">{t.reviewsFeed?.title || "Reviews"}</h2>
           <p className="text-base text-[hsl(var(--muted-foreground))]">{t.reviewsFeed?.subtitle || "Explore feedback and photos shared by customers in Armenia"}</p>
+          
+          <div className="flex flex-wrap items-center gap-2 mt-6">
+            <span className="text-sm font-medium text-[hsl(var(--muted-foreground))]">Filter by rating:</span>
+            {[5, 4, 3, 2, 1].map(star => (
+              <button
+                key={star}
+                onClick={() => {
+                  setFilterRating(filterRating === star ? null : star);
+                  setShowAll(false);
+                }}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition-colors border ${
+                  filterRating === star 
+                    ? "bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))] border-[hsl(var(--primary))]" 
+                    : "bg-[hsl(var(--card))] text-[hsl(var(--foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))]"
+                }`}
+              >
+                {star} <span style={{ color: "#F4B942" }}>★</span>
+              </button>
+            ))}
+            {filterRating !== null && (
+              <button
+                onClick={() => {
+                  setFilterRating(null);
+                  setShowAll(false);
+                }}
+                className="text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] underline ml-2"
+              >
+                Clear Filter
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 justify-items-center">
-          {(showAll ? reviews : reviews.slice(0, 6)).map((review) => {
+          {(showAll ? filteredReviews : filteredReviews.slice(0, 6)).map((review) => {
             const reviewLiked = likedMap[review.id]?.liked ?? false;
             const reviewLikesCount = likedMap[review.id]?.count ?? review.likes;
             const isAnimating = animateMap[review.id] ?? false;
@@ -410,7 +444,7 @@ export default function InstagramReviewFeed() {
             );
           })}
         </div>
-        {reviews.length > 6 && !showAll && (
+        {filteredReviews.length > 6 && !showAll && (
           <div className="flex justify-center mt-12 animate-fade-in">
             <button
               onClick={() => setShowAll(true)}

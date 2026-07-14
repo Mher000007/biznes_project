@@ -10,9 +10,9 @@ import { AuthRequest } from '../middleware/auth.js';
 export const getReviews = asyncHandler(
   async (req: AuthRequest, res: Response): Promise<void> => {
     const { businessId } = req.params;
-    const page  = Math.max(1, parseInt(req.query.page  as string) || 1);
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(50, parseInt(req.query.limit as string) || 10);
-    const skip  = (page - 1) * limit;
+    const skip = (page - 1) * limit;
 
     if (!businessId.match(/^[0-9a-fA-F]{24}$/)) {
       res.status(400).json({ success: false, message: 'Invalid business ID' });
@@ -317,9 +317,9 @@ export const reportReview = asyncHandler(
 // ─── GET all reviews globally (e.g. for homepage review feed) ─────────────────
 export const getAllReviews = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
-    const page  = Math.max(1, parseInt(req.query.page  as string) || 1);
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(50, parseInt(req.query.limit as string) || 10);
-    const skip  = (page - 1) * limit;
+    const skip = (page - 1) * limit;
 
     const reviews = await Review.find({ status: { $ne: 'resolved_deleted' } })
       .sort({ createdAt: -1 })
