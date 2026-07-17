@@ -12,7 +12,9 @@ export interface IReview extends Document {
   reportedReason?: string;
   adminReply?: string;
   reportedAt?: Date;
-  image?: string;
+  image?: string; // legacy support
+  images?: string[];
+  videos?: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -81,6 +83,14 @@ const reviewSchema = new Schema<IReview>(
       type: String,
       trim: true,
     },
+    images: [{
+      type: String,
+      trim: true,
+    }],
+    videos: [{
+      type: String,
+      trim: true,
+    }],
   },
   {
     timestamps: true,

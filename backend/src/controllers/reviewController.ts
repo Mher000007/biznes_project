@@ -89,7 +89,7 @@ export const getReviews = asyncHandler(
 export const createReview = asyncHandler(
   async (req: AuthRequest, res: Response): Promise<void> => {
     const { businessId } = req.params;
-    const { rating, comment, image, authorName } = req.body;
+    const { rating, comment, image, images, videos, authorName } = req.body;
 
     // Validate business ID format
     if (!businessId.match(/^[0-9a-fA-F]{24}$/)) {
@@ -183,7 +183,9 @@ export const createReview = asyncHandler(
       authorName: resolvedAuthorName,
       rating: parsedRating,
       comment: trimmed,
-      image: image || undefined,
+      image: image || (images && images.length > 0 ? images[0] : undefined),
+      images: images || [],
+      videos: videos || [],
     });
 
     if (userId) {

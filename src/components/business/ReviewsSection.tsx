@@ -17,6 +17,8 @@ interface Review {
   helpfulCount: number;
   createdAt: string;
   image?: string;
+  images?: string[];
+  videos?: string[];
 }
 
 interface ReviewsSectionProps {
@@ -257,7 +259,7 @@ export default function ReviewsSection({
   const [submitError, setSubmitError] = useState("");
 
   const [helpfulSet, setHelpfulSet] = useState<Set<string>>(new Set());
-  const [image, setImage] = useState<string | null>(null);
+  const [mediaFiles, setMediaFiles] = useState<{ url: string; type: 'image' | 'video' }[]>([]);
   const [imageUploading, setImageUploading] = useState(false);
   const [guestName, setGuestName] = useState(currentUser?.name || "");
 
@@ -268,30 +270,52 @@ export default function ReviewsSection({
     }
   }, [currentUser, guestName]);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleMediaChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      setSubmitError("Image size must be less than 5MB");
+    if (mediaFiles.length + files.length > 5) {
+      setSubmitError("You can upload a maximum of 5 files.");
       return;
     }
 
     setImageUploading(true);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      if (typeof reader.result === "string") {
-        setImage(reader.result);
-      } else {
-        setSubmitError("Failed to convert image");
+
+    try {
+      const newMedia: { url: string; type: 'image' | 'video' }[] = [];
+      for (const file of files) {
+        if (file.type.startsWith('image/') && file.size > 5 * 1024 * 1024) {
+          throw new Error("Image size must be less than 5MB");
+        }
+        if (file.type.startsWith('video/') && file.size > 20 * 1024 * 1024) {
+          throw new Error("Video size must be less than 20MB");
+        }
+
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = () => reject(new Error("Failed to read file"));
+          reader.readAsDataURL(file);
+        });
+
+        newMedia.push({
+          url: dataUrl,
+          type: file.type.startsWith('video/') ? 'video' : 'image'
+        });
       }
+
+      setMediaFiles(prev => [...prev, ...newMedia]);
+      setSubmitError("");
+    } catch (err: any) {
+      setSubmitError(err.message || "Failed to process files");
+    } finally {
       setImageUploading(false);
-    };
-    reader.onerror = () => {
-      setSubmitError("Failed to read image file");
-      setImageUploading(false);
-    };
-    reader.readAsDataURL(file);
+      e.target.value = '';
+    }
+  };
+
+  const removeMedia = (index: number) => {
+    setMediaFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   // rating summary
@@ -412,12 +436,16 @@ export default function ReviewsSection({
           headers.Authorization = `Bearer ${token}`;
         }
 
+        const images = mediaFiles.filter(m => m.type === 'image').map(m => m.url);
+        const videos = mediaFiles.filter(m => m.type === 'video').map(m => m.url);
+
         const res = await axios.post(
           `${apiURL}/businesses/${businessId}/reviews`,
           {
             rating: selectedRating,
             comment: comment.trim(),
-            image: image || undefined,
+            images: images.length > 0 ? images : undefined,
+            videos: videos.length > 0 ? videos : undefined,
             authorName: guestName.trim() || undefined
           },
           { headers }
@@ -444,7 +472,7 @@ export default function ReviewsSection({
           setSelectedRating(0);
           setComment("");
           setCommentLength(0);
-          setImage(null);
+          setMediaFiles([]);
           setGuestName("");
           setTimeout(() => setSubmitSuccess(false), 3500);
         }
@@ -454,6 +482,9 @@ export default function ReviewsSection({
       }
     } else {
       // localStorage fallback for mock businesses
+      const images = mediaFiles.filter(m => m.type === 'image').map(m => m.url);
+      const videos = mediaFiles.filter(m => m.type === 'video').map(m => m.url);
+
       const newReview: Review = {
         _id: `local-${Date.now()}`,
         author: null,
@@ -463,7 +494,8 @@ export default function ReviewsSection({
         isVerified: false,
         helpfulCount: 0,
         createdAt: new Date().toISOString(),
-        image: image || undefined,
+        images: images.length > 0 ? images : undefined,
+        videos: videos.length > 0 ? videos : undefined,
       };
       const updated = [newReview, ...reviews];
       setReviews(updated);
@@ -493,7 +525,7 @@ export default function ReviewsSection({
       setSelectedRating(0);
       setComment("");
       setCommentLength(0);
-      setImage(null);
+      setMediaFiles([]);
       setTimeout(() => setSubmitSuccess(false), 3500);
     }
 
@@ -631,33 +663,43 @@ export default function ReviewsSection({
                   </div>
                 </div>
 
-                {/* Image upload */}
+                {/* Image/Video upload */}
                 <div className={styles.imageUploadField}>
-                  <label className={styles.label}>{t.reviewsSection?.addPhoto || "Add Photo (Optional)"}</label>
+                  <label className={styles.label}>{t.reviewsSection?.addPhoto || "Add Photo/Video (Max 5)"}</label>
                   <div className={styles.fileInputWrapper}>
-                    {!image ? (
-                      <label className={styles.uploadTriggerBtn}>
-                        <Camera size={16} />
-                        {imageUploading ? "Processing..." : t.reviewsSection?.uploadPhoto || "Upload Photo"}
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageChange}
-                          className={styles.fileInputHidden}
-                          disabled={imageUploading}
-                        />
-                      </label>
-                    ) : (
-                      <div className={styles.imagePreviewContainer}>
-                        <img src={image} alt="Preview" className={styles.previewImage} />
-                        <button
-                          type="button"
-                          onClick={() => setImage(null)}
-                          className={styles.removePreviewBtn}
-                          title="Remove image"
-                        >
-                          <X size={12} />
-                        </button>
+                    <label className={styles.uploadTriggerBtn}>
+                      <Camera size={16} />
+                      {imageUploading ? "Processing..." : "Upload Media"}
+                      <input
+                        type="file"
+                        accept="image/*,video/*"
+                        multiple
+                        onChange={handleMediaChange}
+                        className={styles.fileInputHidden}
+                        disabled={imageUploading || mediaFiles.length >= 5}
+                      />
+                    </label>
+
+                    {mediaFiles.length > 0 && (
+                      <div className={styles.mediaPreviewGrid} style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '16px' }}>
+                        {mediaFiles.map((media, index) => (
+                          <div key={index} className={styles.imagePreviewContainer} style={{ position: 'relative', width: '80px', height: '80px', borderRadius: '8px', border: '1px solid hsl(var(--border))' }}>
+                            {media.type === 'video' ? (
+                              <video src={media.url} className={styles.previewImage} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }} />
+                            ) : (
+                              <img src={media.url} alt={`Preview ${index}`} className={styles.previewImage} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }} />
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => removeMedia(index)}
+                              className={styles.removePreviewBtn}
+                              title="Remove media"
+                              style={{ position: 'absolute', top: '-8px', right: '-8px', background: 'hsl(var(--destructive))', color: 'hsl(var(--destructive-foreground))', borderRadius: '50%', border: 'none', padding: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -741,9 +783,27 @@ export default function ReviewsSection({
 
                 <p className={styles.reviewComment}>{review.comment}</p>
 
-                {review.image && (
-                  <div className={styles.reviewImageContainer}>
-                    <img src={review.image} alt="Review upload" className={styles.reviewImage} />
+                {/* Media Gallery */}
+                {(review.image || (review.images && review.images.length > 0) || (review.videos && review.videos.length > 0)) && (
+                  <div className={styles.reviewMediaGallery} style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px' }}>
+                    {/* Fallback for legacy image */}
+                    {review.image && !review.images?.length && (
+                      <div className={styles.reviewImageContainer} style={{ width: '120px', height: '120px' }}>
+                        <img src={review.image} alt="Review upload" className={styles.reviewImage} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }} />
+                      </div>
+                    )}
+                    {/* Multiple images */}
+                    {review.images?.map((imgUrl, i) => (
+                      <div key={`img-${i}`} className={styles.reviewImageContainer} style={{ width: '120px', height: '120px' }}>
+                        <img src={imgUrl} alt="Review upload" className={styles.reviewImage} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px', cursor: 'pointer' }} onClick={() => window.open(imgUrl, '_blank')} />
+                      </div>
+                    ))}
+                    {/* Multiple videos */}
+                    {review.videos?.map((vidUrl, i) => (
+                      <div key={`vid-${i}`} className={styles.reviewImageContainer} style={{ width: '120px', height: '120px' }}>
+                        <video src={vidUrl} controls className={styles.reviewVideo} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }} />
+                      </div>
+                    ))}
                   </div>
                 )}
 

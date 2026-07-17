@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import axios from "axios";
-import { Heart, Loader2 } from "lucide-react";
+import { Heart, Loader2, ChevronLeft, ChevronRight, Volume2, VolumeX } from "lucide-react";
 import { getApiUrl } from "@/lib/utils";
 import { MOCK_BUSINESSES } from "@/data/mock-businesses";
 import { useI18n } from "@/i18n";
@@ -20,12 +20,17 @@ interface BizProfile {
   images?: string[];
 }
 
+export interface ReviewMedia {
+  url: string;
+  type: 'image' | 'video';
+}
+
 interface ReviewCardData {
   id: string;
   user: UserProfile;
   biz: BizProfile;
   time: string;
-  img: string;
+  media: ReviewMedia[];
   rating: number;
   likes: number;
   caption: string;
@@ -39,7 +44,7 @@ const FALLBACK_REVIEWS: ReviewCardData[] = [
     user: { name: "Anahit Sargsyan", initials: "AS" },
     biz: { name: "Lavash Restaurant Group", slug: "lavash-restaurant-group", address: "22 Abovyan St", city: "Yerevan" },
     time: "2h ago",
-    img: "https://images.unsplash.com/photo-1608897013039-887f21d8c804?w=800&auto=format&fit=crop&q=80",
+    media: [{ url: "https://images.unsplash.com/photo-1608897013039-887f21d8c804?w=800&auto=format&fit=crop&q=80", type: 'image' }],
     rating: 5,
     likes: 42,
     caption: "Amazing traditional food! The lavash is always hot and fresh, and the khorovats was perfectly cooked. Excellent service too.",
@@ -50,7 +55,7 @@ const FALLBACK_REVIEWS: ReviewCardData[] = [
     user: { name: "Gevorg Harutyunyan", initials: "GH" },
     biz: { name: "ArmStone Materials", slug: "armstone-materials", address: "14 Tumanyan St", city: "Yerevan" },
     time: "1d ago",
-    img: "https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=800&auto=format&fit=crop&q=80",
+    media: [{ url: "https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=800&auto=format&fit=crop&q=80", type: 'image' }],
     rating: 5,
     likes: 24,
     caption: "Outstanding tufa and basalt quality. We ordered in bulk for our home facade and they delivered on time with perfect specifications.",
@@ -61,7 +66,7 @@ const FALLBACK_REVIEWS: ReviewCardData[] = [
     user: { name: "Mariam Davtyan", initials: "MD" },
     biz: { name: "Ararat Organic Farms", slug: "ararat-organic-farms", address: "Artashat Highway, Km 12", city: "Artashat" },
     time: "3d ago",
-    img: "https://images.unsplash.com/photo-1610348725531-843dff563e2c?w=800&auto=format&fit=crop&q=80",
+    media: [{ url: "https://images.unsplash.com/photo-1610348725531-843dff563e2c?w=800&auto=format&fit=crop&q=80", type: 'image' }],
     rating: 4,
     likes: 18,
     caption: "The sweetest peaches and fresh herbs! We buy wholesale for our market chain and our customers love the organic quality from Ararat.",
@@ -96,6 +101,9 @@ export default function InstagramReviewFeed() {
   const [loading, setLoading] = useState(true);
   const [likedMap, setLikedMap] = useState<Record<string, { liked: boolean; count: number }>>({});
   const [animateMap, setAnimateMap] = useState<Record<string, boolean>>({});
+  const [heartPopMap, setHeartPopMap] = useState<Record<string, boolean>>({});
+  const [mediaIndexMap, setMediaIndexMap] = useState<Record<string, number>>({});
+  const [unmutedMap, setUnmutedMap] = useState<Record<string, boolean>>({});
   const { t } = useI18n();
   const [showAll, setShowAll] = useState(false);
   const [filterRating, setFilterRating] = useState<number | null>(null);
@@ -109,18 +117,27 @@ export default function InstagramReviewFeed() {
         const res = await axios.get(`${api}/reviews/all?limit=12`);
         if (res.data?.success && res.data.data?.length > 0) {
           backendReviews = res.data.data.map((r: any) => {
-            let imageToShow = r.image;
-            if (!imageToShow && r.business?.images?.length > 0) {
-              imageToShow = r.business.images[0];
+            const mediaList: ReviewMedia[] = [];
+            if (r.videos && r.videos.length > 0) {
+              r.videos.forEach((v: string) => mediaList.push({ url: v, type: 'video' }));
             }
-            if (!imageToShow) {
+            if (r.images && r.images.length > 0) {
+              r.images.forEach((img: string) => mediaList.push({ url: img, type: 'image' }));
+            }
+            if (mediaList.length === 0 && r.image) {
+              mediaList.push({ url: r.image, type: 'image' });
+            }
+            if (mediaList.length === 0 && r.business?.images?.length > 0) {
+              r.business.images.forEach((img: string) => mediaList.push({ url: img, type: 'image' }));
+            }
+            if (mediaList.length === 0) {
               const nameLower = (r.business?.name || "").toLowerCase();
               if (nameLower.includes("restaurant") || nameLower.includes("lavash") || nameLower.includes("cafe")) {
-                imageToShow = "https://images.unsplash.com/photo-1608897013039-887f21d8c804?w=800&auto=format&fit=crop&q=80";
+                mediaList.push({ url: "https://images.unsplash.com/photo-1608897013039-887f21d8c804?w=800&auto=format&fit=crop&q=80", type: 'image' });
               } else if (nameLower.includes("farm") || nameLower.includes("produce") || nameLower.includes("organic")) {
-                imageToShow = "https://images.unsplash.com/photo-1610348725531-843dff563e2c?w=800&auto=format&fit=crop&q=80";
+                mediaList.push({ url: "https://images.unsplash.com/photo-1610348725531-843dff563e2c?w=800&auto=format&fit=crop&q=80", type: 'image' });
               } else {
-                imageToShow = "https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=800&auto=format&fit=crop&q=80";
+                mediaList.push({ url: "https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=800&auto=format&fit=crop&q=80", type: 'image' });
               }
             }
 
@@ -140,7 +157,7 @@ export default function InstagramReviewFeed() {
               },
               time: timeAgo(r.createdAt),
               createdAt: r.createdAt,
-              img: imageToShow,
+              media: mediaList,
               rating: r.rating || 5,
               likes: r.helpfulCount || 0,
               caption: r.comment || "",
@@ -167,18 +184,27 @@ export default function InstagramReviewFeed() {
                   if (r._id && r._id.startsWith("local-")) {
                     const mockBiz = MOCK_BUSINESSES.find((b) => b.slug === slug);
 
-                    let imageToShow = r.image;
-                    if (!imageToShow && mockBiz?.images && mockBiz.images.length > 0) {
-                      imageToShow = mockBiz.images[0];
+                    const mediaList: ReviewMedia[] = [];
+                    if (r.videos && r.videos.length > 0) {
+                      r.videos.forEach((v: string) => mediaList.push({ url: v, type: 'video' }));
                     }
-                    if (!imageToShow) {
+                    if (r.images && r.images.length > 0) {
+                      r.images.forEach((img: string) => mediaList.push({ url: img, type: 'image' }));
+                    }
+                    if (mediaList.length === 0 && r.image) {
+                      mediaList.push({ url: r.image, type: 'image' });
+                    }
+                    if (mediaList.length === 0 && mockBiz?.images && mockBiz.images.length > 0) {
+                      mockBiz.images.forEach((img: string) => mediaList.push({ url: img, type: 'image' }));
+                    }
+                    if (mediaList.length === 0) {
                       const nameLower = (mockBiz?.name || "").toLowerCase();
                       if (nameLower.includes("restaurant") || nameLower.includes("lavash") || nameLower.includes("cafe")) {
-                        imageToShow = "https://images.unsplash.com/photo-1608897013039-887f21d8c804?w=800&auto=format&fit=crop&q=80";
+                        mediaList.push({ url: "https://images.unsplash.com/photo-1608897013039-887f21d8c804?w=800&auto=format&fit=crop&q=80", type: 'image' });
                       } else if (nameLower.includes("farm") || nameLower.includes("produce") || nameLower.includes("organic")) {
-                        imageToShow = "https://images.unsplash.com/photo-1610348725531-843dff563e2c?w=800&auto=format&fit=crop&q=80";
+                        mediaList.push({ url: "https://images.unsplash.com/photo-1610348725531-843dff563e2c?w=800&auto=format&fit=crop&q=80", type: 'image' });
                       } else {
-                        imageToShow = "https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=800&auto=format&fit=crop&q=80";
+                        mediaList.push({ url: "https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=800&auto=format&fit=crop&q=80", type: 'image' });
                       }
                     }
 
@@ -196,7 +222,7 @@ export default function InstagramReviewFeed() {
                       },
                       time: timeAgo(r.createdAt),
                       createdAt: r.createdAt,
-                      img: imageToShow,
+                      media: mediaList,
                       rating: r.rating || 5,
                       likes: r.helpfulCount || 0,
                       caption: r.comment || "",
@@ -339,6 +365,9 @@ export default function InstagramReviewFeed() {
             const reviewLiked = likedMap[review.id]?.liked ?? false;
             const reviewLikesCount = likedMap[review.id]?.count ?? review.likes;
             const isAnimating = animateMap[review.id] ?? false;
+            const isHeartPopping = heartPopMap[review.id] ?? false;
+            const currentMediaIndex = mediaIndexMap[review.id] ?? 0;
+            const isUnmuted = unmutedMap[review.id] ?? false;
 
             return (
               <div
@@ -370,23 +399,110 @@ export default function InstagramReviewFeed() {
                   </span>
                 </div>
 
-                {/* Main 1:1 Photo */}
+                {/* Main 1:1 Photo / Carousel */}
                 <div
                   className="relative w-full aspect-square bg-[hsl(var(--muted))] overflow-hidden border-y border-[hsl(var(--border))] cursor-pointer group"
                   onDoubleClick={() => {
+                    setHeartPopMap((prev) => ({ ...prev, [review.id]: true }));
+                    setTimeout(() => {
+                      setHeartPopMap((prev) => ({ ...prev, [review.id]: false }));
+                    }, 800);
+                    
                     const isLiked = likedMap[review.id]?.liked;
                     if (!isLiked) {
                       handleLike(review.id, review.businessId);
                     }
                   }}
                 >
-                  <img
-                    src={review.img}
-                    alt={`${review.biz.name} review`}
-                    className="w-full h-full object-cover select-none transition-transform duration-500 group-active:scale-95"
-                    loading="lazy"
-                  />
-                  {/* Optional icon overlay could go here, but this enables the functionality */}
+                  <div 
+                    className="flex w-full h-full transition-transform duration-300 ease-in-out"
+                    style={{ transform: `translateX(-${currentMediaIndex * 100}%)` }}
+                  >
+                    {review.media.map((item, idx) => (
+                      <div key={idx} className="w-full h-full shrink-0 relative">
+                        {item.type === 'video' ? (
+                          <video
+                            src={item.url}
+                            className="w-full h-full object-cover select-none transition-transform duration-500 group-active:scale-95"
+                            autoPlay
+                            loop
+                            muted={!isUnmuted}
+                            playsInline
+                          />
+                        ) : (
+                          <img
+                            src={item.url}
+                            alt={`${review.biz.name} review`}
+                            className="w-full h-full object-cover select-none transition-transform duration-500 group-active:scale-95"
+                            loading="lazy"
+                          />
+                        )}
+                        {/* Video Mute Toggle */}
+                        {item.type === 'video' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setUnmutedMap((prev) => ({ ...prev, [review.id]: !isUnmuted }));
+                            }}
+                            className="absolute bottom-3 right-3 p-1.5 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors z-20"
+                          >
+                            {isUnmuted ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Carousel Controls */}
+                  {review.media.length > 1 && (
+                    <>
+                      {currentMediaIndex > 0 && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setMediaIndexMap((prev) => ({ ...prev, [review.id]: currentMediaIndex - 1 }));
+                          }}
+                          className="absolute left-2 top-1/2 -translate-y-1/2 p-1 rounded-full bg-white/70 hover:bg-white text-black shadow-sm z-20 transition-all opacity-0 group-hover:opacity-100"
+                        >
+                          <ChevronLeft size={20} />
+                        </button>
+                      )}
+                      {currentMediaIndex < review.media.length - 1 && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setMediaIndexMap((prev) => ({ ...prev, [review.id]: currentMediaIndex + 1 }));
+                          }}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full bg-white/70 hover:bg-white text-black shadow-sm z-20 transition-all opacity-0 group-hover:opacity-100"
+                        >
+                          <ChevronRight size={20} />
+                        </button>
+                      )}
+                      {/* Dots */}
+                      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
+                        {review.media.map((_, idx) => (
+                          <div 
+                            key={idx} 
+                            className={`w-1.5 h-1.5 rounded-full transition-all ${
+                              idx === currentMediaIndex ? "bg-[#0095f6]" : "bg-white/60"
+                            }`} 
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
+
+                  {/* Heart pop animation */}
+                  <div 
+                    className={`absolute inset-0 flex items-center justify-center pointer-events-none z-30 transition-all duration-500 ease-out ${
+                      isHeartPopping ? "opacity-90 scale-125" : "opacity-0 scale-50"
+                    }`}
+                  >
+                    <Heart 
+                      className="text-white fill-white drop-shadow-[0_0_15px_rgba(0,0,0,0.5)]" 
+                      size={96} 
+                    />
+                  </div>
                 </div>
 
                 {/* Footer Interactions & Stars */}
