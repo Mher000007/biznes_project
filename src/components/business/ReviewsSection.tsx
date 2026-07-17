@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
-import { Star, ThumbsUp, MessageSquare, CheckCircle, AlertCircle, Loader2, User, Camera, X } from "lucide-react";
+import { Star, ThumbsUp, MessageSquare, CheckCircle, AlertCircle, Loader2, User, Camera, X, Upload } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { getApiUrl } from "@/lib/utils";
 import { useI18n } from "@/i18n";
@@ -259,7 +259,7 @@ export default function ReviewsSection({
   const [submitError, setSubmitError] = useState("");
 
   const [helpfulSet, setHelpfulSet] = useState<Set<string>>(new Set());
-  const [mediaFiles, setMediaFiles] = useState<{ url: string; type: 'image' | 'video' }[]>([]);
+  const [mediaFiles, setMediaFiles] = useState<{ url: string; type: 'image' }[]>([]);
   const [imageUploading, setImageUploading] = useState(false);
   const [guestName, setGuestName] = useState(currentUser?.name || "");
 
@@ -282,13 +282,13 @@ export default function ReviewsSection({
     setImageUploading(true);
 
     try {
-      const newMedia: { url: string; type: 'image' | 'video' }[] = [];
+      const newMedia: { url: string; type: 'image' }[] = [];
       for (const file of files) {
-        if (file.type.startsWith('image/') && file.size > 5 * 1024 * 1024) {
-          throw new Error("Image size must be less than 5MB");
+        if (!file.type.startsWith('image/')) {
+          throw new Error("Only images are allowed");
         }
-        if (file.type.startsWith('video/') && file.size > 20 * 1024 * 1024) {
-          throw new Error("Video size must be less than 20MB");
+        if (file.size > 5 * 1024 * 1024) {
+          throw new Error("Image size must be less than 5MB");
         }
 
         const dataUrl = await new Promise<string>((resolve, reject) => {
@@ -300,7 +300,7 @@ export default function ReviewsSection({
 
         newMedia.push({
           url: dataUrl,
-          type: file.type.startsWith('video/') ? 'video' : 'image'
+          type: 'image'
         });
       }
 
@@ -418,6 +418,7 @@ export default function ReviewsSection({
     setSubmitError("");
     if (!selectedRating) { setSubmitError("Please choose a star rating."); return; }
     if (comment.trim().length < 10) { setSubmitError("Comment must be at least 10 characters."); return; }
+    if (mediaFiles.length === 0) { setSubmitError("Please upload at least one photo."); return; }
 
     setSubmitting(true);
 
@@ -665,14 +666,29 @@ export default function ReviewsSection({
 
                 {/* Image/Video upload */}
                 <div className={styles.imageUploadField}>
-                  <label className={styles.label}>{t.reviewsSection?.addPhoto || "Add Photo/Video (Max 5)"}</label>
-                  <div className={styles.fileInputWrapper}>
-                    <label className={styles.uploadTriggerBtn}>
+                  <label className={styles.label}>{t.reviewsSection?.addPhoto || "Add Photo * (Required, Max 5)"}</label>
+                  <div className={styles.fileInputWrapper} style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                    {/* Take Photo Button */}
+                    <label className={styles.uploadTriggerBtn} style={{ flex: 1, justifyContent: 'center' }}>
                       <Camera size={16} />
-                      {imageUploading ? "Processing..." : "Upload Media"}
+                      {imageUploading ? "Processing..." : "Take Photo"}
                       <input
                         type="file"
-                        accept="image/*,video/*"
+                        accept="image/*"
+                        capture="environment"
+                        onChange={handleMediaChange}
+                        className={styles.fileInputHidden}
+                        disabled={imageUploading || mediaFiles.length >= 5}
+                      />
+                    </label>
+
+                    {/* Upload from Gallery Button */}
+                    <label className={styles.uploadTriggerBtn} style={{ flex: 1, justifyContent: 'center' }}>
+                      <Upload size={16} />
+                      {imageUploading ? "Processing..." : "Upload Gallery"}
+                      <input
+                        type="file"
+                        accept="image/*"
                         multiple
                         onChange={handleMediaChange}
                         className={styles.fileInputHidden}
@@ -693,8 +709,8 @@ export default function ReviewsSection({
                               type="button"
                               onClick={() => removeMedia(index)}
                               className={styles.removePreviewBtn}
-                              title="Remove media"
-                              style={{ position: 'absolute', top: '-8px', right: '-8px', background: 'hsl(var(--destructive))', color: 'hsl(var(--destructive-foreground))', borderRadius: '50%', border: 'none', padding: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                              title="Remove photo"
+                              style={{ position: 'absolute', top: '-8px', right: '-8px', background: '#ef4444', color: '#ffffff', borderRadius: '50%', border: '2px solid #ffffff', padding: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.2)', zIndex: 10 }}
                             >
                               <X size={12} />
                             </button>
@@ -716,12 +732,7 @@ export default function ReviewsSection({
                 {/* Submit */}
                 <button
                   type="submit"
-                  disabled={
-                    submitting ||
-                    !selectedRating ||
-                    comment.trim().length < 10 ||
-                    (!currentUser && !guestName.trim())
-                  }
+                  disabled={submitting}
                   className={styles.submitBtn}
                   id="submit-review-btn"
                 >

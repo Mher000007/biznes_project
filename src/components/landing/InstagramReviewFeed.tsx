@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import axios from "axios";
-import { Heart, Loader2, ChevronLeft, ChevronRight, Volume2, VolumeX } from "lucide-react";
+import { Heart, Loader2, ChevronLeft, ChevronRight, Volume2, VolumeX, Quote } from "lucide-react";
 import { getApiUrl } from "@/lib/utils";
 import { MOCK_BUSINESSES } from "@/data/mock-businesses";
 import { useI18n } from "@/i18n";
@@ -126,19 +126,6 @@ export default function InstagramReviewFeed() {
             }
             if (mediaList.length === 0 && r.image) {
               mediaList.push({ url: r.image, type: 'image' });
-            }
-            if (mediaList.length === 0 && r.business?.images?.length > 0) {
-              r.business.images.forEach((img: string) => mediaList.push({ url: img, type: 'image' }));
-            }
-            if (mediaList.length === 0) {
-              const nameLower = (r.business?.name || "").toLowerCase();
-              if (nameLower.includes("restaurant") || nameLower.includes("lavash") || nameLower.includes("cafe")) {
-                mediaList.push({ url: "https://images.unsplash.com/photo-1608897013039-887f21d8c804?w=800&auto=format&fit=crop&q=80", type: 'image' });
-              } else if (nameLower.includes("farm") || nameLower.includes("produce") || nameLower.includes("organic")) {
-                mediaList.push({ url: "https://images.unsplash.com/photo-1610348725531-843dff563e2c?w=800&auto=format&fit=crop&q=80", type: 'image' });
-              } else {
-                mediaList.push({ url: "https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=800&auto=format&fit=crop&q=80", type: 'image' });
-              }
             }
 
             const authorName = r.author?.name || r.authorName || "Anonymous User";
@@ -414,82 +401,93 @@ export default function InstagramReviewFeed() {
                     }
                   }}
                 >
-                  <div 
-                    className="flex w-full h-full transition-transform duration-300 ease-in-out"
-                    style={{ transform: `translateX(-${currentMediaIndex * 100}%)` }}
-                  >
-                    {review.media.map((item, idx) => (
-                      <div key={idx} className="w-full h-full shrink-0 relative">
-                        {item.type === 'video' ? (
-                          <video
-                            src={item.url}
-                            className="w-full h-full object-cover select-none transition-transform duration-500 group-active:scale-95"
-                            autoPlay
-                            loop
-                            muted={!isUnmuted}
-                            playsInline
-                          />
-                        ) : (
-                          <img
-                            src={item.url}
-                            alt={`${review.biz.name} review`}
-                            className="w-full h-full object-cover select-none transition-transform duration-500 group-active:scale-95"
-                            loading="lazy"
-                          />
-                        )}
-                        {/* Video Mute Toggle */}
-                        {item.type === 'video' && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setUnmutedMap((prev) => ({ ...prev, [review.id]: !isUnmuted }));
-                            }}
-                            className="absolute bottom-3 right-3 p-1.5 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors z-20"
-                          >
-                            {isUnmuted ? <Volume2 size={16} /> : <VolumeX size={16} />}
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Carousel Controls */}
-                  {review.media.length > 1 && (
+                  {review.media.length > 0 ? (
                     <>
-                      {currentMediaIndex > 0 && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setMediaIndexMap((prev) => ({ ...prev, [review.id]: currentMediaIndex - 1 }));
-                          }}
-                          className="absolute left-2 top-1/2 -translate-y-1/2 p-1 rounded-full bg-white/70 hover:bg-white text-black shadow-sm z-20 transition-all opacity-0 group-hover:opacity-100"
-                        >
-                          <ChevronLeft size={20} />
-                        </button>
-                      )}
-                      {currentMediaIndex < review.media.length - 1 && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setMediaIndexMap((prev) => ({ ...prev, [review.id]: currentMediaIndex + 1 }));
-                          }}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full bg-white/70 hover:bg-white text-black shadow-sm z-20 transition-all opacity-0 group-hover:opacity-100"
-                        >
-                          <ChevronRight size={20} />
-                        </button>
-                      )}
-                      {/* Dots */}
-                      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
-                        {review.media.map((_, idx) => (
-                          <div 
-                            key={idx} 
-                            className={`w-1.5 h-1.5 rounded-full transition-all ${
-                              idx === currentMediaIndex ? "bg-[#0095f6]" : "bg-white/60"
-                            }`} 
-                          />
+                      <div 
+                        className="flex w-full h-full transition-transform duration-300 ease-in-out"
+                        style={{ transform: `translateX(-${currentMediaIndex * 100}%)` }}
+                      >
+                        {review.media.map((item, idx) => (
+                          <div key={idx} className="w-full h-full shrink-0 relative">
+                            {item.type === 'video' ? (
+                              <video
+                                src={item.url}
+                                className="w-full h-full object-cover select-none transition-transform duration-500 group-active:scale-95"
+                                autoPlay
+                                loop
+                                muted={!isUnmuted}
+                                playsInline
+                              />
+                            ) : (
+                              <img
+                                src={item.url}
+                                alt={`${review.biz.name} review`}
+                                className="w-full h-full object-cover select-none transition-transform duration-500 group-active:scale-95"
+                                loading="lazy"
+                              />
+                            )}
+                            {/* Video Mute Toggle */}
+                            {item.type === 'video' && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setUnmutedMap((prev) => ({ ...prev, [review.id]: !isUnmuted }));
+                                }}
+                                className="absolute bottom-3 right-3 p-1.5 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors z-20"
+                              >
+                                {isUnmuted ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                              </button>
+                            )}
+                          </div>
                         ))}
                       </div>
+
+                      {/* Carousel Controls */}
+                      {review.media.length > 1 && (
+                        <>
+                          {currentMediaIndex > 0 && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setMediaIndexMap((prev) => ({ ...prev, [review.id]: currentMediaIndex - 1 }));
+                              }}
+                              className="absolute left-2 top-1/2 -translate-y-1/2 p-1 rounded-full bg-white/70 hover:bg-white text-black shadow-sm z-20 transition-all opacity-0 group-hover:opacity-100"
+                            >
+                              <ChevronLeft size={20} />
+                            </button>
+                          )}
+                          {currentMediaIndex < review.media.length - 1 && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setMediaIndexMap((prev) => ({ ...prev, [review.id]: currentMediaIndex + 1 }));
+                              }}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full bg-white/70 hover:bg-white text-black shadow-sm z-20 transition-all opacity-0 group-hover:opacity-100"
+                            >
+                              <ChevronRight size={20} />
+                            </button>
+                          )}
+                          {/* Dots */}
+                          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20 px-2 py-1 rounded-full bg-black/20 backdrop-blur-sm">
+                            {review.media.map((_, idx) => (
+                              <div 
+                                key={idx} 
+                                className={`w-1.5 h-1.5 rounded-full transition-all shadow-sm ${
+                                  idx === currentMediaIndex ? "bg-[#0095f6] scale-110" : "bg-white/80 hover:bg-white"
+                                }`} 
+                              />
+                            ))}
+                          </div>
+                        </>
+                      )}
                     </>
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-[hsl(var(--muted))] to-[hsl(var(--background))] border border-[hsl(var(--border))]">
+                      <Quote className="w-12 h-12 text-[hsl(var(--primary))] opacity-20 mb-4" />
+                      <p className="text-[15px] font-medium text-[hsl(var(--foreground))] line-clamp-[8]">
+                        {review.caption}
+                      </p>
+                    </div>
                   )}
 
                   {/* Heart pop animation */}
