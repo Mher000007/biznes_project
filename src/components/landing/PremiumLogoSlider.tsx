@@ -111,11 +111,11 @@ export default function PremiumLogoSlider() {
         <img
           src={brand.logo}
           alt={brand.name}
-          className="h-20 sm:h-28 w-auto object-contain drop-shadow-sm group-hover:drop-shadow-md transition-all duration-300"
+          className="h-20 sm:h-28 w-auto rounded-2xl object-contain drop-shadow-sm group-hover:drop-shadow-md transition-all duration-300"
         />
       ) : (
         <div className="flex items-center gap-4 transition-all duration-300">
-          <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-[hsl(var(--primary))] to-purple-600 flex items-center justify-center text-white font-bold text-xl sm:text-2xl shadow-md ring-2 ring-[hsl(var(--primary))]/20">
+          <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-[hsl(var(--primary))] flex items-center justify-center text-[hsl(var(--primary-foreground))] font-bold text-xl sm:text-2xl shadow-md ring-2 ring-[hsl(var(--primary))]/20">
             {brand.name.substring(0, 1).toUpperCase()}
           </div>
           <span className="text-xl sm:text-3xl font-bold text-[hsl(var(--foreground))] tracking-tight group-hover:text-[hsl(var(--primary))] transition-colors duration-300">

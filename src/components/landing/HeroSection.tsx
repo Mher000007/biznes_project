@@ -21,10 +21,19 @@ export default function HeroSection() {
   const [current, setCurrent] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const activeRef = useRef<HTMLButtonElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (activeRef.current) {
-      activeRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (activeRef.current && containerRef.current) {
+      const container = containerRef.current;
+      const activeEl = activeRef.current;
+      
+      const scrollPos = activeEl.offsetTop - (container.clientHeight / 2) + (activeEl.clientHeight / 2);
+      
+      container.scrollTo({
+        top: scrollPos,
+        behavior: "smooth"
+      });
     }
   }, [current]);
 
@@ -108,6 +117,7 @@ export default function HeroSection() {
         
         {/* Scrollable Container for Indicators */}
         <div 
+          ref={containerRef}
           className="flex flex-col items-center gap-2.5 overflow-y-auto hide-scroll py-2"
           style={{ maxHeight: "35vh", scrollbarWidth: "none", msOverflowStyle: "none" }}
         >

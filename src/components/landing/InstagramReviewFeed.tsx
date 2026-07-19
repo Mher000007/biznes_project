@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import axios from "axios";
-import { Heart, Loader2, ChevronLeft, ChevronRight, Volume2, VolumeX, Quote } from "lucide-react";
+import { Heart, Loader2, ChevronLeft, ChevronRight, Volume2, VolumeX, Quote, ArrowLeft } from "lucide-react";
 import { getApiUrl } from "@/lib/utils";
 import { MOCK_BUSINESSES } from "@/data/mock-businesses";
 import { useI18n } from "@/i18n";
@@ -314,7 +314,7 @@ export default function InstagramReviewFeed() {
         <div className="mb-12">
           <h2 className="text-2xl sm:text-3xl font-semibold mb-2 text-[hsl(var(--foreground))]">{t.reviewsFeed?.title || "Reviews"}</h2>
           <p className="text-base text-[hsl(var(--muted-foreground))]">{t.reviewsFeed?.subtitle || "Explore feedback and photos shared by customers in Armenia"}</p>
-          
+
           <div className="flex flex-wrap items-center gap-2 mt-6">
             <span className="text-sm font-medium text-[hsl(var(--muted-foreground))]">Filter by rating:</span>
             {[5, 4, 3, 2, 1].map(star => (
@@ -324,11 +324,10 @@ export default function InstagramReviewFeed() {
                   setFilterRating(filterRating === star ? null : star);
                   setShowAll(false);
                 }}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition-colors border ${
-                  filterRating === star 
-                    ? "bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))] border-[hsl(var(--primary))]" 
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition-colors border ${filterRating === star
+                    ? "bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))] border-[hsl(var(--primary))]"
                     : "bg-[hsl(var(--card))] text-[hsl(var(--foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))]"
-                }`}
+                  }`}
               >
                 {star} <span style={{ color: "#F4B942" }}>★</span>
               </button>
@@ -347,217 +346,236 @@ export default function InstagramReviewFeed() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 justify-items-center">
-          {(showAll ? filteredReviews : filteredReviews.slice(0, 6)).map((review) => {
-            const reviewLiked = likedMap[review.id]?.liked ?? false;
-            const reviewLikesCount = likedMap[review.id]?.count ?? review.likes;
-            const isAnimating = animateMap[review.id] ?? false;
-            const isHeartPopping = heartPopMap[review.id] ?? false;
-            const currentMediaIndex = mediaIndexMap[review.id] ?? 0;
-            const isUnmuted = unmutedMap[review.id] ?? false;
+        {filteredReviews.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 px-4 text-center max-w-2xl mx-auto">
+            <span className="text-4xl mb-4 opacity-50 grayscale">⭐</span>
+            <h3 className="text-lg font-semibold text-[hsl(var(--foreground))]">
+              Ոչ մի արդյունք
+            </h3>
+            <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1.5 max-w-sm">
+              Այս պահին {filterRating} աստղանի գնահատականով կարծիքներ չկան:
+            </p>
+            <button
+              onClick={() => {
+                setFilterRating(null);
+                setShowAll(false);
+              }}
+              className="mt-6 px-5 py-2.5 bg-[hsl(var(--foreground))] text-[hsl(var(--background))] rounded-full text-sm font-medium hover:opacity-90 transition-opacity shadow-sm flex items-center justify-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" /> Հետ
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 justify-items-center">
+            {(showAll ? filteredReviews : filteredReviews.slice(0, 6)).map((review) => {
+              const reviewLiked = likedMap[review.id]?.liked ?? false;
+              const reviewLikesCount = likedMap[review.id]?.count ?? review.likes;
+              const isAnimating = animateMap[review.id] ?? false;
+              const isHeartPopping = heartPopMap[review.id] ?? false;
+              const currentMediaIndex = mediaIndexMap[review.id] ?? 0;
+              const isUnmuted = unmutedMap[review.id] ?? false;
 
-            return (
-              <div
-                key={review.id}
-                className="w-full max-w-[360px] bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-[12px] flex flex-col overflow-hidden transition-all duration-300"
-              >
-                {/* Header */}
-                <div className="flex items-center gap-3 p-3.5">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 p-[1.5px]">
-                    <div className="flex h-full w-full items-center justify-center rounded-full bg-[hsl(var(--card))] p-[1.5px]">
-                      <div className="flex h-full w-full items-center justify-center rounded-full bg-[hsl(var(--muted))] text-[10px] font-bold text-[hsl(var(--foreground))] uppercase">
-                        {review.user.initials || "U"}
+              return (
+                <div
+                  key={review.id}
+                  className="w-full max-w-[360px] bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-[12px] flex flex-col overflow-hidden transition-all duration-300"
+                >
+                  {/* Header */}
+                  <div className="flex items-center gap-3 p-3.5">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 p-[1.5px]">
+                      <div className="flex h-full w-full items-center justify-center rounded-full bg-[hsl(var(--card))] p-[1.5px]">
+                        <div className="flex h-full w-full items-center justify-center rounded-full bg-[hsl(var(--muted))] text-[10px] font-bold text-[hsl(var(--foreground))] uppercase">
+                          {review.user.initials || "U"}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="min-w-0 flex-1 flex flex-col text-left">
-                    <span className="text-[13px] font-bold text-[hsl(var(--foreground))] truncate leading-tight">
-                      {review.user.name}
-                    </span>
-                    <Link
-                      href={`/business/${review.biz.slug}`}
-                      className="text-[11px] text-[hsl(var(--muted-foreground))] truncate leading-tight hover:underline hover:text-[hsl(var(--foreground))]"
-                    >
-                      {review.biz.name} {review.biz.city ? `(${review.biz.city})` : ""}
-                    </Link>
-                  </div>
-                  <span className="text-[11px] text-[hsl(var(--muted-foreground))] self-start mt-0.5 shrink-0 ml-auto">
-                    {review.time}
-                  </span>
-                </div>
-
-                {/* Main 1:1 Photo / Carousel */}
-                <div
-                  className="relative w-full aspect-square bg-[hsl(var(--muted))] overflow-hidden border-y border-[hsl(var(--border))] cursor-pointer group"
-                  onDoubleClick={() => {
-                    setHeartPopMap((prev) => ({ ...prev, [review.id]: true }));
-                    setTimeout(() => {
-                      setHeartPopMap((prev) => ({ ...prev, [review.id]: false }));
-                    }, 800);
-                    
-                    const isLiked = likedMap[review.id]?.liked;
-                    if (!isLiked) {
-                      handleLike(review.id, review.businessId);
-                    }
-                  }}
-                >
-                  {review.media.length > 0 ? (
-                    <>
-                      <div 
-                        className="flex w-full h-full transition-transform duration-300 ease-in-out"
-                        style={{ transform: `translateX(-${currentMediaIndex * 100}%)` }}
+                    <div className="min-w-0 flex-1 flex flex-col text-left">
+                      <span className="text-[13px] font-bold text-[hsl(var(--foreground))] truncate leading-tight">
+                        {review.user.name}
+                      </span>
+                      <Link
+                        href={`/business/${review.biz.slug}`}
+                        className="text-[11px] text-[hsl(var(--muted-foreground))] truncate leading-tight hover:underline hover:text-[hsl(var(--foreground))]"
                       >
-                        {review.media.map((item, idx) => (
-                          <div key={idx} className="w-full h-full shrink-0 relative">
-                            {item.type === 'video' ? (
-                              <video
-                                src={item.url}
-                                className="w-full h-full object-cover select-none transition-transform duration-500 group-active:scale-95"
-                                autoPlay
-                                loop
-                                muted={!isUnmuted}
-                                playsInline
-                              />
-                            ) : (
-                              <img
-                                src={item.url}
-                                alt={`${review.biz.name} review`}
-                                className="w-full h-full object-cover select-none transition-transform duration-500 group-active:scale-95"
-                                loading="lazy"
-                              />
-                            )}
-                            {/* Video Mute Toggle */}
-                            {item.type === 'video' && (
+                        {review.biz.name} {review.biz.city ? `(${review.biz.city})` : ""}
+                      </Link>
+                    </div>
+                    <span className="text-[11px] text-[hsl(var(--muted-foreground))] self-start mt-0.5 shrink-0 ml-auto">
+                      {review.time}
+                    </span>
+                  </div>
+
+                  {/* Main 1:1 Photo / Carousel */}
+                  <div
+                    className="relative w-full aspect-square bg-[hsl(var(--muted))] overflow-hidden border-y border-[hsl(var(--border))] cursor-pointer group"
+                    onDoubleClick={() => {
+                      setHeartPopMap((prev) => ({ ...prev, [review.id]: true }));
+                      setTimeout(() => {
+                        setHeartPopMap((prev) => ({ ...prev, [review.id]: false }));
+                      }, 800);
+
+                      const isLiked = likedMap[review.id]?.liked;
+                      if (!isLiked) {
+                        handleLike(review.id, review.businessId);
+                      }
+                    }}
+                  >
+                    {review.media.length > 0 ? (
+                      <>
+                        <div
+                          className="flex w-full h-full transition-transform duration-300 ease-in-out"
+                          style={{ transform: `translateX(-${currentMediaIndex * 100}%)` }}
+                        >
+                          {review.media.map((item, idx) => (
+                            <div key={idx} className="w-full h-full shrink-0 relative">
+                              {item.type === 'video' ? (
+                                <video
+                                  src={item.url}
+                                  className="w-full h-full object-cover select-none transition-transform duration-500 group-active:scale-95"
+                                  autoPlay
+                                  loop
+                                  muted={!isUnmuted}
+                                  playsInline
+                                />
+                              ) : (
+                                <img
+                                  src={item.url}
+                                  alt={`${review.biz.name} review`}
+                                  className="w-full h-full object-cover select-none transition-transform duration-500 group-active:scale-95"
+                                  loading="lazy"
+                                />
+                              )}
+                              {/* Video Mute Toggle */}
+                              {item.type === 'video' && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setUnmutedMap((prev) => ({ ...prev, [review.id]: !isUnmuted }));
+                                  }}
+                                  className="absolute bottom-3 right-3 p-1.5 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors z-20"
+                                >
+                                  {isUnmuted ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Carousel Controls */}
+                        {review.media.length > 1 && (
+                          <>
+                            {currentMediaIndex > 0 && (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setUnmutedMap((prev) => ({ ...prev, [review.id]: !isUnmuted }));
+                                  setMediaIndexMap((prev) => ({ ...prev, [review.id]: currentMediaIndex - 1 }));
                                 }}
-                                className="absolute bottom-3 right-3 p-1.5 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors z-20"
+                                className="absolute left-2 top-1/2 -translate-y-1/2 p-1 rounded-full bg-white/70 hover:bg-white text-black shadow-sm z-20 transition-all opacity-0 group-hover:opacity-100"
                               >
-                                {isUnmuted ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                                <ChevronLeft size={20} />
                               </button>
                             )}
-                          </div>
-                        ))}
+                            {currentMediaIndex < review.media.length - 1 && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setMediaIndexMap((prev) => ({ ...prev, [review.id]: currentMediaIndex + 1 }));
+                                }}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full bg-white/70 hover:bg-white text-black shadow-sm z-20 transition-all opacity-0 group-hover:opacity-100"
+                              >
+                                <ChevronRight size={20} />
+                              </button>
+                            )}
+                            {/* Dots */}
+                            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20 px-2 py-1 rounded-full bg-black/20 backdrop-blur-sm">
+                              {review.media.map((_, idx) => (
+                                <div
+                                  key={idx}
+                                  className={`w-1.5 h-1.5 rounded-full transition-all shadow-sm ${idx === currentMediaIndex ? "bg-[#0095f6] scale-110" : "bg-white/80 hover:bg-white"
+                                    }`}
+                                />
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </>
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-[hsl(var(--muted))] to-[hsl(var(--background))] border border-[hsl(var(--border))]">
+                        <Quote className="w-12 h-12 text-[hsl(var(--primary))] opacity-20 mb-4" />
+                        <p className="text-[15px] font-medium text-[hsl(var(--foreground))] line-clamp-[8]">
+                          {review.caption}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Heart pop animation */}
+                    <div
+                      className={`absolute inset-0 flex items-center justify-center pointer-events-none z-30 transition-all duration-500 ease-out ${isHeartPopping ? "opacity-90 scale-125" : "opacity-0 scale-50"
+                        }`}
+                    >
+                      <Heart
+                        className="text-white fill-white drop-shadow-[0_0_15px_rgba(0,0,0,0.5)]"
+                        size={96}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Footer Interactions & Stars */}
+                  <div className="p-3.5 flex flex-col gap-2.5">
+                    {/* Actions Bar */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleLike(review.id, review.businessId)}
+                          className={`p-1 select-none transition-transform duration-200 ${isAnimating ? "scale-125" : "active:scale-90"
+                            }`}
+                          aria-label={reviewLiked ? "Unlike" : "Like"}
+                        >
+                          <Heart
+                            className={`h-5 w-5 transition-colors ${reviewLiked
+                              ? "fill-pink-500 text-pink-500"
+                              : "text-[hsl(var(--foreground))]"
+                              }`}
+                          />
+                        </button>
+                        <span className="text-[13px] font-semibold text-[hsl(var(--foreground))] ml-1">
+                          {reviewLikesCount} {reviewLikesCount === 1 ? "like" : "likes"}
+                        </span>
                       </div>
 
-                      {/* Carousel Controls */}
-                      {review.media.length > 1 && (
-                        <>
-                          {currentMediaIndex > 0 && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setMediaIndexMap((prev) => ({ ...prev, [review.id]: currentMediaIndex - 1 }));
-                              }}
-                              className="absolute left-2 top-1/2 -translate-y-1/2 p-1 rounded-full bg-white/70 hover:bg-white text-black shadow-sm z-20 transition-all opacity-0 group-hover:opacity-100"
-                            >
-                              <ChevronLeft size={20} />
-                            </button>
-                          )}
-                          {currentMediaIndex < review.media.length - 1 && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setMediaIndexMap((prev) => ({ ...prev, [review.id]: currentMediaIndex + 1 }));
-                              }}
-                              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full bg-white/70 hover:bg-white text-black shadow-sm z-20 transition-all opacity-0 group-hover:opacity-100"
-                            >
-                              <ChevronRight size={20} />
-                            </button>
-                          )}
-                          {/* Dots */}
-                          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20 px-2 py-1 rounded-full bg-black/20 backdrop-blur-sm">
-                            {review.media.map((_, idx) => (
-                              <div 
-                                key={idx} 
-                                className={`w-1.5 h-1.5 rounded-full transition-all shadow-sm ${
-                                  idx === currentMediaIndex ? "bg-[#0095f6] scale-110" : "bg-white/80 hover:bg-white"
-                                }`} 
-                              />
-                            ))}
-                          </div>
-                        </>
-                      )}
-                    </>
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-[hsl(var(--muted))] to-[hsl(var(--background))] border border-[hsl(var(--border))]">
-                      <Quote className="w-12 h-12 text-[hsl(var(--primary))] opacity-20 mb-4" />
-                      <p className="text-[15px] font-medium text-[hsl(var(--foreground))] line-clamp-[8]">
+                      {/* Gold Star rating (gold colored #F4B942) */}
+                      <div className="flex gap-0.5 text-[15px] select-none leading-none">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <span
+                            key={star}
+                            style={{
+                              color: star <= review.rating ? "#F4B942" : "#e2e8f0",
+                            }}
+                          >
+                            ★
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Caption */}
+                    <div className="text-left">
+                      <p className="text-[13px] text-[hsl(var(--foreground))] leading-normal line-clamp-3">
+                        <span className="font-bold mr-1.5">{review.user.name}</span>
                         {review.caption}
                       </p>
                     </div>
-                  )}
 
-                  {/* Heart pop animation */}
-                  <div 
-                    className={`absolute inset-0 flex items-center justify-center pointer-events-none z-30 transition-all duration-500 ease-out ${
-                      isHeartPopping ? "opacity-90 scale-125" : "opacity-0 scale-50"
-                    }`}
-                  >
-                    <Heart 
-                      className="text-white fill-white drop-shadow-[0_0_15px_rgba(0,0,0,0.5)]" 
-                      size={96} 
-                    />
-                  </div>
-                </div>
-
-                {/* Footer Interactions & Stars */}
-                <div className="p-3.5 flex flex-col gap-2.5">
-                  {/* Actions Bar */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleLike(review.id, review.businessId)}
-                        className={`p-1 select-none transition-transform duration-200 ${isAnimating ? "scale-125" : "active:scale-90"
-                          }`}
-                        aria-label={reviewLiked ? "Unlike" : "Like"}
-                      >
-                        <Heart
-                          className={`h-5 w-5 transition-colors ${reviewLiked
-                            ? "fill-pink-500 text-pink-500"
-                            : "text-[hsl(var(--foreground))]"
-                            }`}
-                        />
-                      </button>
-                      <span className="text-[13px] font-semibold text-[hsl(var(--foreground))] ml-1">
-                        {reviewLikesCount} {reviewLikesCount === 1 ? "like" : "likes"}
-                      </span>
-                    </div>
-
-                    {/* Gold Star rating (gold colored #F4B942) */}
-                    <div className="flex gap-0.5 text-[15px] select-none leading-none">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <span
-                          key={star}
-                          style={{
-                            color: star <= review.rating ? "#F4B942" : "#e2e8f0",
-                          }}
-                        >
-                          ★
-                        </span>
-                      ))}
+                    {/* Optional address field for wow-effect */}
+                    <div className="text-left text-[11px] text-[hsl(var(--muted-foreground))] border-t border-[hsl(var(--border))] pt-2 mt-1 truncate">
+                      📍 {review.biz.address}
                     </div>
                   </div>
-
-                  {/* Caption */}
-                  <div className="text-left">
-                    <p className="text-[13px] text-[hsl(var(--foreground))] leading-normal line-clamp-3">
-                      <span className="font-bold mr-1.5">{review.user.name}</span>
-                      {review.caption}
-                    </p>
-                  </div>
-
-                  {/* Optional address field for wow-effect */}
-                  <div className="text-left text-[11px] text-[hsl(var(--muted-foreground))] border-t border-[hsl(var(--border))] pt-2 mt-1 truncate">
-                    📍 {review.biz.address}
-                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
         {filteredReviews.length > 6 && !showAll && (
           <div className="flex justify-center mt-12 animate-fade-in">
             <button
