@@ -96,7 +96,10 @@ export default function DashboardLocations() {
 
     try {
       const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
-      const payload = { ...formData };
+      const payload = {
+        ...formData,
+        phone: formData.phone.trim() ? `+374${formData.phone.trim()}` : ""
+      };
 
       if (editingId) {
         await axios.put(`${getApiUrl()}/businesses/locations/${editingId}`, payload, {
@@ -136,7 +139,7 @@ export default function DashboardLocations() {
       name: loc.name,
       address: loc.address,
       city: loc.city,
-      phone: loc.phone || "",
+      phone: (loc.phone || "").replace(/^\+374/, ""),
       workingHours: loc.workingHours || "",
       isPrimary: loc.isPrimary,
       coordinates: loc.coordinates || { latitude: 40.1872, longitude: 44.5152 },
@@ -281,25 +284,21 @@ export default function DashboardLocations() {
                       required
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Phone</label>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Phone</label>
+                    <div className="flex w-full border border-[hsl(var(--border))] rounded-lg bg-transparent overflow-hidden focus-within:border-[hsl(var(--primary))] focus-within:ring-1 focus-within:ring-[hsl(var(--primary))] transition-all">
+                      <div className="px-3 py-2 bg-[hsl(var(--muted))]/50 text-sm font-medium border-r border-[hsl(var(--border))] flex items-center justify-center text-[hsl(var(--foreground))] select-none">
+                        +374
+                      </div>
                       <input
-                        type="text"
-                        className="w-full form-input"
-                        placeholder="+374..."
+                        type="tel"
+                        className="flex-1 bg-transparent px-3 py-2 text-sm outline-none"
+                        placeholder="XX XXXXXX"
                         value={formData.phone}
-                        onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Working Hours</label>
-                      <input
-                        type="text"
-                        className="w-full form-input"
-                        placeholder="e.g. 10:00 - 22:00"
-                        value={formData.workingHours}
-                        onChange={e => setFormData({ ...formData, workingHours: e.target.value })}
+                        onChange={e => {
+                          const val = e.target.value.replace(/\D/g, '').slice(0, 8);
+                          setFormData({ ...formData, phone: val });
+                        }}
                       />
                     </div>
                   </div>

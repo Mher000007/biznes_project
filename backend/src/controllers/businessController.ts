@@ -589,17 +589,41 @@ export const getCalendarSummaries = asyncHandler(
 export const updateDailySummary = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
     const { id, date } = req.params;
-    const { summary, stats } = req.body;
+    const { summary, isClosed, stats } = req.body;
 
     const summaryDoc = await DailySummary.findOneAndUpdate(
       { business: new mongoose.Types.ObjectId(id), date },
-      { summary, stats },
+      { summary, isClosed, stats },
       { new: true, upsert: true }
     );
 
     res.status(200).json({
       success: true,
       data: summaryDoc
+    });
+  }
+);
+
+// Check if a business is closed on a specific date (Public)
+export const checkBusinessDateStatus = asyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const { id } = req.params;
+    const { date } = req.query; // YYYY-MM-DD
+
+    if (!date || typeof date !== 'string') {
+      res.status(400).json({ success: false, message: 'Please provide a valid date' });
+      return;
+    }
+
+    const summaryDoc = await DailySummary.findOne({
+      business: new mongoose.Types.ObjectId(id),
+      date
+    });
+
+    res.status(200).json({
+      success: true,
+      isClosed: summaryDoc ? summaryDoc.isClosed : false,
+      summary: summaryDoc ? summaryDoc.summary : ''
     });
   }
 );

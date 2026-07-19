@@ -34,10 +34,19 @@ export function truncate(str: string, length: number): string {
   return str.slice(0, length) + "...";
 }
 
+/**
+ * Returns the base API URL.
+ * - In the browser: returns a relative `/api/backend` path so all requests go
+ *   through the Next.js rewrite proxy (no CORS issues).
+ * - On the server (SSR / API routes): returns the absolute backend URL so
+ *   server-to-server requests work without needing a proxy.
+ */
 export function getApiUrl(): string {
-  const url = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
-  if (url.includes("localhost:5000")) {
-    return "http://localhost:5001/api";
+  if (typeof window !== "undefined") {
+    // Client-side: use the Next.js rewrite proxy
+    return "/api/backend";
   }
-  return url;
+  // Server-side: hit the backend directly
+  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 }
+

@@ -109,7 +109,7 @@ export const hy: Translations = {
     verified: "Ստուգված է",
     services: "Ծառայություններ",
     hours: "Աշխատանքային ժամեր",
-    contact: "Կոնտակտային տվյալներ",
+    contact: "Տեղեկատվություն",
     about: "Մեր մասին",
     closed: "Փակ է",
     openNow: "Բաց է",

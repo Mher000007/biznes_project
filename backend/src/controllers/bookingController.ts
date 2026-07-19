@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import Booking from '../models/Booking.js';
 import Business from '../models/Business.js';
+import DailySummary from '../models/DailySummary.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { triggerBookingWebhook } from '../utils/n8n.js';
 
@@ -21,6 +22,17 @@ export const createBooking = asyncHandler(async (req: Request, res: Response): P
   const businessExists = await Business.findById(businessId);
   if (!businessExists) {
     res.status(404).json({ success: false, message: 'Business not found' });
+    return;
+  }
+
+  // Check if date is closed for bookings
+  const dStr = typeof date === 'string' ? date.split('T')[0] : new Date(date).toISOString().split('T')[0];
+  const summaryDoc = await DailySummary.findOne({
+    business: businessId,
+    date: dStr
+  });
+  if (summaryDoc && summaryDoc.isClosed) {
+    res.status(400).json({ success: false, message: 'This business is closed for bookings on the selected date.' });
     return;
   }
 

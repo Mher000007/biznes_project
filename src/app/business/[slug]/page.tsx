@@ -168,6 +168,7 @@ export default function BusinessProfilePage() {
   const [customerPhone, setCustomerPhone] = useState("");
   const [bookingDate, setBookingDate] = useState("");
   const [bookingTime, setBookingTime] = useState("");
+  const [isCustomDateClosed, setIsCustomDateClosed] = useState(false);
   const [bookingLocation, setBookingLocation] = useState("");
   const [isLocDropdownOpen, setIsLocDropdownOpen] = useState(false);
   const [bookingNotes, setBookingNotes] = useState("");
@@ -185,6 +186,26 @@ export default function BusinessProfilePage() {
       document.body.style.overflow = "";
     };
   }, [isBookingOpen]);
+
+  // Check if custom date is closed
+  useEffect(() => {
+    if (!bookingDate || !business?._id) {
+      setIsCustomDateClosed(false);
+      return;
+    }
+    const checkDateClosure = async () => {
+      try {
+        const res = await axios.get(`${getApiUrl()}/businesses/${business._id}/calendar/check-date?date=${bookingDate}`);
+        if (res.data?.success) {
+          setIsCustomDateClosed(res.data.isClosed === true);
+        }
+      } catch (err) {
+        console.warn("Failed to check date closure:", err);
+        setIsCustomDateClosed(false);
+      }
+    };
+    checkDateClosure();
+  }, [bookingDate, business]);
 
   // Resolve today's operating hours for time selection validation
   const todayOperatingHours = React.useMemo(() => {
@@ -486,6 +507,12 @@ export default function BusinessProfilePage() {
     e.preventDefault();
     setBookingLoading(true);
 
+    if (isCustomDateClosed || todayOperatingHours?.closed) {
+      alert("This business is closed for bookings on the selected date.");
+      setBookingLoading(false);
+      return;
+    }
+
     if (business.locations && business.locations.length > 0 && !bookingLocation) {
       alert("Please select a branch/location before booking.");
       setBookingLoading(false);
@@ -666,30 +693,18 @@ export default function BusinessProfilePage() {
                 </span>
               )}
             </h1>
+            <span className="flex items-center gap-1 text-[15px] font-medium ml-2">
+              <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
+              {(liveRating > 0 ? liveRating : (business.ratingAvg !== undefined ? (typeof business.ratingAvg === 'number' ? business.ratingAvg : 0) : 0)).toFixed(1)}
+            </span>
           </div>
           <p className="text-[hsl(var(--muted-foreground))] mt-1 text-base">{business.shortDescription || business.description}</p>
-          <div className="flex items-center gap-4 flex-wrap text-sm text-[hsl(var(--muted-foreground))] mt-4">
-            {business.address ? (
-              <a
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(business.address + ', ' + business.city + ', Armenia')}`}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-1 hover:text-[hsl(var(--foreground))] transition-colors"
-              >
-                <MapPin className="h-4 w-4 text-[hsl(var(--primary))]" /> {business.address}, {business.city}, Armenia
-              </a>
-            ) : (
-              <span className="flex items-center gap-1"><MapPin className="h-4 w-4 text-[hsl(var(--primary))]" /> {business.city}, Armenia</span>
-            )}
-            <span className="flex items-center gap-1">
-              <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-              {(liveRating > 0 ? liveRating : (business.ratingAvg !== undefined ? (typeof business.ratingAvg === 'number' ? business.ratingAvg : 0) : 0)).toFixed(1)}{' '}
-              ({liveReviewCount > 0 ? liveReviewCount : (business.reviewCount !== undefined ? business.reviewCount : 0)} review{(liveReviewCount || business.reviewCount || 0) !== 1 ? 's' : ''})
-            </span>
-            {business.foundedYear && (
+
+          {business.foundedYear && (
+            <div className="flex items-center gap-4 flex-wrap text-sm text-[hsl(var(--muted-foreground))] mt-4">
               <span className="flex items-center gap-1"><Calendar className="h-4 w-4" /> Est. {business.foundedYear}</span>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Global Instant Booking Trigger */}
@@ -832,7 +847,7 @@ export default function BusinessProfilePage() {
 
             {/* Contact Details */}
             <section className="flex flex-col h-full">
-              <h2 className="text-lg font-bold mb-3">{t.business?.contact || "Contact Information"}</h2>
+              <h2 className="text-lg font-bold mb-3">{t.business?.contact || "Information"}</h2>
               <div className={`${styles.contactCard} !mt-0 flex-1 flex flex-col justify-center`}>
                 <div className="space-y-4">
                   {business.locations && business.locations.length > 0 ? (
@@ -881,26 +896,6 @@ export default function BusinessProfilePage() {
                         </div>
                       )}
 
-                      {/* Working Hours Group */}
-                      {business.locations.some((l: any) => l.workingHours) && (
-                        <div className="pt-4 border-t border-[hsl(var(--border))]">
-                          <h3 className="text-[10px] font-bold text-[hsl(var(--muted-foreground))] uppercase tracking-widest mb-3">Working Hours</h3>
-                          <div className="space-y-3">
-                            {business.locations.filter((l: any) => l.workingHours).map((loc: any, idx: number) => (
-                              <div key={`hours-${idx}`} className="space-y-1.5">
-                                <div className="flex items-start gap-3">
-                                  <span className="h-4 w-4 shrink-0 flex items-center justify-center text-[hsl(var(--primary))] mt-0.5">🕒</span>
-                                  <div className="min-w-0">
-                                    <div className="text-[13px] text-[hsl(var(--muted-foreground))]">
-                                      {loc.workingHours}
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                     </div>
                   ) : (
                     <>
@@ -1109,10 +1104,10 @@ export default function BusinessProfilePage() {
                         <Clock className="h-4 w-4 shrink-0" />
                         <span>Please select a date first</span>
                       </div>
-                    ) : (todayOperatingHours?.closed || !todayOperatingHours?.open || !todayOperatingHours?.close) ? (
+                    ) : (isCustomDateClosed || todayOperatingHours?.closed || !todayOperatingHours?.open || !todayOperatingHours?.close) ? (
                       <div className="w-full flex items-center gap-2 border border-red-500/20 rounded-lg px-3 py-2.5 text-[13px] bg-red-500/5 text-red-500 font-medium cursor-not-allowed">
                         <X className="h-4 w-4 shrink-0" />
-                        <span>Business is closed</span>
+                        <span>Business is closed on this date</span>
                       </div>
                     ) : (
                       <div className="relative flex items-center w-full">

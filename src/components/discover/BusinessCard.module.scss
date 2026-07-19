@@ -283,13 +283,13 @@
 
 .verifiedBadgeGold {
   color: #fbbf24 !important; // Gold checkmark line color
-  fill: #f59e0b !important;  // Filled background color
+  fill: #f59e0b !important; // Filled background color
   stroke: #ffffff !important; // Center checkmark color
   filter: drop-shadow(0 1px 3px rgba(245, 158, 11, 0.3));
 }
 
 .verifiedBadgeStarter {
   color: $border-light !important; // Blends with card borders
-  fill: $bg-secondary !important;  // Blends with secondary background
+  fill: $bg-secondary !important; // Blends with secondary background
   stroke: $text-secondary !important; // Dark grey center check icon
 }

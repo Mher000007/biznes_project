@@ -14,7 +14,7 @@ export const ru: Translations = {
     verified: "Проверено",
     services: "Услуги",
     hours: "Часы работы",
-    contact: "Контактная информация",
+    contact: "Информация",
     about: "О компании",
     closed: "Закрыто",
     openNow: "Открыто",

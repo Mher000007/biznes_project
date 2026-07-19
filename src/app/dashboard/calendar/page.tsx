@@ -6,10 +6,11 @@ import { getApiUrl } from "@/lib/utils";
 import axios from "axios";
 
 interface DailySummary {
-  _id: string;
+  _id?: string;
   date: string;
   summary: string;
-  stats?: any;
+  isClosed?: boolean;
+  stats?: Record<string, any>;
 }
 
 const STAT_LABELS: Record<string, string> = {
@@ -33,6 +34,7 @@ export default function CalendarPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [modalSummary, setModalSummary] = useState("");
+  const [modalIsClosed, setModalIsClosed] = useState(false);
   const [fixedStats, setFixedStats] = useState({
     totalBookings: "",
     reviewsCount: "",
@@ -135,6 +137,7 @@ export default function CalendarPage() {
     setSelectedDate(date);
     const sum = getDaySummary(day);
     setModalSummary(sum?.summary || "");
+    setModalIsClosed(sum?.isClosed || false);
 
     const initialStatsObj = sum?.stats || {};
     setFixedStats({
@@ -165,6 +168,7 @@ export default function CalendarPage() {
       setSaving(true);
       const res = await axios.post(`${getApiUrl()}/businesses/${businessId}/calendar/${dStr}`, {
         summary: modalSummary,
+        isClosed: modalIsClosed,
         stats: parsedStats
       }, {
         headers: { Authorization: `Bearer ${token}` }
@@ -271,6 +275,11 @@ export default function CalendarPage() {
                 </div>
                 {summaryData && (
                   <div className="mt-2 space-y-1.5 overflow-y-auto max-h-[100px] pr-1 custom-scrollbar">
+                    {summaryData.isClosed && (
+                      <div className="text-[10px] px-2 py-1 bg-red-500/10 text-red-700 dark:text-red-400 rounded-md font-bold border border-red-500/20 shadow-sm flex items-center gap-1 justify-center">
+                        ✕ Closed
+                      </div>
+                    )}
                     {summaryData.summary && (
                       <div className="text-xs p-2 rounded-lg transition-all shadow-sm bg-blue-500/10 text-blue-700 dark:text-blue-400 hover:bg-blue-500/20">
                         <div className="font-semibold flex items-center gap-1 mb-0.5 opacity-80">
@@ -321,7 +330,31 @@ export default function CalendarPage() {
             </div>
 
             <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-5">
+              <div className="flex items-center gap-3 p-3 bg-red-500/5 border border-red-500/20 rounded-xl">
+                <input
+                  type="checkbox"
+                  id="dayClosedCheckbox"
+                  checked={modalIsClosed}
+                  onChange={(e) => setModalIsClosed(e.target.checked)}
+                  className="w-4.5 h-4.5 rounded border-[hsl(var(--border))] text-red-600 focus:ring-red-500 cursor-pointer"
+                />
+                <label htmlFor="dayClosedCheckbox" className="text-sm font-semibold text-[hsl(var(--foreground))] cursor-pointer select-none">
+                  Mark this day as Closed (Block all Bookings)
+                </label>
+              </div>
 
+              <div className="group">
+                <label className="block text-sm font-semibold mb-2 text-[hsl(var(--foreground))]">
+                  Daily Notes / Summary
+                </label>
+                <textarea
+                  value={modalSummary}
+                  onChange={(e) => setModalSummary(e.target.value)}
+                  placeholder="E.g. Special event hosted, modified working hours, or other daily logs..."
+                  rows={3}
+                  className="w-full border border-[hsl(var(--border))] rounded-xl px-3 py-2 text-sm bg-transparent outline-none focus:border-[hsl(var(--primary))] focus:ring-1 focus:ring-[hsl(var(--primary))]/30 transition-all"
+                />
+              </div>
 
               <div className="group">
                 <label className="block text-sm font-semibold mb-3 text-[hsl(var(--foreground))] transition-colors">

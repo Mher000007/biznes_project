@@ -287,13 +287,39 @@ export default function ReviewsSection({
         if (!file.type.startsWith('image/')) {
           throw new Error("Only images are allowed");
         }
-        if (file.size > 5 * 1024 * 1024) {
-          throw new Error("Image size must be less than 5MB");
+        if (file.size > 15 * 1024 * 1024) {
+          throw new Error("Image size must be less than 15MB");
         }
 
         const dataUrl = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
+          reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              let width = img.width;
+              let height = img.height;
+              const max_size = 1024;
+              
+              if (width > height && width > max_size) {
+                height *= max_size / width;
+                width = max_size;
+              } else if (height > max_size) {
+                width *= max_size / height;
+                height = max_size;
+              }
+              
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext('2d');
+              ctx?.drawImage(img, 0, 0, width, height);
+              resolve(canvas.toDataURL('image/jpeg', 0.7));
+            };
+            img.onerror = () => reject(new Error("Failed to process image"));
+            if (event.target?.result) {
+              img.src = event.target.result as string;
+            }
+          };
           reader.onerror = () => reject(new Error("Failed to read file"));
           reader.readAsDataURL(file);
         });
@@ -418,7 +444,7 @@ export default function ReviewsSection({
     setSubmitError("");
     if (!selectedRating) { setSubmitError("Please choose a star rating."); return; }
     if (comment.trim().length < 10) { setSubmitError("Comment must be at least 10 characters."); return; }
-    if (mediaFiles.length === 0) { setSubmitError("Please upload at least one photo."); return; }
+    // Note: photos are optional — don't block submission if no files uploaded
 
     setSubmitting(true);
 
@@ -437,8 +463,12 @@ export default function ReviewsSection({
           headers.Authorization = `Bearer ${token}`;
         }
 
-        const images = mediaFiles.filter(m => m.type === 'image').map(m => m.url);
-        const videos = mediaFiles.filter(m => m.type === 'video').map(m => m.url);
+        const images = mediaFiles
+          .filter(m => m.type === 'image')
+          .map(m => m.url);
+        const videos = mediaFiles
+          .filter(m => (m as any).type === 'video')
+          .map(m => m.url);
 
         const res = await axios.post(
           `${apiURL}/businesses/${businessId}/reviews`,
@@ -484,7 +514,7 @@ export default function ReviewsSection({
     } else {
       // localStorage fallback for mock businesses
       const images = mediaFiles.filter(m => m.type === 'image').map(m => m.url);
-      const videos = mediaFiles.filter(m => m.type === 'video').map(m => m.url);
+      const videos = mediaFiles.filter(m => (m as any).type === 'video').map(m => m.url);
 
       const newReview: Review = {
         _id: `local-${Date.now()}`,
@@ -700,7 +730,7 @@ export default function ReviewsSection({
                       <div className={styles.mediaPreviewGrid} style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '16px' }}>
                         {mediaFiles.map((media, index) => (
                           <div key={index} className={styles.imagePreviewContainer} style={{ position: 'relative', width: '80px', height: '80px', borderRadius: '8px', border: '1px solid hsl(var(--border))' }}>
-                            {media.type === 'video' ? (
+                            {(media as any).type === 'video' ? (
                               <video src={media.url} className={styles.previewImage} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }} />
                             ) : (
                               <img src={media.url} alt={`Preview ${index}`} className={styles.previewImage} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }} />

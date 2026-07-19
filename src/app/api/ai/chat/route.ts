@@ -6,234 +6,307 @@ interface ChatRequest {
   sessionId?: string;
 }
 
-// Full premium menus for mock calculations in standalone environment
-const MOCK_MENUS: Record<string, Array<{ name: string; price: number; category: string; description: string }>> = {
-  "lavash-restaurant-group": [
-    { name: "Traditional Pork Khorovats", price: 3800, category: "Main Course", description: "Charcoal grilled marinated pork skewers" },
-    { name: "Chicken Tabaka", price: 2900, category: "Main Course", description: "Crispy pan-fried whole chicken" },
-    { name: "Tzhvzhik", price: 2400, category: "Appetizer", description: "Traditional beef liver dish" },
-    { name: "Fresh Basturma Platter", price: 2800, category: "Appetizer", description: "Air-cured beef with fenugreek" },
-    { name: "Khachapuri", price: 2200, category: "Main Course", description: "Cheese-filled crusty bread" },
-    { name: "Gata Dessert", price: 1500, category: "Dessert", description: "Traditional sweet pastry" },
-    { name: "Armenian Wine (Glass)", price: 1600, category: "Drinks", description: "Dry red Karas wine" },
-    { name: "Tan (Yogurt Drink)", price: 600, category: "Drinks", description: "Traditional salted yogurt beverage" }
-  ],
-  "dilijan-resort-spa": [
-    { name: "Forest Mushroom Soup", price: 2200, category: "Appetizer", description: "Creamy local wild mushroom soup" },
-    { name: "Grilled Dilijan Trout", price: 4500, category: "Main Course", description: "Fresh river trout served with vegetables" },
-    { name: "Tan (Yogurt Drink)", price: 800, category: "Drinks", description: "Yogurt beverage" }
-  ]
+// Global session store
+interface ChatSession {
+  step: 'ask_pax' | 'ask_location' | 'ask_budget' | 'booking_datetime' | 'booking_details' | 'booking_confirm' | null;
+  pax?: number;
+  location?: string;
+  budget?: number;
+  selectedBizId?: string;
+  selectedBizName?: string;
+  bookingDateTime?: string;
+}
+
+const getSessions = (): Map<string, ChatSession> => {
+  if (!(global as any).aiSessions) {
+    (global as any).aiSessions = new Map<string, ChatSession>();
+  }
+  return (global as any).aiSessions;
 };
 
-// Full premium services for car washes and auto centers
-const MOCK_SERVICES: Record<string, Array<{ name: string; price: number; description: string }>> = {
-  "armtech-solutions": [
-    { name: "Custom Software Development", price: 250000, description: "Tailored enterprise solutions" },
-    { name: "IT Consulting", price: 40000, description: "Cloud migration advice" }
-  ]
-};
+function calculateScore(business: any): number {
+  const rating = business.ratingAvg || 0;
+  let multiplier = 1.0;
+  if (business.plan === 'premium') multiplier = 1.5;
+  else if (business.plan === 'standard') multiplier = 1.2;
+  return rating * multiplier;
+}
 
-// Default services for any business fallback
-const DEFAULT_AUTO_SERVICES = [
-  { name: "Engine Oil Change", price: 8000, description: "Oil and filter change" },
-  { name: "Express Car Wash", price: 3000, description: "Exterior wash and wax" },
-  { name: "Full Detailing", price: 25000, description: "Interior and exterior deep cleaning" },
-  { name: "Brake Pad Replacement", price: 12000, description: "Front or rear brake pads installation" }
-];
-
-function findMenuCombination(menu: any[], budget: number, pax: number) {
-  const appetizers = menu.filter(item => item.category?.toLowerCase().includes('appetizer'));
-  const mains = menu.filter(item => item.category?.toLowerCase().includes('main') || item.category?.toLowerCase().includes('dine'));
-  const drinks = menu.filter(item => item.category?.toLowerCase().includes('drink') || item.category?.toLowerCase().includes('tan') || item.category?.toLowerCase().includes('wine'));
-
-  let bestCombo: any[] | null = null;
-  let bestTotal = 0;
-
-  // Try to find combo of: 1 appetizer + 1 main + 1 drink per person
-  for (const app of (appetizers.length > 0 ? appetizers : [null])) {
-    for (const main of (mains.length > 0 ? mains : [null])) {
-      for (const drink of (drinks.length > 0 ? drinks : [null])) {
-        let total = 0;
-        const items = [];
-        if (app) { total += app.price * pax; items.push({ ...app, qty: pax }); }
-        if (main) { total += main.price * pax; items.push({ ...main, qty: pax }); }
-        if (drink) { total += drink.price * pax; items.push({ ...drink, qty: pax }); }
-
-        if (total > 0 && total <= budget && total > bestTotal) {
-          bestTotal = total;
-          bestCombo = items;
-        }
-      }
-    }
-  }
-
-  // Fallback 1: Just mains and drinks
-  if (!bestCombo) {
-    for (const main of (mains.length > 0 ? mains : [null])) {
-      for (const drink of (drinks.length > 0 ? drinks : [null])) {
-        let total = 0;
-        const items = [];
-        if (main) { total += main.price * pax; items.push({ ...main, qty: pax }); }
-        if (drink) { total += drink.price * pax; items.push({ ...drink, qty: pax }); }
-
-        if (total > 0 && total <= budget && total > bestTotal) {
-          bestTotal = total;
-          bestCombo = items;
-        }
-      }
-    }
-  }
-
-  // Fallback 2: Just mains
-  if (!bestCombo) {
-    for (const main of mains) {
-      const total = main.price * pax;
-      if (total <= budget && total > bestTotal) {
-        bestTotal = total;
-        bestCombo = [{ ...main, qty: pax }];
-      }
-    }
-  }
-
-  return bestCombo ? { items: bestCombo, total: bestTotal } : null;
+function extractHoreca() {
+  return MOCK_BUSINESSES.filter(b => b.category.slug === "horeca" || b.categoryId === "cat-horeca");
 }
 
 export async function POST(request: NextRequest) {
   const body: ChatRequest = await request.json();
   const { message } = body;
+  const sessionId = body.sessionId || `session-${Date.now()}`;
 
   if (!message?.trim()) {
     return NextResponse.json({ error: "Message is required" }, { status: 400 });
   }
 
-  const lower = message.toLowerCase();
+  const lower = message.toLowerCase().trim();
+  const sessions = getSessions();
+  let session = sessions.get(sessionId) || { step: null };
 
-  // 1. Detect Budget & Pax limits
-  const priceMatch = lower.match(/(under|below|within|budget of)\s*([\d,]+)\s*(amd|dram|drams)?/);
-  const paxMatch = lower.match(/(for)?\s*(\d+)\s*(people|person|guests?|pax)/);
-  
-  const budget = priceMatch ? parseInt(priceMatch[2].replace(/,/g, "")) : null;
-  const pax = paxMatch ? parseInt(paxMatch[2]) : 1;
-
-  // Intent analysis
-  let intent = "find_service";
   let content = "";
+  let intent = "flow";
   let suggestions: any[] = [];
-  let quickReplies: string[] = ["🍽️ Restaurants", "🚗 Car Services", "🏨 Hotels & Spas", "Help"];
+  let quickReplies: string[] = [];
 
-  const isCarServiceQuery = lower.includes("car") || lower.includes("auto") || lower.includes("oil") || lower.includes("mechanic") || lower.includes("wash");
-  const isRestaurantQuery = lower.includes("restaurant") || lower.includes("eat") || lower.includes("food") || lower.includes("lavash") || lower.includes("dinner");
+  // Handle Book Trigger
+  if (lower.startsWith("book id:")) {
+    const bizId = lower.split("book id:")[1]?.trim();
+    const biz = MOCK_BUSINESSES.find(b => b.id === bizId);
+    if (biz) {
+      session.step = 'booking_datetime';
+      session.selectedBizId = biz.id;
+      session.selectedBizName = biz.name;
+      sessions.set(sessionId, session);
 
-  if (isCarServiceQuery && budget !== null) {
-    intent = "budget_car_service";
-    // Filter matching businesses (either auto category or has tag)
-    const matchingBiz = MOCK_BUSINESSES.filter(b => b.category.slug === "retail" || b.tags.includes("car") || b.tags.includes("auto") || b.tags.includes("organic") || b.name.toLowerCase().includes("auto"));
-    
-    // We will build a list of matching auto services that fit the budget
-    const results: any[] = [];
-    
-    // Loop through mock services or use default auto services for demonstration
-    const servicesList = DEFAULT_AUTO_SERVICES;
-    const matchingServices = servicesList.filter(s => s.price <= budget);
-
-    if (matchingServices.length > 0) {
-      content = `I found some car service options under **${budget.toLocaleString()} AMD**:\n\n` +
-        matchingServices.map(s => `• **${s.name}**: ${s.price.toLocaleString()} AMD (${s.description})`).join("\n") +
-        `\n\nI recommend visiting **Grand Auto Center** or **Gyumri Auto Care** for these rates.`;
-      
-      // Return suggestions
-      suggestions = MOCK_BUSINESSES.filter(b => b.slug === "silk-road-trading" || b.slug === "gyumri-digital-hub").map(b => ({
-        id: b.id,
-        name: b.name === "Silk Road Trading Co." ? "Grand Auto Services" : "Gyumri Auto Care",
-        category: "Auto Repair",
-        rating: 4.8,
-        city: b.city,
-        shortDescription: "Affordable tire, oil, and diagnostics hub.",
-        slug: b.slug,
-      }));
-    } else {
-      content = `Sorry, I couldn't find any car services under **${budget.toLocaleString()} AMD**. Standard oil changes typically start at 8,000 AMD in Yerevan.`;
+      return NextResponse.json({
+        response: `Հիանալի ընտրություն: Ո՞ր օրվա և ժամի համար եք ցանկանում հաստատել այս ամրագրումը **${biz.name}**-ում:`,
+        intent: "show_datetime_picker",
+        suggestions: [],
+        quickReplies: [],
+        sessionId
+      });
     }
-  } 
-  else if (isRestaurantQuery && budget !== null) {
-    intent = "budget_restaurant";
-    // Target Lavash restaurant as the representative HoReCa item
-    const lavashBiz = MOCK_BUSINESSES.find(b => b.slug === "lavash-restaurant-group");
-    const menu = MOCK_MENUS["lavash-restaurant-group"];
+  }
 
-    if (lavashBiz && menu) {
-      const combo = findMenuCombination(menu, budget, pax);
-      if (combo) {
-        const itemLines = combo.items.map(item => `  - ${item.qty}x **${item.name}** (${item.price.toLocaleString()} AMD each)`).join("\n");
-        content = `Yes! At **${lavashBiz.name}**, you can dine comfortably for **${pax} people** within a total budget of **${budget.toLocaleString()} AMD**.\n\nHere is a calculated combination from their menu:\n${itemLines}\n\n**Total Price**: **${combo.total.toLocaleString()} AMD** (remaining budget: ${(budget - combo.total).toLocaleString()} AMD).\n\nWould you like to book a table now?`;
-        
-        suggestions = [{
-          id: lavashBiz.id,
-          name: lavashBiz.name,
-          category: "HoReCa",
-          rating: lavashBiz.ratingAvg,
-          city: lavashBiz.city,
-          shortDescription: lavashBiz.shortDescription,
-          slug: lavashBiz.slug
-        }];
-        quickReplies = ["📅 Book a table", "View Menu", "Other options"];
+  // Handle Booking DateTime
+  if (session.step === 'booking_datetime') {
+    session.bookingDateTime = message; // Should be the selected ISO string or text
+    session.step = 'booking_details';
+    sessions.set(sessionId, session);
+
+    return NextResponse.json({
+      response: `Խնդրում եմ նշել Ձեր անունը և հեռախոսահամարը, որպեսզի ռեստորանը կարողանա կապ հաստատել Ձեզ հետ: Ունե՞ք հատուկ ցանկություններ (օրինակ՝ ալերգիաներ կամ մանկական աթոռ):`,
+      intent: "ask_booking_details",
+      suggestions: [],
+      quickReplies: [],
+      sessionId
+    });
+  }
+
+  // Handle Booking Confirmation
+  if (session.step === 'booking_details') {
+    const details = message;
+    session.step = 'booking_confirm';
+    sessions.set(sessionId, session);
+
+    return NextResponse.json({
+      response: `Խնդրում եմ ստուգել ամրագրման մանրամասները և հաստատել:`,
+      intent: "show_summary_card",
+      suggestions: [{
+        id: "summary",
+        name: session.selectedBizName || "",
+        category: "Summary",
+        rating: 0,
+        city: "",
+        shortDescription: `Անձանց քանակ: ${session.pax} հոգի\nԺամանակ: ${session.bookingDateTime}\nՄանրամասներ: ${details}`,
+        slug: "",
+        plan: "starter"
+      }],
+      quickReplies: [],
+      sessionId
+    });
+  }
+
+  // Handle Final Success
+  if (session.step === 'booking_confirm') {
+    if (lower === "confirm_booking" || lower.includes("հաստատել")) {
+      session.step = null;
+      sessions.delete(sessionId);
+
+      return NextResponse.json({
+        response: `Ձեր ամրագրումը հաստատված է: Սպասում ենք Ձեզ:\nԱհա Ձեր ամրագրման կոդը՝ **#${Math.floor(10000 + Math.random() * 90000)}**\n\n(Բիզնեսը ավտոմատ ստացավ այս ծանուցումը վահանակում):`,
+        intent: "booking_success",
+        suggestions: [],
+        quickReplies: ["🍽️ Նոր որոնում", "Գլխավոր էջ"],
+        sessionId
+      });
+    }
+  }
+
+  // 1. Detect start of flow
+  if (lower === "restaurants" || lower.includes("ռեստորաններ") || lower === "🍽️ restaurants" || (lower.includes("restaurant") && !session.step)) {
+    session.step = 'ask_pax';
+    sessions.set(sessionId, session);
+
+    return NextResponse.json({
+      response: "Քանի՞ անձի համար եք նախատեսում ամրագրումը:",
+      intent: "ask_pax",
+      suggestions: [],
+      quickReplies: [],
+      sessionId
+    });
+  }
+
+  // 2. Flow: Pax -> Location
+  if (session.step === 'ask_pax') {
+    const paxMatch = lower.match(/(\d+)/);
+    if (!paxMatch) {
+      return NextResponse.json({
+        response: "Խնդրում եմ նշեք հստակ թիվ (օրինակ՝ 2, 4):",
+        intent: "ask_pax",
+        suggestions: [],
+        quickReplies: [],
+        sessionId
+      });
+    }
+
+    session.pax = parseInt(paxMatch[1]);
+    session.step = 'ask_location';
+    sessions.set(sessionId, session);
+
+    // Filter cities based on pax and Premium/Pro (Mock logic: assume all Horeca serve any pax)
+    const topRestaurants = extractHoreca().filter(b => b.plan === "premium" || b.plan === "standard");
+    const uniqueCities = Array.from(new Set(topRestaurants.map(b => b.city)));
+
+    return NextResponse.json({
+      response: `Ո՞ր տարածքում (Location) եք ցանկանում ամրագրել ռեստորան: Ձեր նշած ${session.pax} անձի համար այս պահին գործող առաջարկներ ունենք հետևյալ տարածքներում՝`,
+      intent: "ask_location",
+      suggestions: [],
+      quickReplies: uniqueCities,
+      sessionId
+    });
+  }
+
+  // 3. Flow: Location -> Budget
+  if (session.step === 'ask_location') {
+    session.location = message;
+    session.step = 'ask_budget';
+    sessions.set(sessionId, session);
+
+    // Calculate Min/Max for this location
+    const targetCity = session.location.toLowerCase();
+    const locBiz = extractHoreca().filter(b => b.city.toLowerCase().includes(targetCity));
+    // Mock prices based on rating for logic
+    const minPrice = locBiz.length > 0 ? 5000 : 5000;
+
+    return NextResponse.json({
+      response: `Որքա՞ն գումար եք նախատեսում ամրագրման համար (AMD):\n(Տվյալ տարածքում արժեքները սկսվում են մոտ ${minPrice} դրամից)`,
+      intent: "ask_budget",
+      suggestions: [],
+      quickReplies: [],
+      sessionId
+    });
+  }
+
+  // 4. Flow: Budget -> Results & Fallbacks
+  if (session.step === 'ask_budget') {
+    const budgetMatch = lower.match(/(\d+)/);
+    if (!budgetMatch) {
+      return NextResponse.json({
+        response: "Խնդրում եմ նշեք գումարի չափը թվերով (օրինակ՝ 15000):",
+        intent: "ask_budget",
+        suggestions: [],
+        quickReplies: [],
+        sessionId
+      });
+    }
+
+    session.budget = parseInt(budgetMatch[1]);
+
+    // Process Results
+    const targetCity = (session.location || "Yerevan").toLowerCase();
+    let candidates = extractHoreca();
+
+    // Filter by exact location
+    let exactCandidates = candidates.filter(b => b.city.toLowerCase().includes(targetCity));
+
+    // Filter by budget (Mock logic: simulate some expensive places)
+    // Let's say Premium businesses cost 25000+, Pro 15000+, Starter 5000+
+    const getMockPrice = (b: any) => b.plan === 'premium' ? 25000 : (b.plan === 'standard' ? 15000 : 5000);
+
+    let validExactCandidates = exactCandidates.filter(b => getMockPrice(b) <= (session.budget || 0));
+
+    // Fallback Logic
+    let fallbackType = null;
+    let finalCandidates = [...validExactCandidates];
+
+    if (validExactCandidates.length === 0) {
+      // Priority 1: Expand budget by 20%
+      const expandedBudget = (session.budget || 0) * 1.2;
+      const expandedCandidates = exactCandidates.filter(b => getMockPrice(b) <= expandedBudget);
+
+      if (expandedCandidates.length > 0) {
+        fallbackType = "priority1";
+        finalCandidates = expandedCandidates;
       } else {
-        content = `A budget of **${budget.toLocaleString()} AMD** is slightly tight for **${pax} people** at high-end restaurants. I recommend increasing the budget to at least ${(pax * 5000).toLocaleString()} AMD or exploring smaller local taverns.`;
+        // Priority 3: Change location
+        const otherLocationsCandidates = candidates.filter(b => !b.city.toLowerCase().includes(targetCity) && getMockPrice(b) <= (session.budget || 0));
+        if (otherLocationsCandidates.length > 0) {
+          fallbackType = "priority3";
+          finalCandidates = otherLocationsCandidates;
+        }
       }
-    } else {
-      content = `I found restaurant listings in Yerevan, but their digital menus are currently offline. Standard dining budgets are around 5,000 AMD - 10,000 AMD per person.`;
     }
-  }
-  else if (lower.includes("book") || lower.includes("table") || lower.includes("reserve")) {
-    intent = "book_service";
-    const lavash = MOCK_BUSINESSES.find(b => b.slug === "lavash-restaurant-group");
-    content = `I can trigger an instant reservation for you. Would you like to book a table at **Lavash Restaurant** in Yerevan?`;
-    if (lavash) {
-      suggestions = [{
-        id: lavash.id,
-        name: lavash.name,
-        category: "HoReCa",
-        rating: 4.9,
-        city: "Yerevan",
-        shortDescription: "Award-winning traditional Armenian kitchen.",
-        slug: lavash.slug
-      }];
-    }
-    quickReplies = ["Yes, Book table", "No, show other categories"];
-  }
-  else if (lower.match(/^(hi|hello|hey|barev|privet)/)) {
-    intent = "greeting";
-    content = `Barev! 👋 I'm your Findy AI assistant. I can calculate menu combinations and look up service rates under specific budgets.\n\nTry asking me:\n• "Find a car service under 10,000 AMD for an oil change."\n• "Recommend a restaurant for 4 people with a budget of 30,000 AMD."`;
-  }
-  else {
-    // Default search fallback
-    const matches = MOCK_BUSINESSES.filter(b => 
-      b.name.toLowerCase().includes(lower) || 
-      b.category.slug.includes(lower) ||
-      b.tags.some(t => t.includes(lower))
-    ).slice(0, 2);
 
-    if (matches.length > 0) {
-      content = `I found some businesses matching your query:`;
-      suggestions = matches.map(b => ({
+    // Apply Ranking Formula
+    finalCandidates.sort((a, b) => calculateScore(b) - calculateScore(a));
+
+    if (finalCandidates.length > 0) {
+      if (fallbackType === "priority1") {
+        content = `Ցավոք, **${session.location}**-ում ճիշտ Ձեր նշած բյուջեով հասանելի առաջարկներ չկան, սակայն ունենք հիանալի տարբերակներ մոտակա գնային միջակայքում: Դիտարկե՞նք դրանք.\n\n`;
+      } else if (fallbackType === "priority3") {
+        const altCity = finalCandidates[0].city;
+        content = `Ձեր նշած գումարի սահմաններում **${session.location}**-ում այս պահին ամրագրումներ չունենք, բայց Ձեր բյուջեին կատարյալ համապատասխանում են **${altCity}** տարածքի այս ռեստորանները.\n\n`;
+      } else {
+        content = `Գտա հետևյալ ռեստորանները **${session.pax} անձի** համար՝ **${session.budget} AMD** բյուջեով:\n\nԱրդյունքները դասավորված են ըստ որակի\n\n`;
+      }
+
+      content += finalCandidates.slice(0, 3).map((b, i) => {
+        const planStr = b.plan === 'premium' ? "🥇 Premium" : b.plan === 'standard' ? "🥈 Pro" : "⭐ Standard";
+        return `${i + 1}. **${b.name}** (${planStr}) - ${b.ratingAvg} վարկանիշ (Սկսած ${getMockPrice(b)} AMD)`;
+      }).join("\n");
+
+      suggestions = finalCandidates.slice(0, 3).map(b => ({
         id: b.id,
         name: b.name,
         category: b.category.name,
         rating: b.ratingAvg,
         city: b.city,
         shortDescription: b.shortDescription,
-        slug: b.slug
+        slug: b.slug,
+        plan: b.plan
       }));
     } else {
-      content = `I'm here to guide your discovery! Ask me about service budgets (e.g. oil change under 10,000 AMD) or group dining selections (e.g. restaurant for 4 people under 30,000 AMD).`;
+      content = "Ներողություն, այս չափանիշներով նույնիսկ մոտակա տարածքներում կամ բյուջեով ռեստորաններ չգտնվեցին: Խնդրում եմ փորձել ավելացնել բյուջեն:";
     }
+
+    quickReplies = ["Նոր որոնում", "🚗 Car Services"];
+
+    // Reset session
+    sessions.delete(sessionId);
+
+    return NextResponse.json({
+      response: content,
+      intent: "show_results",
+      suggestions,
+      quickReplies,
+      sessionId
+    });
   }
 
+  // 3. Greeting and Fallbacks
+  if (lower.match(/^(hi|hello|hey|barev|privet|բարև)/)) {
+    return NextResponse.json({
+      response: `Barev! 👋 I'm your Findy AI assistant. Ինչպե՞ս կարող եմ օգնել ձեզ այսօր:\n\nԴուք կարող եք սկսել որոնումը՝ սեղմելով "🍽️ Restaurants" կոճակը:`,
+      intent: "greeting",
+      suggestions: [],
+      quickReplies: ["🍽️ Restaurants", "🚗 Car Services", "🏨 Hotels & Spas"],
+      sessionId
+    });
+  }
+
+  // Fallback for everything else
   return NextResponse.json({
-    response: content,
-    intent,
-    suggestions,
-    quickReplies,
-    sessionId: `session-${Date.now()}`
+    response: "Խնդրում եմ ընտրել ոլորտը՝ որոնումը սկսելու համար:",
+    intent: "fallback",
+    suggestions: [],
+    quickReplies: ["🍽️ Restaurants", "🚗 Car Services"],
+    sessionId
   });
 }

@@ -20,9 +20,12 @@ import {
   MapPin,
   Calendar,
   HeadphonesIcon,
+  Utensils,
 } from "lucide-react";
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+import { Suspense } from "react";
+
+function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -84,6 +87,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
     { href: "/dashboard/calendar", label: "Calendar", icon: Calendar },
     { href: "/dashboard/profile", label: "Business Profile", icon: Building2 },
+    { href: "/dashboard/offers", label: "Menus & Offers", icon: Utensils },
     { href: "/dashboard/locations", label: "My Locations", icon: MapPin },
     { href: "/dashboard/stories", label: "Stories", icon: Sparkles },
     { href: "/dashboard/inquiries", label: "Inquiries", icon: MessageSquare },
@@ -194,5 +198,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {children}
       </div>
     </div>
+  );
+}
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={<div className="p-8 text-center">Loading dashboard...</div>}>
+      <DashboardLayoutInner>{children}</DashboardLayoutInner>
+    </Suspense>
   );
 }

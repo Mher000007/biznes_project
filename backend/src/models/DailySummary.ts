@@ -4,6 +4,7 @@ export interface IDailySummary extends Document {
   business: mongoose.Types.ObjectId;
   date: string; // YYYY-MM-DD
   summary: string;
+  isClosed: boolean;
   stats?: Record<string, any>;
   createdAt: Date;
   updatedAt: Date;
@@ -22,6 +23,10 @@ const dailySummarySchema = new Schema<IDailySummary>({
   summary: {
     type: String,
     default: '',
+  },
+  isClosed: {
+    type: Boolean,
+    default: false,
   },
   stats: {
     type: Schema.Types.Mixed,

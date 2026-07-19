@@ -118,7 +118,7 @@ export const en = {
     verified: "Verified",
     services: "Services",
     hours: "Opening Hours",
-    contact: "Contact Information",
+    contact: "Information",
     about: "About",
     closed: "Closed",
     openNow: "Open Now",

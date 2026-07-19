@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { Play, Pause } from "lucide-react";
 import axios from "axios";
 import { getApiUrl } from "@/lib/utils";
 
@@ -18,26 +19,14 @@ const DEFAULT_SLIDES: SlideItem[] = [
 export default function HeroSection() {
   const [slides, setSlides] = useState<SlideItem[]>(DEFAULT_SLIDES);
   const [current, setCurrent] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const activeRef = useRef<HTMLButtonElement>(null);
 
-  const start = () => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    intervalRef.current = setInterval(() => {
-      setSlides((currentSlides) => {
-        if (currentSlides.length > 0) {
-          setCurrent((p) => (p + 1) % currentSlides.length);
-        }
-        return currentSlides;
-      });
-    }, 5000);
-  };
-
-  const stop = () => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
+  useEffect(() => {
+    if (activeRef.current) {
+      activeRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
     }
-  };
+  }, [current]);
 
   // Fetch premium businesses to display dynamic slideshow backgrounds, or fallback
   useEffect(() => {
@@ -75,9 +64,12 @@ export default function HeroSection() {
   }, []);
 
   useEffect(() => {
-    start();
-    return stop;
-  }, [slides.length]);
+    if (slides.length <= 1 || !isPlaying) return;
+    const timer = setInterval(() => {
+      setCurrent((prev) => (prev + 1) % slides.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [slides.length, current, isPlaying]);
 
   return (
     <section className="hero-section pt-24 pb-16 sm:pt-32 sm:pb-24 relative overflow-hidden min-h-[500px] sm:min-h-[580px] flex items-center">
@@ -99,7 +91,71 @@ export default function HeroSection() {
       </div>
 
       {/* Dark gradient overlay blending with header */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent pointer-events-none z-10" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent pointer-events-none z-10" />
+
+      <style>{`
+        @keyframes fillDown {
+          0% { height: 0%; }
+          100% { height: 100%; }
+        }
+        .hide-scroll::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
+
+      {/* Yelp-style Pagination Indicators (Vertical Left) */}
+      <div className="absolute left-6 sm:left-10 top-1/2 -translate-y-1/2 z-20 flex flex-col items-center gap-2.5">
+        
+        {/* Scrollable Container for Indicators */}
+        <div 
+          className="flex flex-col items-center gap-2.5 overflow-y-auto hide-scroll py-2"
+          style={{ maxHeight: "35vh", scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
+          {slides.map((_, idx) => (
+            <button
+              key={idx}
+              ref={idx === current ? activeRef : null}
+              onClick={() => {
+                setCurrent(idx);
+                setIsPlaying(true); // Auto-resume when manually selecting
+              }}
+              className="group flex items-center justify-center bg-transparent border-none px-2 py-1.5 cursor-pointer outline-none"
+              aria-label={`Select slide ${idx + 1}`}
+            >
+              <span
+                className={`block w-1.5 rounded-full transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] relative overflow-hidden ${
+                  idx === current
+                    ? "h-10 sm:h-12 bg-white/20 opacity-100"
+                    : "h-4 sm:h-5 bg-[#EBEBEB] opacity-40 group-hover:opacity-100 group-hover:h-6 group-hover:bg-white"
+                }`}
+              >
+                {idx === current && (
+                  <span
+                    className="absolute top-0 left-0 w-full bg-white rounded-full"
+                    style={{ 
+                      animation: "fillDown 5s linear forwards",
+                      animationPlayState: isPlaying ? "running" : "paused"
+                    }}
+                  />
+                )}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* Play / Pause Toggle */}
+        <button
+          onClick={() => setIsPlaying(!isPlaying)}
+          className="group flex items-center justify-center bg-transparent border-none px-2 py-1.5 cursor-pointer outline-none mt-1"
+          aria-label={isPlaying ? "Pause slideshow" : "Play slideshow"}
+        >
+          {isPlaying ? (
+            <Pause className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#EBEBEB] opacity-40 group-hover:opacity-100 group-hover:text-white transition-all duration-300" />
+          ) : (
+            <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#EBEBEB] opacity-40 group-hover:opacity-100 group-hover:text-white transition-all duration-300 fill-current" />
+          )}
+        </button>
+      </div>
     </section>
   );
 }

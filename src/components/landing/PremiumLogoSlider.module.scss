@@ -1,0 +1,35 @@
+.marqueeContainer {
+  display: flex;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+  /* Optional: faded edges */
+  mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+  padding: 1rem 0;
+}
+
+.marqueeContent {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 3rem;
+  padding-right: 3rem;
+  /* Match gap for seamless loop */
+  min-width: 100%;
+  animation: scrollX 130s linear infinite;
+}
+
+.marqueeContainer:hover .marqueeContent {
+  animation-play-state: paused;
+}
+
+@keyframes scrollX {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-100%);
+  }
+}

@@ -73,6 +73,7 @@ export const MOCK_BUSINESSES: Business[] = [
     logoUrl: "", coverImageUrl: "", images: [],
     status: "active", isFeatured: true, isVerified: true,
     viewCount: 5890, inquiryCount: 156, ratingAvg: 4.9, reviewCount: 124,
+    plan: "standard",
     createdAt: "2021-05-20", updatedAt: "2024-12-01",
     operatingHours: [
       { day: 1, dayName: "Monday", openTime: "11:00", closeTime: "23:00", isClosed: false },
@@ -234,7 +235,8 @@ export const MOCK_BUSINESSES: Business[] = [
     ],
     logoUrl: "", coverImageUrl: "", images: [],
     status: "active", isFeatured: true, isVerified: true,
-    viewCount: 6200, inquiryCount: 180, ratingAvg: 4.7, reviewCount: 95,
+    viewCount: 6200, inquiryCount: 180, ratingAvg: 3.5, reviewCount: 95,
+    plan: "premium",
     createdAt: "2021-01-05", updatedAt: "2024-11-30",
     operatingHours: [
       { day: 1, dayName: "Monday", openTime: "00:00", closeTime: "23:59", isClosed: false },

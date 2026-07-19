@@ -38,7 +38,29 @@ function BusinessCard({ biz }: { biz: BusinessSuggestion }) {
 
 function MessageBubble({ msg }: { msg: ChatMessage }) {
   const { t } = useI18n();
+  const dispatch = useDispatch();
+  const sessionId = useSelector((s: RootState) => s.chat.sessionId);
   const isUser = msg.role === "user";
+
+  const handleSendDate = (dateVal: string) => {
+    if (!dateVal) return;
+    const userMsg: ChatMessage = { id: `msg-${Date.now()}`, role: "user", content: dateVal, timestamp: Date.now() };
+    dispatch(addMessage(userMsg));
+    dispatch(setLoading(true));
+    axios.post("/api/ai/chat", { message: dateVal, sessionId }).then(res => {
+      dispatch(addMessage({ id: `msg-${Date.now() + 1}`, role: "assistant", content: res.data.response, timestamp: Date.now(), intent: res.data.intent, suggestions: res.data.suggestions, quickReplies: res.data.quickReplies }));
+      dispatch(setLoading(false));
+    });
+  };
+
+  const handleBook = (bizId: string) => {
+    handleSendDate(`book id:${bizId}`);
+  };
+
+  const confirmBooking = () => {
+    handleSendDate(`confirm_booking`);
+  };
+
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"} animate-fade-in`}>
       <div className={`max-w-[85%] space-y-2`}>
@@ -51,17 +73,56 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
             <span className="text-[11px] font-bold tracking-wide text-[hsl(var(--muted-foreground))]">{t.chat?.assistantName || "Findy Assistant"}</span>
           </div>
         )}
-        <div className={`relative px-4 py-3 text-[14px] leading-relaxed whitespace-pre-wrap transition-all duration-300 ${
-          isUser
+        <div className={`relative px-4 py-3 text-[14px] leading-relaxed whitespace-pre-wrap transition-all duration-300 ${isUser
             ? "bg-[hsl(var(--primary))] text-white rounded-[20px] rounded-tr-[4px] shadow-sm"
             : "bg-white/60 dark:bg-slate-800/60 backdrop-blur-md text-[hsl(var(--foreground))] rounded-[20px] rounded-tl-[4px] border border-white/40 dark:border-white/10 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]"
-        }`}>
+          }`}>
           {msg.content.split("**").map((part, i) =>
             i % 2 === 1 ? <strong key={i} className="font-semibold">{part}</strong> : <span key={i}>{part}</span>
           )}
         </div>
 
-        {msg.suggestions && msg.suggestions.length > 0 && (
+        {msg.intent === "show_datetime_picker" && (
+          <div className="mt-2 flex flex-col gap-2">
+            <input type="datetime-local" id={`date-${msg.id}`} className="w-full text-sm p-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))]" />
+            <button onClick={() => {
+              const val = (document.getElementById(`date-${msg.id}`) as HTMLInputElement).value;
+              handleSendDate(val);
+            }} className="w-full p-2 bg-[hsl(var(--primary))] text-white rounded-lg text-sm font-semibold hover:bg-[hsl(var(--primary))]/90 transition-colors">
+              Ընտրել Ժամը
+            </button>
+          </div>
+        )}
+
+        {msg.intent === "show_summary_card" && msg.suggestions && msg.suggestions.length > 0 && (
+          <div className="mt-2 p-4 bg-white dark:bg-slate-800 rounded-xl border border-[hsl(var(--border))] shadow-md space-y-3">
+            <h4 className="font-bold text-base text-[hsl(var(--primary))]">Ամրագրման Ամփոփում</h4>
+            <div className="text-sm space-y-1 text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
+              {msg.suggestions[0].shortDescription}
+            </div>
+            <div className="text-xs text-slate-500 bg-slate-100 dark:bg-slate-700/50 p-2 rounded-lg">
+              ℹ️ Անվճար չեղարկում մինչև ամրագրված ժամից 2 ժամ առաջ:
+            </div>
+            <button onClick={confirmBooking} className="w-full py-3 mt-2 rounded-xl text-white font-bold text-sm shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all" style={{ backgroundColor: "#FD7B0A" }}>
+              ՀԱՍՏԱՏԵԼ ԱՄՐԱԳՐՈՒՄԸ
+            </button>
+          </div>
+        )}
+
+        {msg.intent === "show_results" && msg.suggestions && msg.suggestions.length > 0 && (
+          <div className="space-y-2 mt-2">
+            {msg.suggestions.map(biz => (
+              <div key={biz.id} className="group relative">
+                <BusinessCard biz={biz} />
+                <button onClick={() => handleBook(biz.id)} className="w-full mt-1.5 py-2 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 rounded-lg text-xs font-semibold hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors">
+                  Ամրագրել
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {msg.intent !== "show_results" && msg.intent !== "show_summary_card" && msg.suggestions && msg.suggestions.length > 0 && (
           <div className="space-y-2 mt-2">
             {msg.suggestions.map(biz => (
               <BusinessCard key={biz.id} biz={biz} />
@@ -107,6 +168,7 @@ function QuickReplyButton({ text }: { text: string }) {
         timestamp: Date.now(),
         suggestions: res.data.suggestions,
         quickReplies: res.data.quickReplies,
+        intent: res.data.intent,
       };
       dispatch(addMessage(aiMsg));
       if (res.data.sessionId) dispatch(setSessionId(res.data.sessionId));
@@ -158,10 +220,7 @@ export default function ChatWidget() {
         content: t.chat?.welcome || "Welcome to Findy AI!",
         timestamp: Date.now(),
         quickReplies: [
-          t.chat?.quickReplies?.restaurants || "🍽️ Restaurants",
-          t.chat?.quickReplies?.tech || "💻 Tech Companies",
-          t.chat?.quickReplies?.hotels || "🏨 Hotels & Spas",
-          t.chat?.quickReplies?.help || "Help"
+          t.chat?.quickReplies?.restaurants || "🍽️ Restaurants"
         ],
       }));
     }
@@ -190,6 +249,7 @@ export default function ChatWidget() {
         timestamp: Date.now(),
         suggestions: res.data.suggestions,
         quickReplies: res.data.quickReplies,
+        intent: res.data.intent,
       };
       dispatch(addMessage(aiMsg));
       if (res.data.sessionId) dispatch(setSessionId(res.data.sessionId));
@@ -216,7 +276,7 @@ export default function ChatWidget() {
             <div className="relative px-5 py-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-[hsl(var(--border))] overflow-hidden shadow-sm transition-colors">
               {/* Faint green glow at the bottom */}
               <div className="absolute -bottom-4 -left-4 -right-4 h-12 bg-gradient-to-t from-emerald-500/30 to-transparent blur-2xl opacity-70"></div>
-              
+
               <div className="relative flex items-center justify-between z-10">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 shadow-sm relative group">
@@ -272,7 +332,7 @@ export default function ChatWidget() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder={t.chat?.placeholder || "Ask about businesses..."}
-                  className="flex-1 bg-transparent text-sm focus:outline-none dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                  className="flex-1 bg-transparent text-sm text-slate-900 focus:outline-none dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   disabled={isLoading}
                 />
                 <button

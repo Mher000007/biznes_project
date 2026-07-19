@@ -889,19 +889,15 @@ export default function DashboardProfilePage() {
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1">{t.builder.credentials.category}</label>
-                      <select value={category} onChange={e => {
+                      <select disabled value={category} onChange={e => {
                         setCategory(e.target.value);
                         setCategoryId(null); // Clear categoryId so categoryValue resolves to the new selected category slug
-                      }} className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]">
-                        {CATEGORIES.map((c) => <option key={c.id} value={c.slug}>{c.name}</option>)}
+                      }} className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))] opacity-75 cursor-not-allowed">
+                        {CATEGORIES.filter(c => c.slug === "horeca").map((c) => <option key={c.id} value={c.slug}>{c.name}</option>)}
                       </select>
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1">{t.builder.credentials.bio}</label>
-                    <textarea rows={3} value={description} onChange={e => setDescription(e.target.value)} className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))] resize-none" />
-                  </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -1243,7 +1239,7 @@ export default function DashboardProfilePage() {
 
                   {/* Contact Details */}
                   <div className={profileStyles.contactCard} style={{ padding: "1rem", borderRadius: "1rem" }}>
-                    <h3 style={{ fontSize: "0.85rem", fontWeight: 700, marginBottom: "0.75rem" }}>Contact Information</h3>
+                    <h3 style={{ fontSize: "0.85rem", fontWeight: 700, marginBottom: "0.75rem" }}>{t.business?.contact || "Information"}</h3>
                     <div className="space-y-2">
                       <a href={`tel:${phone}`} className={profileStyles.contactItem} style={{ fontSize: "0.75rem" }}>
                         <Phone className="h-3.5 w-3.5 text-[hsl(var(--primary))]" /> {phone}
@@ -1496,7 +1492,7 @@ export default function DashboardProfilePage() {
 
                     {/* Contact Details */}
                     <section className="flex flex-col h-full">
-                      <h2 className="text-lg font-bold mb-3">Contact Information</h2>
+                      <h2 className="text-lg font-bold mb-3">{t.business?.contact || "Information"}</h2>
                       <div className={`${profileStyles.contactCard} !mt-0 flex-1 flex flex-col justify-center`}>
                         <div className="space-y-3">
                           <a href={`tel:${phone}`} className={profileStyles.contactItem}>

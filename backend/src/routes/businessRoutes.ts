@@ -11,6 +11,7 @@ import {
   getBusinessAnalytics,
   getCalendarSummaries,
   updateDailySummary,
+  checkBusinessDateStatus,
 } from '../controllers/businessController.js';
 import {
   getLocations,
@@ -30,6 +31,7 @@ router.post('/onboard', authenticate, createBusiness);
 // ── Public routes ────────────────────────────────────────────────────────────
 router.get('/', getBusinesses);
 router.get('/slug/:slug', getBusinessBySlug);
+router.get('/:id/calendar/check-date', checkBusinessDateStatus);
 
 // ── Protected CRUD ───────────────────────────────────────────────────────────
 router.post('/', authenticate, createBusiness);

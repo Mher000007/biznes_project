@@ -7,6 +7,7 @@ export interface ChatMessage {
   timestamp: number;
   suggestions?: BusinessSuggestion[];
   quickReplies?: string[];
+  intent?: string;
 }
 
 export interface BusinessSuggestion {

@@ -18,6 +18,7 @@ import storyRoutes from './routes/storyRoutes.js';
 import locationRoutes from './routes/locationRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
+import offerRoutes from './routes/offerRoutes.js';
 import { getAllReviews } from './controllers/reviewController.js';
 
 dotenv.config();
@@ -67,6 +68,7 @@ app.use('/api/stories', storyRoutes);
 app.use('/api/locations', locationRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/offers', offerRoutes);
 app.get('/api/reviews/all', getAllReviews);
 
 // 404 handler
@@ -78,11 +80,12 @@ app.use((req: Request, res: Response) => {
 app.use(errorHandler);
 
 // Start server
-const startServer = async () => {
+const startServer = async (attempt = 1) => {
   try {
     await connectDB();
     await seedCategories();
-    app.listen(PORT, () => {
+
+    const server = app.listen(PORT, () => {
       console.log(`\n🚀 Server running on http://localhost:${PORT}`);
       console.log(`📝 API Documentation:`);
       console.log(`   POST   /api/auth/register`);
@@ -92,6 +95,35 @@ const startServer = async () => {
       console.log(`   POST   /api/inquiries`);
       console.log(`\n✓ Ready to accept requests\n`);
     });
+
+    // Gracefully handle port-in-use (EADDRINUSE) — retry after 1s (max 5 attempts)
+    server.on('error', (err: NodeJS.ErrnoException) => {
+      if (err.code === 'EADDRINUSE') {
+        if (attempt >= 5) {
+          console.error(`❌ Port ${PORT} still in use after 5 retries. Exiting.`);
+          process.exit(1);
+        }
+        console.warn(`⚠️  Port ${PORT} in use — retrying in 1s... (attempt ${attempt}/5)`);
+        server.close();
+        setTimeout(() => startServer(attempt + 1), 1000);
+      } else {
+        console.error('Server error:', err);
+        process.exit(1);
+      }
+    });
+
+    // Clean shutdown on hot-reload / Ctrl+C (remove old listeners first)
+    const shutdown = () => {
+      server.close(() => {
+        console.log('🛑 Server closed');
+        process.exit(0);
+      });
+    };
+    process.removeAllListeners('SIGTERM');
+    process.removeAllListeners('SIGINT');
+    process.once('SIGTERM', shutdown);
+    process.once('SIGINT', shutdown);
+
   } catch (error) {
     console.error('Failed to start server:', error);
     process.exit(1);

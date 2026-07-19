@@ -34,7 +34,7 @@ export const createStory = asyncHandler(
     }
 
     const sub = await Subscription.findOne({ business: business._id, status: 'active' });
-    
+
     let validDuration = 24;
     if (sub && sub.plan === 'premium' && duration && !isNaN(Number(duration))) {
       validDuration = Number(duration);
