@@ -361,16 +361,3 @@
   color: hsl(var(--muted)) !important;
   stroke: hsl(var(--muted)) !important;
 }
-
-.verifiedBadgeGold {
-  fill: #451a03 !important;
-  color: #fde68a !important;
-  stroke: #fde68a !important;
-  filter: drop-shadow(0 1px 3px rgba(69, 26, 3, 0.2));
-}
-
-.verifiedBadgeStarter {
-  fill: hsl(var(--muted-foreground)) !important;
-  color: hsl(var(--muted)) !important;
-  stroke: hsl(var(--muted)) !important;
-}

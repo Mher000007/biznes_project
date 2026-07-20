@@ -8,29 +8,29 @@ import { useI18n } from "@/i18n";
 // Helper to parse time string into minutes from midnight
 function parseTimeToMinutes(timeStr: string, defaultMinutes: number): number {
   if (!timeStr) return defaultMinutes;
-
+  
   const clean = timeStr.trim().toLowerCase();
-
+  
   // Check for AM/PM format
   const isPM = clean.includes("pm");
   const isAM = clean.includes("am");
-
+  
   // Extract numbers and colon
   const timeOnly = clean.replace(/[^0-9:]/g, "");
-
+  
   const parts = timeOnly.split(":");
   let hours = parseInt(parts[0], 10);
   let minutes = parts[1] ? parseInt(parts[1], 10) : 0;
-
+  
   if (isNaN(hours)) return defaultMinutes;
   if (isNaN(minutes)) minutes = 0;
-
+  
   if (isPM && hours < 12) {
     hours += 12;
   } else if (isAM && hours === 12) {
     hours = 0;
   }
-
+  
   return hours * 60 + minutes;
 }
 
@@ -111,7 +111,7 @@ export default function BusinessCard({ business, viewMode = "list" }: { business
 
       {/* Details container */}
       <div className={styles.details}>
-        <div className={styles.contentCol}>
+        <div>
           <div className={styles.headerRow}>
             <div className="flex items-center gap-2 min-w-0">
               <Link href={`/business/${business.slug}`} className={styles.title}>
@@ -124,12 +124,13 @@ export default function BusinessCard({ business, viewMode = "list" }: { business
                   }`} />
               )}
             </div>
-            {business.operatingHours && (
-              <div className={`${styles.statusBadge} ${!status.isOpen ? styles.isClosedBadge : styles.isOpenBadge} shrink-0`}>
-                <span className={`${styles.statusDot} ${!status.isOpen ? styles.closed : ""}`}></span>
-                {status.text}
-              </div>
-            )}
+            <div className={`${styles.statusBadge} ${status.isOpen ? styles.isOpenBadge : styles.isClosedBadge} shrink-0`}>
+              <span
+                className={`${styles.statusDot} ${!status.isOpen ? styles.closed : ""
+                  }`}
+              />
+              {status.text}
+            </div>
           </div>
 
           <div className={styles.category}>{business.category.name}</div>
@@ -157,16 +158,8 @@ export default function BusinessCard({ business, viewMode = "list" }: { business
           <div className={styles.metaRow}>
             <span className={styles.metaItem}>
               <MapPin className={styles.metaIcon} />
-              <span className={styles.metaText}>
-                {business.address ? `${business.address}, ` : ""}{business.city}
-              </span>
+              {business.address ? `${business.address}, ` : ""}{business.city}
             </span>
-
-            <div className={styles.footerRow}>
-              <Link href={`/business/${business.slug}`} className={styles.actionButton}>
-                {t.discover?.bookNow || "Visit"}
-              </Link>
-            </div>
           </div>
 
           {business.tags && business.tags.length > 0 && (
@@ -179,7 +172,14 @@ export default function BusinessCard({ business, viewMode = "list" }: { business
             </div>
           )}
         </div>
+
+        <div className={styles.footerRow}>
+          <Link href={`/business/${business.slug}`} className={styles.actionButton}>
+            {t.discover?.bookNow || "Visit"}
+          </Link>
+        </div>
       </div>
     </div>
   );
 }
+
