@@ -11,6 +11,7 @@ import ReviewsSection from "@/components/business/ReviewsSection";
 import StoryViewer from "@/components/landing/StoryViewer";
 import { useI18n } from "@/i18n";
 import dynamic from "next/dynamic";
+import { getOpenStatus } from "@/components/discover/BusinessCard";
 
 const BusinessMap = dynamic(() => import("@/components/map/BusinessMap"), {
   ssr: false,
@@ -175,6 +176,10 @@ export default function BusinessProfilePage() {
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
 
+  const isClosed = business
+    ? !getOpenStatus(business.operatingHours || business.metadata?.operatingHours, t).isOpen
+    : false;
+
   // Prevent background scrolling when Booking Modal is open
   useEffect(() => {
     if (isBookingOpen) {
@@ -248,14 +253,17 @@ export default function BusinessProfilePage() {
           biz.logo = biz.logo && !isDefaultImage(biz.logo) ? biz.logo : "";
           biz.images = (biz.images || []).filter((url: string) => !isDefaultImage(url));
           biz.highlights = (biz.highlights || []).filter((h: any) => !isDefaultHighlight(h));
-          if (biz.metadata?.coverUrl) {
-            if (Array.isArray(biz.metadata.coverUrl)) {
-              biz.metadata.coverUrl = biz.metadata.coverUrl.filter((url: string) => !isDefaultImage(url));
-            } else if (typeof biz.metadata.coverUrl === 'string' && isDefaultImage(biz.metadata.coverUrl)) {
-              biz.metadata.coverUrl = "";
+            if (biz.metadata?.coverUrl) {
+              if (Array.isArray(biz.metadata.coverUrl)) {
+                biz.metadata.coverUrl = biz.metadata.coverUrl.filter((url: string) => !isDefaultImage(url));
+              } else if (typeof biz.metadata.coverUrl === 'string' && isDefaultImage(biz.metadata.coverUrl)) {
+                biz.metadata.coverUrl = "";
+              }
             }
-          }
-          setBusiness(biz);
+            // Resolve operatingHours from metadata if not present at top-level
+            biz.operatingHours = biz.operatingHours || biz.metadata?.operatingHours || [];
+            
+            setBusiness(biz);
           setLiveRating(biz.rating || 0);
           setLiveReviewCount(biz.reviewCount || 0);
           setLoading(false);
@@ -697,6 +705,18 @@ export default function BusinessProfilePage() {
               <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
               {(liveRating > 0 ? liveRating : (business.ratingAvg !== undefined ? (typeof business.ratingAvg === 'number' ? business.ratingAvg : 0) : 0)).toFixed(1)}
             </span>
+            {business && (() => {
+              const status = getOpenStatus(business.operatingHours || business.metadata?.operatingHours, t);
+              return (
+                <div className={`${styles.statusBadge} ${status.isOpen ? styles.isOpenBadge : styles.isClosedBadge}`}>
+                  <span
+                    className={`${styles.statusDot} ${!status.isOpen ? styles.closed : ""
+                      }`}
+                  />
+                  {status.text}
+                </div>
+              );
+            })()}
           </div>
           <p className="text-[hsl(var(--muted-foreground))] mt-1 text-base">{business.shortDescription || business.description}</p>
 
@@ -709,10 +729,19 @@ export default function BusinessProfilePage() {
 
         {/* Global Instant Booking Trigger */}
         <button
-          onClick={() => openBooking({ name: "General Appointment", price: 0 })}
-          className="btn-primary py-3.5 px-6 rounded-xl text-sm font-semibold shadow-lg shrink-0"
+          onClick={() => {
+            if (!isClosed) {
+              openBooking({ name: "General Appointment", price: 0 });
+            }
+          }}
+          disabled={isClosed}
+          className={`py-3.5 px-6 rounded-xl text-sm font-semibold shadow-lg shrink-0 transition-all ${
+            isClosed
+              ? "bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] border border-[hsl(var(--border))] cursor-not-allowed opacity-60"
+              : "btn-primary"
+          }`}
         >
-          {t.business?.bookAppointment || "Book Appointment"}
+          {isClosed ? (t.business?.closed || "Closed") : (t.business?.bookAppointment || "Book Appointment")}
         </button>
       </div>
 

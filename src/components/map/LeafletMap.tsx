@@ -19,8 +19,8 @@ if (typeof window !== "undefined") {
 
 function buildDefaultIcon(plan?: string): L.DivIcon {
   const isPremium = plan === 'premium';
-  const fillColor = isPremium ? "#eab308" : "#2563eb";
-  const innerFill = isPremium ? "#eab308" : "#2563eb";
+  const fillColor = isPremium ? "#eab308" : "#10b981";
+  const innerFill = isPremium ? "#eab308" : "#10b981";
 
   return L.divIcon({
     html: `

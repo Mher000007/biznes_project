@@ -62,6 +62,7 @@ export const ru: Translations = {
     all: "Все",
     allLocations: "Все локации",
     allRatings: "Все рейтинги",
+    allHours: "Все часы",
     rating45: "★ 4.5 и выше",
     rating40: "★ 4.0 и выше",
     rating30: "★ 3.0 и выше",

@@ -95,7 +95,7 @@ export default function HeroCarousel() {
     <section className="pb-16 sm:pb-24">
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
         <div className="relative rounded-2xl overflow-hidden group shadow-sm bg-neutral-900" style={{ aspectRatio: "21/9" }}>
-          
+
           {/* Slides */}
           {slides.map((slide, i) => {
             const slideContent = (
@@ -159,9 +159,8 @@ export default function HeroCarousel() {
                   setCurrent(i);
                   start();
                 }}
-                className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                  i === current ? "w-5 bg-white" : "w-1.5 bg-white/40 hover:bg-white/60"
-                }`}
+                className={`h-1.5 rounded-full transition-all cursor-pointer ${i === current ? "w-5 bg-white" : "w-1.5 bg-white/40 hover:bg-white/60"
+                  }`}
               />
             ))}
           </div>

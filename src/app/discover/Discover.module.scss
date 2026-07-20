@@ -25,9 +25,11 @@
   left: 0;
   width: 100%;
   z-index: 40;
-  background-color: $bg-primary;
+  background-color: color-mix(in srgb, $bg-primary 80%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid $border-light;
-  height: 50px;
+  height: 64px;
   display: flex;
   align-items: center;
   overflow: hidden;
@@ -35,13 +37,14 @@
 
   @include mq-down("md") {
     top: 64px;
+    height: 56px;
   }
 }
 
 .categoryList {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   width: 100%;
   max-width: 1440px;
   margin: 0 auto;
@@ -59,31 +62,43 @@
 
   @include mq-down("md") {
     padding: 0 16px;
+    gap: 8px;
   }
 }
 
 .categoryButton {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   color: $text-secondary;
-  background-color: transparent;
-  border: 1px solid $border-light;
-  padding: 6px 14px;
+  background-color: $bg-secondary;
+  border: 1px solid transparent;
+  padding: 8px 20px;
   border-radius: 999px; // Pill shape for filters
   cursor: pointer;
-  transition: $transition-smooth;
+  transition: $transition-bounce;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 
   @include hover-device {
     &:hover {
-      border-color: $text-primary;
+      background-color: $bg-card-raised;
+      transform: translateY(-2px);
+      box-shadow: $shadow-neomorphic-raised;
       color: $text-primary;
     }
   }
 
+  &:active {
+    transform: translateY(1px);
+    box-shadow: $shadow-neomorphic-pressed;
+  }
+
   &.active {
-    background-color: $accent-primary; // Black for active
-    border-color: $accent-primary;
-    color: #FFFFFF; // White text
+    background-color: $bg-card-raised;
+    border-color: $border-light;
+    color: $text-primary;
+    box-shadow: $shadow-neomorphic-raised;
     font-weight: 600;
   }
 }
@@ -278,27 +293,33 @@
   display: flex;
   align-items: center;
   gap: 4px;
+  background-color: $bg-secondary;
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  margin-left: auto; // Push to the right edge
 
   button {
     background: transparent;
     border: none;
     cursor: pointer;
     color: $text-secondary;
-    padding: 6px;
-    border-radius: 6px;
+    padding: 8px 12px;
+    border-radius: 999px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
+    transition: $transition-bounce;
 
     &:hover {
       color: $text-primary;
-      background-color: rgba(0, 0, 0, 0.05);
+      transform: translateY(-1px);
     }
 
     &.active {
       color: $text-primary;
-      background-color: rgba(0, 0, 0, 0.08);
+      background-color: $bg-card-raised;
+      box-shadow: $shadow-neomorphic-raised;
     }
   }
 }

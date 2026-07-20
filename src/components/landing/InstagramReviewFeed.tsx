@@ -324,10 +324,11 @@ export default function InstagramReviewFeed() {
                   setFilterRating(filterRating === star ? null : star);
                   setShowAll(false);
                 }}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition-colors border ${filterRating === star
-                    ? "bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))] border-[hsl(var(--primary))]"
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-300 border ${
+                  filterRating === star 
+                    ? "bg-[hsl(var(--foreground))] text-[hsl(var(--background))] border-[hsl(var(--foreground))] shadow-md scale-105" 
                     : "bg-[hsl(var(--card))] text-[hsl(var(--foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))]"
-                  }`}
+                }`}
               >
                 {star} <span style={{ color: "#F4B942" }}>★</span>
               </button>
@@ -382,12 +383,8 @@ export default function InstagramReviewFeed() {
                 >
                   {/* Header */}
                   <div className="flex items-center gap-3 p-3.5">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 p-[1.5px]">
-                      <div className="flex h-full w-full items-center justify-center rounded-full bg-[hsl(var(--card))] p-[1.5px]">
-                        <div className="flex h-full w-full items-center justify-center rounded-full bg-[hsl(var(--muted))] text-[10px] font-bold text-[hsl(var(--foreground))] uppercase">
-                          {review.user.initials || "U"}
-                        </div>
-                      </div>
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--muted))] text-[11px] font-bold text-[hsl(var(--foreground))] uppercase border border-[hsl(var(--border))]">
+                      {review.user.initials || "U"}
                     </div>
                     <div className="min-w-0 flex-1 flex flex-col text-left">
                       <span className="text-[13px] font-bold text-[hsl(var(--foreground))] truncate leading-tight">
@@ -501,10 +498,13 @@ export default function InstagramReviewFeed() {
                       </>
                     ) : (
                       <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-[hsl(var(--muted))] to-[hsl(var(--background))] border border-[hsl(var(--border))]">
-                        <Quote className="w-12 h-12 text-[hsl(var(--primary))] opacity-20 mb-4" />
-                        <p className="text-[15px] font-medium text-[hsl(var(--foreground))] line-clamp-[8]">
-                          {review.caption}
-                        </p>
+                        <img 
+                          src="/logo.png" 
+                          alt="Quote Mark" 
+                          className="opacity-40 mb-4 object-contain grayscale" 
+                          /* Դուք կարող եք կառավարել չափերը՝ փոխելով ներքևի 160px արժեքները */
+                          style={{ width: "160px", height: "160px" }}
+                        />
                       </div>
                     )}
 

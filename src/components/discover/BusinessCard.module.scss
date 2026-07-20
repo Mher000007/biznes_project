@@ -51,7 +51,10 @@
     width: 100%;
     height: 180px;
     aspect-ratio: auto;
-    border-radius: 8px;
+    border-radius: 12px;
+    overflow: hidden;
+    -webkit-backface-visibility: hidden;
+    -webkit-transform: translate3d(0, 0, 0);
   }
 
   .headerRow {
@@ -71,8 +74,10 @@
   width: 140px;
   height: 140px;
   aspect-ratio: 1 / 1; // 1:1 aspect ratio
-  border-radius: 4px;
+  border-radius: 12px;
   overflow: hidden;
+  -webkit-backface-visibility: hidden;
+  -webkit-transform: translate3d(0, 0, 0);
   background-color: $bg-secondary;
   border: 1px solid $border-light;
   flex-shrink: 0;
@@ -84,6 +89,7 @@
     width: 100%;
     height: 200px;
     aspect-ratio: 16 / 9;
+    border-radius: 12px;
   }
 }
 
@@ -228,30 +234,92 @@
 .footerRow {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   margin-top: auto;
   gap: 16px;
   padding-top: 12px;
 }
 
 .statusBadge {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
-  color: $text-primary;
-  font-weight: 500;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+
+  &.isOpenBadge {
+    background-color: color-mix(in srgb, #10b981 10%, transparent);
+    color: #059669;
+    border-color: color-mix(in srgb, #10b981 20%, transparent);
+
+    :global(.dark) & {
+      background-color: color-mix(in srgb, #10b981 15%, transparent);
+      color: #34d399;
+      border-color: color-mix(in srgb, #10b981 25%, transparent);
+    }
+  }
+
+  &.isClosedBadge {
+    background-color: color-mix(in srgb, #ef4444 8%, transparent);
+    color: #dc2626;
+    border-color: color-mix(in srgb, #ef4444 15%, transparent);
+
+    :global(.dark) & {
+      background-color: color-mix(in srgb, #ef4444 12%, transparent);
+      color: #f87171;
+      border-color: color-mix(in srgb, #ef4444 20%, transparent);
+    }
+  }
 }
 
 .statusDot {
+  position: relative;
   width: 6px;
   height: 6px;
-  background-color: #111111; // Small #111111 dot indicator
+  background-color: #10b981;
   border-radius: 50%;
   display: inline-block;
+  flex-shrink: 0;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background-color: inherit;
+    animation: statusPulse 2.5s infinite ease-out;
+    opacity: 0.75;
+  }
 
   &.closed {
-    background-color: #888888; // Greyed out for closed
+    background-color: #ef4444;
+
+    &::after {
+      animation: none;
+      opacity: 0;
+    }
+  }
+}
+
+@keyframes statusPulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.75;
+  }
+
+  100% {
+    transform: scale(2.8);
+    opacity: 0;
   }
 }
 
@@ -282,14 +350,27 @@
 }
 
 .verifiedBadgeGold {
-  color: #fbbf24 !important; // Gold checkmark line color
-  fill: #f59e0b !important; // Filled background color
-  stroke: #ffffff !important; // Center checkmark color
-  filter: drop-shadow(0 1px 3px rgba(245, 158, 11, 0.3));
+  fill: #451a03 !important;
+  color: #fde68a !important;
+  stroke: #fde68a !important;
+  filter: drop-shadow(0 1px 3px rgba(69, 26, 3, 0.2));
 }
 
 .verifiedBadgeStarter {
-  color: $border-light !important; // Blends with card borders
-  fill: $bg-secondary !important; // Blends with secondary background
-  stroke: $text-secondary !important; // Dark grey center check icon
+  fill: hsl(var(--muted-foreground)) !important;
+  color: hsl(var(--muted)) !important;
+  stroke: hsl(var(--muted)) !important;
+}
+
+.verifiedBadgeGold {
+  fill: #451a03 !important;
+  color: #fde68a !important;
+  stroke: #fde68a !important;
+  filter: drop-shadow(0 1px 3px rgba(69, 26, 3, 0.2));
+}
+
+.verifiedBadgeStarter {
+  fill: hsl(var(--muted-foreground)) !important;
+  color: hsl(var(--muted)) !important;
+  stroke: hsl(var(--muted)) !important;
 }

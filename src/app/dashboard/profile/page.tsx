@@ -722,27 +722,29 @@ export default function DashboardProfilePage() {
 
                     <div>
                       <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1.5">{t.builder.branding.logoUrl}</label>
-                      <div className="flex gap-2">
-                        <input
-                          value={logoUrl}
-                          onChange={e => setLogoUrl(e.target.value)}
-                          placeholder="Avatar/Logo URL"
-                          type="text"
-                          className="flex-1 rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]"
-                        />
+                      <div className="flex items-center gap-3">
+                        {logoUrl ? (
+                          <div className="relative w-12 h-12 rounded-full overflow-hidden border border-[hsl(var(--border))]/60 group">
+                            <img src={logoUrl} alt="Logo preview" className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => setLogoUrl("")}
+                              className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="w-12 h-12 rounded-full bg-[hsl(var(--muted))] border border-[hsl(var(--border))] flex items-center justify-center text-[hsl(var(--muted-foreground))]">
+                            <Camera className="h-5 w-5" />
+                          </div>
+                        )}
                         <button
                           type="button"
                           onClick={() => logoInputRef.current?.click()}
                           className="px-3 py-2 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] transition-colors border border-[hsl(var(--border))] flex items-center gap-1 font-semibold"
                         >
                           <Camera className="h-3.5 w-3.5" /> Upload
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setLogoUrl("https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=150&auto=format&fit=crop")}
-                          className="px-3 py-2 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] transition-colors border border-[hsl(var(--border))]"
-                        >
-                          {t.builder.branding.reset}
                         </button>
                       </div>
                     </div>
@@ -753,7 +755,7 @@ export default function DashboardProfilePage() {
                         <input
                           value={newCoverUrl}
                           onChange={e => setNewCoverUrl(e.target.value)}
-                          placeholder="Facebook cover-style banner URL"
+                          placeholder="cover-style banner"
                           type="text"
                           className="flex-1 rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]"
                         />
@@ -1110,6 +1112,25 @@ export default function DashboardProfilePage() {
 
               {/* Profile Header Details */}
               <div className={profileStyles.profileHeader} style={{ gap: "1rem", marginBottom: "1.5rem" }}>
+                {/* Logo Avatar preview */}
+                <div className="flex items-center justify-center shrink-0">
+                  <div className="w-16 h-16 rounded-full shrink-0 flex items-center justify-center overflow-hidden border border-[hsl(var(--border))]/60 p-[2px]">
+                    <div className="w-full h-full rounded-full bg-[hsl(var(--background))] p-[2px] overflow-hidden relative">
+                      {logoUrl ? (
+                        <img
+                          src={logoUrl}
+                          className="w-full h-full rounded-full object-cover"
+                          alt={name}
+                        />
+                      ) : (
+                        <div className="w-full h-full rounded-full bg-violet-600 flex items-center justify-center text-white text-lg font-bold uppercase">
+                          {name ? name[0] : "B"}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 <div className={profileStyles.titleBlock}>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h1 style={{ fontSize: "1.5rem", fontWeight: 800, marginBottom: "0.25rem", display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
@@ -1375,6 +1396,25 @@ export default function DashboardProfilePage() {
 
               {/* Profile Header Details */}
               <div className={profileStyles.profileHeader}>
+                {/* Logo Avatar preview */}
+                <div className="flex items-center justify-center shrink-0">
+                  <div className="w-20 h-20 rounded-full shrink-0 flex items-center justify-center overflow-hidden border border-[hsl(var(--border))]/60 p-[2px]">
+                    <div className="w-full h-full rounded-full bg-[hsl(var(--background))] p-[2px] overflow-hidden relative">
+                      {logoUrl ? (
+                        <img
+                          src={logoUrl}
+                          className="w-full h-full rounded-full object-cover"
+                          alt={name}
+                        />
+                      ) : (
+                        <div className="w-full h-full rounded-full bg-violet-600 flex items-center justify-center text-white text-xl font-bold uppercase">
+                          {name ? name[0] : "B"}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 <div className={profileStyles.titleBlock}>
                   <div className="flex items-center gap-3 flex-wrap">
                     <h1>

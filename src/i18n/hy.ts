@@ -157,6 +157,7 @@ export const hy: Translations = {
     all: "Բոլորը",
     allLocations: "Բոլոր վայրերը",
     allRatings: "Բոլոր վարկանիշները",
+    allHours: "Ցանկացած ժամ",
     rating45: "★ 4.5 և ավել",
     rating40: "★ 4.0 և ավել",
     rating30: "★ 3.0 և ավել",

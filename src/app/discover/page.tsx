@@ -9,7 +9,8 @@ import { CATEGORIES, SORT_OPTIONS } from "@/lib/constants";
 import { LocationSelect } from "@/components/ui/LocationSelect";
 import { RatingSelect } from "@/components/ui/RatingSelect";
 import { SortSelect } from "@/components/ui/SortSelect";
-import BusinessCard from "@/components/discover/BusinessCard";
+import { StatusSelect } from "@/components/ui/StatusSelect";
+import BusinessCard, { getOpenStatus } from "@/components/discover/BusinessCard";
 import { Building2, Loader2, Map as MapIcon, List as ListIcon, LayoutGrid } from "lucide-react";
 import axios from "axios";
 import { getApiUrl } from "@/lib/utils";
@@ -78,7 +79,7 @@ function normalizeBackendBusiness(b: any) {
     reviewCount: b.reviewCount || 0,
     createdAt: b.createdAt || new Date().toISOString(),
     updatedAt: b.updatedAt || new Date().toISOString(),
-    operatingHours: b.operatingHours || [],
+    operatingHours: b.operatingHours || b.metadata?.operatingHours || [],
     tags: b.tags || [],
     highlights: b.highlights || [],
   };
@@ -92,6 +93,7 @@ function DiscoverContent() {
 
   const [businesses, setBusinesses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<"all" | "open" | "closed">("all");
 
   // View mode and pagination state
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
@@ -186,6 +188,11 @@ function DiscoverContent() {
       if (filters.employeeCount && b.employeeCount !== filters.employeeCount) return false;
       if (filters.verifiedOnly && !b.isVerified) return false;
       if (filters.ratingMin && (b.ratingAvg || 0) < filters.ratingMin) return false;
+      if (statusFilter !== "all") {
+        const { isOpen } = getOpenStatus(b.operatingHours, t);
+        if (statusFilter === "open" && !isOpen) return false;
+        if (statusFilter === "closed" && isOpen) return false;
+      }
       return true;
     })
     .sort((a, b) => {
@@ -254,13 +261,17 @@ function DiscoverContent() {
             <div className={styles.categoryList}>
               {/* "All" Reset Button */}
               <button
-                onClick={() => dispatch(resetFilters())}
+                onClick={() => {
+                  dispatch(resetFilters());
+                  setStatusFilter("all");
+                }}
                 className={`${styles.categoryButton} ${(!filters.category &&
                   !filters.city &&
                   filters.ratingMin === 0 &&
                   !filters.verifiedOnly &&
                   !filters.query &&
-                  filters.sortBy === "popular")
+                  filters.sortBy === "popular" &&
+                  statusFilter === "all")
                   ? styles.active
                   : ""
                   }`}
@@ -285,6 +296,15 @@ function DiscoverContent() {
                   value={filters.ratingMin || 0}
                   onChange={(val) => dispatch(setRatingMin(val))}
                   className={`${styles.categoryButton} ${filters.ratingMin > 0 ? styles.active : ""} cursor-pointer`}
+                />
+              </div>
+
+              {/* Open/Closed Selector Dropdown */}
+              <div className="relative inline-block">
+                <StatusSelect
+                  value={statusFilter}
+                  onChange={(val) => setStatusFilter(val)}
+                  className={`${styles.categoryButton} ${statusFilter !== "all" ? styles.active : ""} cursor-pointer`}
                 />
               </div>
 
@@ -318,12 +338,21 @@ function DiscoverContent() {
 
 
               {/* Reset Filters Button */}
-              {(filters.category || filters.city || filters.ratingMin > 0 || filters.verifiedOnly || filters.sortBy !== "popular") && (
+              {(!filters.category &&
+                !filters.city &&
+                filters.ratingMin === 0 &&
+                !filters.verifiedOnly &&
+                !filters.query &&
+                filters.sortBy === "popular" &&
+                statusFilter === "all") ? null : (
                 <button
-                  onClick={() => dispatch(resetFilters())}
-                  className="text-xs text-[hsl(var(--primary))] font-semibold hover:underline ml-2 cursor-pointer"
+                  onClick={() => {
+                    dispatch(resetFilters());
+                    setStatusFilter("all");
+                  }}
+                  className="text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors px-2 font-semibold cursor-pointer underline"
                 >
-                  Clear Filters
+                  {t.discover.reset || "Reset"}
                 </button>
               )}
             </div>
