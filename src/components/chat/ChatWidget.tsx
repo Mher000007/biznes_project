@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import { toggleChat, addMessage, setLoading, setSessionId } from "@/store/slices/chatSlice";
 import type { ChatMessage, BusinessSuggestion } from "@/store/slices/chatSlice";
-import { MessageCircle, X, Send, Star, MapPin, ArrowRight, Sparkles, Bot } from "lucide-react";
+import { Search, MessageCircle, X, Send, Star, MapPin, ArrowRight, Sparkles, Bot } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
 import { useI18n } from "@/i18n";
@@ -355,7 +355,7 @@ export default function ChatWidget() {
           }`}
         aria-label="Open AI chat"
       >
-        <MessageCircle className="h-7 w-7" strokeWidth={2} />
+        <Search className="h-7 w-7" strokeWidth={2} />
         {/* Pulse ring */}
         <span className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-20 pointer-events-none" />
       </button>

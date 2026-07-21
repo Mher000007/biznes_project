@@ -54,12 +54,24 @@ export const getBusinesses = asyncHandler(async (req: Request, res: Response): P
   }
 
   if (search) {
-    const searchRegex = { $regex: search, $options: 'i' };
-    const searchConditions = [
+    const searchStr = (search as string).trim();
+    const escaped = searchStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const searchRegex = { $regex: escaped, $options: 'i' };
+    const searchConditions: any[] = [
       { name: searchRegex },
       { description: searchRegex },
+      { city: searchRegex },
+      { address: searchRegex },
+      { slug: searchRegex },
       { tags: searchRegex },
     ];
+
+    const matchingCategories = await Category.find({
+      $or: [{ name: searchRegex }, { slug: searchRegex }]
+    }).select('_id');
+    if (matchingCategories.length > 0) {
+      searchConditions.push({ category: { $in: matchingCategories.map(c => c._id) } });
+    }
 
     if (filter.$or) {
       // If we already have a price filter, combine them with $and
@@ -143,14 +155,26 @@ export const getBusinessById = asyncHandler(async (req: Request, res: Response):
 // Get business by slug
 export const getBusinessBySlug = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
-    const business = await Business.findOneAndUpdate(
-      { slug: req.params.slug },
+    const slugOrId = req.params.slug;
+    let business = await Business.findOneAndUpdate(
+      { slug: slugOrId },
       { $inc: { views: 1 } },
       { new: true }
     )
       .populate('category')
       .populate('owner', 'name email phone')
       .populate('highlights.stories');
+
+    if (!business && mongoose.Types.ObjectId.isValid(slugOrId)) {
+      business = await Business.findByIdAndUpdate(
+        slugOrId,
+        { $inc: { views: 1 } },
+        { new: true }
+      )
+        .populate('category')
+        .populate('owner', 'name email phone')
+        .populate('highlights.stories');
+    }
 
     if (!business) {
       res.status(404).json({ success: false, message: 'Business not found' });

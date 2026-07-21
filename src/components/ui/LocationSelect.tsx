@@ -49,7 +49,7 @@ export function LocationSelect({
     return () => window.removeEventListener('resize', checkMedia);
   }, []);
 
-  // Close when clicking outside or scrolling outside
+  // Close when clicking outside, update position on scroll/resize
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -62,28 +62,29 @@ export function LocationSelect({
       }
     }
     
-    function handleScroll(e: Event) {
-      if (dropdownRef.current && dropdownRef.current.contains(e.target as Node)) {
-        return;
+    function handleScrollOrResize() {
+      if (wrapperRef.current) {
+        const rect = wrapperRef.current.getBoundingClientRect();
+        setCoords({
+          top: rect.bottom,
+          left: rect.left,
+          width: rect.width
+        });
       }
-      setIsOpen(false);
     }
     
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
-      // Only attach scroll listener for non-mobile, as mobile might have body scrolling issues
-      if (!isMobile) {
-        window.addEventListener("scroll", handleScroll, true);
-        window.addEventListener("resize", handleScroll);
-      }
+      window.addEventListener("scroll", handleScrollOrResize, true);
+      window.addEventListener("resize", handleScrollOrResize);
     }
     
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
-      window.removeEventListener("scroll", handleScroll, true);
-      window.removeEventListener("resize", handleScroll);
+      window.removeEventListener("scroll", handleScrollOrResize, true);
+      window.removeEventListener("resize", handleScrollOrResize);
     };
-  }, [isOpen, isMobile]);
+  }, [isOpen]);
 
   // Translate locations deeply using useMemo
   const localizedLocations = useMemo(() => {
@@ -167,7 +168,7 @@ export function LocationSelect({
         width: rect.width
       });
     }
-    setIsOpen(!isOpen);
+    setIsOpen((prev) => !prev);
   };
 
   // Helper to show localized currently selected value
