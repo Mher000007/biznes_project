@@ -1,6 +1,8 @@
 "use client";
 import React, { useMemo } from "react";
 import MapWorkspace, { LocationItem } from "@/components/map/MapWorkspace";
+import { getOpenStatus } from "@/components/discover/BusinessCard";
+import { useI18n } from "@/i18n";
 
 interface DiscoverMapProps {
   businesses: any[];
@@ -29,6 +31,8 @@ export default function DiscoverMap({
   businesses,
   hoveredBusinessId,
 }: DiscoverMapProps) {
+  const { t } = useI18n();
+
   // Registry to track duplicates and apply small offsets (jitter) to prevent overlap
   const coordinateRegistry: Record<string, number> = {};
 
@@ -36,6 +40,8 @@ export default function DiscoverMap({
   const locations: LocationItem[] = useMemo(() => {
     return (businesses || []).flatMap((biz) => {
       const allLocations: LocationItem[] = [];
+      const openStatus = getOpenStatus(biz.operatingHours || biz.metadata?.operatingHours, t);
+      const isOpen = openStatus.isOpen;
 
       const getJitteredCoords = (rawLat: any, rawLng: any, city: string) => {
         let lat = parseFloat(rawLat as string);
@@ -109,6 +115,7 @@ export default function DiscoverMap({
         rating: biz.ratingAvg || biz.rating || 0,
         reviewCount: biz.reviewCount || 0,
         plan: biz.plan || biz.subscriptionPlan,
+        isOpen,
       });
 
       // 2. Add all non-primary branches
@@ -129,6 +136,7 @@ export default function DiscoverMap({
             rating: biz.ratingAvg || biz.rating || 0,
             reviewCount: biz.reviewCount || 0,
             plan: biz.plan || biz.subscriptionPlan,
+            isOpen,
           });
         });
       }

@@ -4,6 +4,7 @@ import { MessageSquare, Star } from "lucide-react";
 import axios from "axios";
 import { getApiUrl } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
+import { useI18n } from "@/i18n";
 
 const API = getApiUrl();
 
@@ -32,6 +33,7 @@ function authHeader() {
 
 export default function InquiriesPage() {
   const { currentUser } = useAuth();
+  const { locale } = useI18n();
   const [inquiries, setInquiries] = useState<DashboardInquiry[]>([]);
   const [activeTab, setActiveTab] = useState<"all" | "bookings" | "reviews" | "notifications">("all");
   const [loading, setLoading] = useState(true);
@@ -262,7 +264,7 @@ export default function InquiriesPage() {
 
         {activeTab === "reviews" && (
           <div className="flex flex-wrap items-center gap-2 px-5 py-3 border-b border-[hsl(var(--border))]">
-            <span className="text-xs font-medium text-[hsl(var(--muted-foreground))]">Filter by rating:</span>
+            <span className="text-xs font-medium text-[hsl(var(--muted-foreground))]">{locale === 'hy' ? "Ֆիլտրել ըստ գնահատականի:" : "Filter by rating:"}</span>
             {[5, 4, 3, 2, 1].map((star) => (
               <button
                 key={star}
@@ -280,7 +282,7 @@ export default function InquiriesPage() {
                 onClick={() => setFilterRating(null)}
                 className="text-[10px] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] underline ml-2"
               >
-                Clear Filter
+                {locale === 'hy' ? "Մաքրել ֆիլտրը" : "Clear Filter"}
               </button>
             )}
           </div>

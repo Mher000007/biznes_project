@@ -202,7 +202,7 @@ export default function SignInPage() {
                   className="h-4 w-4 rounded border-[hsl(var(--border))] text-primary focus:ring-primary accent-primary cursor-pointer"
                 />
                 <label htmlFor="rememberMe" className="text-sm font-medium text-[hsl(var(--muted-foreground))] cursor-pointer select-none">
-                  {(t.auth as any).rememberMe || "Remember me"}
+                  {t.auth.rememberMe}
                 </label>
               </div>
               <button type="submit" className="w-full h-11 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90 transition-colors mt-2 shadow-md hover:shadow-lg">
@@ -258,7 +258,7 @@ export default function SignInPage() {
                 </div>
               )}
               <div>
-                <label className="block text-sm font-semibold mb-1.5">{(t.auth as any).username || "Username"}</label>
+                <label className="block text-sm font-semibold mb-1.5">{t.auth.username}</label>
                 <input
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}

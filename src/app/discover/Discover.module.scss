@@ -25,19 +25,21 @@
   left: 0;
   width: 100%;
   z-index: 40;
-  background-color: color-mix(in srgb, $bg-primary 80%, transparent);
+  background-color: color-mix(in srgb, $bg-primary 85%, transparent);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid $border-light;
-  height: 64px;
+  min-height: 68px;
+  height: auto;
   display: flex;
   align-items: center;
-  overflow: hidden;
+  overflow: visible;
   flex-shrink: 0;
+  padding: 6px 0;
 
   @include mq-down("md") {
     top: 64px;
-    height: 56px;
+    min-height: 60px;
   }
 }
 
@@ -48,20 +50,36 @@
   width: 100%;
   max-width: 1440px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 4px 24px 8px 24px;
   overflow-x: auto;
   white-space: nowrap;
 
-  // Hide scrollbar but keep functionality
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+  /* Sleek custom visible horizontal scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--primary) / 0.4) transparent;
 
   &::-webkit-scrollbar {
-    display: none;
+    height: 6px;
+    display: block !important;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary) / 0.4);
+    border-radius: 10px;
+    transition: background 0.2s ease;
+
+    &:hover {
+      background: hsl(var(--primary) / 0.7);
+    }
   }
 
   @include mq-down("md") {
-    padding: 0 16px;
+    padding: 4px 16px 6px 16px;
     gap: 8px;
   }
 }

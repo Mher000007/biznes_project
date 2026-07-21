@@ -86,7 +86,7 @@ function normalizeBackendBusiness(b: any) {
 }
 
 function DiscoverContent() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const dispatch = useDispatch();
   const searchParams = useSearchParams();
   const filters = useSelector((s: RootState) => s.filters);
@@ -220,15 +220,36 @@ function DiscoverContent() {
     setCurrentPage(1);
     if (feedColumnRef.current) {
       feedColumnRef.current.scrollTo({ top: 0, behavior: "smooth" });
-      window.scrollTo({ top: 0, behavior: "smooth" });
     }
-  }, [filters]);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [filters, statusFilter]);
+
+  // Adjust page if current page exceeds total pages
+  useEffect(() => {
+    if (totalPages > 0 && currentPage > totalPages) {
+      setCurrentPage(1);
+    }
+  }, [totalPages, currentPage]);
 
   const handlePageChange = (newPage: number) => {
-    setCurrentPage(newPage);
+    const targetPage = Math.max(1, Math.min(totalPages, newPage));
+    setCurrentPage(targetPage);
+
     if (feedColumnRef.current) {
-      feedColumnRef.current.scrollTo({ top: 0, behavior: "smooth" });
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      try {
+        feedColumnRef.current.scrollTo({ top: 0, behavior: "smooth" });
+      } catch (e) {
+        feedColumnRef.current.scrollTop = 0;
+      }
+    }
+    if (typeof window !== "undefined") {
+      try {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } catch (e) {
+        // fallback
+      }
+      document.body.scrollTop = 0;
+      document.documentElement.scrollTop = 0;
     }
   };
 
@@ -246,11 +267,20 @@ function DiscoverContent() {
 
             <div className={styles.resultsCount}>
               {loading ? (
-                <span>Loading directory...</span>
+                <span>
+                  {locale === "hy"
+                    ? "Բեռնվում է..."
+                    : locale === "ru"
+                      ? "Загрузка каталога..."
+                      : "Loading directory..."}
+                </span>
               ) : (
                 <span>
-                  Showing {filtered.length} business
-                  {filtered.length !== 1 ? "es" : ""}
+                  {locale === "hy"
+                    ? `Ցուցադրված է ${filtered.length} բիզնես`
+                    : locale === "ru"
+                      ? `Показано ${filtered.length} компаний`
+                      : `Showing ${filtered.length} business${filtered.length !== 1 ? "es" : ""}`}
                 </span>
               )}
             </div>
@@ -381,17 +411,36 @@ function DiscoverContent() {
               {totalPages > 1 && (
                 <div className={styles.pagination}>
                   <button
-                    onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
+                    type="button"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage <= 1}
                   >
-                    Previous
+                    {t.common?.previous || (locale === "hy" ? "Նախորդ" : locale === "ru" ? "Назад" : "Previous")}
                   </button>
-                  <span>Page {currentPage} of {totalPages}</span>
+
+                  <div className="flex items-center gap-1.5 px-2">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((pNum) => (
+                      <button
+                        key={pNum}
+                        type="button"
+                        onClick={() => handlePageChange(pNum)}
+                        className={`h-8 w-8 !p-0 rounded-full text-xs font-bold transition-all flex items-center justify-center cursor-pointer ${
+                          pNum === currentPage
+                            ? "!bg-[hsl(var(--foreground))] !text-[hsl(var(--background))] !border-[hsl(var(--foreground))] shadow-sm"
+                            : "!bg-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] !border-transparent hover:!border-[hsl(var(--border))]"
+                        }`}
+                      >
+                        {pNum}
+                      </button>
+                    ))}
+                  </div>
+
                   <button
-                    onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-                    disabled={currentPage === totalPages}
+                    type="button"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage >= totalPages}
                   >
-                    Next
+                    {t.common?.next || (locale === "hy" ? "Հաջորդ" : locale === "ru" ? "Вперед" : "Next")}
                   </button>
                 </div>
               )}

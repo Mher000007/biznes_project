@@ -239,7 +239,7 @@ export default function ReviewsSection({
   onRatingUpdate
 }: ReviewsSectionProps) {
   const { currentUser } = useAuth();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const isBackend = /^[0-9a-fA-F]{24}$/.test(businessId);
 
   // ── state ──
@@ -789,14 +789,14 @@ export default function ReviewsSection({
             {loading && (
               <div className={styles.loadingRow}>
                 <Loader2 size={20} className={styles.spin} />
-                Loading reviews…
+                {locale === 'hy' ? "Բեռնվում են կարծիքները..." : "Loading reviews…"}
               </div>
             )}
 
             {!loading && reviews.length === 0 && (
               <div className={styles.emptyState}>
                 <MessageSquare size={40} className={styles.emptyIcon} />
-                <p>No reviews yet. Be the first to share your experience!</p>
+                <p>{locale === 'hy' ? "Կարծիքներ դեռ չկան: Եղեք առաջինը, ով կկիսվի իր տպավորություններով:" : "No reviews yet. Be the first to share your experience!"}</p>
               </div>
             )}
 

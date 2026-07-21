@@ -104,7 +104,7 @@ export default function InstagramReviewFeed() {
   const [heartPopMap, setHeartPopMap] = useState<Record<string, boolean>>({});
   const [mediaIndexMap, setMediaIndexMap] = useState<Record<string, number>>({});
   const [unmutedMap, setUnmutedMap] = useState<Record<string, boolean>>({});
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [showAll, setShowAll] = useState(false);
   const [filterRating, setFilterRating] = useState<number | null>(null);
 
@@ -316,7 +316,7 @@ export default function InstagramReviewFeed() {
           <p className="text-base text-[hsl(var(--muted-foreground))]">{t.reviewsFeed?.subtitle || "Explore feedback and photos shared by customers in Armenia"}</p>
 
           <div className="flex flex-wrap items-center gap-2 mt-6">
-            <span className="text-sm font-medium text-[hsl(var(--muted-foreground))]">Filter by rating:</span>
+            <span className="text-sm font-medium text-[hsl(var(--muted-foreground))]">{locale === 'hy' ? "Ֆիլտրել ըստ գնահատականի:" : "Filter by rating:"}</span>
             {[5, 4, 3, 2, 1].map(star => (
               <button
                 key={star}
@@ -341,7 +341,7 @@ export default function InstagramReviewFeed() {
                 }}
                 className="text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] underline ml-2"
               >
-                Clear Filter
+                {locale === 'hy' ? "Մաքրել ֆիլտրը" : "Clear Filter"}
               </button>
             )}
           </div>

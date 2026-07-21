@@ -88,6 +88,8 @@ export const hy: Translations = {
     signUp: "Գրանցվել",
     haveBusiness: "Բիզնես ունե՞ք:",
     registerBusiness: "Գրանցել Բիզնեսը",
+    username: "Օգտանուն",
+    rememberMe: "Հիշել ինձ",
   },
   dashboard: {
     title: "Վահանակ",
@@ -223,6 +225,8 @@ export const hy: Translations = {
     selectCity: "Ընտրել քաղաք",
     selectSize: "Ընտրել չափ",
     employees: "աշխատակիցներ",
+    previous: "Նախորդ",
+    next: "Հաջորդ",
   },
   // Profile Builder
   builder: {

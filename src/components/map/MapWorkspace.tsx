@@ -3,6 +3,7 @@ import React, { useMemo } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import LeafletMap, { LeafletMarkerItem } from "@/components/map/LeafletMap";
+import { useI18n } from "@/i18n";
 
 // Strict Location Interface
 export interface LocationItem {
@@ -17,6 +18,7 @@ export interface LocationItem {
   rating?: number;
   reviewCount?: number;
   plan?: string;
+  isOpen?: boolean;
 }
 
 // Map Component Props
@@ -30,6 +32,7 @@ export default function MapWorkspace({
   hoveredLocationId,
 }: MapWorkspaceProps) {
   const theme = useSelector((s: RootState) => s.ui.theme);
+  const { locale, t } = useI18n();
 
   // Yerevan default fallback center coordinates
   const center: [number, number] = useMemo(() => {
@@ -40,12 +43,20 @@ export default function MapWorkspace({
 
   // Convert locations data to LeafletMap compatible markers
   const markers: LeafletMarkerItem[] = useMemo(() => {
+    const openText = t.business?.openNow || (locale === 'hy' ? 'Բաց է' : locale === 'ru' ? 'Открыто' : 'Open Now');
+    const closedText = t.business?.closed || (locale === 'hy' ? 'Փակ է' : locale === 'ru' ? 'Закрыто' : 'Closed');
+
     return locations.map((loc) => {
+      const statusHtml = loc.isOpen === false
+        ? `<span class="popup-status is-closed">● ${closedText}</span>`
+        : `<span class="popup-status is-open">● ${openText}</span>`;
+
       const popupContent = `
         <div class="popup-content">
           <h4 class="popup-content__title">${loc.name}</h4>
           ${loc.category ? `<p class="popup-content__category">${loc.category}</p>` : ""}
           ${loc.addressDetails ? `<p class="popup-content__address">${loc.addressDetails}</p>` : ""}
+          ${statusHtml}
         </div>
       `;
 
@@ -61,6 +72,7 @@ export default function MapWorkspace({
         rating: loc.rating,
         reviewCount: loc.reviewCount,
         plan: loc.plan,
+        isOpen: loc.isOpen,
       };
     });
   }, [locations]);

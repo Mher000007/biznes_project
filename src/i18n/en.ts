@@ -95,6 +95,8 @@ export const en = {
     signUp: "Sign up",
     haveBusiness: "Have a business?",
     registerBusiness: "Register Business",
+    username: "Username",
+    rememberMe: "Remember me",
   },
   // Dashboard
   dashboard: {
@@ -237,6 +239,8 @@ export const en = {
     selectCity: "Select city",
     selectSize: "Select size",
     employees: "employees",
+    previous: "Previous",
+    next: "Next",
   },
   // Profile Builder
   builder: {

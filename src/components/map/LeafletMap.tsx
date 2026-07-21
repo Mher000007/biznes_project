@@ -4,6 +4,7 @@ import L from "leaflet";
 import "../../styles/leaflet.css";
 import { Maximize2, Minimize2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useI18n } from "@/i18n";
 
 // Resolve default marker icon asset path issues in Webpack/Vite bundlers
 if (typeof window !== "undefined") {
@@ -17,15 +18,18 @@ if (typeof window !== "undefined") {
 
 // ─── Icon builders ────────────────────────────────────────────────────────────
 
-function buildDefaultIcon(plan?: string): L.DivIcon {
+function buildDefaultIcon(plan?: string, isOpen: boolean = true): L.DivIcon {
   const isPremium = plan === 'premium';
   const fillColor = isPremium ? "#eab308" : "#10b981";
   const innerFill = isPremium ? "#eab308" : "#10b981";
+  const opacityStyle = isOpen
+    ? "opacity: 1;"
+    : "opacity: 0.45; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15)) grayscale(0.4);";
 
   return L.divIcon({
     html: `
       <svg width="28" height="36" viewBox="0 0 28 36" fill="none" xmlns="http://www.w3.org/2000/svg"
-           style="filter:drop-shadow(0 3px 6px rgba(0,0,0,0.30));display:block;">
+           style="filter:drop-shadow(0 3px 6px rgba(0,0,0,0.30));display:block;${opacityStyle}">
         <path d="M14 0C6.268 0 0 6.268 0 14c0 9.5 14 22 14 22S28 23.5 28 14C28 6.268 21.732 0 14 0z"
               fill="${fillColor}"/>
         <circle cx="14" cy="14" r="6.5" fill="white" fill-opacity="0.95"/>
@@ -35,7 +39,7 @@ function buildDefaultIcon(plan?: string): L.DivIcon {
         <rect x="14.8" y="11" width="2.2" height="2.2" fill="white" fill-opacity="0.75"/>
       </svg>
     `,
-    className: "leaflet-custom-pin-icon",
+    className: `leaflet-custom-pin-icon ${isOpen ? '' : 'is-closed-pin'}`,
     iconSize: [28, 36],
     iconAnchor: [14, 36],
     popupAnchor: [0, -36],
@@ -73,6 +77,7 @@ export interface LeafletMarkerItem {
   rating?: number;
   reviewCount?: number;
   plan?: 'starter' | 'standard' | 'premium' | string;
+  isOpen?: boolean;
 }
 
 export interface LeafletMapProps {
@@ -113,11 +118,31 @@ export default function LeafletMap({
   hideFullscreenControl = false,
 }: LeafletMapProps) {
   const router = useRouter();
+  const { locale, t } = useI18n();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const markersGroupRef = useRef<L.LayerGroup | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Update zoom button titles dynamically for English / Armenian / Russian
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const zoomInTitle = locale === 'hy' ? 'Մոտեցնել' : locale === 'ru' ? 'Увеличить' : 'Zoom in';
+    const zoomOutTitle = locale === 'hy' ? 'Հեռացնել' : locale === 'ru' ? 'Уменьшить' : 'Zoom out';
+
+    const inBtn = container.querySelector('.leaflet-control-zoom-in');
+    const outBtn = container.querySelector('.leaflet-control-zoom-out');
+    if (inBtn) {
+      inBtn.setAttribute('title', zoomInTitle);
+      inBtn.setAttribute('aria-label', zoomInTitle);
+    }
+    if (outBtn) {
+      outBtn.setAttribute('title', zoomOutTitle);
+      outBtn.setAttribute('aria-label', zoomOutTitle);
+    }
+  }, [locale]);
 
   // Registry: id → Leaflet marker instance (to swap icons without rebuilding)
   const markerRegistryRef = useRef<Map<string | number, L.Marker>>(new Map());
@@ -227,6 +252,9 @@ export default function LeafletMap({
     const bounds = L.latLngBounds([]);
     const validList: [number, number][] = [];
 
+    const openText = t.business?.openNow || (locale === 'hy' ? 'Բաց է' : locale === 'ru' ? 'Открыто' : 'Open Now');
+    const closedText = t.business?.closed || (locale === 'hy' ? 'Փակ է' : locale === 'ru' ? 'Закрыто' : 'Closed');
+
     if (markers && markers.length > 0) {
       markers.forEach((m) => {
         const lat = Number(m.lat);
@@ -235,7 +263,7 @@ export default function LeafletMap({
 
         const marker = L.marker([lat, lng], {
           draggable: m.draggable && !readonly,
-          icon: buildDefaultIcon(m.plan),
+          icon: buildDefaultIcon(m.plan, m.isOpen ?? true),
         });
 
         // Tooltip (shown on marker hover)
@@ -250,11 +278,16 @@ export default function LeafletMap({
           const catHtml = m.category
             ? `<span class="marker-tooltip-category">${m.category}</span>`
             : "";
+          const statusHtml = m.isOpen === false
+            ? `<span class="marker-tooltip-status is-closed">● ${closedText}</span>`
+            : `<span class="marker-tooltip-status is-open">● ${openText}</span>`;
+
           marker.bindTooltip(
             `<div class="marker-tooltip-inner">
                <strong class="marker-tooltip-name">${m.name}</strong>
                ${catHtml}
                ${starsHtml}
+               ${statusHtml}
              </div>`,
             {
               permanent: false,
