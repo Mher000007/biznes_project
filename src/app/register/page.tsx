@@ -9,6 +9,7 @@ import { Building2, CheckCircle, ChevronRight, ChevronLeft, ShieldCheck, Sparkle
 import Link from "next/link";
 import axios from "axios";
 import { getApiUrl } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 import styles from "./Register.module.scss";
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -43,6 +44,7 @@ interface ServiceItem {
 }
 
 export default function RegisterPage() {
+  const router = useRouter();
   const { currentUser, register: authRegister } = useAuth();
   const [step, setStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
@@ -506,8 +508,13 @@ export default function RegisterPage() {
         <div className={styles.navigation}>
           <button
             type="button"
-            onClick={() => setStep(s => s - 1)}
-            disabled={step === 0}
+            onClick={() => {
+              if (step > 0) {
+                setStep(s => s - 1);
+              } else {
+                router.push("/signin");
+              }
+            }}
             className={styles.btnBack}
           >
             <ChevronLeft className="h-4 w-4" /> Back

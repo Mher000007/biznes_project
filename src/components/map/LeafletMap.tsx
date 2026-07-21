@@ -135,12 +135,18 @@ export default function LeafletMap({
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
+    // Clear any existing leaflet container property to prevent re-initialization error
+    const container = containerRef.current as any;
+    if (container._leaflet_id) {
+      container._leaflet_id = null;
+    }
+
     const safeCenter: [number, number] = [
       !isFinite(Number(center[0])) ? 40.1872 : Number(center[0]),
       !isFinite(Number(center[1])) ? 44.5152 : Number(center[1]),
     ];
 
-    const map = L.map(containerRef.current, {
+    const map = L.map(container, {
       zoomControl: zoomControl && !readonly,
       scrollWheelZoom,
       dragging: !readonly,
@@ -343,8 +349,19 @@ export default function LeafletMap({
       marker.setIcon(buildDefaultIcon(m?.plan));
     });
 
-    const activeCompanyId = internalHoveredCompanyId ||
-      (hoveredLocationId ? companyRegistry.get(hoveredLocationId) : null);
+    let activeCompanyId: string | number | null = null;
+    if (internalHoveredCompanyId) {
+      activeCompanyId = internalHoveredCompanyId;
+    } else if (hoveredLocationId) {
+      if (companyRegistry.has(hoveredLocationId)) {
+        activeCompanyId = companyRegistry.get(hoveredLocationId) || null;
+      } else {
+        const values = Array.from(companyRegistry.values());
+        if (values.includes(hoveredLocationId)) {
+          activeCompanyId = hoveredLocationId;
+        }
+      }
+    }
 
     if (activeCompanyId) {
       let targetForFlyTo: L.Marker | null = null;
@@ -357,8 +374,8 @@ export default function LeafletMap({
             targetForFlyTo = marker;
           }
         } else {
-          // Hide all other markers
-          marker.setOpacity(0);
+          // Keep all other markers visible but slightly dimmed for focus
+          marker.setOpacity(0.6);
         }
       });
 
