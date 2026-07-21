@@ -9,7 +9,6 @@ import DailySummary from '../models/DailySummary.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { triggerOnboardingWebhook } from '../utils/n8n.js';
 import { isValidCity } from '../utils/locationValidator.js';
-import { transliterateArmenian } from '../utils/transliterate.js';
 
 // Get all businesses
 export const getBusinesses = asyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -55,37 +54,15 @@ export const getBusinesses = asyncHandler(async (req: Request, res: Response): P
   }
 
   if (search) {
-    const rawSearch = (search as string).trim();
-    const cleanSearch = rawSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-    // Generate transliterated terms for hybrid Armenian/English/Russian matching
-    const armenianEquiv = transliterateArmenian(rawSearch, 'hy');
-    const latinEquiv = transliterateArmenian(rawSearch, 'en');
-
-    const searchTerms = Array.from(new Set([cleanSearch, armenianEquiv, latinEquiv])).filter(Boolean);
-    const regexList = searchTerms.map(t => new RegExp(t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'));
-
-    // Find categories matching any search term
-    const matchingCats = await Category.find({
-      $or: regexList.flatMap(r => [
-        { name: r },
-        { slug: r }
-      ])
-    }).select('_id');
-    const catIds = matchingCats.map(c => c._id);
-
-    const searchConditions = regexList.flatMap(r => [
-      { name: r },
-      { description: r },
-      { tags: r },
-      { city: r },
-      { address: r },
-      { 'services.name': r },
-      { 'menu.name': r },
-      ...(catIds.length > 0 ? [{ category: { $in: catIds } }] : [])
-    ]);
+    const searchRegex = { $regex: search, $options: 'i' };
+    const searchConditions = [
+      { name: searchRegex },
+      { description: searchRegex },
+      { tags: searchRegex },
+    ];
 
     if (filter.$or) {
+      // If we already have a price filter, combine them with $and
       filter.$and = [
         { $or: filter.$or },
         { $or: searchConditions }
@@ -594,14 +571,14 @@ export const getCalendarSummaries = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
     const { month } = req.query; // YYYY-MM
-
+    
     const filter: any = { business: new mongoose.Types.ObjectId(id) };
     if (month && typeof month === 'string') {
       filter.date = { $regex: `^${month}` }; // Matches "YYYY-MM-DD"
     }
 
     const summaries = await DailySummary.find(filter).sort({ date: 1 });
-
+    
     res.status(200).json({
       success: true,
       data: summaries

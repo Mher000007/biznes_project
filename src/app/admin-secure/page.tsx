@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { getApiUrl } from "@/lib/utils";
 import {
-  BarChart3, Building2, CalendarDays, Gem, Flag, Users, Search,
+  BarChart3, Building2, CalendarDays, Gem, Flag, Users,
   Mail, Phone, Trash2, CheckCircle2,
   X, Ban, RefreshCw, LogOut, CheckCircle, AlertOctagon,
   UserCircle2, Crown, Briefcase, Star, Eye, Tag, Award,
@@ -750,7 +750,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                 ))}
               </div>
             </div>
-            {filteredBiz.length === 0 ? emptyState(Search, "No businesses found") : (
+            {filteredBiz.length === 0 ? emptyState(Building2, "No businesses found") : (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {filteredBiz.map(b => (
                   <div key={b._id} style={{

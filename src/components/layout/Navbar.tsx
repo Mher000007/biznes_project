@@ -273,11 +273,11 @@ export default function Navbar() {
           </Link>
         )}
 
-        {(!currentUser || currentUser.role !== "business_owner") && pathname !== "/register" && (
+        {/* {(!currentUser || currentUser.role !== "business_owner") && pathname !== "/register" && (
           <Link href="/register" className={styles.registerButton}>
             {t.nav.getStarted}
           </Link>
-        )}
+        )} */}
 
         {/* Mobile controls */}
         <div className={styles.mobileControls}>
@@ -355,7 +355,7 @@ export default function Navbar() {
             </Link>
           )}
 
-          {(!currentUser || currentUser.role !== "business_owner") && pathname !== "/register" && (
+          {/* {(!currentUser || currentUser.role !== "business_owner") && pathname !== "/register" && (
             <div className="mt-3">
               <Link
                 href="/register"
@@ -365,7 +365,7 @@ export default function Navbar() {
                 {t.nav.getStarted}
               </Link>
             </div>
-          )}
+          )} */}
         </div>
       )}
     </header>

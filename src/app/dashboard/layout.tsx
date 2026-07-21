@@ -85,7 +85,6 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
   const links = [
     { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-    { href: "/dashboard/calendar", label: "Calendar", icon: Calendar },
     { href: "/dashboard/profile", label: "Business Profile", icon: Building2 },
     { href: "/dashboard/offers", label: "Menus & Offers", icon: Utensils },
     { href: "/dashboard/locations", label: "My Locations", icon: MapPin },
