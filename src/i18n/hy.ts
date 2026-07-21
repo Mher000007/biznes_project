@@ -86,8 +86,6 @@ export const hy: Translations = {
     forgotPassword: "Մոռացե՞լ եք գաղտնաբառը",
     loginBtn: "Մուտք",
     signUp: "Գրանցվել",
-    haveBusiness: "Բիզնես ունե՞ք:",
-    registerBusiness: "Գրանցել Բիզնեսը",
   },
   dashboard: {
     title: "Վահանակ",

@@ -93,8 +93,6 @@ export const en = {
     forgotPassword: "Forgot password?",
     loginBtn: "Log in",
     signUp: "Sign up",
-    haveBusiness: "Have a business?",
-    registerBusiness: "Register Business",
   },
   // Dashboard
   dashboard: {

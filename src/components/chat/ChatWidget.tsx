@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import { toggleChat, addMessage, setLoading, setSessionId } from "@/store/slices/chatSlice";
 import type { ChatMessage, BusinessSuggestion } from "@/store/slices/chatSlice";
-import { MessageCircle, X, Send, Star, MapPin, ArrowRight, Sparkles, Bot } from "lucide-react";
+import { Search, MessageCircle, X, Send, Star, MapPin, ArrowRight, Sparkles, Bot } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
 import { useI18n } from "@/i18n";
@@ -74,11 +74,11 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
           </div>
         )}
         <div className={`relative px-4 py-3 text-[14px] leading-relaxed whitespace-pre-wrap transition-all duration-300 ${isUser
-            ? "bg-green-500 text-white rounded-[20px] rounded-tr-[4px] shadow-sm"
-            : "bg-white/60 dark:bg-slate-800/60 backdrop-blur-md text-slate-800 dark:text-slate-100 rounded-[20px] rounded-tl-[4px] border border-white/40 dark:border-white/10 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]"
+          ? "bg-green-500 text-white rounded-[20px] rounded-tr-[4px] shadow-sm"
+          : "bg-white/60 dark:bg-slate-800/60 backdrop-blur-md text-slate-800 dark:text-slate-100 rounded-[20px] rounded-tl-[4px] border border-white/40 dark:border-white/10 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]"
           }`}>
           {msg.content.split("**").map((part, i) =>
-            i % 2 === 1 ? <strong key={i} className="font-semibold text-slate-800 dark:text-slate-100">{part}</strong> : <span key={i} className="text-slate-800 dark:text-slate-100">{part}</span>
+            i % 2 === 1 ? <strong key={i} className="font-semibold">{part}</strong> : <span key={i}>{part}</span>
           )}
         </div>
 
@@ -355,7 +355,7 @@ export default function ChatWidget() {
           }`}
         aria-label="Open AI chat"
       >
-        <MessageCircle className="h-7 w-7" strokeWidth={2} />
+        <Search className="h-7 w-7" strokeWidth={2} />
         {/* Pulse ring */}
         <span className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-20 pointer-events-none" />
       </button>

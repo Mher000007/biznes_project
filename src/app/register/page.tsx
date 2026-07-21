@@ -9,7 +9,6 @@ import { Building2, CheckCircle, ChevronRight, ChevronLeft, ShieldCheck, Sparkle
 import Link from "next/link";
 import axios from "axios";
 import { getApiUrl } from "@/lib/utils";
-import { useRouter } from "next/navigation";
 import styles from "./Register.module.scss";
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -44,7 +43,6 @@ interface ServiceItem {
 }
 
 export default function RegisterPage() {
-  const router = useRouter();
   const { currentUser, register: authRegister } = useAuth();
   const [step, setStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
@@ -52,7 +50,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
 
   // Dynamic steps setup
-  const stepsList = currentUser 
+  const stepsList = currentUser
     ? ["Business Details", "Contact & Address"]
     : ["Account Setup", "Business Details", "Contact & Address"];
 
@@ -197,7 +195,7 @@ export default function RegisterPage() {
     try {
       const token = typeof window !== 'undefined' ? window.localStorage.getItem('token') : null;
       const apiURL = getApiUrl();
-      
+
       const payload = {
         name,
         description: shortDesc,
@@ -348,11 +346,11 @@ export default function RegisterPage() {
             <div className={styles.formGroup}>
               <label>Account Password * (Min. 6 characters)</label>
               <div className="relative">
-                <input 
-                  value={accountPassword} 
-                  onChange={e => setAccountPassword(e.target.value)} 
-                  type={showPassword ? "text" : "password"} 
-                  placeholder="••••••••" 
+                <input
+                  value={accountPassword}
+                  onChange={e => setAccountPassword(e.target.value)}
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
                   className="w-full pr-10"
                   style={{ borderColor: (accountPassword.length >= 6 && accountPassword === confirmAccountPassword) ? "#22c55e" : undefined, transition: "border-color 0.3s" }}
                 />
@@ -369,11 +367,11 @@ export default function RegisterPage() {
             <div className={styles.formGroup}>
               <label>Confirm Password *</label>
               <div className="relative">
-                <input 
-                  value={confirmAccountPassword} 
-                  onChange={e => setConfirmAccountPassword(e.target.value)} 
-                  type={showConfirmPassword ? "text" : "password"} 
-                  placeholder="••••••••" 
+                <input
+                  value={confirmAccountPassword}
+                  onChange={e => setConfirmAccountPassword(e.target.value)}
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="••••••••"
                   className="w-full pr-10"
                   style={{ borderColor: (accountPassword.length >= 6 && accountPassword === confirmAccountPassword) ? "#22c55e" : undefined, transition: "border-color 0.3s" }}
                 />
@@ -415,8 +413,8 @@ export default function RegisterPage() {
             </div>
             <div className={styles.formGroup}>
               <label>Founded Year</label>
-              <input 
-                value={foundedYear} 
+              <input
+                value={foundedYear}
                 onChange={e => {
                   const val = e.target.value;
                   if (val === "") {
@@ -431,11 +429,11 @@ export default function RegisterPage() {
                       setFoundedYear(val);
                     }
                   }
-                }} 
-                type="number" 
-                min="1900" 
-                max={CURRENT_YEAR} 
-                placeholder={`e.g., ${CURRENT_YEAR - 10}`} 
+                }}
+                type="number"
+                min="1900"
+                max={CURRENT_YEAR}
+                placeholder={`e.g., ${CURRENT_YEAR - 10}`}
               />
             </div>
           </div>
@@ -446,10 +444,10 @@ export default function RegisterPage() {
           <div className="space-y-4">
             <div className={styles.formGroup}>
               <label>City *</label>
-              <LocationSelect 
-                value={city} 
-                onChange={e => setCity(e.target.value)} 
-                placeholder="Select Region/City/Village" 
+              <LocationSelect
+                value={city}
+                onChange={e => setCity(e.target.value)}
+                placeholder="Select Region/City/Village"
               />
             </div>
             <div className={styles.formGroup}>
@@ -473,13 +471,13 @@ export default function RegisterPage() {
                 <label>Contact Phone *</label>
                 <div className="relative flex items-center">
                   <span className="absolute left-3 text-[hsl(var(--foreground))] font-medium">+374</span>
-                  <input 
-                    value={phone} 
+                  <input
+                    value={phone}
                     onChange={e => {
                       const val = e.target.value.replace(/\D/g, '').slice(0, 8);
                       setPhone(val);
-                    }} 
-                    type="tel" 
+                    }}
+                    type="tel"
                     placeholder="XX XXXXXX"
                     style={{ paddingLeft: "3.5rem" }}
                   />
@@ -508,13 +506,8 @@ export default function RegisterPage() {
         <div className={styles.navigation}>
           <button
             type="button"
-            onClick={() => {
-              if (step > 0) {
-                setStep(s => s - 1);
-              } else {
-                router.push("/signin");
-              }
-            }}
+            onClick={() => setStep(s => s - 1)}
+            disabled={step === 0}
             className={styles.btnBack}
           >
             <ChevronLeft className="h-4 w-4" /> Back

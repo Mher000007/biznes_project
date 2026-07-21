@@ -11,7 +11,7 @@ import { RatingSelect } from "@/components/ui/RatingSelect";
 import { SortSelect } from "@/components/ui/SortSelect";
 import { StatusSelect } from "@/components/ui/StatusSelect";
 import BusinessCard, { getOpenStatus } from "@/components/discover/BusinessCard";
-import { Building2, Loader2, Map as MapIcon, List as ListIcon, LayoutGrid } from "lucide-react";
+import { Building2, Search, Loader2, Map as MapIcon, List as ListIcon, LayoutGrid, RotateCcw } from "lucide-react";
 import axios from "axios";
 import { getApiUrl } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
@@ -398,7 +398,7 @@ function DiscoverContent() {
             </>
           ) : (
             <div className={styles.centeredState}>
-              <Building2 className="h-12 w-12 text-[#666666]/30 mb-4" />
+              <Search className="h-12 w-12 text-[hsl(var(--muted-foreground))]/40 mb-4" />
               <h3>No businesses found</h3>
               <p>Try adjusting your search criteria or clear location filters.</p>
             </div>
