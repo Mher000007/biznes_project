@@ -52,7 +52,14 @@ export default function Navbar() {
   return (
     <header className={`${styles.header} ${isTransparent ? styles.transparentHeader : ""}`}>
       {/* Logo */}
-      <Link href="/" className={styles.logo}>
+      <Link
+        href="/"
+        onClick={(e) => {
+          e.preventDefault();
+          router.push("/");
+        }}
+        className={styles.logo}
+      >
         <img src="/logo.png" alt="Findy Logo" className={styles.logoImage} />
       </Link>
 

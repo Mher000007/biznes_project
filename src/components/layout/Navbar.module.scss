@@ -27,6 +27,9 @@
   align-items: center;
   text-decoration: none;
   flex-shrink: 0;
+  cursor: pointer;
+  z-index: 10;
+  position: relative;
 }
 
 .logoImage {
