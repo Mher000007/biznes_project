@@ -558,9 +558,46 @@ export default function DashboardProfilePage() {
     updated[index].closed = !updated[index].closed;
     setOperatingHours(updated);
   };
-  const updateDayHours = (index: number, field: "open" | "close", value: string) => {
+  const updateDayHours = (index: number, field: "open" | "close", rawVal: string) => {
+    // 1. Keep only digits and colon
+    let val = rawVal.replace(/[^0-9:]/g, "");
+
+    // 2. Limit total string length to 5 (HH:MM)
+    if (val.length > 5) val = val.slice(0, 5);
+
+    const prevVal = operatingHours[index][field] || "";
+
+    // 3. Auto-insert colon after 2 digits if user is typing forward
+    if (/^\d{2}$/.test(val) && rawVal.length > prevVal.length) {
+      let hh = parseInt(val, 10);
+      if (hh >= 24) val = "00:";
+      else val = `${val}:`;
+    }
+
+    // 4. Validate HH and MM parts if colon exists
+    if (val.includes(":")) {
+      const parts = val.split(":");
+      let hh = parts[0];
+      let mm = parts[1];
+
+      if (hh.length >= 2) {
+        let hNum = parseInt(hh, 10);
+        if (hNum >= 24) hh = "00";
+      }
+
+      if (mm && mm.length >= 2) {
+        let mNum = parseInt(mm, 10);
+        if (mNum > 59) mm = "59";
+      }
+
+      val = `${hh}:${mm}`;
+    } else if (val.length >= 2) {
+      let hh = parseInt(val.slice(0, 2), 10);
+      if (hh >= 24) val = "00";
+    }
+
     const updated = [...operatingHours];
-    updated[index] = { ...updated[index], [field]: value };
+    updated[index] = { ...updated[index], [field]: val };
     setOperatingHours(updated);
   };
 
@@ -1029,9 +1066,11 @@ export default function DashboardProfilePage() {
                     <h3 className="text-base font-bold text-[hsl(var(--foreground))] mb-3">{t.builder.hours.schedule}</h3>
 
                     <div className="space-y-2.5">
-                      {operatingHours.map((d, index) => (
-                        <div key={d.day} className="flex items-center justify-between border-b border-[hsl(var(--border))]/40 pb-2 last:border-0 last:pb-0">
-                          <span className="text-xs font-semibold text-[hsl(var(--foreground))] w-24">{d.day}</span>
+                      {operatingHours.map((d, index) => {
+                        const dayLabel = t.business?.days?.[d.day.toLowerCase() as keyof typeof t.business.days] || d.day;
+                        return (
+                          <div key={d.day} className="flex items-center justify-between border-b border-[hsl(var(--border))]/40 pb-2 last:border-0 last:pb-0">
+                            <span className="text-xs font-semibold text-[hsl(var(--foreground))] w-24">{dayLabel}</span>
 
                           <div className="flex items-center gap-4">
                             <label className="flex items-center gap-2 text-xs cursor-pointer select-none">
@@ -1049,6 +1088,16 @@ export default function DashboardProfilePage() {
                                 <input
                                   type="text"
                                   value={d.open}
+                                  maxLength={5}
+                                  onKeyDown={(e) => {
+                                    if (
+                                      !/[0-9:]/.test(e.key) &&
+                                      !["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab", "Enter"].includes(e.key) &&
+                                      !e.ctrlKey && !e.metaKey
+                                    ) {
+                                      e.preventDefault();
+                                    }
+                                  }}
                                   onChange={e => updateDayHours(index, "open", e.target.value)}
                                   className="w-16 rounded border border-[hsl(var(--border))] px-2 py-1 text-center text-xs outline-none bg-transparent text-[hsl(var(--foreground))]"
                                 />
@@ -1056,6 +1105,16 @@ export default function DashboardProfilePage() {
                                 <input
                                   type="text"
                                   value={d.close}
+                                  maxLength={5}
+                                  onKeyDown={(e) => {
+                                    if (
+                                      !/[0-9:]/.test(e.key) &&
+                                      !["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab", "Enter"].includes(e.key) &&
+                                      !e.ctrlKey && !e.metaKey
+                                    ) {
+                                      e.preventDefault();
+                                    }
+                                  }}
                                   onChange={e => updateDayHours(index, "close", e.target.value)}
                                   className="w-16 rounded border border-[hsl(var(--border))] px-2 py-1 text-center text-xs outline-none bg-transparent text-[hsl(var(--foreground))]"
                                 />
@@ -1066,7 +1125,8 @@ export default function DashboardProfilePage() {
                             )}
                           </div>
                         </div>
-                      ))}
+                      );
+                    })}
                     </div>
                   </div>
                 </div>
@@ -1233,14 +1293,17 @@ export default function DashboardProfilePage() {
                   <section className="mb-6">
                     <h2 className="text-sm font-bold mb-2">Operating Hours</h2>
                     <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] divide-y divide-[hsl(var(--border))]">
-                      {operatingHours.map((h) => (
-                        <div key={h.day} className="flex items-center justify-between px-3 py-2 text-xs">
-                          <span className="font-medium">{h.day}</span>
-                          <span className="text-[hsl(var(--muted-foreground))]">
-                            {h.closed ? "Closed" : `${h.open} — ${h.close}`}
-                          </span>
-                        </div>
-                      ))}
+                      {operatingHours.map((h) => {
+                        const dayLabel = t.business?.days?.[h.day.toLowerCase() as keyof typeof t.business.days] || h.day;
+                        return (
+                          <div key={h.day} className="flex items-center justify-between px-3 py-2 text-xs">
+                            <span className="font-medium">{dayLabel}</span>
+                            <span className="text-[hsl(var(--muted-foreground))]">
+                              {h.closed ? (t.business?.closed || "Closed") : `${h.open} — ${h.close}`}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </section>
                 </div>
@@ -1519,14 +1582,17 @@ export default function DashboardProfilePage() {
                     <section className="flex flex-col h-full">
                       <h2 className="text-lg font-bold mb-3">Operating Hours</h2>
                       <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] divide-y divide-[hsl(var(--border))] flex-1">
-                        {operatingHours.map((h) => (
-                          <div key={h.day} className="flex items-center justify-between px-4 py-2.5 text-sm">
-                            <span className="font-medium">{h.day}</span>
-                            <span className="text-[hsl(var(--muted-foreground))]">
-                              {h.closed ? "Closed" : `${h.open} — ${h.close}`}
-                            </span>
-                          </div>
-                        ))}
+                        {operatingHours.map((h) => {
+                          const dayLabel = t.business?.days?.[h.day.toLowerCase() as keyof typeof t.business.days] || h.day;
+                          return (
+                            <div key={h.day} className="flex items-center justify-between px-4 py-2.5 text-sm">
+                              <span className="font-medium">{dayLabel}</span>
+                              <span className="text-[hsl(var(--muted-foreground))]">
+                                {h.closed ? (t.business?.closed || "Closed") : `${h.open} — ${h.close}`}
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
                     </section>
 

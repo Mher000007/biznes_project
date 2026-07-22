@@ -129,9 +129,23 @@ function authHeaders() {
 function AdminLogin({ onLogin }: { onLogin: (token: string) => void }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPw, setShowPw] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("armbiz_admin_remember_creds");
+      if (saved) {
+        try {
+          const { email: savedEmail, password: savedPassword } = JSON.parse(saved);
+          if (savedEmail) setEmail(savedEmail);
+          if (savedPassword) setPassword(savedPassword);
+        } catch (e) {}
+      }
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -143,6 +157,11 @@ function AdminLogin({ onLogin }: { onLogin: (token: string) => void }) {
         if (user?.role !== "admin") {
           setError("Access denied — admin credentials required.");
           setLoading(false); return;
+        }
+        if (rememberMe) {
+          localStorage.setItem("armbiz_admin_remember_creds", JSON.stringify({ email, password }));
+        } else {
+          localStorage.removeItem("armbiz_admin_remember_creds");
         }
         localStorage.setItem(ADMIN_TOKEN_KEY, res.data.token);
         localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(user));
@@ -210,6 +229,18 @@ function AdminLogin({ onLogin }: { onLogin: (token: string) => void }) {
                   {showPw ? <X size={16} /> : <Eye size={16} />}
                 </button>
               </div>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: -2 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 12, color: C.muted, userSelect: "none" }}>
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  style={{ accentColor: "#7c3aed", width: 15, height: 15, borderRadius: 4, cursor: "pointer" }}
+                />
+                Remember login & password
+              </label>
             </div>
 
             {error && (

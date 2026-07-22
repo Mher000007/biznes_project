@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useI18n } from "@/i18n";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { getApiUrl } from "@/lib/utils";
@@ -83,22 +84,74 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     fetchUnread();
   }, [pathname, currentUser]);
 
+  const [activePlan, setActivePlan] = useState<"starter" | "standard" | "premium">("starter");
+  const [shakingHrefs, setShakingHrefs] = useState<string[]>([]);
+
+  useEffect(() => {
+    async function loadPlan() {
+      if (!currentUser) return;
+      try {
+        const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
+        if (!token) return;
+        const bizRes = await axios.get(`${getApiUrl()}/businesses/me/all`, { headers: { Authorization: `Bearer ${token}` } });
+        if (bizRes.data?.success && bizRes.data.data?.length > 0) {
+          const bizId = bizRes.data.data[0]._id;
+          try {
+            const subRes = await axios.get(`${getApiUrl()}/subscriptions/business/${bizId}`, { headers: { Authorization: `Bearer ${token}` } });
+            if (subRes.data?.success && subRes.data.data?.plan) {
+              setActivePlan(subRes.data.data.plan);
+              return;
+            }
+          } catch {}
+        }
+      } catch {}
+
+      if (typeof window !== "undefined") {
+        const profilesStr = window.localStorage.getItem("armbiz-business-profiles");
+        if (profilesStr) {
+          try {
+            const profiles = JSON.parse(profilesStr);
+            const myProfile = profiles.find((p: any) => p.ownerUsername === currentUser?.username);
+            if (myProfile && myProfile.plan) {
+              setActivePlan(myProfile.plan);
+            }
+          } catch (e) {}
+        }
+      }
+    }
+    loadPlan();
+  }, [currentUser]);
+
+  const handleLockedClick = (e: React.MouseEvent, href: string) => {
+    if (activePlan === "starter") {
+      e.preventDefault();
+      e.stopPropagation();
+      setShakingHrefs((prev) => [...prev, href]);
+      setTimeout(() => {
+        setShakingHrefs((prev) => prev.filter((h) => h !== href));
+      }, 500);
+    }
+  };
+
+  const { t } = useI18n();
+  const navT = (t as any).dashboard?.nav || {};
+
   const links = [
-    { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-    { href: "/dashboard/profile", label: "Business Profile", icon: Building2 },
-    { href: "/dashboard/offers", label: "Menus & Offers", icon: Utensils },
-    { href: "/dashboard/locations", label: "My Locations", icon: MapPin },
-    { href: "/dashboard/stories", label: "Stories", icon: Sparkles },
-    { href: "/dashboard/inquiries", label: "Inquiries", icon: MessageSquare },
-    { href: "/dashboard/support", label: "Support Chat", icon: HeadphonesIcon },
-    { href: "/dashboard/settings", label: "Settings", icon: Settings },
+    { href: "/dashboard", label: navT.overview || "Overview", icon: LayoutDashboard },
+    { href: "/dashboard/profile", label: navT.businessProfile || "Business Profile", icon: Building2 },
+    { href: "/dashboard/offers", label: navT.menusOffers || "Menus & Offers", icon: Utensils, isPro: true },
+    { href: "/dashboard/locations", label: navT.myLocations || "My Locations", icon: MapPin },
+    { href: "/dashboard/stories", label: navT.stories || "Stories", icon: Sparkles, isPro: true },
+    { href: "/dashboard/inquiries", label: navT.inquiries || "Inquiries", icon: MessageSquare },
+    { href: "/dashboard/support", label: navT.supportChat || "Support Chat", icon: HeadphonesIcon },
+    { href: "/dashboard/settings", label: navT.settings || "Settings", icon: Settings },
   ];
 
   const profileSubLinks = [
-    { href: "/dashboard/profile?tab=branding", label: "Branding", icon: Sparkles },
-    { href: "/dashboard/profile?tab=credentials", label: "Credentials", icon: Lock },
-    { href: "/dashboard/profile?tab=stories", label: "Stories & Highlights", icon: Camera },
-    { href: "/dashboard/profile?tab=hours", label: "Operating Hours", icon: Clock },
+    { href: "/dashboard/profile?tab=branding", label: navT.branding || "Branding", icon: Sparkles },
+    { href: "/dashboard/profile?tab=credentials", label: navT.credentials || "Credentials", icon: Lock },
+    { href: "/dashboard/profile?tab=stories", label: navT.storiesHighlights || "Stories & Highlights", icon: Camera, isPro: true },
+    { href: "/dashboard/profile?tab=hours", label: navT.operatingHours || "Operating Hours", icon: Clock },
   ];
 
   const isSubActive = (href: string) => {
@@ -109,11 +162,21 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="pt-16 min-h-screen flex">
+      <style jsx global>{`
+        @keyframes planLockShake {
+          0%, 100% { transform: translateX(0); }
+          20%, 60% { transform: translateX(-4px); }
+          40%, 80% { transform: translateX(4px); }
+        }
+      `}</style>
       {/* Sidebar */}
       <aside className="hidden lg:flex fixed top-14 left-0 bottom-0 w-64 flex-col border-r border-[hsl(var(--border))] bg-[hsl(var(--card))] z-40">
         <div className="flex flex-col flex-1 p-4 gap-1 pt-6">
           <p className="px-3 mb-3 text-xs font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Dashboard</p>
           {links.map((link) => {
+            const isLocked = activePlan === "starter" && link.isPro;
+            const isShaking = shakingHrefs.includes(link.href);
+
             if (link.href === "/dashboard/profile") {
               const isProfileActive = pathname.startsWith("/dashboard/profile");
               return (
@@ -137,18 +200,29 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                     <div className="pl-6 flex flex-col gap-1 border-l border-[hsl(var(--border))]/60 ml-5 mt-1">
                       {profileSubLinks.map((sub) => {
                         const active = isSubActive(sub.href);
+                        const isSubLocked = activePlan === "starter" && sub.isPro;
+                        const isSubShaking = shakingHrefs.includes(sub.href);
+
                         return (
                           <Link
                             key={sub.href}
                             href={sub.href}
-                            className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-                              active
-                                ? "text-[hsl(var(--primary))] font-semibold bg-[hsl(var(--primary))]/5"
-                                : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]/50 hover:text-[hsl(var(--foreground))]"
+                            onClick={(e) => isSubLocked && handleLockedClick(e, sub.href)}
+                            style={isSubShaking ? { animation: "planLockShake 0.4s ease-in-out" } : undefined}
+                            title={isSubLocked ? "Pro & Premium feature — Locked on Starter Plan" : undefined}
+                            className={`flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
+                              isSubLocked
+                                ? "text-[hsl(var(--muted-foreground))]/70 hover:bg-amber-500/10 cursor-pointer"
+                                : active
+                                  ? "text-[hsl(var(--primary))] font-semibold bg-[hsl(var(--primary))]/5"
+                                  : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]/50 hover:text-[hsl(var(--foreground))]"
                             }`}
                           >
-                            <sub.icon className="h-3 w-3" />
-                            {sub.label}
+                            <div className="flex items-center gap-2 truncate">
+                              <sub.icon className="h-3 w-3 shrink-0" />
+                              <span className="truncate">{sub.label}</span>
+                            </div>
+                            {isSubLocked && <Lock className="h-3 w-3 text-amber-500 shrink-0" />}
                           </Link>
                         );
                       })}
@@ -163,20 +237,29 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
               <Link
                 key={link.href}
                 href={link.href}
+                onClick={(e) => isLocked && handleLockedClick(e, link.href)}
+                style={isShaking ? { animation: "planLockShake 0.4s ease-in-out" } : undefined}
+                title={isLocked ? "Pro & Premium feature — Locked on Starter Plan" : undefined}
                 className={`flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                  isActive
-                    ? "bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))]"
-                    : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
+                  isLocked
+                    ? "text-[hsl(var(--muted-foreground))]/70 hover:bg-amber-500/10 cursor-pointer"
+                    : isActive
+                      ? "bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))]"
+                      : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
                 }`}
               >
                 <div className="flex items-center gap-3">
                   <link.icon className="h-4 w-4" />
                   {link.label}
                 </div>
-                {link.href === "/dashboard/inquiries" && unreadCount > 0 && (
-                  <div className="flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold shadow-sm">
-                    {unreadCount}
-                  </div>
+                {isLocked ? (
+                  <Lock className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                ) : (
+                  link.href === "/dashboard/inquiries" && unreadCount > 0 && (
+                    <div className="flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold shadow-sm">
+                      {unreadCount}
+                    </div>
+                  )
                 )}
               </Link>
             );

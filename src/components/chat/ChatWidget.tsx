@@ -226,6 +226,10 @@ export default function ChatWidget() {
     }
   }, [isOpen, messages.length, dispatch, t]);
 
+  if (pathname?.startsWith("/dashboard") || pathname?.startsWith("/admin")) {
+    return null;
+  }
+
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
     const text = input.trim();

@@ -120,6 +120,20 @@ export const en = {
     overview: "Overview",
     profile: "Profile",
     settings: "Settings",
+    nav: {
+      overview: "Overview",
+      businessProfile: "Business Profile",
+      branding: "Branding",
+      credentials: "Credentials",
+      storiesHighlights: "Stories & Highlights",
+      operatingHours: "Operating Hours",
+      menusOffers: "Menus & Offers",
+      myLocations: "My Locations",
+      stories: "Stories",
+      inquiries: "Inquiries",
+      supportChat: "Support Chat",
+      settings: "Settings",
+    },
   },
   // Business Profile
   business: {
