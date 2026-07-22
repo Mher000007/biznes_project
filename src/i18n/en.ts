@@ -12,6 +12,10 @@ export const en = {
     serviceOrBusiness: "Search...",
     allLocations: "All Locations",
     searchButton: "Search",
+    popularBusinesses: "Top Searches",
+    searchResults: "Search Results",
+    useArrowKeys: "Use ↑↓ to navigate",
+    noBusinessesFound: "No businesses found",
   },
   // Hero
   hero: {

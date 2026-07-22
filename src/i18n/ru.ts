@@ -1,6 +1,6 @@
 import type { Translations } from "./en";
 export const ru: Translations = {
-  nav: { home: "Главная", discover: "Каталог", categories: "Категории", about: "О нас", login: "Войти", getStarted: "Начать", signOut: "Выйти", hello: "Привет, ", serviceOrBusiness: "Поиск ...", allLocations: "Все локации", searchButton: "Найти" },
+  nav: { home: "Главная", discover: "Каталог", categories: "Категории", about: "О нас", login: "Войти", getStarted: "Начать", signOut: "Выйти", hello: "Привет, ", serviceOrBusiness: "Поиск ...", allLocations: "Все локации", searchButton: "Найти", popularBusinesses: "Топ поиски", searchResults: "Результаты поиска", useArrowKeys: "Используйте ↑↓ для навигации", noBusinessesFound: "Компании не найдены" },
   hero: { title: "Найдите нужный рестораныв Армении", subtitle: "Более 900 проверенных компаний во всех отраслях. Находите услуги, читайте отзывы, связывайтесь напрямую.", searchPlaceholder: "Поиск компаний...", search: "Найти", businesses: "компаний", cities: "городов", industries: "отраслей" },
   categories: { title: "Поиск по категориям", subtitle: "Все основные отрасли бизнеса Армении", listed: "в списке", allCategories: "Все категории", allSubtitle: "Просмотрите все отрасли" },
   featured: { title: "Топ-5 ресторанов", subtitle: "Рестораны с самым высоким рейтингом на Findy", viewAll: "Все" },

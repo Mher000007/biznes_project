@@ -13,6 +13,10 @@ export const hy: Translations = {
     serviceOrBusiness: "Որոնում ...",
     allLocations: "Բոլոր վայրերը",
     searchButton: "Որոնել",
+    popularBusinesses: "Թոփ Որոնումներ",
+    searchResults: "Որոնման արդյունքներ",
+    useArrowKeys: "Օգտագործեք ↑↓ նավիգացիայի համար",
+    noBusinessesFound: "Բիզնեսներ չեն գտնվել",
   },
   hero: {
     title: "Գտեք ճիշտ ռեստորան Հայաստանում",

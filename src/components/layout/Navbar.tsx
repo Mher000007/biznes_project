@@ -19,7 +19,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { currentUser, logout } = useAuth();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   const [isOpen, setIsOpen] = useState(false);
   const [navQuery, setNavQuery] = useState("");
@@ -54,7 +54,7 @@ export default function Navbar() {
         try {
           const endpoint = query
             ? `${getApiUrl()}/businesses?search=${encodeURIComponent(navQuery.trim())}&limit=8`
-            : `${getApiUrl()}/businesses?featured=true&limit=8`;
+            : `${getApiUrl()}/businesses?category=horeca&limit=8&sort=-rating`;
 
           const res = await axios.get(endpoint);
           backendResults = Array.isArray(res.data?.data)
@@ -77,19 +77,32 @@ export default function Navbar() {
           return lText.includes(query) || lText.includes(armQuery) || lText.includes(enQuery);
         };
 
-        // Search local mock businesses
+        // Top Restaurants / HoReCa businesses for initial suggestions, or search matching
         const matchedMock = query
           ? MOCK_BUSINESSES.filter((b) => {
-              const nameMatch = matchesQuery(b.name);
-              const catMatch = matchesQuery(b.category?.name) || matchesQuery(b.category?.slug);
-              const cityMatch = matchesQuery(b.city);
-              const descMatch = matchesQuery(b.description) || matchesQuery(b.shortDescription);
-              const tagMatch = (b.tags || []).some((t) => matchesQuery(t));
-              return nameMatch || catMatch || cityMatch || descMatch || tagMatch;
+              const bName = b.name || "";
+              const bCat = typeof b.category === "object" ? (b.category?.name || b.category?.slug || "") : (b.category || "");
+              const bCity = b.city || "";
+              const bDesc = b.description || b.shortDescription || "";
+              const bTags = (b.tags || []).join(" ");
+              return matchesQuery(bName) || matchesQuery(bCat) || matchesQuery(bCity) || matchesQuery(bDesc) || matchesQuery(bTags);
             })
-          : MOCK_BUSINESSES.filter((b) => b.isFeatured);
+          : MOCK_BUSINESSES.filter((b) => b.category?.slug === "horeca" || b.category?.id === "cat-horeca" || b.category?.name === "HoReCa")
+              .sort((a, b) => (b.ratingAvg || 0) - (a.ratingAvg || 0) || (b.reviewCount || 0) - (a.reviewCount || 0));
 
-        // Search localStorage custom business profiles
+        // Filter backend results if query is provided
+        const filteredBackend = query
+          ? backendResults.filter((b: any) => {
+              const bName = b.name || "";
+              const bCat = typeof b.category === "object" ? (b.category?.name || b.category?.slug || "") : (b.category || "");
+              const bCity = b.city || "";
+              const bDesc = b.description || b.shortDescription || "";
+              const bTags = (b.tags || []).join(" ");
+              return matchesQuery(bName) || matchesQuery(bCat) || matchesQuery(bCity) || matchesQuery(bDesc) || matchesQuery(bTags);
+            })
+          : backendResults;
+
+        // Search localStorage custom business profiles ONLY when user types a query or matches category
         let matchedLocalProfiles: any[] = [];
         if (typeof window !== "undefined") {
           const profilesStr = window.localStorage.getItem("armbiz-business-profiles");
@@ -99,7 +112,11 @@ export default function Navbar() {
               matchedLocalProfiles = profiles
                 .filter((p: any) => {
                   if (!p.isPublished || !p.businessName) return false;
-                  if (!query) return true;
+                  if (!query) {
+                    // When empty query, only include if category is restaurant / horeca
+                    const pCat = (p.category || "").toLowerCase();
+                    return pCat.includes("horeca") || pCat.includes("restaurant") || pCat.includes("ռեստորան");
+                  }
                   return matchesQuery(p.businessName) || matchesQuery(p.shortDesc) || matchesQuery(p.fullDesc) || matchesQuery(p.category) || matchesQuery(p.city);
                 })
                 .map((p: any) => {
@@ -112,7 +129,7 @@ export default function Navbar() {
                     slug: validSlug,
                     name: p.businessName,
                     city: p.city || "Yerevan",
-                    category: { name: p.category || "Business" },
+                    category: { name: p.category || "HoReCa" },
                     images: p.gallery || [],
                     logo: p.logo || "",
                     rating: p.ratingAvg || 5.0,
@@ -126,16 +143,16 @@ export default function Navbar() {
         }
 
         // Normalize backend items
-        const normalizedBackend = backendResults.map((b: any) => ({
+        const normalizedBackend = filteredBackend.map((b: any) => ({
           _id: b._id || b.id,
           slug: b.slug || b._id || b.id,
           name: b.name,
           city: b.city || "Yerevan",
-          category: typeof b.category === "object" ? b.category : { name: b.category || "" },
+          category: typeof b.category === "object" ? b.category : { name: b.category || "HoReCa" },
           images: b.images || [],
-          logo: b.logo || "",
-          rating: b.rating || 0,
-          verified: b.verified,
+          logo: b.logo || b.logoUrl || "",
+          rating: b.rating || b.ratingAvg || 0,
+          verified: b.verified || b.isVerified,
         }));
 
         // Normalize mock items
@@ -144,14 +161,14 @@ export default function Navbar() {
           slug: b.slug || b.id,
           name: b.name,
           city: b.city || "Yerevan",
-          category: b.category || { name: "" },
+          category: b.category || { name: "HoReCa" },
           images: b.images || [],
           logo: b.logoUrl || "",
           rating: b.ratingAvg || 0,
           verified: b.isVerified,
         }));
 
-        // Merge backend + mock + local storage, removing duplicates
+        // Merge backend + Top Restaurants mock + matched local profiles
         const combined = [...normalizedBackend, ...normalizedMock, ...matchedLocalProfiles];
         const uniqueList: any[] = [];
         const seenKeys = new Set<string>();
@@ -298,13 +315,16 @@ export default function Navbar() {
                 {loadingSuggestions ? (
                   <div className="p-4 text-xs text-center text-[hsl(var(--muted-foreground))] flex items-center justify-center gap-2">
                     <span className="h-3.5 w-3.5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-                    Loading...
+                    {locale === "hy" ? "Բեռնվում է..." : locale === "ru" ? "Загрузка..." : "Loading..."}
                   </div>
                 ) : suggestions.length > 0 ? (
                   <div className="py-1">
                     <div className="px-3.5 py-2 text-[10px] font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))] bg-[hsl(var(--muted))/25] flex items-center justify-between">
-                      <span>{navQuery.trim() ? `Search Results (${suggestions.length})` : "⭐ Popular Businesses"}</span>
-                      <span className="text-[9px] font-normal text-[hsl(var(--muted-foreground))] opacity-75">Use ↑↓ to navigate</span>
+                      <span>
+                        {navQuery.trim()
+                          ? `${t.nav?.searchResults || "Search Results"} (${suggestions.length})`
+                          : (t.nav?.popularBusinesses || "Popular Businesses")}
+                      </span>
                     </div>
                     {suggestions.map((biz, idx) => {
                       const isSelected = idx === selectedIndex;
@@ -323,9 +343,8 @@ export default function Navbar() {
                             e.preventDefault();
                             navigateToBusiness(biz);
                           }}
-                          className={`w-full px-3.5 py-2.5 flex items-center gap-3 transition-colors cursor-pointer border-b border-[hsl(var(--border))]/20 last:border-0 ${
-                            isSelected ? "bg-primary/10 text-primary font-semibold" : "hover:bg-[hsl(var(--muted))/50]"
-                          }`}
+                          className={`w-full px-3.5 py-2.5 flex items-center gap-3 transition-colors cursor-pointer border-b border-[hsl(var(--border))]/20 last:border-0 ${isSelected ? "bg-primary/10 text-primary font-semibold" : "hover:bg-[hsl(var(--muted))/50]"
+                            }`}
                         >
                           {imageUrl ? (
                             <img
@@ -371,7 +390,7 @@ export default function Navbar() {
                   </div>
                 ) : (
                   <div className="p-4 text-xs text-center text-[hsl(var(--muted-foreground))]">
-                    No businesses found for &quot;{navQuery}&quot;
+                    {t.nav?.noBusinessesFound || "No businesses found"} &quot;{navQuery}&quot;
                   </div>
                 )}
               </div>

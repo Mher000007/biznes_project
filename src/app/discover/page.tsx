@@ -424,11 +424,10 @@ function DiscoverContent() {
                         key={pNum}
                         type="button"
                         onClick={() => handlePageChange(pNum)}
-                        className={`h-8 w-8 !p-0 rounded-full text-xs font-bold transition-all flex items-center justify-center cursor-pointer ${
-                          pNum === currentPage
+                        className={`h-8 w-8 !p-0 rounded-full text-xs font-bold transition-all flex items-center justify-center cursor-pointer ${pNum === currentPage
                             ? "!bg-[hsl(var(--foreground))] !text-[hsl(var(--background))] !border-[hsl(var(--foreground))] shadow-sm"
                             : "!bg-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] !border-transparent hover:!border-[hsl(var(--border))]"
-                        }`}
+                          }`}
                       >
                         {pNum}
                       </button>
