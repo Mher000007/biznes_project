@@ -280,8 +280,9 @@ export default function BusinessProfilePage() {
           try {
             const profiles = JSON.parse(profilesStr);
             const foundProfileIndex = profiles.findIndex((p: any) => {
-              const profileSlug = p.businessName ? p.businessName.toLowerCase().trim().replace(/\s+/g, "-").replace(/[^\w-]/g, "") : "";
-              return profileSlug === slug && p.isPublished;
+              const profileSlug = p.businessName ? p.businessName.toLowerCase().trim().replace(/\s+/g, "-").replace(/[^\w\u0531-\u058F-]/g, "") : "";
+              const decodedSlug = typeof slug === "string" ? decodeURIComponent(slug) : slug;
+              return (profileSlug === slug || profileSlug === decodedSlug || p.ownerUsername === slug || `custom-${p.ownerUsername}` === slug) && p.isPublished;
             });
             if (foundProfileIndex !== -1) {
               const foundProfile = profiles[foundProfileIndex];

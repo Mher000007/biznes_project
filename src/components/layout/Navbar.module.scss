@@ -81,7 +81,8 @@
   border-radius: 4px; // Max 4px border radius for soft but structured look
   border: 1px solid transparent;
   flex: 1;
-  overflow: hidden;
+  overflow: visible;
+  position: relative;
   height: 40px;
   transition: $transition-smooth;
 

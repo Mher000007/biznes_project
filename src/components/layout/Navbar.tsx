@@ -11,6 +11,7 @@ import { LocationSelect } from "@/components/ui/LocationSelect";
 import { MOCK_BUSINESSES } from "@/data/mock-businesses";
 import axios from "axios";
 import { getApiUrl } from "@/lib/utils";
+import { transliterateArmenian } from "@/lib/transliterate";
 
 import styles from "./Navbar.module.scss";
 
@@ -33,11 +34,13 @@ export default function Navbar() {
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
   const navigateToBusiness = (biz: any) => {
-    const targetSlug = biz.slug || biz._id || biz.id;
+    const targetSlug = (biz.slug && String(biz.slug).trim()) || (biz._id && String(biz._id).trim()) || (biz.id && String(biz.id).trim());
     setIsSuggestionsOpen(false);
     setSelectedIndex(-1);
     setNavQuery("");
-    router.push(`/business/${targetSlug}`);
+    if (targetSlug) {
+      router.push(`/business/${targetSlug}`);
+    }
   };
 
   // Debounced search suggestions fetch (API + Mock + LocalStorage)
@@ -65,14 +68,23 @@ export default function Navbar() {
           console.warn("Backend live search warning:", err);
         }
 
+        const armQuery = transliterateArmenian(query, "hy").toLowerCase();
+        const enQuery = transliterateArmenian(query, "en").toLowerCase();
+
+        const matchesQuery = (text?: string) => {
+          if (!text) return false;
+          const lText = text.toLowerCase();
+          return lText.includes(query) || lText.includes(armQuery) || lText.includes(enQuery);
+        };
+
         // Search local mock businesses
         const matchedMock = query
           ? MOCK_BUSINESSES.filter((b) => {
-              const nameMatch = b.name.toLowerCase().includes(query);
-              const catMatch = b.category?.name?.toLowerCase().includes(query) || b.category?.slug?.toLowerCase().includes(query);
-              const cityMatch = b.city?.toLowerCase().includes(query);
-              const descMatch = (b.description || "").toLowerCase().includes(query) || (b.shortDescription || "").toLowerCase().includes(query);
-              const tagMatch = (b.tags || []).some((t) => t.toLowerCase().includes(query));
+              const nameMatch = matchesQuery(b.name);
+              const catMatch = matchesQuery(b.category?.name) || matchesQuery(b.category?.slug);
+              const cityMatch = matchesQuery(b.city);
+              const descMatch = matchesQuery(b.description) || matchesQuery(b.shortDescription);
+              const tagMatch = (b.tags || []).some((t) => matchesQuery(t));
               return nameMatch || catMatch || cityMatch || descMatch || tagMatch;
             })
           : MOCK_BUSINESSES.filter((b) => b.isFeatured);
@@ -88,23 +100,25 @@ export default function Navbar() {
                 .filter((p: any) => {
                   if (!p.isPublished || !p.businessName) return false;
                   if (!query) return true;
-                  const bName = p.businessName.toLowerCase();
-                  const bDesc = (p.shortDesc || p.fullDesc || "").toLowerCase();
-                  const bCat = (p.category || "").toLowerCase();
-                  const bCity = (p.city || "").toLowerCase();
-                  return bName.includes(query) || bDesc.includes(query) || bCat.includes(query) || bCity.includes(query);
+                  return matchesQuery(p.businessName) || matchesQuery(p.shortDesc) || matchesQuery(p.fullDesc) || matchesQuery(p.category) || matchesQuery(p.city);
                 })
-                .map((p: any) => ({
-                  _id: `custom-${p.ownerUsername}`,
-                  slug: p.businessName ? p.businessName.toLowerCase().trim().replace(/\s+/g, "-").replace(/[^\w-]/g, "") : "",
-                  name: p.businessName,
-                  city: p.city || "Yerevan",
-                  category: { name: p.category || "Business" },
-                  images: p.gallery || [],
-                  logo: p.logo || "",
-                  rating: p.ratingAvg || 5.0,
-                  verified: true,
-                }));
+                .map((p: any) => {
+                  const generatedSlug = p.businessName
+                    ? p.businessName.toLowerCase().trim().replace(/\s+/g, "-").replace(/[^\w\u0531-\u058F-]/g, "")
+                    : "";
+                  const validSlug = generatedSlug || `custom-${p.ownerUsername}`;
+                  return {
+                    _id: `custom-${p.ownerUsername}`,
+                    slug: validSlug,
+                    name: p.businessName,
+                    city: p.city || "Yerevan",
+                    category: { name: p.category || "Business" },
+                    images: p.gallery || [],
+                    logo: p.logo || "",
+                    rating: p.ratingAvg || 5.0,
+                    verified: true,
+                  };
+                });
             } catch (e) {
               console.error("Failed to parse local profiles for search", e);
             }
