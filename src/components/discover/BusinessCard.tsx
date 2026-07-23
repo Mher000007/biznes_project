@@ -5,33 +5,33 @@ import type { Business } from "@/types/business";
 import styles from "./BusinessCard.module.scss";
 import { useI18n } from "@/i18n";
 
-// Force Next.js compilation reload: 1
+// Force Next.js compilation reload: 3
 // Helper to parse time string into minutes from midnight
 function parseTimeToMinutes(timeStr: string, defaultMinutes: number): number {
   if (!timeStr) return defaultMinutes;
-  
+
   const clean = timeStr.trim().toLowerCase();
-  
+
   // Check for AM/PM format
   const isPM = clean.includes("pm");
   const isAM = clean.includes("am");
-  
+
   // Extract numbers and colon
   const timeOnly = clean.replace(/[^0-9:]/g, "");
-  
+
   const parts = timeOnly.split(":");
   let hours = parseInt(parts[0], 10);
   let minutes = parts[1] ? parseInt(parts[1], 10) : 0;
-  
+
   if (isNaN(hours)) return defaultMinutes;
   if (isNaN(minutes)) minutes = 0;
-  
+
   if (isPM && hours < 12) {
     hours += 12;
   } else if (isAM && hours === 12) {
     hours = 0;
   }
-  
+
   return hours * 60 + minutes;
 }
 
@@ -105,7 +105,7 @@ export default function BusinessCard({ business, viewMode = "list" }: { business
             setIsFavorited(true);
           }
         }
-      } catch (e) {}
+      } catch (e) { }
     }
   }, [business.id, business.slug]);
 
@@ -157,7 +157,7 @@ export default function BusinessCard({ business, viewMode = "list" }: { business
   return (
     <div className={viewMode === "grid" ? styles.cardGrid : styles.cardList}>
       {/* Image container */}
-      <div className="relative shrink-0">
+      <div className="relative shrink-0 group">
         <Link href={`/business/${business.slug}`} className={styles.imageContainer}>
           {business.logoUrl || business.coverImageUrl ? (
             <img
@@ -176,14 +176,16 @@ export default function BusinessCard({ business, viewMode = "list" }: { business
           onClick={toggleFavorite}
           aria-label="Add to favorites"
           title={isFavorited ? "Remove from favorites" : "Save to favorites"}
-          className="absolute top-2 right-2 p-1.5 transition-transform hover:scale-110 cursor-pointer z-10 bg-transparent border-0"
+          className={`absolute top-2 right-2 p-1.5 transition-all hover:scale-110 cursor-pointer z-10 bg-transparent border-0 ${
+            isFavorited ? "opacity-100 scale-100" : "opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100"
+          }`}
         >
           <Bookmark
-            className={`h-5 w-5 transition-all drop-shadow-md ${
-              isFavorited
-                ? "fill-amber-500 text-amber-500 scale-110"
-                : "text-white hover:text-amber-400"
-            }`}
+            className="h-5 w-5 transition-all drop-shadow-md"
+            style={{
+              stroke: isFavorited ? "#f59e0b" : "white",
+              fill: isFavorited ? "#f59e0b" : "none",
+            }}
           />
         </button>
       </div>
@@ -260,7 +262,13 @@ export default function BusinessCard({ business, viewMode = "list" }: { business
             title={isFavorited ? "Remove from favorites" : "Save to favorites"}
             className="bg-transparent border-0 p-1.5 transition-transform hover:scale-115 cursor-pointer flex items-center justify-center shrink-0"
           >
-            <Bookmark className={`h-5 w-5 transition-all ${isFavorited ? "fill-amber-500 text-amber-500 scale-110 drop-shadow-sm" : "text-[hsl(var(--muted-foreground))] hover:text-amber-500"}`} />
+            <Bookmark
+              className={`h-5 w-5 transition-all ${isFavorited ? "scale-110 drop-shadow-sm" : ""}`}
+              style={{
+                stroke: isFavorited ? "#f59e0b" : "hsl(var(--muted-foreground))",
+                fill: isFavorited ? "#f59e0b" : "none",
+              }}
+            />
           </button>
 
           <Link href={`/business/${business.slug}`} className={styles.actionButton}>
