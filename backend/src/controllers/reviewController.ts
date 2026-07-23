@@ -150,20 +150,38 @@ export const createReview = asyncHandler(
         return;
       }
 
-      // Check for duplicate (1 review per user per business)
+      // Check for duplicate (1 review per user per business) - update existing review if present
       const existing = await Review.findOne({
         business: businessId,
         author: userId,
       });
+
+      resolvedAuthorName = userName || 'Anonymous';
+
       if (existing) {
-        res.status(409).json({
-          success: false,
-          message: 'You have already reviewed this business. Delete your existing review to submit a new one.',
+        existing.rating = parsedRating;
+        existing.comment = trimmed;
+        if (Array.isArray(images)) existing.images = images;
+        if (Array.isArray(videos)) existing.videos = videos;
+        existing.authorName = resolvedAuthorName;
+        existing.createdAt = new Date();
+        await existing.save();
+
+        // Recalculate business average rating
+        const allBusinessReviews = await Review.find({ business: businessId });
+        const count = allBusinessReviews.length;
+        const avg = count > 0 ? allBusinessReviews.reduce((sum, r) => sum + r.rating, 0) / count : 0;
+        business.ratingAvg = Math.round(avg * 10) / 10;
+        business.reviewCount = count;
+        await business.save();
+
+        res.status(200).json({
+          success: true,
+          message: 'Your review has been updated successfully',
+          data: existing,
         });
         return;
       }
-
-      resolvedAuthorName = userName || 'Anonymous';
     } else {
       // Guest validation
       if (!authorName || typeof authorName !== 'string' || authorName.trim().length < 2) {

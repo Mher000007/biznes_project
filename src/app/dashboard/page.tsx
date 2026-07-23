@@ -56,6 +56,8 @@ function authHeader() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+import UserProfileDashboard from "@/components/dashboard/UserProfileDashboard";
+
 export default function DashboardPage() {
   const { currentUser } = useAuth();
   const displayName = currentUser?.name || currentUser?.username || "User";
@@ -241,6 +243,10 @@ export default function DashboardPage() {
 
     loadDashboardData();
   }, [currentUser]);
+
+  if (currentUser && (currentUser.accountType === "personal" || currentUser.role === "user")) {
+    return <UserProfileDashboard />;
+  }
 
   return (
     <ProtectedRoute>

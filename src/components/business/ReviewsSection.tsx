@@ -261,12 +261,13 @@ export default function ReviewsSection({
   const [helpfulSet, setHelpfulSet] = useState<Set<string>>(new Set());
   const [mediaFiles, setMediaFiles] = useState<{ url: string; type: 'image' }[]>([]);
   const [imageUploading, setImageUploading] = useState(false);
-  const [guestName, setGuestName] = useState(currentUser?.name || "");
+  const [guestName, setGuestName] = useState(currentUser?.name || currentUser?.username || "");
 
   // Update guestName if currentUser loads asynchronously
   useEffect(() => {
-    if (currentUser?.name && !guestName) {
-      setGuestName(currentUser.name);
+    const userDisplayName = currentUser?.name || currentUser?.username;
+    if (userDisplayName && guestName !== userDisplayName) {
+      setGuestName(userDisplayName);
     }
   }, [currentUser, guestName]);
 
@@ -484,8 +485,32 @@ export default function ReviewsSection({
 
         if (res.data?.success) {
           const newReview = res.data.data as Review;
-          setReviews((prev) => [newReview, ...prev]);
+          const enrichedReview = {
+            ...newReview,
+            authorName: currentUser?.name || currentUser?.username || guestName.trim() || "Anonymous",
+            userUsername: currentUser?.username || "",
+            userEmail: currentUser?.email || "",
+            businessSlug: businessSlug,
+            rating: selectedRating,
+            comment: comment.trim(),
+            images: images.length > 0 ? images : (newReview.images || undefined),
+            createdAt: newReview.createdAt || new Date().toISOString(),
+          };
+
+          setReviews((prev) => [enrichedReview, ...prev]);
           setReviewCount((c) => c + 1);
+
+          try {
+            if (currentUser) {
+              const userReviewsStr = localStorage.getItem("armbiz_user_reviews");
+              const userReviews = userReviewsStr ? JSON.parse(userReviewsStr) : [];
+              if (!userReviews.some((r: any) => r._id === enrichedReview._id)) {
+                userReviews.unshift(enrichedReview);
+                localStorage.setItem("armbiz_user_reviews", JSON.stringify(userReviews));
+              }
+            }
+            window.dispatchEvent(new Event("reviewsUpdated"));
+          } catch { /* ignore */ }
 
           // Recalculate avg
           const newAvg = ((avgRating * (reviewCount)) + selectedRating) / (reviewCount + 1);
@@ -516,10 +541,13 @@ export default function ReviewsSection({
       const images = mediaFiles.filter(m => m.type === 'image').map(m => m.url);
       const videos = mediaFiles.filter(m => (m as any).type === 'video').map(m => m.url);
 
-      const newReview: Review = {
+      const newReview: Review & { userUsername?: string; userEmail?: string; businessSlug?: string; businessName?: string } = {
         _id: `local-${Date.now()}`,
-        author: null,
-        authorName: currentUser?.name || guestName.trim() || "Anonymous",
+        author: currentUser ? { _id: (currentUser as any)._id || (currentUser as any).id || "user", name: currentUser.name || currentUser.username } : null,
+        authorName: currentUser?.name || currentUser?.username || guestName.trim() || "Anonymous",
+        userUsername: currentUser?.username || "",
+        userEmail: currentUser?.email || "",
+        businessSlug: businessSlug,
         rating: selectedRating,
         comment: comment.trim(),
         isVerified: false,
@@ -528,9 +556,41 @@ export default function ReviewsSection({
         images: images.length > 0 ? images : undefined,
         videos: videos.length > 0 ? videos : undefined,
       };
-      const updated = [newReview, ...reviews];
+      let updated: Review[] = [];
+      const existingIdx = reviews.findIndex(
+        (r) =>
+          r._id.startsWith("local-") &&
+          (r.authorName === newReview.authorName ||
+            (newReview.userUsername && (r as any).userUsername === newReview.userUsername))
+      );
+
+      if (existingIdx !== -1) {
+        updated = [...reviews];
+        updated[existingIdx] = {
+          ...updated[existingIdx],
+          ...newReview,
+          _id: updated[existingIdx]._id,
+        };
+      } else {
+        updated = [newReview, ...reviews];
+      }
+
       setReviews(updated);
-      try { localStorage.setItem(`armbiz-reviews-${businessSlug}`, JSON.stringify(updated)); } catch { /* ignore */ }
+      try {
+        localStorage.setItem(`armbiz-reviews-${businessSlug}`, JSON.stringify(updated));
+        if (currentUser) {
+          const userReviewsStr = localStorage.getItem("armbiz_user_reviews");
+          let userReviews: any[] = userReviewsStr ? JSON.parse(userReviewsStr) : [];
+          const uIdx = userReviews.findIndex((r) => r.businessSlug === businessSlug);
+          if (uIdx !== -1) {
+            userReviews[uIdx] = { ...userReviews[uIdx], ...newReview, _id: userReviews[uIdx]._id };
+          } else {
+            userReviews.unshift(newReview);
+          }
+          localStorage.setItem("armbiz_user_reviews", JSON.stringify(userReviews));
+        }
+        window.dispatchEvent(new Event("reviewsUpdated"));
+      } catch { /* ignore */ }
 
       // Recalculate based on initial data + all user-added reviews
       const userAdded = updated.filter(r => r._id.startsWith("local-"));
@@ -625,6 +685,11 @@ export default function ReviewsSection({
                 <div className={styles.guestNameField}>
                   <label className={styles.label} htmlFor="guest-name">
                     {t.reviewsSection?.yourName || "Your Name *"}
+                    {currentUser && (
+                      <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-normal ml-2">
+                        ({locale === "hy" ? "Մուտք գործված հաշիվ" : locale === "ru" ? "Авторизоваն" : "Logged in"})
+                      </span>
+                    )}
                   </label>
                   <input
                     type="text"
@@ -632,7 +697,11 @@ export default function ReviewsSection({
                     value={guestName}
                     placeholder={t.reviewsSection?.enterName || "Enter your name"}
                     onChange={(e) => setGuestName(e.target.value)}
-                    className={styles.inputField}
+                    className={`${styles.inputField} ${
+                      currentUser ? "opacity-80 cursor-not-allowed bg-[hsl(var(--muted))]/50" : ""
+                    }`}
+                    disabled={Boolean(currentUser)}
+                    readOnly={Boolean(currentUser)}
                     required
                   />
                 </div>
@@ -802,7 +871,7 @@ export default function ReviewsSection({
 
             {(!isBackend ? reviews.slice((page - 1) * 3, page * 3) : reviews).map((review, idx) => (
               <div
-                key={review._id}
+                key={review._id ? `${review._id}-${idx}` : `rev-${idx}`}
                 className={styles.reviewCard}
                 style={{ animationDelay: `${idx * 0.06}s` }}
               >

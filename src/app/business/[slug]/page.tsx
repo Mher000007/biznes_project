@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { MOCK_BUSINESSES } from "@/data/mock-businesses";
-import { Star, MapPin, BadgeCheck, Globe, Phone, Mail, Clock, Users, Calendar, ArrowLeft, Send, X, Compass, ChevronLeft, ChevronRight, CheckCircle, Maximize2, ChevronDown } from "lucide-react";
+import { Star, MapPin, BadgeCheck, Globe, Phone, Mail, Clock, Users, Calendar, ArrowLeft, Send, X, Compass, ChevronLeft, ChevronRight, CheckCircle, Maximize2, ChevronDown, Heart, Bookmark } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
 import { getApiUrl } from "@/lib/utils";
@@ -10,6 +10,7 @@ import styles from "@/components/business/BusinessProfile.module.scss";
 import ReviewsSection from "@/components/business/ReviewsSection";
 import StoryViewer from "@/components/landing/StoryViewer";
 import { useI18n } from "@/i18n";
+import { useAuth } from "@/context/AuthContext";
 import dynamic from "next/dynamic";
 import { getOpenStatus } from "@/components/discover/BusinessCard";
 
@@ -162,12 +163,29 @@ export default function BusinessProfilePage() {
 
 
 
+  const formatPhoneDigits = (raw: string) => {
+    if (!raw) return "";
+    const clean = raw.replace(/^\+374/, "").replace(/\D/g, "").slice(0, 8);
+    return clean.match(/.{1,2}/g)?.join(" ") || "";
+  };
+
+  const { currentUser } = useAuth();
   // Booking Modal State
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<any>(null);
-  const [customerName, setCustomerName] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
+  const [customerName, setCustomerName] = useState(currentUser?.name || currentUser?.username || "");
+  const [customerPhone, setCustomerPhone] = useState(formatPhoneDigits(currentUser?.phone || ""));
   const [bookingDate, setBookingDate] = useState("");
+
+  useEffect(() => {
+    const displayName = currentUser?.name || currentUser?.username;
+    if (displayName && customerName !== displayName) {
+      setCustomerName(displayName);
+    }
+    if (currentUser?.phone && !customerPhone) {
+      setCustomerPhone(formatPhoneDigits(currentUser.phone));
+    }
+  }, [currentUser, customerName, customerPhone]);
   const [bookingTime, setBookingTime] = useState("");
   const [isCustomDateClosed, setIsCustomDateClosed] = useState(false);
   const [bookingLocation, setBookingLocation] = useState("");
@@ -179,6 +197,64 @@ export default function BusinessProfilePage() {
   const isClosed = business
     ? !getOpenStatus(business.operatingHours || business.metadata?.operatingHours, t).isOpen
     : false;
+
+  const [isFavorited, setIsFavorited] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && business) {
+      try {
+        const favsStr = localStorage.getItem("armbiz_favorites");
+        if (favsStr) {
+          const favs: string[] = JSON.parse(favsStr);
+          if (favs.includes(business.id) || (business.slug && favs.includes(business.slug))) {
+            setIsFavorited(true);
+          }
+        }
+      } catch (e) {}
+    }
+  }, [business]);
+
+  const toggleFavorite = () => {
+    if (typeof window === "undefined" || !business) return;
+
+    try {
+      const favsStr = localStorage.getItem("armbiz_favorites");
+      const itemsStr = localStorage.getItem("armbiz_favorites_items");
+
+      let favs: string[] = favsStr ? JSON.parse(favsStr) : [];
+      let itemsMap: Record<string, any> = itemsStr ? JSON.parse(itemsStr) : {};
+
+      const key = business.slug || business.id;
+      const isCurrentlyFav = favs.includes(business.id) || (business.slug && favs.includes(business.slug));
+
+      if (isCurrentlyFav) {
+        favs = favs.filter((id) => id !== business.id && id !== business.slug);
+        delete itemsMap[business.id];
+        if (business.slug) delete itemsMap[business.slug];
+        setIsFavorited(false);
+      } else {
+        if (key && !favs.includes(key)) favs.push(key);
+        itemsMap[key] = {
+          id: business.id,
+          slug: business.slug || business.id,
+          name: business.name,
+          city: business.city || "Yerevan",
+          category: business.category,
+          ratingAvg: business.ratingAvg || 5.0,
+          images: business.images || (business.logoUrl ? [business.logoUrl] : business.coverImageUrl ? [business.coverImageUrl] : []),
+          logoUrl: business.logoUrl || business.coverImageUrl || "",
+          shortDescription: business.shortDescription || ""
+        };
+        setIsFavorited(true);
+      }
+
+      localStorage.setItem("armbiz_favorites", JSON.stringify(favs));
+      localStorage.setItem("armbiz_favorites_items", JSON.stringify(itemsMap));
+      window.dispatchEvent(new Event("favoritesUpdated"));
+    } catch (e) {
+      console.error("Failed to update favorites:", e);
+    }
+  };
 
   // Prevent background scrolling when Booking Modal is open
   useEffect(() => {
@@ -253,17 +329,17 @@ export default function BusinessProfilePage() {
           biz.logo = biz.logo && !isDefaultImage(biz.logo) ? biz.logo : "";
           biz.images = (biz.images || []).filter((url: string) => !isDefaultImage(url));
           biz.highlights = (biz.highlights || []).filter((h: any) => !isDefaultHighlight(h));
-            if (biz.metadata?.coverUrl) {
-              if (Array.isArray(biz.metadata.coverUrl)) {
-                biz.metadata.coverUrl = biz.metadata.coverUrl.filter((url: string) => !isDefaultImage(url));
-              } else if (typeof biz.metadata.coverUrl === 'string' && isDefaultImage(biz.metadata.coverUrl)) {
-                biz.metadata.coverUrl = "";
-              }
+          if (biz.metadata?.coverUrl) {
+            if (Array.isArray(biz.metadata.coverUrl)) {
+              biz.metadata.coverUrl = biz.metadata.coverUrl.filter((url: string) => !isDefaultImage(url));
+            } else if (typeof biz.metadata.coverUrl === 'string' && isDefaultImage(biz.metadata.coverUrl)) {
+              biz.metadata.coverUrl = "";
             }
-            // Resolve operatingHours from metadata if not present at top-level
-            biz.operatingHours = biz.operatingHours || biz.metadata?.operatingHours || [];
-            
-            setBusiness(biz);
+          }
+          // Resolve operatingHours from metadata if not present at top-level
+          biz.operatingHours = biz.operatingHours || biz.metadata?.operatingHours || [];
+
+          setBusiness(biz);
           setLiveRating(biz.rating || 0);
           setLiveReviewCount(biz.reviewCount || 0);
           setLoading(false);
@@ -528,10 +604,13 @@ export default function BusinessProfilePage() {
       return;
     }
 
+    const cleanPhoneDigits = customerPhone.replace(/\D/g, "");
+    const fullCustomerPhone = cleanPhoneDigits ? `+374${cleanPhoneDigits}` : "";
+
     const bookingPayload = {
       businessId: business.id || business._id,
       customerName,
-      customerPhone: `+374${customerPhone}`,
+      customerPhone: fullCustomerPhone,
       date: bookingDate,
       timeSlot: bookingTime,
       serviceName: selectedService?.name || "General Service",
@@ -573,13 +652,20 @@ export default function BusinessProfilePage() {
       // Save booking request to local storage so it is persisted offline/locally
       try {
         const localBookings = JSON.parse(window.localStorage.getItem("armbiz-local-bookings") || "[]");
+        const userBookings = JSON.parse(window.localStorage.getItem("armbiz_user_bookings") || "[]");
         const newBooking = {
           id: `booking-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           businessId: business.id || business._id,
+          businessName: business.name || "Business Listing",
+          businessSlug: business.slug || slug || "",
+          userKey: currentUser?.username || currentUser?.email || currentUser?.name || customerName,
+          userEmail: currentUser?.email || "",
           customerName,
-          customerPhone,
+          customerPhone: fullCustomerPhone,
           date: bookingDate,
+          time: bookingTime,
           timeSlot: bookingTime,
+          service: selectedService?.name || "General Service",
           serviceName: selectedService?.name || "General Service",
           totalPrice: selectedService?.price || 0,
           notes: bookingNotes,
@@ -587,7 +673,10 @@ export default function BusinessProfilePage() {
           createdAt: new Date().toISOString()
         };
         localBookings.push(newBooking);
+        userBookings.push(newBooking);
         window.localStorage.setItem("armbiz-local-bookings", JSON.stringify(localBookings));
+        window.localStorage.setItem("armbiz_user_bookings", JSON.stringify(userBookings));
+        window.dispatchEvent(new Event("bookingsUpdated"));
       } catch (e) {
         console.error("Error saving local booking to localStorage", e);
       }
@@ -718,6 +807,15 @@ export default function BusinessProfilePage() {
                 </div>
               );
             })()}
+
+            <button
+              type="button"
+              onClick={toggleFavorite}
+              className="bg-transparent border-0 p-1.5 transition-transform hover:scale-115 cursor-pointer flex items-center justify-center"
+              title={isFavorited ? "Remove from favorites" : "Save to favorites"}
+            >
+              <Bookmark className={`h-6 w-6 transition-all ${isFavorited ? "fill-amber-500 text-amber-500 scale-110 drop-shadow-sm" : "text-[hsl(var(--muted-foreground))] hover:text-amber-500"}`} />
+            </button>
           </div>
           <p className="text-[hsl(var(--muted-foreground))] mt-1 text-base">{business.shortDescription || business.description}</p>
 
@@ -736,11 +834,10 @@ export default function BusinessProfilePage() {
             }
           }}
           disabled={isClosed}
-          className={`py-3.5 px-6 rounded-xl text-sm font-semibold shadow-lg shrink-0 transition-all ${
-            isClosed
-              ? "bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] border border-[hsl(var(--border))] cursor-not-allowed opacity-60"
-              : "btn-primary"
-          }`}
+          className={`py-3.5 px-6 rounded-xl text-sm font-semibold shadow-lg shrink-0 transition-all ${isClosed
+            ? "bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] border border-[hsl(var(--border))] cursor-not-allowed opacity-60"
+            : "btn-primary"
+            }`}
         >
           {isClosed ? (t.business?.closed || "Closed") : (t.business?.bookAppointment || "Book Appointment")}
         </button>
@@ -1030,35 +1127,60 @@ export default function BusinessProfilePage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold mb-1">Your Full Name *</label>
+                  <label className="block text-xs font-semibold mb-1">
+                    Your Full Name *
+                    {currentUser && (
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-normal ml-2">
+                        (Logged in as {currentUser.name || currentUser.username})
+                      </span>
+                    )}
+                  </label>
                   <input
                     required
                     type="text"
                     value={customerName}
                     onChange={e => setCustomerName(e.target.value)}
                     placeholder="Enter your name"
-                    className="w-full border border-[hsl(var(--border))] rounded-lg px-3 py-2 text-sm bg-transparent outline-none focus:border-[hsl(var(--primary))]"
+                    disabled={Boolean(currentUser)}
+                    readOnly={Boolean(currentUser)}
+                    className={`w-full border border-[hsl(var(--border))] rounded-lg px-3 py-2 text-sm bg-transparent outline-none focus:border-[hsl(var(--primary))] ${
+                      currentUser ? "opacity-80 cursor-not-allowed bg-[hsl(var(--muted))]/50" : ""
+                    }`}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold mb-1">Phone Number *</label>
-                  <div className="flex w-full border border-[hsl(var(--border))] rounded-lg bg-transparent overflow-hidden focus-within:border-[hsl(var(--primary))] focus-within:ring-1 focus-within:ring-[hsl(var(--primary))] transition-all">
-                    <div className="px-3 py-2 bg-[hsl(var(--muted))]/50 text-sm font-medium border-r border-[hsl(var(--border))] flex items-center justify-center text-[hsl(var(--foreground))] select-none">
+                  <label className="block text-xs font-semibold mb-1">
+                    Phone Number *
+                    {currentUser && (
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-normal ml-2">
+                        (Logged in account)
+                      </span>
+                    )}
+                  </label>
+                  <div className={`flex w-full border border-[hsl(var(--border))] rounded-lg overflow-hidden transition-all ${
+                    currentUser ? "opacity-80 cursor-not-allowed bg-[hsl(var(--muted))]/50" : "bg-transparent focus-within:border-[hsl(var(--primary))] focus-within:ring-1 focus-within:ring-[hsl(var(--primary))]"
+                  }`}>
+                    <div className="px-3 py-2 bg-[hsl(var(--muted))]/50 text-sm font-medium border-r border-[hsl(var(--border))] flex items-center justify-center text-[hsl(var(--foreground))] select-none shrink-0">
                       +374
                     </div>
                     <input
                       required
                       type="tel"
-                      minLength={8}
-                      maxLength={8}
+                      inputMode="numeric"
                       value={customerPhone}
                       onChange={e => {
-                        const val = e.target.value.replace(/\D/g, '').slice(0, 8);
-                        setCustomerPhone(val);
+                        const digitsOnly = e.target.value.replace(/\D/g, "").slice(0, 8);
+                        const formatted = digitsOnly.match(/.{1,2}/g)?.join(" ") || "";
+                        setCustomerPhone(formatted);
                       }}
-                      placeholder="XX XXXXXX"
-                      className="flex-1 px-3 py-2 text-sm bg-transparent outline-none w-full"
+                      disabled={Boolean(currentUser)}
+                      readOnly={Boolean(currentUser)}
+                      maxLength={11}
+                      placeholder="99 12 34 56"
+                      className={`flex-1 px-3 py-2 text-sm outline-none w-full font-medium tracking-wider bg-transparent ${
+                        currentUser ? "cursor-not-allowed" : ""
+                      }`}
                     />
                   </div>
                 </div>

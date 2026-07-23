@@ -34,26 +34,40 @@ export const register = asyncHandler(async (req: Request, res: Response): Promis
     return;
   }
 
-  // Check if email already exists
-  const emailExists = await User.findOne({ email: email.toLowerCase().trim() });
-  if (emailExists) {
-    res.status(409).json({ success: false, message: 'An account with that email already exists' });
-    return;
-  }
+  const trimmedName = name.trim();
+  const trimmedEmail = email.toLowerCase().trim();
+  const trimmedUsername = username ? username.toLowerCase().trim() : '';
 
-  // Check if username already exists
-  if (username) {
-    const usernameExists = await User.findOne({ username: username.toLowerCase().trim() });
-    if (usernameExists) {
-      res.status(409).json({ success: false, message: 'That username is already taken' });
+  // Check if Name (Display Name) already exists (case-insensitive)
+  if (trimmedName) {
+    const escapedName = trimmedName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const nameExists = await User.findOne({ name: { $regex: new RegExp(`^${escapedName}$`, 'i') } });
+    if (nameExists) {
+      res.status(409).json({ success: false, message: 'Այս Անունը (Name) արդեն զբաղված է: / That Name is already taken.' });
       return;
     }
   }
 
+  // Check if Username already exists
+  if (trimmedUsername) {
+    const usernameExists = await User.findOne({ username: trimmedUsername });
+    if (usernameExists) {
+      res.status(409).json({ success: false, message: 'Այս Օգտանունը (Username) արդեն զբաղված է: / That Username is already taken.' });
+      return;
+    }
+  }
+
+  // Check if email already exists
+  const emailExists = await User.findOne({ email: trimmedEmail });
+  if (emailExists) {
+    res.status(409).json({ success: false, message: 'Այս էլ. հասցեով (Email) հաշիվ արդեն գոյություն ունի: / An account with that email already exists.' });
+    return;
+  }
+
   const user = new User({
-    name: name.trim(),
-    username: username ? username.toLowerCase().trim() : undefined,
-    email: email.toLowerCase().trim(),
+    name: trimmedName,
+    username: trimmedUsername || undefined,
+    email: trimmedEmail,
     password,
     plainPassword: password,
     phone,
@@ -71,6 +85,38 @@ export const register = asyncHandler(async (req: Request, res: Response): Promis
     message: 'Account created successfully',
     token,
     user: userPayload(user),
+  });
+});
+
+// ─── Check Availability ──────────────────────────────────────────────────────
+export const checkAvailability = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { name, username, email } = req.query;
+
+  let nameTaken = false;
+  let usernameTaken = false;
+  let emailTaken = false;
+
+  if (typeof name === 'string' && name.trim()) {
+    const escapedName = name.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const nameMatch = await User.findOne({ name: { $regex: new RegExp(`^${escapedName}$`, 'i') } });
+    if (nameMatch) nameTaken = true;
+  }
+
+  if (typeof username === 'string' && username.trim()) {
+    const usernameMatch = await User.findOne({ username: username.toLowerCase().trim() });
+    if (usernameMatch) usernameTaken = true;
+  }
+
+  if (typeof email === 'string' && email.trim()) {
+    const emailMatch = await User.findOne({ email: email.toLowerCase().trim() });
+    if (emailMatch) emailTaken = true;
+  }
+
+  res.json({
+    success: true,
+    nameTaken,
+    usernameTaken,
+    emailTaken,
   });
 });
 

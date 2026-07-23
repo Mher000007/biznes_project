@@ -196,7 +196,7 @@
 *::before,
 *::after {
   box-sizing: border-box;
-  border-color: var(--border-color-rgba) !important;
+  border-color: var(--border-color-rgba);
 }
 
 html {

@@ -3,9 +3,11 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Building2, User, ArrowRight, ChevronLeft, X } from "lucide-react";
-import { AccountType } from "@/lib/auth";
+import { AccountType, getUsers } from "@/lib/auth";
 import { useAuth } from "@/context/AuthContext";
 import { useI18n } from "@/i18n";
+import axios from "axios";
+import { getApiUrl } from "@/lib/utils";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -17,6 +19,60 @@ export default function SignUpPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
+
+  // Debounced check for Username availability
+  useEffect(() => {
+    if (!username.trim()) {
+      setUsernameError(null);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const res = await axios.get(`${getApiUrl()}/auth/check-availability?username=${encodeURIComponent(username.trim())}`);
+        if (res.data?.usernameTaken) {
+          setUsernameError("Այս Օգտանունը (Username) արդեն զբաղված է:");
+        } else {
+          setUsernameError(null);
+        }
+      } catch (err) {
+        const users = getUsers();
+        if (users.some((u) => u.username.toLowerCase() === username.trim().toLowerCase())) {
+          setUsernameError("Այս Օգտանունը (Username) արդեն զբաղված է:");
+        } else {
+          setUsernameError(null);
+        }
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [username]);
+
+  // Debounced check for Name availability
+  useEffect(() => {
+    if (!name.trim()) {
+      setNameError(null);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const res = await axios.get(`${getApiUrl()}/auth/check-availability?name=${encodeURIComponent(name.trim())}`);
+        if (res.data?.nameTaken) {
+          setNameError("Այս Անունը (Name) արդեն զբաղված է:");
+        } else {
+          setNameError(null);
+        }
+      } catch (err) {
+        const users = getUsers();
+        if (users.some((u) => u.displayName && u.displayName.toLowerCase() === name.trim().toLowerCase())) {
+          setNameError("Այս Անունը (Name) արդեն զբաղված է:");
+        } else {
+          setNameError(null);
+        }
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [name]);
 
   useEffect(() => {
     const handleAuthMessage = (event: MessageEvent) => {
@@ -81,6 +137,11 @@ export default function SignUpPage() {
 
     if (!accountType) {
       setError("Please choose an account type.");
+      return;
+    }
+
+    if (usernameError || nameError) {
+      setError(usernameError || nameError || "Please fix input errors before submitting.");
       return;
     }
 
@@ -171,7 +232,7 @@ export default function SignUpPage() {
 
         <form onSubmit={handleSubmit} className="space-y-3">
           {error && (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <div className="rounded-xl border border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-900/50 px-3 py-2 text-sm text-red-700 dark:text-red-400 font-medium">
               {error}
             </div>
           )}
@@ -182,8 +243,13 @@ export default function SignUpPage() {
               onChange={(e) => setUsername(e.target.value)}
               type="text"
               required
-              className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-sm outline-none transition-colors focus:border-[hsl(var(--foreground))]"
+              className={`w-full rounded-lg border px-3 py-2 text-sm outline-none transition-colors ${
+                usernameError ? "border-red-500 focus:border-red-500" : "border-[hsl(var(--border))] focus:border-[hsl(var(--foreground))]"
+              }`}
             />
+            {usernameError && (
+              <p className="text-xs text-red-500 font-medium mt-1">{usernameError}</p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Name</label>
@@ -192,8 +258,13 @@ export default function SignUpPage() {
               onChange={(e) => setName(e.target.value)}
               type="text"
               required
-              className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-sm outline-none transition-colors focus:border-[hsl(var(--foreground))]"
+              className={`w-full rounded-lg border px-3 py-2 text-sm outline-none transition-colors ${
+                nameError ? "border-red-500 focus:border-red-500" : "border-[hsl(var(--border))] focus:border-[hsl(var(--foreground))]"
+              }`}
             />
+            {nameError && (
+              <p className="text-xs text-red-500 font-medium mt-1">{nameError}</p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Email</label>
@@ -216,7 +287,11 @@ export default function SignUpPage() {
               className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-sm outline-none transition-colors focus:border-[hsl(var(--foreground))]"
             />
           </div>
-          <button type="submit" className="w-full h-10 rounded-lg text-sm font-medium btn-primary mt-1">
+          <button
+            type="submit"
+            disabled={!!usernameError || !!nameError}
+            className="w-full h-10 rounded-lg text-sm font-medium btn-primary mt-1 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             {accountType === "business" ? "Continue" : "Create account"}
           </button>
         </form>

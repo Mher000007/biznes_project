@@ -160,6 +160,10 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     return pathname === url.pathname && currentTab === tabParam;
   };
 
+  if (currentUser && (currentUser.accountType === "personal" || currentUser.role === "user")) {
+    return <div className="pt-16 min-h-screen">{children}</div>;
+  }
+
   return (
     <div className="pt-16 min-h-screen flex">
       <style jsx global>{`

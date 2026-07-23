@@ -1,5 +1,6 @@
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Star, MapPin, BadgeCheck } from "lucide-react";
+import { Star, MapPin, BadgeCheck, Bookmark } from "lucide-react";
 import type { Business } from "@/types/business";
 import styles from "./BusinessCard.module.scss";
 import { useI18n } from "@/i18n";
@@ -92,22 +93,100 @@ export default function BusinessCard({ business, viewMode = "list" }: { business
   const { t } = useI18n();
   const status = getOpenStatus(business.operatingHours, t);
 
+  const [isFavorited, setIsFavorited] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const favsStr = localStorage.getItem("armbiz_favorites");
+        if (favsStr) {
+          const favs: string[] = JSON.parse(favsStr);
+          if (favs.includes(business.id) || (business.slug && favs.includes(business.slug))) {
+            setIsFavorited(true);
+          }
+        }
+      } catch (e) {}
+    }
+  }, [business.id, business.slug]);
+
+  const toggleFavorite = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (typeof window === "undefined") return;
+
+    try {
+      const favsStr = localStorage.getItem("armbiz_favorites");
+      const itemsStr = localStorage.getItem("armbiz_favorites_items");
+
+      let favs: string[] = favsStr ? JSON.parse(favsStr) : [];
+      let itemsMap: Record<string, any> = itemsStr ? JSON.parse(itemsStr) : {};
+
+      const key = business.slug || business.id;
+      const isCurrentlyFav = favs.includes(business.id) || (business.slug && favs.includes(business.slug));
+
+      if (isCurrentlyFav) {
+        favs = favs.filter((id) => id !== business.id && id !== business.slug);
+        delete itemsMap[business.id];
+        if (business.slug) delete itemsMap[business.slug];
+        setIsFavorited(false);
+      } else {
+        if (key && !favs.includes(key)) favs.push(key);
+        itemsMap[key] = {
+          id: business.id,
+          slug: business.slug || business.id,
+          name: business.name,
+          city: business.city || "Yerevan",
+          category: business.category,
+          ratingAvg: business.ratingAvg || 5.0,
+          images: business.images || (business.logoUrl ? [business.logoUrl] : business.coverImageUrl ? [business.coverImageUrl] : []),
+          logoUrl: business.logoUrl || business.coverImageUrl || "",
+          shortDescription: business.shortDescription || ""
+        };
+        setIsFavorited(true);
+      }
+
+      localStorage.setItem("armbiz_favorites", JSON.stringify(favs));
+      localStorage.setItem("armbiz_favorites_items", JSON.stringify(itemsMap));
+      window.dispatchEvent(new Event("favoritesUpdated"));
+    } catch (e) {
+      console.error("Failed to update favorites:", e);
+    }
+  };
+
   return (
     <div className={viewMode === "grid" ? styles.cardGrid : styles.cardList}>
       {/* Image container */}
-      <Link href={`/business/${business.slug}`} className={styles.imageContainer}>
-        {business.logoUrl || business.coverImageUrl ? (
-          <img
-            src={business.logoUrl || business.coverImageUrl}
-            alt={business.name}
-            className={styles.image}
+      <div className="relative shrink-0">
+        <Link href={`/business/${business.slug}`} className={styles.imageContainer}>
+          {business.logoUrl || business.coverImageUrl ? (
+            <img
+              src={business.logoUrl || business.coverImageUrl}
+              alt={business.name}
+              className={styles.image}
+            />
+          ) : (
+            <div className={styles.imagePlaceholder}>
+              {business.name[0]}
+            </div>
+          )}
+        </Link>
+        <button
+          type="button"
+          onClick={toggleFavorite}
+          aria-label="Add to favorites"
+          title={isFavorited ? "Remove from favorites" : "Save to favorites"}
+          className="absolute top-2 right-2 p-1.5 transition-transform hover:scale-110 cursor-pointer z-10 bg-transparent border-0"
+        >
+          <Bookmark
+            className={`h-5 w-5 transition-all drop-shadow-md ${
+              isFavorited
+                ? "fill-amber-500 text-amber-500 scale-110"
+                : "text-white hover:text-amber-400"
+            }`}
           />
-        ) : (
-          <div className={styles.imagePlaceholder}>
-            {business.name[0]}
-          </div>
-        )}
-      </Link>
+        </button>
+      </div>
 
       {/* Details container */}
       <div className={styles.details}>
@@ -133,7 +212,7 @@ export default function BusinessCard({ business, viewMode = "list" }: { business
             </div>
           </div>
 
-          <div className={styles.category}>{business.category.name}</div>
+          <div className={styles.category}>{typeof business.category === "object" ? business.category.name : business.category}</div>
 
           <p className={styles.description}>{business.shortDescription}</p>
 
@@ -174,6 +253,16 @@ export default function BusinessCard({ business, viewMode = "list" }: { business
         </div>
 
         <div className={styles.footerRow}>
+          <button
+            type="button"
+            onClick={toggleFavorite}
+            aria-label="Add to favorites"
+            title={isFavorited ? "Remove from favorites" : "Save to favorites"}
+            className="bg-transparent border-0 p-1.5 transition-transform hover:scale-115 cursor-pointer flex items-center justify-center shrink-0"
+          >
+            <Bookmark className={`h-5 w-5 transition-all ${isFavorited ? "fill-amber-500 text-amber-500 scale-110 drop-shadow-sm" : "text-[hsl(var(--muted-foreground))] hover:text-amber-500"}`} />
+          </button>
+
           <Link href={`/business/${business.slug}`} className={styles.actionButton}>
             {t.discover?.bookNow || "Visit"}
           </Link>

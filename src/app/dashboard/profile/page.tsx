@@ -556,6 +556,25 @@ export default function DashboardProfilePage() {
   const toggleDayClosed = (index: number) => {
     const updated = [...operatingHours];
     updated[index].closed = !updated[index].closed;
+    if (updated[index].closed) {
+      (updated[index] as any).is24h = false;
+    }
+    setOperatingHours(updated);
+  };
+  const toggleDay24h = (index: number) => {
+    const updated = [...operatingHours];
+    const item = updated[index] as any;
+    const isCurrently24h = Boolean(item.is24h || (item.open === "00:00" && (item.close === "24:00" || item.close === "00:00")));
+    if (isCurrently24h) {
+      item.is24h = false;
+      item.open = "09:00";
+      item.close = "18:00";
+    } else {
+      item.closed = false;
+      item.is24h = true;
+      item.open = "00:00";
+      item.close = "24:00";
+    }
     setOperatingHours(updated);
   };
   const updateDayHours = (index: number, field: "open" | "close", rawVal: string) => {
@@ -1084,11 +1103,24 @@ export default function DashboardProfilePage() {
                             </label>
 
                             {!d.closed && (
+                              <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-bold transition-colors hover:bg-amber-500/20">
+                                <input
+                                  type="checkbox"
+                                  checked={Boolean((d as any).is24h || (d.open === "00:00" && (d.close === "24:00" || d.close === "00:00")))}
+                                  onChange={() => toggleDay24h(index)}
+                                  className="rounded border-amber-500 text-amber-500 focus:ring-amber-500 h-3.5 w-3.5"
+                                />
+                                <span>24/7 (Շուրջօրյա)</span>
+                              </label>
+                            )}
+
+                            {!d.closed && (
                               <div className="flex items-center gap-2">
                                 <input
                                   type="text"
                                   value={d.open}
                                   maxLength={5}
+                                  disabled={Boolean((d as any).is24h || (d.open === "00:00" && (d.close === "24:00" || d.close === "00:00")))}
                                   onKeyDown={(e) => {
                                     if (
                                       !/[0-9:]/.test(e.key) &&
@@ -1099,13 +1131,14 @@ export default function DashboardProfilePage() {
                                     }
                                   }}
                                   onChange={e => updateDayHours(index, "open", e.target.value)}
-                                  className="w-16 rounded border border-[hsl(var(--border))] px-2 py-1 text-center text-xs outline-none bg-transparent text-[hsl(var(--foreground))]"
+                                  className="w-16 rounded border border-[hsl(var(--border))] px-2 py-1 text-center text-xs outline-none bg-transparent text-[hsl(var(--foreground))] disabled:opacity-50 disabled:bg-[hsl(var(--muted))/30]"
                                 />
                                 <span className="text-xs text-[hsl(var(--muted-foreground))]">-</span>
                                 <input
                                   type="text"
                                   value={d.close}
                                   maxLength={5}
+                                  disabled={Boolean((d as any).is24h || (d.open === "00:00" && (d.close === "24:00" || d.close === "00:00")))}
                                   onKeyDown={(e) => {
                                     if (
                                       !/[0-9:]/.test(e.key) &&
@@ -1116,7 +1149,7 @@ export default function DashboardProfilePage() {
                                     }
                                   }}
                                   onChange={e => updateDayHours(index, "close", e.target.value)}
-                                  className="w-16 rounded border border-[hsl(var(--border))] px-2 py-1 text-center text-xs outline-none bg-transparent text-[hsl(var(--foreground))]"
+                                  className="w-16 rounded border border-[hsl(var(--border))] px-2 py-1 text-center text-xs outline-none bg-transparent text-[hsl(var(--foreground))] disabled:opacity-50 disabled:bg-[hsl(var(--muted))/30]"
                                 />
                               </div>
                             )}

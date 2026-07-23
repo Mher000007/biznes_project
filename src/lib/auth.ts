@@ -85,17 +85,23 @@ export function registerUser(input: {
 
   const users = getUsers();
   const normalizedUsername = input.username.trim().toLowerCase();
+  const normalizedDisplayName = input.displayName.trim().toLowerCase();
   const normalizedEmail = input.email.trim().toLowerCase();
 
   if (!normalizedUsername || !normalizedEmail || !input.password) {
     return { success: false, error: "Please enter username, email, and password." };
   }
 
-  const exists = users.some(
-    (user) => user.username.toLowerCase() === normalizedUsername || user.email.toLowerCase() === normalizedEmail
-  );
-  if (exists) {
-    return { success: false, error: "An account with that username or email already exists." };
+  if (users.some((user) => user.username.toLowerCase() === normalizedUsername)) {
+    return { success: false, error: "Այս Օգտանունը (Username) արդեն զբաղված է: / That Username is already taken." };
+  }
+
+  if (normalizedDisplayName && users.some((user) => user.displayName && user.displayName.toLowerCase() === normalizedDisplayName)) {
+    return { success: false, error: "Այս Անունը (Name) արդեն զբաղված է: / That Name is already taken." };
+  }
+
+  if (users.some((user) => user.email.toLowerCase() === normalizedEmail)) {
+    return { success: false, error: "Այս էլ. հասցեով (Email) հաշիվ արդեն գոյություն ունի: / An account with that Email already exists." };
   }
 
   const user: UserAccount = {
