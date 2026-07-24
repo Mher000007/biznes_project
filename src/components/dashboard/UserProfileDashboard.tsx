@@ -31,7 +31,10 @@ import {
   Award,
   Shield,
   MessageSquare,
-  Bookmark
+  Bookmark,
+  Coins,
+  Send,
+  UserPlus
 } from "lucide-react";
 import { MOCK_BUSINESSES } from "@/data/mock-businesses";
 
@@ -39,7 +42,7 @@ export default function UserProfileDashboard() {
   const { currentUser, logout, refreshUser } = useAuth();
   const { t, locale } = useI18n();
 
-  const [activeTab, setActiveTab] = useState<"profile" | "favorites" | "bookings" | "reviews" | "security">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "favorites" | "bookings" | "reviews" | "security" | "transfer" | "invite">("profile");
 
   // Profile Form States
   const [name, setName] = useState(currentUser?.name || "");
@@ -205,7 +208,8 @@ export default function UserProfileDashboard() {
         date: b.date || b.bookingDate || "N/A",
         time: b.time || b.timeSlot || b.bookingTime || "N/A",
         status: b.status || "pending",
-        notes: b.notes || b.bookingNotes || ""
+        notes: b.notes || b.bookingNotes || "",
+        totalPrice: b.totalPrice || b.price || 0
       }));
 
       setUserBookings(mapped);
@@ -544,6 +548,9 @@ export default function UserProfileDashboard() {
   const displayName = currentUser?.name || currentUser?.username || "User";
   const userInitial = displayName.charAt(0).toUpperCase();
 
+  // Calculate Findy Coins (5% of total bookings value)
+  const findyCoins = Math.floor(userBookings.reduce((sum, b) => sum + ((Number(b.totalPrice) || 0) * 0.05), 0));
+
   return (
     <div className="min-h-screen bg-[hsl(var(--background))] text-[hsl(var(--foreground))] py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto space-y-6">
@@ -608,6 +615,9 @@ export default function UserProfileDashboard() {
                   <CheckCircle className="w-3 h-3" />
                   {locale === "hy" ? "Անձնական Հաշիվ" : locale === "ru" ? "Личный аккаунт" : "Personal Account"}
                 </span>
+                <h3 className="text-2xl font-black text-[hsl(var(--foreground))] tracking-tight flex items-center ml-2">
+                  {findyCoins.toLocaleString()} <span className="text-emerald-500 text-sm font-bold uppercase tracking-wider ml-1">Coins</span>
+                </h3>
               </div>
               <p className="text-sm text-[hsl(var(--muted-foreground))] flex items-center justify-center sm:justify-start gap-3 flex-wrap">
                 <span>@{currentUser?.username || "user"}</span>
@@ -630,6 +640,17 @@ export default function UserProfileDashboard() {
                 <Search className="w-3.5 h-3.5" />
                 {locale === "hy" ? "Որոնել Ռեստորաններ" : "Explore Places"}
               </Link>
+              <button
+                onClick={() => setActiveTab("security")}
+                className={`h-10 px-4 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${
+                  activeTab === "security"
+                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
+                    : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
+                }`}
+              >
+                <Lock className="w-3.5 h-3.5" />
+                {locale === "hy" ? "Անվտանգություն" : locale === "ru" ? "Безопасность" : "Security & Password"}
+              </button>
               <button
                 onClick={logout}
                 className="h-10 px-3.5 rounded-xl text-xs font-medium border border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] transition-colors flex items-center gap-1.5 text-red-600 dark:text-red-400"
@@ -763,30 +784,61 @@ export default function UserProfileDashboard() {
             </span>
           </button>
 
+
           <button
-            onClick={() => setActiveTab("security")}
+            onClick={() => setActiveTab("transfer")}
             className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${
-              activeTab === "security"
+              activeTab === "transfer"
                 ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
                 : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
             }`}
           >
-            <Lock className="w-3.5 h-3.5" />
-            {locale === "hy" ? "Անվտանգություն" : locale === "ru" ? "Безопасность" : "Security & Password"}
+            <Coins className="w-3.5 h-3.5" />
+            {locale === "hy" ? "Ուղարկել Քոյն" : locale === "ru" ? "Отправить монеты" : "Send Coins"}
+          </button>
+
+          <button
+            onClick={() => setActiveTab("invite")}
+            className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${
+              activeTab === "invite"
+                ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
+                : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
+            }`}
+          >
+            <UserPlus className="w-3.5 h-3.5" />
+            {locale === "hy" ? "Հրավիրել Ընկերներ" : locale === "ru" ? "Пригласить друзей" : "Invite Friends"}
           </button>
         </div>
 
         {/* ── TAB CONTENT: Profile Info ── */}
         {activeTab === "profile" && (
-          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl p-6 shadow-sm space-y-6">
-            <div>
-              <h2 className="text-lg font-bold tracking-tight text-[hsl(var(--foreground))]">
-                {locale === "hy" ? "Անձնական Տվյալների Խմբագրում" : "Edit Personal Details"}
-              </h2>
-              <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                {locale === "hy" ? "Թարմացրեք ձեր անձնական տվյալները և կոնտակտային ինֆորմացիան" : "Update your profile information and contact options."}
-              </p>
+          <div className="space-y-6">
+            {/* Findy Coin Balance Card */}
+            <div className="bg-gradient-to-r from-emerald-500/10 via-[hsl(var(--card))] to-[hsl(var(--card))] border border-emerald-500/30 rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+               <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20 shrink-0">
+                    <Coins className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
+                      {locale === "hy" ? "Դուք վաստակում եք 5% ամեն ամրագրումից" : locale === "ru" ? "Вы зарабатываете 5% с каждого бронирования" : "You earn 5% back from all your bookings"}
+                    </p>
+                  </div>
+               </div>
+               <button className="px-4 py-2 rounded-xl bg-emerald-500 text-white text-xs font-bold shadow hover:bg-emerald-600 transition-colors shrink-0">
+                 {locale === "hy" ? "Ինչպե՞ս օգտագործել" : "How to use?"}
+               </button>
             </div>
+
+            <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl p-6 shadow-sm space-y-6">
+              <div>
+                <h2 className="text-lg font-bold tracking-tight text-[hsl(var(--foreground))]">
+                  {locale === "hy" ? "Անձնական Տվյալների Խմբագրում" : "Edit Personal Details"}
+                </h2>
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                  {locale === "hy" ? "Թարմացրեք ձեր անձնական տվյալները և կոնտակտային ինֆորմացիան" : "Update your profile information and contact options."}
+                </p>
+              </div>
 
             {profileMsg && (
               <div
@@ -905,6 +957,7 @@ export default function UserProfileDashboard() {
               </div>
             </form>
           </div>
+        </div>
         )}
 
         {/* ── TAB CONTENT: Favorites ── */}
@@ -1365,6 +1418,77 @@ export default function UserProfileDashboard() {
                 <Building2 className="w-4 h-4" />
                 {locale === "hy" ? "Գրանցել Բիզնես Հաշիվ" : "Register Business Account"}
               </Link>
+            </div>
+          </div>
+        )}
+
+        {/* ── TAB CONTENT: Transfer Coins ── */}
+        {activeTab === "transfer" && (
+          <div className="animate-in fade-in zoom-in-95 duration-500">
+            <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-3xl p-6 sm:p-10 max-w-2xl mx-auto shadow-sm">
+              <div className="w-16 h-16 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center mb-6">
+                <Coins className="w-8 h-8" />
+              </div>
+              <h3 className="text-2xl font-black mb-2">{locale === "hy" ? "Ուղարկել ընկերոջը" : "Send to a Friend"}</h3>
+              <p className="text-[hsl(var(--muted-foreground))] mb-8">{locale === "hy" ? "Անմիջապես փոխանցեք Findy Coins ձեր հրավիրած ընկերներին:" : "Transfer Findy Coins instantly to friends you have invited."}</p>
+              
+              <div className="space-y-5">
+                <div>
+                  <label className="text-sm font-bold text-[hsl(var(--muted-foreground))] mb-2 block">{locale === "hy" ? "Ընտրել ընկերոջը" : "Select Friend"}</label>
+                  <select className="w-full bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-xl px-4 py-3.5 outline-none focus:border-blue-500 transition-colors text-[hsl(var(--foreground))] font-medium">
+                    <option>Aram K. ({locale === "hy" ? "Հրավիրվել է 2 օր առաջ" : "Invited 2 days ago"})</option>
+                    <option>Narek B. ({locale === "hy" ? "Հրավիրվել է 1 շաբաթ առաջ" : "Invited 1 week ago"})</option>
+                    <option>Lilit M. ({locale === "hy" ? "Հրավիրվել է 1 ամիս առաջ" : "Invited 1 month ago"})</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-sm font-bold text-[hsl(var(--muted-foreground))] mb-2 block">{locale === "hy" ? "Քանակը" : "Amount to send"}</label>
+                  <div className="relative">
+                    <Coins className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-500" />
+                    <input type="number" placeholder="0" className="w-full bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-xl pl-12 pr-4 py-3.5 outline-none focus:border-blue-500 transition-colors font-bold text-lg" />
+                  </div>
+                </div>
+                <button className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-95 mt-2">
+                  {locale === "hy" ? "Հաստատել" : "Confirm Transfer"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── TAB CONTENT: Invite Friends ── */}
+        {activeTab === "invite" && (
+          <div className="animate-in fade-in zoom-in-95 duration-500">
+            <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-3xl p-6 sm:p-10 max-w-2xl mx-auto shadow-sm text-center">
+              <div className="w-20 h-20 rounded-full bg-purple-500/10 text-purple-500 flex items-center justify-center mx-auto mb-6">
+                <UserPlus className="w-10 h-10" />
+              </div>
+              <h3 className="text-2xl font-black mb-2">{locale === "hy" ? "Հրավիրել և Վաստակել" : "Invite & Earn"}</h3>
+              <p className="text-[hsl(var(--muted-foreground))] mb-8 max-w-md mx-auto">
+                {locale === "hy" ? (
+                  <>Կիսվեք ձեր հրավերի հղումով ընկերների հետ: Երբ նրանք գրանցվեն և հաստատեն իրենց հաշիվը, դուք երկուսդ էլ կստանաք <span className="font-bold text-emerald-500">500 Coins!</span></>
+                ) : (
+                  <>Share your unique invite link with friends. When they sign up and verify their account, you both get <span className="font-bold text-emerald-500">500 Coins!</span></>
+                )}
+              </p>
+              
+              <div className="bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-2xl p-2 flex items-center gap-2 max-w-lg mx-auto">
+                <input type="text" readOnly value="https://findy.am/invite/u882jK1" className="flex-1 bg-transparent px-4 font-medium text-[hsl(var(--muted-foreground))] outline-none" />
+                <button className="px-6 py-3 bg-[hsl(var(--foreground))] text-[hsl(var(--background))] rounded-xl font-bold hover:scale-105 active:scale-95 transition-all whitespace-nowrap">
+                  {locale === "hy" ? "Պատճենել" : "Copy Link"}
+                </button>
+              </div>
+              
+              <div className="mt-8 pt-8 border-t border-[hsl(var(--border))]/50 flex justify-center gap-8 text-sm">
+                <div>
+                  <p className="font-black text-2xl text-[hsl(var(--foreground))] mb-1">12</p>
+                  <p className="text-[hsl(var(--muted-foreground))]">{locale === "hy" ? "Հրավիրված Ընկերներ" : "Friends Invited"}</p>
+                </div>
+                <div>
+                  <p className="font-black text-2xl text-emerald-500 mb-1">+6,000</p>
+                  <p className="text-[hsl(var(--muted-foreground))]">{locale === "hy" ? "Վաստակած Քոյններ" : "Coins Earned"}</p>
+                </div>
+              </div>
             </div>
           </div>
         )}

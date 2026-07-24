@@ -477,7 +477,10 @@ export const en = {
       ]
     }
   },
-
+  exchange: {
+    heroDesc: "Convert your accumulated Findy Coins into real-world benefits. Trade with other users or redeem for special offers.",
+    startExchanging: "Start Exchanging",
+  },
 };
 
 export type Translations = typeof en;

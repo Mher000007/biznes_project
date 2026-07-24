@@ -45,7 +45,7 @@ export default function StoriesSection() {
         setGroups(res.data.data);
       }
     } catch (err: any) {
-      console.error("Failed to load active stories:", err?.message || "Error");
+      console.log("Failed to load active stories:", err?.message || "Error");
     } finally {
       setLoading(false);
     }

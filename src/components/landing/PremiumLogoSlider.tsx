@@ -42,7 +42,7 @@ export default function PremiumLogoSlider() {
           }
         }
       } catch (err: any) {
-        console.warn("Failed to fetch premium brands from backend", err?.message || "Error");
+        console.log("Failed to fetch premium brands from backend", err?.message || "Error");
       }
 
       if (premiumBrands.length < 5) {

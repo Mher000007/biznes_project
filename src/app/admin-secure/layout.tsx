@@ -1,7 +1,6 @@
 "use client";
 import { useEffect } from "react";
 import type { Metadata } from "next";
-
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Force dark background on body/html for admin panel

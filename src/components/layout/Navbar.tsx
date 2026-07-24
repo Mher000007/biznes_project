@@ -461,6 +461,28 @@ export default function Navbar() {
         >
           {t.nav.about}
         </Link>
+        <div className="relative group/exchange flex items-center h-full">
+          <Link
+            href="/exchange"
+            className={`${styles.navLink} ${(pathname as string) === "/exchange" ? styles.active : ""
+              }`}
+          >
+            {t.nav.exchange || "Exchange"}
+          </Link>
+          
+          {/* Exchange Coins Hover Popup */}
+          {(pathname as string) !== "/exchange" && (
+            <div className="absolute top-[120%] left-1/2 -translate-x-1/2 opacity-0 invisible group-hover/exchange:opacity-100 group-hover/exchange:visible group-hover/exchange:translate-y-0 translate-y-2 transition-all duration-300 z-50 pointer-events-none group-hover/exchange:pointer-events-auto">
+              <div className="relative bg-[hsl(var(--background))]/90 backdrop-blur-xl px-3.5 py-1.5 rounded-xl border border-[hsl(var(--border))] shadow-xl whitespace-nowrap">
+                {/* Little arrow pointing up */}
+                <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[hsl(var(--background))]/90 border-t border-l border-[hsl(var(--border))] rotate-45 backdrop-blur-xl"></div>
+                <h3 className="relative text-lg font-black text-[hsl(var(--foreground))] tracking-tight flex items-baseline gap-1">
+                  0 <span className="text-emerald-500 text-[10px] font-extrabold uppercase tracking-[0.15em] drop-shadow-sm">Coins</span>
+                </h3>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Actions */}
@@ -517,12 +539,6 @@ export default function Navbar() {
                 </div>
               </div>
             </div>
-            <button
-              onClick={handleLogout}
-              className={`hidden lg:inline-flex h-9 items-center rounded-lg px-4 text-[13px] font-medium border border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors cursor-pointer ${styles.authButton}`}
-            >
-              {t.nav.signOut}
-            </button>
           </>
         ) : (
           <Link
@@ -576,6 +592,13 @@ export default function Navbar() {
             className={styles.navLink}
           >
             {t.nav.about}
+          </Link>
+          <Link
+            href="/exchange"
+            onClick={() => setIsOpen(false)}
+            className={styles.navLink}
+          >
+            {t.nav.exchange || "Exchange"}
           </Link>
 
           <div className="py-2.5 my-2 border-y border-[hsl(var(--border))] flex items-center justify-between">

@@ -66,7 +66,7 @@ export default function HeroSection() {
           setSlides(loadedSlides);
         }
       } catch (err: any) {
-        console.error("Failed to load premium businesses for background slides:", err?.message || "Error");
+        console.log("Failed to load premium businesses for background slides:", err?.message || "Error");
       }
     };
     fetchPremium();

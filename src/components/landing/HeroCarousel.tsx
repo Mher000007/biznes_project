@@ -74,7 +74,7 @@ export default function HeroCarousel() {
           setSlides(loadedSlides);
         }
       } catch (err: any) {
-        console.error("Failed to load premium businesses for carousel:", err?.message || "Error");
+        console.log("Failed to load premium businesses for carousel:", err?.message || "Error");
       }
     };
     fetchPremium();
