@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X, Search, MapPin } from "lucide-react";
+import { Menu, X, Search, MapPin, Bookmark } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { useI18n } from "@/i18n";
@@ -12,6 +12,9 @@ import { MOCK_BUSINESSES } from "@/data/mock-businesses";
 import axios from "axios";
 import { getApiUrl } from "@/lib/utils";
 import { transliterateArmenian } from "@/lib/transliterate";
+import { FlyingBookmarkProvider } from "@/components/ui/FlyingBookmark";
+
+// Force Next.js compilation reload: 2
 
 import styles from "./Navbar.module.scss";
 
@@ -25,6 +28,29 @@ export default function Navbar() {
   const [navQuery, setNavQuery] = useState("");
   const [navLocation, setNavLocation] = useState("");
   const [scrolled, setScrolled] = useState(false);
+
+  // Favorites state for dropdown
+  const [favorites, setFavorites] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadFavorites = () => {
+      try {
+        const itemsStr = localStorage.getItem("armbiz_favorites_items");
+        if (itemsStr) {
+          const map = JSON.parse(itemsStr);
+          setFavorites(Object.values(map));
+        } else {
+          setFavorites([]);
+        }
+      } catch (e) {
+        console.error("Failed to load favorites for navbar dropdown", e);
+      }
+    };
+
+    loadFavorites();
+    window.addEventListener("favoritesUpdated", loadFavorites);
+    return () => window.removeEventListener("favoritesUpdated", loadFavorites);
+  }, []);
 
   // Live search state
   const [suggestions, setSuggestions] = useState<any[]>([]);
@@ -64,8 +90,8 @@ export default function Navbar() {
               : Array.isArray(res.data)
                 ? res.data
                 : [];
-        } catch (err) {
-          console.warn("Backend live search warning:", err);
+        } catch (err: any) {
+          console.warn("Backend live search warning:", err?.message || err);
         }
 
         const armQuery = transliterateArmenian(query, "hy").toLowerCase();
@@ -446,12 +472,51 @@ export default function Navbar() {
 
         {currentUser ? (
           <>
-            <Link
-              href="/dashboard"
-              className={`hidden lg:inline-flex text-[13px] font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors cursor-pointer ${styles.authText}`}
-            >
-              {t.nav.hello}{currentUser.name || currentUser.username}
-            </Link>
+            <div className="relative group/fav flex items-center">
+              <Link
+                href="/dashboard"
+                className={`hidden lg:inline-flex items-center gap-1.5 text-[13px] font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors cursor-pointer ${styles.authText}`}
+              >
+                <Bookmark id="navbar-bookmark-icon" className="w-3.5 h-3.5 text-amber-500 fill-amber-500/20" />
+                {t.nav.hello}{currentUser.name || currentUser.username}
+              </Link>
+              
+              {/* Favorites Hover Dropdown */}
+              <div className="absolute top-full right-0 pt-2 w-64 opacity-0 invisible group-hover/fav:opacity-100 group-hover/fav:visible transition-all duration-200 z-50 pointer-events-none group-hover/fav:pointer-events-auto">
+                <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-lg p-2">
+                  <div className="text-xs font-semibold text-[hsl(var(--muted-foreground))] px-2 py-1.5 mb-1 border-b border-[hsl(var(--border))]/50">
+                    Saved Places
+                  </div>
+                  {favorites.length > 0 ? (
+                    <div className="max-h-60 overflow-y-auto scrollbar-thin flex flex-col gap-1">
+                      {favorites.map((fav) => (
+                        <Link
+                          key={fav.id || fav.slug}
+                          href={`/business/${fav.slug || fav.id}`}
+                          className="flex items-center gap-2 p-2 hover:bg-[hsl(var(--muted))] rounded-lg transition-colors"
+                        >
+                          {(fav.logoUrl || fav.logo || fav.images?.[0]) ? (
+                            <img src={fav.logoUrl || fav.logo || fav.images?.[0]} alt={fav.name} className="w-8 h-8 rounded bg-[hsl(var(--background))] object-cover shrink-0" />
+                          ) : (
+                            <div className="w-8 h-8 rounded bg-violet-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                              {fav.name?.charAt(0) || "B"}
+                            </div>
+                          )}
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-sm font-medium text-[hsl(var(--foreground))] truncate">{fav.name}</span>
+                            <span className="text-[10px] text-[hsl(var(--muted-foreground))] truncate">{fav.category?.name || fav.category || "Place"}</span>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-4 text-center text-xs text-[hsl(var(--muted-foreground))]">
+                      No saved places yet
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
             <button
               onClick={handleLogout}
               className={`hidden lg:inline-flex h-9 items-center rounded-lg px-4 text-[13px] font-medium border border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors cursor-pointer ${styles.authButton}`}
@@ -477,6 +542,7 @@ export default function Navbar() {
         {/* Mobile controls */}
         <div className={styles.mobileControls}>
           <button
+            id="mobile-menu-btn"
             onClick={() => setIsOpen(!isOpen)}
             className={styles.iconButton}
             aria-label="Toggle Menu"
@@ -527,8 +593,9 @@ export default function Navbar() {
               <Link
                 href="/dashboard"
                 onClick={() => setIsOpen(false)}
-                className="block py-2 text-sm text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+                className="flex items-center gap-1.5 py-2 text-sm text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
               >
+                <Bookmark className="w-4 h-4 text-amber-500 fill-amber-500/20" />
                 Hi, {currentUser.name || currentUser.username}
               </Link>
               <button
@@ -563,6 +630,8 @@ export default function Navbar() {
           )} */}
         </div>
       )}
+
+      <FlyingBookmarkProvider />
     </header>
   );
 }

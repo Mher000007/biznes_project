@@ -160,8 +160,8 @@ function DiscoverContent() {
           setLoading(false);
           return;
         }
-      } catch (err) {
-        console.warn("Backend businesses fetch failed, using static mock data", err);
+      } catch (err: any) {
+        console.warn("Backend businesses fetch failed, using static mock data:", err?.message || err);
       }
 
       // Fallback: use static mock data

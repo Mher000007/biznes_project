@@ -5,7 +5,7 @@ import type { Business } from "@/types/business";
 import styles from "./BusinessCard.module.scss";
 import { useI18n } from "@/i18n";
 
-// Force Next.js compilation reload: 3
+// Force Next.js compilation reload: 4
 // Helper to parse time string into minutes from midnight
 function parseTimeToMinutes(timeStr: string, defaultMinutes: number): number {
   if (!timeStr) return defaultMinutes;
@@ -139,11 +139,21 @@ export default function BusinessCard({ business, viewMode = "list" }: { business
           city: business.city || "Yerevan",
           category: business.category,
           ratingAvg: business.ratingAvg || 5.0,
-          images: business.images || (business.logoUrl ? [business.logoUrl] : business.coverImageUrl ? [business.coverImageUrl] : []),
-          logoUrl: business.logoUrl || business.coverImageUrl || "",
+          images: business.images || (business.logo ? [business.logo] : business.logoUrl ? [business.logoUrl] : business.coverImageUrl ? [business.coverImageUrl] : []),
+          logoUrl: business.logo || business.logoUrl || business.coverImageUrl || "",
           shortDescription: business.shortDescription || ""
         };
         setIsFavorited(true);
+
+        // Dispatch animation event using button's bounding box for accuracy
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        const startX = rect.left + rect.width / 2;
+        const startY = rect.top + rect.height / 2;
+
+        const event = new CustomEvent("fly-to-bookmark", {
+          detail: { x: startX, y: startY },
+        });
+        window.dispatchEvent(event);
       }
 
       localStorage.setItem("armbiz_favorites", JSON.stringify(favs));

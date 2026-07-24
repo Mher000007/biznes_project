@@ -44,8 +44,8 @@ export default function StoriesSection() {
       if (res.data?.success) {
         setGroups(res.data.data);
       }
-    } catch (err) {
-      console.error("Failed to load active stories:", err);
+    } catch (err: any) {
+      console.error("Failed to load active stories:", err?.message || "Error");
     } finally {
       setLoading(false);
     }
@@ -84,9 +84,8 @@ export default function StoriesSection() {
     );
   }
 
-  // If no stories are active, and user is not a business owner (so they don't see the add story action), hide the section
-  const isBizOwner = currentUser?.role === "business_owner";
-  if (groups.length === 0 && !isBizOwner) {
+  // If no stories are active, and user is not logged in, hide the section
+  if (groups.length === 0 && !currentUser) {
     return null;
   }
 
@@ -95,22 +94,20 @@ export default function StoriesSection() {
       <div className="mx-auto max-w-6xl px-5 sm:px-8 stories-content-wrapper">
         <div className="flex items-center gap-5 overflow-x-auto scrollbar-none py-1.5 -mx-2 px-2">
 
-          {/* "Your Story" circle for logged-in business owners */}
-          {isBizOwner && (
-            <Link
-              href="/dashboard/stories"
-              className="flex flex-col items-center gap-1.5 cursor-pointer shrink-0 group"
-            >
-              <div className="relative w-[68px] h-[68px] rounded-full p-[2px] bg-[hsl(var(--border))] group-hover:bg-[hsl(var(--primary))]/30 transition-colors flex items-center justify-center bg-[hsl(var(--background))]">
-                <div className="w-full h-full rounded-full bg-[hsl(var(--card))] border border-[hsl(var(--border))] flex items-center justify-center transition-all group-hover:scale-95">
-                  <span className="text-2xl font-bold text-[hsl(var(--primary))]" style={{ marginTop: "-2px" }}>+</span>
-                </div>
+          {/* "Your Story" circle for all users */}
+          <Link
+            href="/dashboard/stories"
+            className="flex flex-col items-center gap-1.5 cursor-pointer shrink-0 group"
+          >
+            <div className="relative w-[68px] h-[68px] rounded-full p-[2px] bg-[hsl(var(--border))] group-hover:bg-[hsl(var(--primary))]/30 transition-colors flex items-center justify-center bg-[hsl(var(--background))]">
+              <div className="w-full h-full rounded-full bg-[hsl(var(--card))] border border-[hsl(var(--border))] flex items-center justify-center transition-all group-hover:scale-95">
+                <span className="text-2xl font-bold text-[hsl(var(--primary))]" style={{ marginTop: "-2px" }}>+</span>
               </div>
-              <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--foreground))] tracking-tight truncate max-w-[72px] transition-colors">
-                {t.stories.addStory}
-              </span>
-            </Link>
-          )}
+            </div>
+            <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--foreground))] tracking-tight truncate max-w-[72px] transition-colors">
+              {t.stories.addStory}
+            </span>
+          </Link>
 
           {/* Active Business Stories */}
           {groups.map((group, idx) => {

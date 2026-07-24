@@ -106,13 +106,20 @@ export const getBusinesses = asyncHandler(async (req: Request, res: Response): P
   const total = await Business.countDocuments(filter);
 
   const populatedBusinesses = await Promise.all(businesses.map(async (biz) => {
-    const sub = await Subscription.findOne({ business: biz._id, status: 'active' });
-    const locations = await BusinessLocation.find({ business: biz._id }).sort({ isPrimary: -1, createdAt: 1 });
-    const plan = sub ? sub.plan : 'starter';
-    const bizObj = biz.toObject() as any;
-    bizObj.plan = plan;
-    bizObj.locations = locations;
-    return bizObj;
+    try {
+      const sub = await Subscription.findOne({ business: biz._id, status: 'active' });
+      const locations = await BusinessLocation.find({ business: biz._id }).sort({ isPrimary: -1, createdAt: 1 });
+      const plan = sub ? sub.plan : 'starter';
+      const bizObj = biz.toObject() as any;
+      bizObj.plan = plan;
+      bizObj.locations = locations || [];
+      return bizObj;
+    } catch (e) {
+      const bizObj = biz.toObject() as any;
+      bizObj.plan = 'starter';
+      bizObj.locations = [];
+      return bizObj;
+    }
   }));
 
   res.status(200).json({

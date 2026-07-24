@@ -50,8 +50,8 @@ export default function FeaturedBusinesses() {
           setLoading(false);
           return;
         }
-      } catch (err) {
-        console.warn("Failed to load restaurants from backend, using static data", err);
+      } catch (err: any) {
+        console.warn("Failed to load restaurants from backend, using static data", err?.message || "Error");
       }
 
       // Fallback: filter mock businesses by HoReCa category

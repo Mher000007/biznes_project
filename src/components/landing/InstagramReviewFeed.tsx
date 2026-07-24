@@ -152,8 +152,8 @@ export default function InstagramReviewFeed() {
             };
           });
         }
-      } catch (err) {
-        console.warn("Failed to load reviews from backend", err);
+      } catch (err: any) {
+        console.warn("Failed to load reviews from backend", err?.message || err);
       }
 
       // Load local storage reviews
@@ -221,8 +221,8 @@ export default function InstagramReviewFeed() {
             }
           }
         }
-      } catch (err) {
-        console.warn("Failed to load local storage reviews", err);
+      } catch (err: any) {
+        console.warn("Failed to load local storage reviews", err?.message || err);
       }
 
       // Combine and sort user-written reviews by date
