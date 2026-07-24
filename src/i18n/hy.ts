@@ -17,6 +17,7 @@ export const hy: Translations = {
     searchResults: "Որոնման արդյունքներ",
     useArrowKeys: "Օգտագործեք ↑↓ նավիգացիայի համար",
     noBusinessesFound: "Բիզնեսներ չեն գտնվել",
+    exchange: "Փոխանակում",
   },
   hero: {
     title: "Գտեք ճիշտ ռեստորան Հայաստանում",
@@ -123,6 +124,7 @@ export const hy: Translations = {
       myLocations: "Իմ հասցեները",
       stories: "Սթորիներ",
       inquiries: "Հարցումներ",
+      exchange: "Փոխանակում",
       supportChat: "Աջակցման չաթ",
       settings: "Կարգավորումներ",
     },

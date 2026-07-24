@@ -16,6 +16,7 @@ export const en = {
     searchResults: "Search Results",
     useArrowKeys: "Use ↑↓ to navigate",
     noBusinessesFound: "No businesses found",
+    exchange: "Exchange",
   },
   // Hero
   hero: {
@@ -131,6 +132,7 @@ export const en = {
       myLocations: "My Locations",
       stories: "Stories",
       inquiries: "Inquiries",
+      exchange: "Exchange",
       supportChat: "Support Chat",
       settings: "Settings",
     },

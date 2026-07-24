@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X, Search, MapPin, Bookmark } from "lucide-react";
+import { Menu, X, Search, MapPin, Bookmark, ArrowUp, ArrowDown } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { useI18n } from "@/i18n";
@@ -106,26 +106,26 @@ export default function Navbar() {
         // Top Restaurants / HoReCa businesses for initial suggestions, or search matching
         const matchedMock = query
           ? MOCK_BUSINESSES.filter((b) => {
-              const bName = b.name || "";
-              const bCat = typeof b.category === "object" ? (b.category?.name || b.category?.slug || "") : (b.category || "");
-              const bCity = b.city || "";
-              const bDesc = b.description || b.shortDescription || "";
-              const bTags = (b.tags || []).join(" ");
-              return matchesQuery(bName) || matchesQuery(bCat) || matchesQuery(bCity) || matchesQuery(bDesc) || matchesQuery(bTags);
-            })
+            const bName = b.name || "";
+            const bCat = typeof b.category === "object" ? (b.category?.name || b.category?.slug || "") : (b.category || "");
+            const bCity = b.city || "";
+            const bDesc = b.description || b.shortDescription || "";
+            const bTags = (b.tags || []).join(" ");
+            return matchesQuery(bName) || matchesQuery(bCat) || matchesQuery(bCity) || matchesQuery(bDesc) || matchesQuery(bTags);
+          })
           : MOCK_BUSINESSES.filter((b) => b.category?.slug === "horeca" || b.category?.id === "cat-horeca" || b.category?.name === "HoReCa")
-              .sort((a, b) => (b.ratingAvg || 0) - (a.ratingAvg || 0) || (b.reviewCount || 0) - (a.reviewCount || 0));
+            .sort((a, b) => (b.ratingAvg || 0) - (a.ratingAvg || 0) || (b.reviewCount || 0) - (a.reviewCount || 0));
 
         // Filter backend results if query is provided
         const filteredBackend = query
           ? backendResults.filter((b: any) => {
-              const bName = b.name || "";
-              const bCat = typeof b.category === "object" ? (b.category?.name || b.category?.slug || "") : (b.category || "");
-              const bCity = b.city || "";
-              const bDesc = b.description || b.shortDescription || "";
-              const bTags = (b.tags || []).join(" ");
-              return matchesQuery(bName) || matchesQuery(bCat) || matchesQuery(bCity) || matchesQuery(bDesc) || matchesQuery(bTags);
-            })
+            const bName = b.name || "";
+            const bCat = typeof b.category === "object" ? (b.category?.name || b.category?.slug || "") : (b.category || "");
+            const bCity = b.city || "";
+            const bDesc = b.description || b.shortDescription || "";
+            const bTags = (b.tags || []).join(" ");
+            return matchesQuery(bName) || matchesQuery(bCat) || matchesQuery(bCity) || matchesQuery(bDesc) || matchesQuery(bTags);
+          })
           : backendResults;
 
         // Search localStorage custom business profiles ONLY when user types a query or matches category
@@ -290,6 +290,7 @@ export default function Navbar() {
   };
 
   const isTransparent = pathname === "/" && !scrolled;
+  const isBusinessUser = currentUser?.role === "business_owner" || currentUser?.accountType === "business";
 
   return (
     <header className={`${styles.header} ${isTransparent ? styles.transparentHeader : ""}`}>
@@ -464,14 +465,17 @@ export default function Navbar() {
         <div className="relative group/exchange flex items-center h-full">
           <Link
             href="/exchange"
-            className={`${styles.navLink} ${(pathname as string) === "/exchange" ? styles.active : ""
-              }`}
+            className={`${styles.navLink} ${(pathname as string) === "/exchange" ? styles.active : ""} flex items-center`}
           >
             {t.nav.exchange || "Exchange"}
+            <div className="flex items-center overflow-hidden transition-all duration-300 max-w-0 opacity-0 group-hover/exchange:max-w-[24px] group-hover/exchange:opacity-100 group-hover/exchange:ml-1">
+              <ArrowUp className="w-3.5 h-3.5 text-emerald-500 -mr-1 animate-bounce" style={{ animationDelay: '0ms' }} />
+              <ArrowDown className="w-3.5 h-3.5 text-emerald-500 animate-bounce" style={{ animationDelay: '500ms' }} />
+            </div>
           </Link>
-          
+
           {/* Exchange Coins Hover Popup */}
-          {(pathname as string) !== "/exchange" && (
+          {(pathname as string) !== "/exchange" && !isBusinessUser && (
             <div className="absolute top-[120%] left-1/2 -translate-x-1/2 opacity-0 invisible group-hover/exchange:opacity-100 group-hover/exchange:visible group-hover/exchange:translate-y-0 translate-y-2 transition-all duration-300 z-50 pointer-events-none group-hover/exchange:pointer-events-auto">
               <div className="relative bg-[hsl(var(--background))]/90 backdrop-blur-xl px-3.5 py-1.5 rounded-xl border border-[hsl(var(--border))] shadow-xl whitespace-nowrap">
                 {/* Little arrow pointing up */}
@@ -494,50 +498,54 @@ export default function Navbar() {
 
         {currentUser ? (
           <>
-            <div className="relative group/fav flex items-center">
+            <div className={`relative ${isBusinessUser ? '' : 'group/fav'} flex items-center`}>
               <Link
                 href="/dashboard"
                 className={`hidden lg:inline-flex items-center gap-1.5 text-[13px] font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors cursor-pointer ${styles.authText}`}
               >
-                <Bookmark id="navbar-bookmark-icon" className="w-3.5 h-3.5 text-amber-500 fill-amber-500/20" />
+                {!isBusinessUser && (
+                  <Bookmark id="navbar-bookmark-icon" className="w-3.5 h-3.5 text-amber-500 fill-amber-500/20" />
+                )}
                 {t.nav.hello}{currentUser.name || currentUser.username}
               </Link>
-              
+
               {/* Favorites Hover Dropdown */}
-              <div className="absolute top-full right-0 pt-2 w-64 opacity-0 invisible group-hover/fav:opacity-100 group-hover/fav:visible transition-all duration-200 z-50 pointer-events-none group-hover/fav:pointer-events-auto">
-                <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-lg p-2">
-                  <div className="text-xs font-semibold text-[hsl(var(--muted-foreground))] px-2 py-1.5 mb-1 border-b border-[hsl(var(--border))]/50">
-                    Saved Places
-                  </div>
-                  {favorites.length > 0 ? (
-                    <div className="max-h-60 overflow-y-auto scrollbar-thin flex flex-col gap-1">
-                      {favorites.map((fav) => (
-                        <Link
-                          key={fav.id || fav.slug}
-                          href={`/business/${fav.slug || fav.id}`}
-                          className="flex items-center gap-2 p-2 hover:bg-[hsl(var(--muted))] rounded-lg transition-colors"
-                        >
-                          {(fav.logoUrl || fav.logo || fav.images?.[0]) ? (
-                            <img src={fav.logoUrl || fav.logo || fav.images?.[0]} alt={fav.name} className="w-8 h-8 rounded bg-[hsl(var(--background))] object-cover shrink-0" />
-                          ) : (
-                            <div className="w-8 h-8 rounded bg-violet-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                              {fav.name?.charAt(0) || "B"}
+              {!isBusinessUser && (
+                <div className="absolute top-full right-0 pt-2 w-64 opacity-0 invisible group-hover/fav:opacity-100 group-hover/fav:visible transition-all duration-200 z-50 pointer-events-none group-hover/fav:pointer-events-auto">
+                  <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-lg p-2">
+                    <div className="text-xs font-semibold text-[hsl(var(--muted-foreground))] px-2 py-1.5 mb-1 border-b border-[hsl(var(--border))]/50">
+                      Saved Places
+                    </div>
+                    {favorites.length > 0 ? (
+                      <div className="max-h-60 overflow-y-auto scrollbar-thin flex flex-col gap-1">
+                        {favorites.map((fav) => (
+                          <Link
+                            key={fav.id || fav.slug}
+                            href={`/business/${fav.slug || fav.id}`}
+                            className="flex items-center gap-2 p-2 hover:bg-[hsl(var(--muted))] rounded-lg transition-colors"
+                          >
+                            {(fav.logoUrl || fav.logo || fav.images?.[0]) ? (
+                              <img src={fav.logoUrl || fav.logo || fav.images?.[0]} alt={fav.name} className="w-8 h-8 rounded bg-[hsl(var(--background))] object-cover shrink-0" />
+                            ) : (
+                              <div className="w-8 h-8 rounded bg-violet-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                                {fav.name?.charAt(0) || "B"}
+                              </div>
+                            )}
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-sm font-medium text-[hsl(var(--foreground))] truncate">{fav.name}</span>
+                              <span className="text-[10px] text-[hsl(var(--muted-foreground))] truncate">{fav.category?.name || fav.category || "Place"}</span>
                             </div>
-                          )}
-                          <div className="flex flex-col min-w-0">
-                            <span className="text-sm font-medium text-[hsl(var(--foreground))] truncate">{fav.name}</span>
-                            <span className="text-[10px] text-[hsl(var(--muted-foreground))] truncate">{fav.category?.name || fav.category || "Place"}</span>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="p-4 text-center text-xs text-[hsl(var(--muted-foreground))]">
-                      No saved places yet
-                    </div>
-                  )}
+                          </Link>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-4 text-center text-xs text-[hsl(var(--muted-foreground))]">
+                        No saved places yet
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </>
         ) : (
@@ -618,7 +626,9 @@ export default function Navbar() {
                 onClick={() => setIsOpen(false)}
                 className="flex items-center gap-1.5 py-2 text-sm text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
               >
-                <Bookmark className="w-4 h-4 text-amber-500 fill-amber-500/20" />
+                {!isBusinessUser && (
+                  <Bookmark className="w-4 h-4 text-amber-500 fill-amber-500/20" />
+                )}
                 Hi, {currentUser.name || currentUser.username}
               </Link>
               <button

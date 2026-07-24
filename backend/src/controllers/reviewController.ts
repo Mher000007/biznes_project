@@ -168,11 +168,12 @@ export const createReview = asyncHandler(
         await existing.save();
 
         // Recalculate business average rating
-        const allBusinessReviews = await Review.find({ business: businessId });
-        const count = allBusinessReviews.length;
-        const avg = count > 0 ? allBusinessReviews.reduce((sum, r) => sum + r.rating, 0) / count : 0;
-        business.ratingAvg = Math.round(avg * 10) / 10;
-        business.reviewCount = count;
+        const stats = await Review.aggregate([
+          { $match: { business: new mongoose.Types.ObjectId(businessId) } },
+          { $group: { _id: '$business', nRating: { $sum: 1 }, avgRating: { $avg: '$rating' } } }
+        ]);
+        business.rating = Math.round(stats[0].avgRating * 10) / 10;
+        business.reviewCount = stats[0].nRating;
         await business.save();
 
         res.status(200).json({

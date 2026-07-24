@@ -22,6 +22,7 @@ import {
   Calendar,
   HeadphonesIcon,
   Utensils,
+  ArrowRightLeft,
 } from "lucide-react";
 
 import { Suspense } from "react";
@@ -143,6 +144,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     { href: "/dashboard/locations", label: navT.myLocations || "My Locations", icon: MapPin },
     { href: "/dashboard/stories", label: navT.stories || "Stories", icon: Sparkles, isPro: true },
     { href: "/dashboard/inquiries", label: navT.inquiries || "Inquiries", icon: MessageSquare },
+    { href: "/dashboard/exchange", label: navT.exchange || "Exchange", icon: ArrowRightLeft },
     { href: "/dashboard/support", label: navT.supportChat || "Support Chat", icon: HeadphonesIcon },
     { href: "/dashboard/settings", label: navT.settings || "Settings", icon: Settings },
   ];

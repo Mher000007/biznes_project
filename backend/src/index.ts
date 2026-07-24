@@ -19,6 +19,7 @@ import locationRoutes from './routes/locationRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import offerRoutes from './routes/offerRoutes.js';
+import exchangeOfferRoutes from './routes/exchangeOfferRoutes.js';
 import { getAllReviews } from './controllers/reviewController.js';
 
 dotenv.config();
@@ -69,6 +70,7 @@ app.use('/api/locations', locationRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/offers', offerRoutes);
+app.use('/api/exchange-offers', exchangeOfferRoutes);
 app.get('/api/reviews/all', getAllReviews);
 
 // 404 handler

@@ -3,50 +3,73 @@
 import React, { useState, useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import { ExchangeIllustration } from "@/components/ui/ExchangeIllustration";
-import { ArrowDown, Coins, ShieldCheck, Zap, X, UserPlus, Gift, Send } from "lucide-react";
+import { ArrowDown, Coins, ShieldCheck, Zap, X, UserPlus, Gift, Send, Heart } from "lucide-react";
 import { useI18n } from "@/i18n";
+import { useAuth } from "@/context/AuthContext";
+import axios from "axios";
+import { getApiUrl } from "@/lib/utils";
 
-const OFFERS = [
+const MOCK_OFFERS = [
   {
-    id: 1,
+    id: "1",
     title: "Free Artisan Coffee",
     business: "Cafe Central",
     cost: 150,
-    category: "Food & Drink",
+    category: "Food",
     bgClass: "bg-emerald-500/10",
     textClass: "text-emerald-600 dark:text-emerald-400",
+    barClass: "bg-emerald-500",
     icon: Coins,
-    description: "Start your morning right! Redeem this offer for any medium-sized artisan coffee or tea at Cafe Central. Valid for dine-in or takeout. Limit one per customer."
+    description: "Start your morning right! Redeem this offer for any medium-sized artisan coffee or tea at Cafe Central. Valid for dine-in or takeout. Limit one per customer.",
+    totalQuantity: 100,
+    claimedQuantity: 85
   },
   {
-    id: 2,
+    id: "2",
     title: "20% Off Dinner Menu",
     business: "Bistro Noir",
     cost: 500,
-    category: "Food & Drink",
+    category: "Drink",
     bgClass: "bg-blue-500/10",
     textClass: "text-blue-600 dark:text-blue-400",
+    barClass: "bg-blue-500",
     icon: Zap,
-    description: "Enjoy a luxurious evening at Bistro Noir with a 20% discount on all dinner menu items. Excludes alcoholic beverages. Reservation required."
+    description: "Enjoy a luxurious evening at Bistro Noir with a 20% discount on all dinner menu items. Excludes alcoholic beverages. Reservation required.",
+    totalQuantity: 50,
+    claimedQuantity: 12
   },
   {
-    id: 3,
+    id: "3",
     title: "1 Month Gym Access",
     business: "FitLife Gym",
     cost: 2500,
     category: "Fitness & Health",
     bgClass: "bg-purple-500/10",
     textClass: "text-purple-600 dark:text-purple-400",
+    barClass: "bg-purple-500",
     icon: ShieldCheck,
-    description: "Get fully unlimited access to all FitLife Gym facilities, group classes, and sauna for one entire month. Start your premium fitness journey today!"
+    description: "Get fully unlimited access to all FitLife Gym facilities, group classes, and sauna for one entire month. Start your premium fitness journey today!",
+    totalQuantity: 20,
+    claimedQuantity: 19
   }
 ];
 
 export default function ExchangePage() {
   const { t } = useI18n();
+  const { currentUser } = useAuth();
+  const isBusinessUser = currentUser?.role === "business_owner" || currentUser?.accountType === "business";
+  
   const [selectedOffer, setSelectedOffer] = useState<any>(null);
-
   const [offerCategory, setOfferCategory] = useState<string>('All');
+  const [savedOffers, setSavedOffers] = useState<string[]>([]);
+  const [offers, setOffers] = useState<any[]>(MOCK_OFFERS);
+
+  const toggleSavedOffer = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setSavedOffers(prev => 
+      prev.includes(id) ? prev.filter(offerId => offerId !== id) : [...prev, id]
+    );
+  };
 
   useEffect(() => {
     if (selectedOffer) {
@@ -58,6 +81,40 @@ export default function ExchangePage() {
       document.body.style.overflow = "unset";
     };
   }, [selectedOffer]);
+
+  useEffect(() => {
+    const fetchOffers = async () => {
+      try {
+        const res = await axios.get(`${getApiUrl()}/exchange-offers`);
+        if (res.data.success && res.data.data.length > 0) {
+          const mappedOffers = res.data.data.map((o: any, idx: number) => {
+            const colors = [
+              { bgClass: "bg-emerald-500/10", textClass: "text-emerald-600 dark:text-emerald-400", barClass: "bg-emerald-500", icon: Coins },
+              { bgClass: "bg-blue-500/10", textClass: "text-blue-600 dark:text-blue-400", barClass: "bg-blue-500", icon: Zap },
+              { bgClass: "bg-purple-500/10", textClass: "text-purple-600 dark:text-purple-400", barClass: "bg-purple-500", icon: ShieldCheck }
+            ];
+            const c = colors[idx % colors.length];
+            return {
+              id: o._id,
+              title: o.title,
+              business: o.business?.name || "Unknown Business",
+              businessLogo: o.business?.logo || null,
+              cost: o.cost,
+              category: o.category || "Food",
+              description: o.description,
+              totalQuantity: o.totalQuantity,
+              claimedQuantity: o.claimedQuantity,
+              ...c
+            };
+          });
+          setOffers(mappedOffers);
+        }
+      } catch (e) {
+        console.error("Failed to fetch offers", e);
+      }
+    };
+    fetchOffers();
+  }, []);
 
   return (
     <div className="min-h-screen bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
@@ -153,32 +210,93 @@ export default function ExchangePage() {
             {/* OFFERS SECTION */}
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               {/* Categories */}
-              <div className="flex items-center gap-2 mb-8 overflow-x-auto pb-2 scrollbar-hide">
-                {['All', 'Food & Drink', 'Fitness & Health', 'Services'].map(cat => (
-                  <button 
-                    key={cat}
-                    onClick={() => setOfferCategory(cat)}
-                    className={`px-4 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${offerCategory === cat ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' : 'bg-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] border border-transparent'}`}
-                  >
-                    {cat}
-                  </button>
-                ))}
+              <div className="flex justify-start items-center gap-3 md:gap-6 mb-10 overflow-x-auto pb-4 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+                {/* Primary Filters */}
+                <div className="inline-flex items-center p-1.5 bg-[hsl(var(--muted))]/30 border border-[hsl(var(--border))]/50 rounded-full shadow-inner backdrop-blur-md shrink-0">
+                  {['All', 'Saved'].map(cat => {
+                    const isActive = offerCategory === cat;
+                    return (
+                      <button 
+                        key={cat}
+                        onClick={() => setOfferCategory(cat)}
+                        className={`relative px-6 py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-all duration-300 ${
+                          isActive 
+                            ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' 
+                            : 'bg-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/80'
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="w-px h-8 bg-[hsl(var(--border))] shrink-0"></div>
+
+                {/* Categories */}
+                <div className="inline-flex items-center p-1.5 bg-[hsl(var(--muted))]/30 border border-[hsl(var(--border))]/50 rounded-full shadow-inner backdrop-blur-md shrink-0">
+                  {['Food', 'Drink', 'Hookah'].map(cat => {
+                    const isActive = offerCategory === cat;
+                    return (
+                      <button 
+                        key={cat}
+                        onClick={() => setOfferCategory(cat)}
+                        className={`relative px-6 py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-all duration-300 ${
+                          isActive 
+                            ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' 
+                            : 'bg-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/80'
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Offers Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {OFFERS.filter(o => offerCategory === 'All' || o.category === offerCategory).map((offer) => (
+                {offers.filter(o => offerCategory === 'All' ? true : offerCategory === 'Saved' ? savedOffers.includes(o.id) : o.category === offerCategory).map((offer) => (
                   <div 
                     key={offer.id}
                     onClick={() => setSelectedOffer(offer)}
                     className="group bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-3xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden flex flex-col cursor-pointer"
                   >
                     <div className={`absolute top-0 right-0 w-32 h-32 ${offer.bgClass} rounded-bl-full -mr-16 -mt-16 transition-transform group-hover:scale-110`} />
-                    <div className={`w-12 h-12 rounded-2xl ${offer.bgClass} ${offer.textClass} flex items-center justify-center mb-6`}>
-                      <offer.icon className="w-6 h-6" />
+                    
+                    {/* Save Offer Button */}
+                    <button 
+                      onClick={(e) => toggleSavedOffer(e, offer.id)}
+                      className="absolute top-4 right-4 z-10 p-2.5 rounded-full bg-[hsl(var(--background))]/50 backdrop-blur-md border border-[hsl(var(--border))]/50 hover:bg-[hsl(var(--card))] hover:shadow-md transition-all duration-200 group/btn"
+                    >
+                      <Heart className={`w-5 h-5 transition-colors ${savedOffers.includes(offer.id) ? 'fill-red-500 text-red-500' : 'text-[hsl(var(--muted-foreground))] group-hover/btn:text-[hsl(var(--foreground))]'}`} />
+                    </button>
+
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className={`w-10 h-10 rounded-xl ${offer.bgClass} ${offer.textClass} flex items-center justify-center overflow-hidden shrink-0`}>
+                        {offer.businessLogo ? (
+                          <img src={offer.businessLogo.startsWith('data:') || offer.businessLogo.startsWith('http') ? offer.businessLogo : getApiUrl().replace('/api', '') + offer.businessLogo} alt={offer.business} className="w-full h-full object-cover" />
+                        ) : (
+                          <offer.icon className="w-5 h-5" />
+                        )}
+                      </div>
+                      <span className="font-semibold text-sm text-[hsl(var(--foreground))]">{offer.business}</span>
                     </div>
-                    <h3 className="text-xl font-bold text-[hsl(var(--foreground))] mb-2">{offer.title}</h3>
-                    <p className="text-sm text-[hsl(var(--muted-foreground))] mb-6 flex-1">Offered by <span className="font-semibold text-[hsl(var(--foreground))]">{offer.business}</span></p>
+                    <h3 className="text-xl font-bold text-[hsl(var(--foreground))] mb-4 flex-1">{offer.title}</h3>
+                    
+                    {/* Progress Bar */}
+                    <div className="mb-5 mt-auto">
+                      <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))] mb-2">
+                        <span>{offer.totalQuantity - offer.claimedQuantity} Left</span>
+                        <span>{Math.round((offer.claimedQuantity / offer.totalQuantity) * 100)}% Claimed</span>
+                      </div>
+                      <div className="w-full bg-[hsl(var(--border))] rounded-full h-1.5 overflow-hidden">
+                        <div 
+                          className={`h-full rounded-full transition-all duration-1000 ${offer.barClass}`} 
+                          style={{ width: `${(offer.claimedQuantity / offer.totalQuantity) * 100}%` }}
+                        />
+                      </div>
+                    </div>
                     
                     <div className="flex items-center justify-between pt-4 border-t border-[hsl(var(--border))]/50">
                       <div className="flex items-center gap-1.5">
@@ -192,9 +310,9 @@ export default function ExchangePage() {
                   </div>
                 ))}
                 
-                {OFFERS.filter(o => offerCategory === 'All' || o.category === offerCategory).length === 0 && (
+                {offers.filter(o => offerCategory === 'All' ? true : offerCategory === 'Saved' ? savedOffers.includes(o.id) : o.category === offerCategory).length === 0 && (
                   <div className="col-span-full py-12 text-center text-[hsl(var(--muted-foreground))]">
-                    No offers found in this category.
+                    {offerCategory === 'Saved' ? "You haven't saved any offers yet." : "No offers found in this category."}
                   </div>
                 )}
               </div>
@@ -223,11 +341,17 @@ export default function ExchangePage() {
                 <X className="w-4 h-4" />
               </button>
               
-              <div className={`w-16 h-16 rounded-2xl bg-[hsl(var(--card))] shadow-sm ${selectedOffer.textClass} flex items-center justify-center mb-4`}>
-                <selectedOffer.icon className="w-8 h-8" />
+              <div className="flex items-center gap-4 mb-4">
+                <div className={`w-14 h-14 rounded-2xl bg-[hsl(var(--card))] shadow-sm ${selectedOffer.textClass} flex items-center justify-center overflow-hidden shrink-0`}>
+                  {selectedOffer.businessLogo ? (
+                    <img src={selectedOffer.businessLogo.startsWith('data:') || selectedOffer.businessLogo.startsWith('http') ? selectedOffer.businessLogo : getApiUrl().replace('/api', '') + selectedOffer.businessLogo} alt={selectedOffer.business} className="w-full h-full object-cover" />
+                  ) : (
+                    <selectedOffer.icon className="w-7 h-7" />
+                  )}
+                </div>
+                <span className="font-bold text-lg text-[hsl(var(--foreground))]">{selectedOffer.business}</span>
               </div>
-              <h2 className="text-2xl font-black text-[hsl(var(--foreground))]">{selectedOffer.title}</h2>
-              <p className="text-sm font-medium opacity-80 mt-1">Offered by <span className="font-bold">{selectedOffer.business}</span></p>
+              <h2 className="text-3xl font-black text-[hsl(var(--foreground))] leading-tight">{selectedOffer.title}</h2>
             </div>
 
             {/* Modal Body */}
@@ -245,9 +369,15 @@ export default function ExchangePage() {
                     <span className="font-black text-2xl text-[hsl(var(--foreground))]">{selectedOffer.cost}</span>
                   </div>
                 </div>
-                <button className="px-8 py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold shadow-md shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all">
-                  Confirm Exchange
-                </button>
+                {!isBusinessUser ? (
+                  <button className="px-8 py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold shadow-md shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all">
+                    Confirm Exchange
+                  </button>
+                ) : (
+                  <button disabled className="px-8 py-3.5 bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] rounded-xl font-bold cursor-not-allowed">
+                    Not available for business
+                  </button>
+                )}
               </div>
             </div>
             
