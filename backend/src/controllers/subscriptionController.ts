@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import Subscription from '../models/Subscription.js';
 import Business from '../models/Business.js';
 import PromoCode from '../models/PromoCode.js';
@@ -13,7 +14,13 @@ export const subscribe = asyncHandler(async (req: Request & { user?: any }, res:
     return;
   }
 
-  const business = await Business.findById(businessId);
+  let business: any = null;
+  if (businessId === 'me') {
+    business = await Business.findOne({ owner: req.user?.id });
+  } else if (businessId && mongoose.Types.ObjectId.isValid(businessId)) {
+    business = await Business.findById(businessId);
+  }
+
   if (!business) {
     res.status(404).json({ success: false, message: 'Business not found' });
     return;
@@ -42,7 +49,7 @@ export const subscribe = asyncHandler(async (req: Request & { user?: any }, res:
   endDate.setMonth(endDate.getMonth() + 1); // 1 month duration
 
   // Find existing subscription or create new
-  let subscription = await Subscription.findOne({ business: businessId });
+  let subscription = await Subscription.findOne({ business: business._id });
 
   if (subscription) {
     subscription.plan = plan;
@@ -54,7 +61,7 @@ export const subscribe = asyncHandler(async (req: Request & { user?: any }, res:
     await subscription.save();
   } else {
     subscription = new Subscription({
-      business: businessId,
+      business: business._id,
       plan,
       price,
       commissionRate,
@@ -76,7 +83,13 @@ export const subscribe = asyncHandler(async (req: Request & { user?: any }, res:
 export const getSubscription = asyncHandler(async (req: Request & { user?: any }, res: Response): Promise<void> => {
   const { businessId } = req.params;
 
-  const business = await Business.findById(businessId);
+  let business: any = null;
+  if (businessId === 'me') {
+    business = await Business.findOne({ owner: req.user?.id });
+  } else if (businessId && mongoose.Types.ObjectId.isValid(businessId)) {
+    business = await Business.findById(businessId);
+  }
+
   if (!business) {
     res.status(404).json({ success: false, message: 'Business not found' });
     return;
@@ -88,12 +101,12 @@ export const getSubscription = asyncHandler(async (req: Request & { user?: any }
     return;
   }
 
-  let subscription = await Subscription.findOne({ business: businessId });
+  let subscription = await Subscription.findOne({ business: business._id });
 
   // If no subscription exists, default to starter plan (Freemium)
   if (!subscription) {
     subscription = new Subscription({
-      business: businessId,
+      business: business._id,
       plan: 'starter',
       price: 0,
       commissionRate: 7,

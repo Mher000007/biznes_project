@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import { toggleChat, addMessage, setLoading, setSessionId } from "@/store/slices/chatSlice";
 import type { ChatMessage, BusinessSuggestion } from "@/store/slices/chatSlice";
-import { Search, MessageCircle, X, Send, Star, MapPin, ArrowRight, Sparkles, Bot } from "lucide-react";
+import { Search, MessageCircle, X, Send, Star, MapPin, ArrowRight, Sparkles, Bot, Tag, Users, Utensils } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
 import { useI18n } from "@/i18n";
@@ -33,6 +33,92 @@ function BusinessCard({ biz }: { biz: BusinessSuggestion }) {
       </div>
       <ArrowRight className="h-4 w-4 shrink-0 self-center text-[hsl(var(--muted-foreground))]" />
     </Link>
+  );
+}
+
+function OfferCard({ item, onBook }: { item: BusinessSuggestion; onBook: (id: string) => void }) {
+  const priceFormatted = (item.price || 13000).toLocaleString() + " AMD";
+  const paxText = (item.pax || 2) + " Persons";
+  const locationText = item.location || item.city || "Palermo Restaurant, Jrvej";
+  const packageName = item.packageName || item.name || "Սեթ No 1";
+
+  const atmosphere = item.atmosphere || 'family';
+  const atmBadgeClass = atmosphere === 'family' 
+    ? 'bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/15 border-amber-500/30 text-amber-700 dark:text-amber-300' 
+    : atmosphere === 'friends' 
+    ? 'bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-indigo-500/15 border-indigo-500/30 text-indigo-700 dark:text-indigo-300' 
+    : 'bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-cyan-500/15 border-emerald-500/30 text-emerald-700 dark:text-emerald-300';
+  const atmText = atmosphere === 'family' ? '👨‍👩‍👧‍👦 Family' : atmosphere === 'friends' ? '👥 Friends' : '⚡ Active';
+
+  return (
+    <div className="relative group rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 shadow-sm transition-all hover:border-[hsl(var(--primary))]/30 hover:shadow-md my-2">
+      <div className="flex justify-between items-start mb-2.5">
+        <div>
+          <h3 className="font-semibold text-base text-[hsl(var(--foreground))]">{packageName}</h3>
+          {item.name && item.name !== packageName && (
+            <p className="text-[11px] text-[hsl(var(--muted-foreground))] font-medium">{item.name}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-2.5 text-xs text-[hsl(var(--muted-foreground))]">
+        <div className="flex items-center justify-between gap-2 flex-wrap pt-0.5">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/20 text-xs shadow-2xs">
+              <Tag className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+              <span>{priceFormatted}</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] font-semibold text-xs border border-[hsl(var(--border))]">
+              <Users className="h-3.5 w-3.5 text-[hsl(var(--muted-foreground))] shrink-0" />
+              <span>{paxText}</span>
+            </div>
+          </div>
+          <span className={`text-[11px] font-bold px-2.5 py-1 rounded-xl flex items-center gap-1.5 border shadow-2xs backdrop-blur-xs transition-all ${atmBadgeClass}`}>
+            <Sparkles className="w-3 h-3 shrink-0" />
+            <span>{atmText}</span>
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 text-xs bg-[hsl(var(--muted))]/40 border border-[hsl(var(--border))]/80 px-3 py-2 rounded-xl transition-all hover:bg-[hsl(var(--muted))]/70 group cursor-default" title={locationText}>
+          <div className="p-1 rounded-lg bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))] shrink-0 group-hover:scale-110 transition-transform">
+            <MapPin className="w-3.5 h-3.5" />
+          </div>
+          <span className="truncate font-semibold text-[hsl(var(--foreground))] text-xs">{locationText}</span>
+        </div>
+
+        {(item.dishesHy || item.dishesEn || item.dishesRu) && (
+          <div className="mt-2.5 pt-2.5 border-t border-[hsl(var(--border))]/60 space-y-1.5">
+            <p className="font-bold text-[11px] uppercase tracking-wider text-[hsl(var(--muted-foreground))] flex items-center gap-1.5">
+              <Utensils className="w-3 h-3 text-[hsl(var(--primary))]" />
+              <span>Dishes</span>
+            </p>
+            {item.dishesHy && (
+              <p className="line-clamp-2 text-xs font-medium text-[hsl(var(--foreground))] bg-[hsl(var(--muted))]/20 p-2 rounded-lg border border-[hsl(var(--border))]/40">
+                🇦🇲 {item.dishesHy}
+              </p>
+            )}
+            {item.dishesEn && (
+              <p className="line-clamp-2 text-xs text-[hsl(var(--muted-foreground))] pl-1">
+                🇬🇧 {item.dishesEn}
+              </p>
+            )}
+            {item.dishesRu && (
+              <p className="line-clamp-2 text-xs text-[hsl(var(--muted-foreground))] pl-1">
+                🇷🇺 {item.dishesRu}
+              </p>
+            )}
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={() => onBook(item.id)}
+          className="w-full mt-2 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition-all shadow-sm hover:shadow-md cursor-pointer flex items-center justify-center gap-1.5"
+        >
+          <span>Ամրագրել Առաջարկը</span>
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -112,12 +198,7 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
         {msg.intent === "show_results" && msg.suggestions && msg.suggestions.length > 0 && (
           <div className="space-y-2 mt-2">
             {msg.suggestions.map(biz => (
-              <div key={biz.id} className="group relative">
-                <BusinessCard biz={biz} />
-                <button onClick={() => handleBook(biz.id)} className="w-full mt-1.5 py-2 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 rounded-lg text-xs font-semibold hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors">
-                  Ամրագրել
-                </button>
-              </div>
+              <OfferCard key={biz.id} item={biz} onBook={handleBook} />
             ))}
           </div>
         )}

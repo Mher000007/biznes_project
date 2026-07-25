@@ -4,10 +4,13 @@ export interface IOffer extends Document {
   business: mongoose.Types.ObjectId;
   packageName: string;
   dishes: string[];
+  dishesEn?: string[];
+  dishesRu?: string[];
   pax: number;
   price: number;
   inclusions: string[];
   location: string;
+  atmosphere?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -25,6 +28,14 @@ const offerSchema = new Schema<IOffer>(
       trim: true,
     },
     dishes: {
+      type: [String],
+      default: [],
+    },
+    dishesEn: {
+      type: [String],
+      default: [],
+    },
+    dishesRu: {
       type: [String],
       default: [],
     },
@@ -46,14 +57,27 @@ const offerSchema = new Schema<IOffer>(
       type: String,
       required: [true, 'Please provide the exact location for this offer'],
     },
+    atmosphere: {
+      type: String,
+      default: 'family',
+    },
   },
   {
     timestamps: true,
   }
 );
 
-// Add index for faster AI queries based on location or pax
+// Indexes for fast AI assistant search & multi-field filtering
 offerSchema.index({ business: 1 });
-offerSchema.index({ pax: 1, price: 1 });
+offerSchema.index({ pax: 1, price: 1, atmosphere: 1 });
+offerSchema.index({
+  packageName: 'text',
+  dishes: 'text',
+  dishesEn: 'text',
+  dishesRu: 'text',
+  inclusions: 'text',
+  location: 'text',
+  atmosphere: 'text',
+});
 
 export default mongoose.model<IOffer>('Offer', offerSchema);

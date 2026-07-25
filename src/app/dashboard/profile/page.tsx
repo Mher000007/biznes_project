@@ -245,7 +245,7 @@ export default function DashboardProfilePage() {
   const [newGalleryUrl, setNewGalleryUrl] = useState("");
 
   // Active Subscription
-  const [activePlan, setActivePlan] = useState<"starter" | "standard" | "premium">("standard");
+  const [activePlan, setActivePlan] = useState<string>("starter");
   const [activeSubscription, setActiveSubscription] = useState<any>(null);
   const [businessId, setBusinessId] = useState<string | null>(null);
   const [promoCodeInput, setPromoCodeInput] = useState("");
@@ -1002,71 +1002,86 @@ export default function DashboardProfilePage() {
 
               {/* TAB 3: HIGHLIGHTS ONLY */}
               {activeFormTab === "stories" && (
-                <div className="space-y-6 animate-scale-in">
-
-                  {/* Highlights Editor */}
-                  <div>
-                    <h3 className="text-base font-bold text-[hsl(var(--foreground))] mb-1">{t.builder.stories.highlightsTitle}</h3>
-                    <p className="text-xs text-[hsl(var(--muted-foreground))]">{t.builder.stories.highlightsSubtitle}</p>
-
-                    <div className="grid grid-cols-1 gap-2 mt-3">
-                      <input
-                        type="text"
-                        placeholder={t.builder.stories.highlightsPlaceholder}
-                        value={newHighlightTitle}
-                        onChange={e => setNewHighlightTitle(e.target.value)}
-                        className="w-full rounded-lg border border-[hsl(var(--border))] px-2.5 py-1.5 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]"
-                      />
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setIsStoryArchiveModalOpen(true)}
-                          className="flex-1 px-2.5 py-1.5 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] transition-colors border border-[hsl(var(--border))] flex justify-center items-center gap-2 font-semibold"
-                        >
-                          <GridIcon className="h-4 w-4" />
-                          {selectedArchiveStories.length > 0 ? `${selectedArchiveStories.length} stories selected` : "Select from Archive"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (!newHighlightTitle || selectedArchiveStories.length === 0) return;
-                            const firstSelected = storyArchive.find((s: any) => s._id === selectedArchiveStories[0]);
-                            const newHighlight = {
-                              id: Date.now().toString(),
-                              title: newHighlightTitle,
-                              imageUrl: firstSelected?.mediaUrl || "",
-                              stories: [...selectedArchiveStories]
-                            };
-                            setHighlights([...highlights, newHighlight]);
-                            setNewHighlightTitle("");
-                            setSelectedArchiveStories([]);
-                          }}
-                          disabled={!newHighlightTitle || selectedArchiveStories.length === 0}
-                          className="px-4 py-1.5 bg-[hsl(var(--primary))] text-white font-semibold rounded-lg text-xs hover:opacity-90 disabled:opacity-50"
-                        >
-                          {t.builder.stories.add}
-                        </button>
-                      </div>
+                (!activePlan || activePlan === "starter" || activePlan === "start" || activePlan === "free" || activePlan === "basic") ? (
+                  <div className="max-w-xl mx-auto py-10 px-4 text-center bg-[hsl(var(--card))] rounded-3xl shadow-xl border border-[hsl(var(--border))] my-4">
+                    <div className="w-14 h-14 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 text-amber-500 shadow-inner">
+                      <Lock className="w-7 h-7" />
                     </div>
+                    <h2 className="text-lg font-bold mb-2">Stories & Highlights Feature Locked</h2>
+                    <p className="text-xs sm:text-sm text-[hsl(var(--muted-foreground))] mb-6 leading-relaxed">
+                      The Stories & Highlights feature is not available on the Start plan. Upgrade your plan to Pro or Premium to manage stories and highlights.
+                    </p>
+                    <Link href="/dashboard/settings" className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-xs transition-all inline-block shadow-lg shadow-emerald-500/20 hover:scale-105">
+                      Upgrade Plan
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-6 animate-scale-in">
 
-                    {/* Highlights list */}
-                    <div className="flex gap-3 overflow-x-auto py-3 mt-2">
-                      {highlights.map(h => (
-                        <div key={h.id} className="relative group flex flex-col items-center shrink-0 w-16">
-                          <img src={h.imageUrl} className="h-10 w-10 object-cover rounded-full border border-[hsl(var(--border))]" alt="" />
-                          <span className="text-[10px] mt-1 text-[hsl(var(--muted-foreground))] truncate w-full text-center">{h.title}</span>
+                    {/* Highlights Editor */}
+                    <div>
+                      <h3 className="text-base font-bold text-[hsl(var(--foreground))] mb-1">{t.builder.stories.highlightsTitle}</h3>
+                      <p className="text-xs text-[hsl(var(--muted-foreground))]">{t.builder.stories.highlightsSubtitle}</p>
+
+                      <div className="grid grid-cols-1 gap-2 mt-3">
+                        <input
+                          type="text"
+                          placeholder={t.builder.stories.highlightsPlaceholder}
+                          value={newHighlightTitle}
+                          onChange={e => setNewHighlightTitle(e.target.value)}
+                          className="w-full rounded-lg border border-[hsl(var(--border))] px-2.5 py-1.5 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]"
+                        />
+                        <div className="flex gap-2">
                           <button
                             type="button"
-                            onClick={() => removeHighlightItem(h.id)}
-                            className="absolute -top-1 -right-1 p-0.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                            onClick={() => setIsStoryArchiveModalOpen(true)}
+                            className="flex-1 px-2.5 py-1.5 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] transition-colors border border-[hsl(var(--border))] flex justify-center items-center gap-2 font-semibold"
                           >
-                            <X className="h-2.5 w-2.5" />
+                            <GridIcon className="h-4 w-4" />
+                            {selectedArchiveStories.length > 0 ? `${selectedArchiveStories.length} stories selected` : "Select from Archive"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!newHighlightTitle || selectedArchiveStories.length === 0) return;
+                              const firstSelected = storyArchive.find((s: any) => s._id === selectedArchiveStories[0]);
+                              const newHighlight = {
+                                id: Date.now().toString(),
+                                title: newHighlightTitle,
+                                imageUrl: firstSelected?.mediaUrl || "",
+                                stories: [...selectedArchiveStories]
+                              };
+                              setHighlights([...highlights, newHighlight]);
+                              setNewHighlightTitle("");
+                              setSelectedArchiveStories([]);
+                            }}
+                            disabled={!newHighlightTitle || selectedArchiveStories.length === 0}
+                            className="px-4 py-1.5 bg-[hsl(var(--primary))] text-white font-semibold rounded-lg text-xs hover:opacity-90 disabled:opacity-50"
+                          >
+                            {t.builder.stories.add}
                           </button>
                         </div>
-                      ))}
+                      </div>
+
+                      {/* Highlights list */}
+                      <div className="flex gap-3 overflow-x-auto py-3 mt-2">
+                        {highlights.map(h => (
+                          <div key={h.id} className="relative group flex flex-col items-center shrink-0 w-16">
+                            <img src={h.imageUrl} className="h-10 w-10 object-cover rounded-full border border-[hsl(var(--border))]" alt="" />
+                            <span className="text-[10px] mt-1 text-[hsl(var(--muted-foreground))] truncate w-full text-center">{h.title}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeHighlightItem(h.id)}
+                              className="absolute -top-1 -right-1 p-0.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                            >
+                              <X className="h-2.5 w-2.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
+                )
               )}
 
 

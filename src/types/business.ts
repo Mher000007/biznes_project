@@ -31,6 +31,7 @@ export interface Business {
   services: Service[];
 
   // Media
+  logo?: string;
   logoUrl: string;
   coverImageUrl: string;
   images: string[];

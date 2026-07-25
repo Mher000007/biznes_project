@@ -3,7 +3,8 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getApiUrl } from "@/lib/utils";
 import axios from "axios";
-import { Plus, Trash2, Edit2, Coins, Tag, RefreshCw, Heart } from "lucide-react";
+import Link from "next/link";
+import { Plus, Trash2, Edit2, Coins, Tag, RefreshCw, Heart, Lock } from "lucide-react";
 
 interface ExchangeOffer {
   _id: string;
@@ -14,15 +15,46 @@ interface ExchangeOffer {
   totalQuantity: number;
   claimedQuantity: number;
   isActive: boolean;
+  savedBy?: string[];
   likes?: number;
 }
 
 export default function DashboardExchange() {
   const { currentUser } = useAuth();
+  const [activePlan, setActivePlan] = useState<string>("starter");
   const [offers, setOffers] = useState<ExchangeOffer[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+
+  useEffect(() => {
+    const loadPlan = async () => {
+      try {
+        const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
+        if (token) {
+          const subRes = await axios.get(`${getApiUrl()}/subscriptions/business/me`, { headers: { Authorization: `Bearer ${token}` } });
+          if (subRes.data?.success && subRes.data.data?.plan) {
+            setActivePlan(subRes.data.data.plan);
+            return;
+          }
+        }
+      } catch {}
+
+      if (typeof window !== "undefined") {
+        const profilesStr = window.localStorage.getItem("armbiz-business-profiles");
+        if (profilesStr) {
+          try {
+            const profiles = JSON.parse(profilesStr);
+            const myProfile = profiles.find((p: any) => p.ownerUsername === currentUser?.username);
+            if (myProfile && myProfile.plan) {
+              setActivePlan(myProfile.plan);
+            }
+          } catch (e) {}
+        }
+      }
+    };
+    loadPlan();
+  }, [currentUser]);
   
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -139,7 +171,7 @@ export default function DashboardExchange() {
   };
 
   const deleteOffer = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this exchange offer?")) return;
+    if (!confirm("Արդյո՞ք ցանկանում եք ջնջել այս փոխանակման առաջարկը:")) return;
     try {
       const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
       await axios.delete(`${getApiUrl()}/exchange-offers/${id}`, {
@@ -150,6 +182,27 @@ export default function DashboardExchange() {
       console.error("Error deleting offer", error);
     }
   };
+
+  const isStarterPlan = activePlan === "starter" || activePlan === "start" || activePlan === "free";
+
+  if (isStarterPlan) {
+    return (
+      <div className="p-6 max-w-lg mx-auto mt-12">
+        <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-3xl p-8 text-center shadow-xl">
+          <div className="w-16 h-16 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 text-amber-500 shadow-inner">
+            <Lock className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-bold text-[hsl(var(--foreground))] mb-2">Exchange Feature Locked</h2>
+          <p className="text-xs sm:text-sm text-[hsl(var(--muted-foreground))] mb-6 leading-relaxed">
+            The Findy Coin Exchange feature is not available on the Start plan. Upgrade your plan to Pro or Premium to manage exchange offers.
+          </p>
+          <Link href="/dashboard/settings" className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-sm transition-all inline-block shadow-lg shadow-emerald-500/20 hover:scale-105">
+            Upgrade Plan
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
@@ -243,7 +296,7 @@ export default function DashboardExchange() {
                 
                 <div className="flex items-center gap-1.5 text-[hsl(var(--muted-foreground))] bg-[hsl(var(--muted))] px-2 py-0.5 rounded-md">
                   <Heart className="w-3.5 h-3.5 fill-red-500 text-red-500" />
-                  <span className="text-xs font-bold">{offer.likes || ((offer.title.length * 7) % 50) + 5}</span>
+                  <span className="text-xs font-bold">{offer.savedBy?.length || 0}</span>
                 </div>
               </div>
               

@@ -19,7 +19,7 @@ export default function Footer() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 py-12">
           <div className="col-span-2 sm:col-span-1">
             <Link href="/" className="mb-3 block">
-              <img src="/logo.png" alt="Findy Logo" style={{ height: '7rem' }} className="w-auto object-contain" />
+              <img src="/logo.png" alt="Findy Logo" style={{ height: '7rem' }} className="w-auto object-contain [filter:invert(56%)_sepia(87%)_saturate(2462%)_hue-rotate(119deg)_brightness(98%)_contrast(105%)] dark:[filter:brightness(0)_invert(1)]" />
             </Link>
             <p className="text-xs text-[hsl(var(--muted-foreground))] leading-relaxed">
               {t.footer.tagline}

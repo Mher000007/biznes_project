@@ -4,6 +4,8 @@ import { Star, MapPin, BadgeCheck, Bookmark } from "lucide-react";
 import type { Business } from "@/types/business";
 import styles from "./BusinessCard.module.scss";
 import { useI18n } from "@/i18n";
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/context/ToastContext";
 
 // Force Next.js compilation reload: 4
 // Helper to parse time string into minutes from midnight
@@ -91,6 +93,8 @@ export function getOpenStatus(operatingHours: any[] | undefined, t: any) {
 
 export default function BusinessCard({ business, viewMode = "list" }: { business: Business, viewMode?: "list" | "grid" }) {
   const { t } = useI18n();
+  const { currentUser } = useAuth();
+  const { showToast } = useToast();
   const status = getOpenStatus(business.operatingHours, t);
 
   const [isFavorited, setIsFavorited] = useState(false);
@@ -112,6 +116,11 @@ export default function BusinessCard({ business, viewMode = "list" }: { business
   const toggleFavorite = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
+    if (!currentUser) {
+      showToast();
+      return;
+    }
 
     if (typeof window === "undefined") return;
 

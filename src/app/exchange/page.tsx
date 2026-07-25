@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Navbar from "@/components/layout/Navbar";
 import { ExchangeIllustration } from "@/components/ui/ExchangeIllustration";
-import { ArrowDown, Coins, ShieldCheck, Zap, X, UserPlus, Gift, Send, Heart } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Coins, ShieldCheck, Zap, X, UserPlus, Gift, Send, Heart } from "lucide-react";
 import { useI18n } from "@/i18n";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/context/ToastContext";
 import axios from "axios";
 import { getApiUrl } from "@/lib/utils";
 
@@ -18,35 +19,32 @@ const MOCK_OFFERS = [
     category: "Food",
     bgClass: "bg-emerald-500/10",
     textClass: "text-emerald-600 dark:text-emerald-400",
-    barClass: "bg-emerald-500",
-    icon: Coins,
-    description: "Start your morning right! Redeem this offer for any medium-sized artisan coffee or tea at Cafe Central. Valid for dine-in or takeout. Limit one per customer.",
-    totalQuantity: 100,
-    claimedQuantity: 85
+    icon: Gift,
+    description: "Enjoy a freshly brewed artisanal coffee of your choice from Cafe Central. Valid for espresso, cappuccino, or latte. Redeemable anytime this month!",
+    totalQuantity: 50,
+    claimedQuantity: 32
   },
   {
     id: "2",
-    title: "20% Off Dinner Menu",
-    business: "Bistro Noir",
-    cost: 500,
-    category: "Drink",
-    bgClass: "bg-blue-500/10",
-    textClass: "text-blue-600 dark:text-blue-400",
-    barClass: "bg-blue-500",
+    title: "20% Off Hookah Session",
+    business: "Chill Lounge",
+    cost: 300,
+    category: "Hookah",
+    bgClass: "bg-purple-500/10",
+    textClass: "text-purple-600 dark:text-purple-400",
     icon: Zap,
-    description: "Enjoy a luxurious evening at Bistro Noir with a 20% discount on all dinner menu items. Excludes alcoholic beverages. Reservation required.",
-    totalQuantity: 50,
+    description: "Get a 20% discount on any premium hookah blend at Chill Lounge. Perfect for an evening with friends. Minimum spend 10,000 AMD.",
+    totalQuantity: 30,
     claimedQuantity: 12
   },
   {
     id: "3",
-    title: "1 Month Gym Access",
+    title: "1 Month Gym Pass",
     business: "FitLife Gym",
-    cost: 2500,
-    category: "Fitness & Health",
-    bgClass: "bg-purple-500/10",
-    textClass: "text-purple-600 dark:text-purple-400",
-    barClass: "bg-purple-500",
+    cost: 1000,
+    category: "Food",
+    bgClass: "bg-blue-500/10",
+    textClass: "text-blue-600 dark:text-blue-400",
     icon: ShieldCheck,
     description: "Get fully unlimited access to all FitLife Gym facilities, group classes, and sauna for one entire month. Start your premium fitness journey today!",
     totalQuantity: 20,
@@ -55,20 +53,63 @@ const MOCK_OFFERS = [
 ];
 
 export default function ExchangePage() {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const { currentUser } = useAuth();
+  const { showToast } = useToast();
   const isBusinessUser = currentUser?.role === "business_owner" || currentUser?.accountType === "business";
   
   const [selectedOffer, setSelectedOffer] = useState<any>(null);
   const [offerCategory, setOfferCategory] = useState<string>('All');
+  const [sortOrder, setSortOrder] = useState<'default' | 'highToLow' | 'lowToHigh'>('default');
   const [savedOffers, setSavedOffers] = useState<string[]>([]);
   const [offers, setOffers] = useState<any[]>(MOCK_OFFERS);
 
-  const toggleSavedOffer = (e: React.MouseEvent, id: string) => {
+  const sortedOffers = useMemo(() => {
+    let list = offers.filter(o =>
+      offerCategory === 'All'
+        ? true
+        : offerCategory === 'Saved'
+        ? savedOffers.includes(o.id)
+        : o.category === offerCategory
+    );
+
+    if (sortOrder === 'highToLow') {
+      return [...list].sort((a, b) => (Number(b.cost) || 0) - (Number(a.cost) || 0));
+    }
+    if (sortOrder === 'lowToHigh') {
+      return [...list].sort((a, b) => (Number(a.cost) || 0) - (Number(b.cost) || 0));
+    }
+    return list;
+  }, [offers, offerCategory, savedOffers, sortOrder]);
+
+  const handleConfirmExchange = () => {
+    if (!currentUser) {
+      showToast();
+      return;
+    }
+    alert("Exchange request confirmed!");
+    setSelectedOffer(null);
+  };
+
+  const toggleSavedOffer = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
+    if (!currentUser) {
+      showToast();
+      return;
+    }
     setSavedOffers(prev => 
       prev.includes(id) ? prev.filter(offerId => offerId !== id) : [...prev, id]
     );
+    const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
+    if (token && id !== "1" && id !== "2" && id !== "3") {
+      try {
+        await axios.post(`${getApiUrl()}/exchange-offers/${id}/toggle-save`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      } catch (err) {
+        console.error("Failed to toggle save offer", err);
+      }
+    }
   };
 
   useEffect(() => {
@@ -87,7 +128,11 @@ export default function ExchangePage() {
       try {
         const res = await axios.get(`${getApiUrl()}/exchange-offers`);
         if (res.data.success && res.data.data.length > 0) {
+          const loadedSaved: string[] = [];
           const mappedOffers = res.data.data.map((o: any, idx: number) => {
+            if (currentUser && (o.savedBy || []).some((userId: any) => userId === currentUser?.id || userId === (currentUser as any)?._id)) {
+              loadedSaved.push(o._id);
+            }
             const colors = [
               { bgClass: "bg-emerald-500/10", textClass: "text-emerald-600 dark:text-emerald-400", barClass: "bg-emerald-500", icon: Coins },
               { bgClass: "bg-blue-500/10", textClass: "text-blue-600 dark:text-blue-400", barClass: "bg-blue-500", icon: Zap },
@@ -108,13 +153,16 @@ export default function ExchangePage() {
             };
           });
           setOffers(mappedOffers);
+          if (loadedSaved.length > 0) {
+            setSavedOffers(prev => Array.from(new Set([...prev, ...loadedSaved])));
+          }
         }
       } catch (e) {
         console.error("Failed to fetch offers", e);
       }
     };
     fetchOffers();
-  }, []);
+  }, [currentUser]);
 
   return (
     <div className="min-h-screen bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
@@ -209,26 +257,64 @@ export default function ExchangePage() {
             
             {/* OFFERS SECTION */}
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              {/* Categories */}
-              <div className="flex justify-start items-center gap-3 md:gap-6 mb-10 overflow-x-auto pb-4 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+              {/* Categories Bar */}
+              <div className="flex justify-start items-center gap-3 md:gap-6 mb-8 flex-wrap sm:flex-nowrap overflow-visible relative z-30">
                 {/* Primary Filters */}
                 <div className="inline-flex items-center p-1.5 bg-[hsl(var(--muted))]/30 border border-[hsl(var(--border))]/50 rounded-full shadow-inner backdrop-blur-md shrink-0">
-                  {['All', 'Saved'].map(cat => {
-                    const isActive = offerCategory === cat;
-                    return (
-                      <button 
-                        key={cat}
-                        onClick={() => setOfferCategory(cat)}
-                        className={`relative px-6 py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-all duration-300 ${
-                          isActive 
-                            ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' 
-                            : 'bg-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/80'
-                        }`}
-                      >
-                        {cat}
-                      </button>
-                    );
-                  })}
+                  {/* All Button with Price Sort Hover Dropdown */}
+                  <div className="relative group/all inline-block">
+                    <button 
+                      onClick={() => setOfferCategory('All')}
+                      className={`relative px-6 py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-all duration-300 flex items-center gap-1.5 cursor-pointer ${
+                        offerCategory === 'All'
+                          ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' 
+                          : 'bg-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/80'
+                      }`}
+                    >
+                      <span>All</span>
+                      {sortOrder === 'highToLow' && <ArrowDown className="w-3.5 h-3.5 text-white" />}
+                      {sortOrder === 'lowToHigh' && <ArrowUp className="w-3.5 h-3.5 text-white" />}
+                    </button>
+
+                    {/* Hover Dropdown Popup for Price Sorting */}
+                    <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover/all:opacity-100 group-hover/all:visible group-hover/all:translate-y-0 translate-y-2 transition-all duration-300 z-[100] pointer-events-none group-hover/all:pointer-events-auto">
+                      <div className="inline-flex items-center p-1 bg-[hsl(var(--card))]/95 border border-[hsl(var(--border))] rounded-2xl shadow-2xl backdrop-blur-xl ring-1 ring-[hsl(var(--border))]/50 whitespace-nowrap">
+                        <button
+                          onClick={() => setSortOrder(prev => prev === 'highToLow' ? 'default' : 'highToLow')}
+                          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 flex items-center gap-1.5 cursor-pointer ${
+                            sortOrder === 'highToLow'
+                              ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/25'
+                              : 'bg-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/60'
+                          }`}
+                        >
+                          <span>{locale === "hy" ? "Թանկից էժան" : locale === "ru" ? "От дорогих к дешевым" : "Expensive to Cheap"}</span>
+                          <ArrowDown className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setSortOrder(prev => prev === 'lowToHigh' ? 'default' : 'lowToHigh')}
+                          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 flex items-center gap-1.5 cursor-pointer ${
+                            sortOrder === 'lowToHigh'
+                              ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/25'
+                              : 'bg-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/60'
+                          }`}
+                        >
+                          <span>{locale === "hy" ? "Էժանից թանկ" : locale === "ru" ? "От дешевых к дорогим" : "Cheap to Expensive"}</span>
+                          <ArrowUp className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={() => setOfferCategory('Saved')}
+                    className={`relative px-6 py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-all duration-300 cursor-pointer ${
+                      offerCategory === 'Saved'
+                        ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' 
+                        : 'bg-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/80'
+                    }`}
+                  >
+                    Saved
+                  </button>
                 </div>
 
                 <div className="w-px h-8 bg-[hsl(var(--border))] shrink-0"></div>
@@ -256,7 +342,7 @@ export default function ExchangePage() {
 
               {/* Offers Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {offers.filter(o => offerCategory === 'All' ? true : offerCategory === 'Saved' ? savedOffers.includes(o.id) : o.category === offerCategory).map((offer) => (
+                {sortedOffers.map((offer) => (
                   <div 
                     key={offer.id}
                     onClick={() => setSelectedOffer(offer)}
@@ -310,7 +396,7 @@ export default function ExchangePage() {
                   </div>
                 ))}
                 
-                {offers.filter(o => offerCategory === 'All' ? true : offerCategory === 'Saved' ? savedOffers.includes(o.id) : o.category === offerCategory).length === 0 && (
+                {sortedOffers.length === 0 && (
                   <div className="col-span-full py-12 text-center text-[hsl(var(--muted-foreground))]">
                     {offerCategory === 'Saved' ? "You haven't saved any offers yet." : "No offers found in this category."}
                   </div>
@@ -370,7 +456,10 @@ export default function ExchangePage() {
                   </div>
                 </div>
                 {!isBusinessUser ? (
-                  <button className="px-8 py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold shadow-md shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all">
+                  <button
+                    onClick={handleConfirmExchange}
+                    className="px-8 py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold shadow-md shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                  >
                     Confirm Exchange
                   </button>
                 ) : (

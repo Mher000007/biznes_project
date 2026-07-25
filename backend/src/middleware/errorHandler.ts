@@ -5,15 +5,27 @@ interface ApiError extends Error {
 }
 
 export const errorHandler = (
-  err: ApiError,
+  err: any,
   req: Request,
   res: Response,
   next: NextFunction
 ): void => {
-  const statusCode = err.statusCode || 500;
-  const message = err.message || 'Internal Server Error';
+  let statusCode = err.statusCode || 500;
+  let message = err.message || 'Internal Server Error';
 
-  console.error(`[${new Date().toISOString()}] Error:`, err);
+  // Handle Mongoose CastError (invalid ObjectId, e.g. "me" or bad string)
+  if (err.name === 'CastError') {
+    statusCode = 404;
+    message = `Resource not found with id of ${err.value}`;
+  }
+
+  // Handle Mongoose duplicate key
+  if (err.code === 11000) {
+    statusCode = 400;
+    message = 'Duplicate field value entered';
+  }
+
+  console.error(`[${new Date().toISOString()}] Error (${statusCode}):`, message);
 
   res.status(statusCode).json({
     success: false,

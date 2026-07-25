@@ -22,12 +22,26 @@ export const getExchangeOffers = async (req: Request, res: Response) => {
   }
 };
 
+import mongoose from 'mongoose';
+
 // @desc    Get exchange offers for a specific business
 // @route   GET /api/exchange-offers/business/:businessId
 // @access  Public
-export const getBusinessExchangeOffers = async (req: Request, res: Response) => {
+export const getBusinessExchangeOffers = async (req: Request & { user?: any }, res: Response) => {
   try {
-    const offers = await ExchangeOffer.find({ business: req.params.businessId }).sort('-createdAt');
+    let businessId = req.params.businessId;
+
+    if (businessId === 'me') {
+      const biz = await Business.findOne({ owner: req.user?.id });
+      if (!biz) {
+        return res.status(200).json({ success: true, count: 0, data: [] });
+      }
+      businessId = biz._id.toString();
+    } else if (!mongoose.Types.ObjectId.isValid(businessId)) {
+      return res.status(200).json({ success: true, count: 0, data: [] });
+    }
+
+    const offers = await ExchangeOffer.find({ business: businessId }).sort('-createdAt');
 
     res.status(200).json({
       success: true,
@@ -125,6 +139,41 @@ export const deleteExchangeOffer = async (req: AuthRequest, res: Response) => {
     res.status(200).json({
       success: true,
       data: {},
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Server Error' });
+  }
+};
+
+// @desc    Toggle save/like on an exchange offer
+// @route   POST /api/exchange-offers/:id/toggle-save
+// @access  Private
+export const toggleSaveExchangeOffer = async (req: AuthRequest, res: Response) => {
+  try {
+    const offer = await ExchangeOffer.findById(req.params.id);
+
+    if (!offer) {
+      return res.status(404).json({ success: false, error: 'Exchange offer not found' });
+    }
+
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Not authorized' });
+    }
+
+    const index = offer.savedBy?.findIndex((id) => id.toString() === userId.toString()) ?? -1;
+    if (index === -1) {
+      offer.savedBy = offer.savedBy || [];
+      offer.savedBy.push(userId as any);
+    } else {
+      offer.savedBy.splice(index, 1);
+    }
+
+    await offer.save();
+
+    res.status(200).json({
+      success: true,
+      data: offer,
     });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Server Error' });

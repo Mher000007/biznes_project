@@ -4,7 +4,8 @@ import axios from "axios";
 import { getApiUrl } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { useI18n } from "@/i18n";
-import { Sparkles, Trash2, Eye, Calendar, Upload, Link as LinkIcon, AlertCircle, CheckCircle } from "lucide-react";
+import Link from "next/link";
+import { Sparkles, Trash2, Eye, Calendar, Upload, Link as LinkIcon, AlertCircle, CheckCircle, Lock } from "lucide-react";
 
 const API = getApiUrl();
 
@@ -209,6 +210,25 @@ export default function DashboardStoriesPage() {
         <p className="text-sm text-[hsl(var(--muted-foreground))] mb-6 leading-relaxed">
           {t.stories.verificationRequiredDesc}
         </p>
+      </div>
+    );
+  }
+
+  const isStarterPlan = !activePlan || activePlan === "start" || activePlan === "starter" || activePlan === "free" || activePlan === "basic";
+
+  if (isStarterPlan) {
+    return (
+      <div className="max-w-2xl mx-auto py-12 px-4 text-center bg-[hsl(var(--card))] rounded-3xl shadow-xl border border-[hsl(var(--border))] mt-10">
+        <div className="w-16 h-16 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 text-amber-500 shadow-inner">
+          <Lock className="w-8 h-8" />
+        </div>
+        <h2 className="text-xl font-bold mb-2">Stories Feature Locked</h2>
+        <p className="text-sm text-[hsl(var(--muted-foreground))] mb-6 leading-relaxed">
+          The Stories & Highlights feature is not available on the Start plan. Upgrade your plan to Pro or Premium to post stories.
+        </p>
+        <Link href="/dashboard/settings" className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-sm transition-all inline-block shadow-lg shadow-emerald-500/20 hover:scale-105">
+          Upgrade Plan
+        </Link>
       </div>
     );
   }
@@ -446,3 +466,4 @@ export default function DashboardStoriesPage() {
     </div>
   );
 }
+

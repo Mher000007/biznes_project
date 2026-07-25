@@ -33,7 +33,7 @@
   height: 7rem;
   width: auto;
   object-fit: contain;
-  filter: brightness(0) !important;
+  filter: invert(56%) sepia(87%) saturate(2462%) hue-rotate(119deg) brightness(98%) contrast(105%) !important;
   transition: filter 0.3s ease;
 
   :global(.dark) & {

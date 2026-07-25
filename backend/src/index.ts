@@ -25,7 +25,7 @@ import { getAllReviews } from './controllers/reviewController.js';
 dotenv.config();
 
 const app: Express = express();
-const PORT = process.env.PORT || 5001;
+const PORT = Number(process.env.PORT) || 5001;
 
 // Middleware
 const allowedOrigins = [
@@ -87,7 +87,7 @@ const startServer = async (attempt = 1) => {
     await connectDB();
     await seedCategories();
 
-    const server = app.listen(PORT, () => {
+    const server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`\n🚀 Server running on http://localhost:${PORT}`);
       console.log(`📝 API Documentation:`);
       console.log(`   POST   /api/auth/register`);
@@ -97,6 +97,10 @@ const startServer = async (attempt = 1) => {
       console.log(`   POST   /api/inquiries`);
       console.log(`\n✓ Ready to accept requests\n`);
     });
+
+    // Configure keepAliveTimeout and headersTimeout to prevent socket hang up (ECONNRESET) errors when proxied
+    server.keepAliveTimeout = 120000;
+    server.headersTimeout = 121000;
 
     // Gracefully handle port-in-use (EADDRINUSE) — retry after 1s (max 5 attempts)
     server.on('error', (err: NodeJS.ErrnoException) => {

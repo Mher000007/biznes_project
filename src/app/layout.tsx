@@ -9,6 +9,7 @@ import Footer from "@/components/layout/Footer";
 import ChatWidget from "@/components/chat/ChatWidget";
 import { I18nProvider } from "@/i18n";
 import { AuthProvider } from "@/context/AuthContext";
+import { ToastProvider } from "@/context/ToastContext";
 
 const montserrat = Montserrat({
   variable: "--font-montserrat",
@@ -37,10 +38,12 @@ export default function RootLayout({
         <StoreProvider>
           <AuthProvider>
             <I18nProvider>
-              <Navbar />
-              <main className="flex-1">{children}</main>
-              <Footer />
-              <ChatWidget />
+              <ToastProvider>
+                <Navbar />
+                <main className="flex-1">{children}</main>
+                <Footer />
+                <ChatWidget />
+              </ToastProvider>
             </I18nProvider>
           </AuthProvider>
         </StoreProvider>

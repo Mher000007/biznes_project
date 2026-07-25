@@ -18,6 +18,14 @@ export interface BusinessSuggestion {
   city: string;
   shortDescription: string;
   slug: string;
+  packageName?: string;
+  price?: number;
+  pax?: number;
+  atmosphere?: string;
+  location?: string;
+  dishesHy?: string;
+  dishesEn?: string;
+  dishesRu?: string;
 }
 
 interface ChatState {

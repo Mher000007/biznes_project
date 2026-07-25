@@ -5,6 +5,7 @@ import {
   createExchangeOffer,
   updateExchangeOffer,
   deleteExchangeOffer,
+  toggleSaveExchangeOffer,
 } from '../controllers/exchangeOfferController.js';
 
 import { authenticate } from '../middleware/auth.js';
@@ -19,6 +20,10 @@ router
 router
   .route('/business/:businessId')
   .get(getBusinessExchangeOffers);
+
+router
+  .route('/:id/toggle-save')
+  .post(authenticate as any, toggleSaveExchangeOffer as any);
 
 router
   .route('/:id')

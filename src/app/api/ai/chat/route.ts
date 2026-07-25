@@ -8,9 +8,8 @@ interface ChatRequest {
 
 // Global session store
 interface ChatSession {
-  step: 'ask_pax' | 'ask_location' | 'ask_budget' | 'booking_datetime' | 'booking_details' | 'booking_confirm' | null;
+  step: 'ask_pax' | 'ask_budget' | 'booking_datetime' | 'booking_details' | 'booking_confirm' | null;
   pax?: number;
-  location?: string;
   budget?: number;
   selectedBizId?: string;
   selectedBizName?: string;
@@ -104,7 +103,7 @@ export async function POST(request: NextRequest) {
         category: "Summary",
         rating: 0,
         city: "",
-        shortDescription: `Անձանց քանակ: ${session.pax} հոգի\nԺամանակ: ${session.bookingDateTime}\nՄանրամասներ: ${details}`,
+        shortDescription: `Անձանց քանակ: ${session.pax || 2} հոգի\nԺամանակ: ${session.bookingDateTime}\nՄանրամասներ: ${details}`,
         slug: "",
         plan: "starter"
       }],
@@ -129,7 +128,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // 1. Detect start of flow
+  // 1. Trigger Start of Flow -> Step 1: Pax
   if (lower === "restaurants" || lower.includes("ռեստորաններ") || lower === "🍽️ restaurants" || (lower.includes("restaurant") && !session.step)) {
     session.step = 'ask_pax';
     sessions.set(sessionId, session);
@@ -138,12 +137,12 @@ export async function POST(request: NextRequest) {
       response: "Քանի՞ անձի համար եք նախատեսում ամրագրումը:",
       intent: "ask_pax",
       suggestions: [],
-      quickReplies: [],
+      quickReplies: ["2 անձ", "4 անձ", "6 անձ", "10+ անձ"],
       sessionId
     });
   }
 
-  // 2. Flow: Pax -> Location
+  // QUESTION 1: Pax -> QUESTION 2: Budget
   if (session.step === 'ask_pax') {
     const paxMatch = lower.match(/(\d+)/);
     if (!paxMatch) {
@@ -151,45 +150,20 @@ export async function POST(request: NextRequest) {
         response: "Խնդրում եմ նշեք հստակ թիվ (օրինակ՝ 2, 4):",
         intent: "ask_pax",
         suggestions: [],
-        quickReplies: [],
+        quickReplies: ["2 անձ", "4 անձ", "6 անձ", "10+ անձ"],
         sessionId
       });
     }
 
     session.pax = parseInt(paxMatch[1]);
-    session.step = 'ask_location';
-    sessions.set(sessionId, session);
-
-    // Filter cities based on pax and Premium/Pro (Mock logic: assume all Horeca serve any pax)
-    const topRestaurants = extractHoreca().filter(b => b.plan === "premium" || b.plan === "standard");
-    const uniqueCities = Array.from(new Set(topRestaurants.map(b => b.city)));
-
-    return NextResponse.json({
-      response: `Ո՞ր տարածքում (Location) եք ցանկանում ամրագրել ռեստորան: Ձեր նշած ${session.pax} անձի համար այս պահին գործող առաջարկներ ունենք հետևյալ տարածքներում՝`,
-      intent: "ask_location",
-      suggestions: [],
-      quickReplies: uniqueCities,
-      sessionId
-    });
-  }
-
-  // 3. Flow: Location -> Budget
-  if (session.step === 'ask_location') {
-    session.location = message;
     session.step = 'ask_budget';
     sessions.set(sessionId, session);
 
-    // Calculate Min/Max for this location
-    const targetCity = session.location.toLowerCase();
-    const locBiz = extractHoreca().filter(b => b.city.toLowerCase().includes(targetCity));
-    // Mock prices based on rating for logic
-    const minPrice = locBiz.length > 0 ? 5000 : 5000;
-
     return NextResponse.json({
-      response: `Որքա՞ն գումար եք նախատեսում ամրագրման համար (AMD):\n(Տվյալ տարածքում արժեքները սկսվում են մոտ ${minPrice} դրամից)`,
+      response: "Որքա՞ն գումար եք նախատեսում ամրագրման համար:",
       intent: "ask_budget",
       suggestions: [],
-      quickReplies: [],
+      quickReplies: ["10,000 AMD", "20,000 AMD", "30,000 AMD"],
       sessionId
     });
   }
@@ -249,12 +223,9 @@ export async function POST(request: NextRequest) {
 
     if (finalCandidates.length > 0) {
       if (fallbackType === "priority1") {
-        content = `Ցավոք, **${session.location}**-ում ճիշտ Ձեր նշած բյուջեով հասանելի առաջարկներ չկան, սակայն ունենք հիանալի տարբերակներ մոտակա գնային միջակայքում: Դիտարկե՞նք դրանք.\n\n`;
-      } else if (fallbackType === "priority3") {
-        const altCity = finalCandidates[0].city;
-        content = `Ձեր նշած գումարի սահմաններում **${session.location}**-ում այս պահին ամրագրումներ չունենք, բայց Ձեր բյուջեին կատարյալ համապատասխանում են **${altCity}** տարածքի այս ռեստորանները.\n\n`;
+        content = `Ցավոք, ճիշտ Ձեր նշած բյուջեով հասանելի առաջարկներ չկան, սակայն ունենք հիանալի տարբերակներ մոտակա գնային միջակայքում: Դիտարկե՞նք դրանք.\n\n`;
       } else {
-        content = `Գտա հետևյալ ռեստորանները **${session.pax} անձի** համար՝ **${session.budget} AMD** բյուջեով:\n\nԱրդյունքները դասավորված են ըստ որակի\n\n`;
+        content = `Գտա հետևյալ ռեստորանները **${session.pax} անձի** համար՝ **${session.budget} AMD** բյուջեով:\n\nԱրդյունքները դասավորված են ըստ որակի.\n\n`;
       }
 
       content += finalCandidates.slice(0, 3).map((b, i) => {
@@ -262,7 +233,7 @@ export async function POST(request: NextRequest) {
         return `${i + 1}. **${b.name}** (${planStr}) - ${b.ratingAvg} վարկանիշ (Սկսած ${getMockPrice(b)} AMD)`;
       }).join("\n");
 
-      suggestions = finalCandidates.slice(0, 3).map(b => ({
+      suggestions = finalCandidates.slice(0, 3).map((b, idx) => ({
         id: b.id,
         name: b.name,
         category: b.category.name,
@@ -270,7 +241,15 @@ export async function POST(request: NextRequest) {
         city: b.city,
         shortDescription: b.shortDescription,
         slug: b.slug,
-        plan: b.plan
+        plan: b.plan,
+        packageName: `Սեթ No ${idx + 1}`,
+        price: session.budget || getMockPrice(b) || 13000,
+        pax: session.pax || 2,
+        atmosphere: session.atmosphere || 'family',
+        location: b.address || `${b.name}, ${b.city}`,
+        dishesHy: (b as any).menu ? (b as any).menu.map((m: any) => m.name).join(", ") : "Խոզի խորոված, Խաչապուրի, Գինի",
+        dishesEn: "Pork Khorovats, Khachapuri, Wine",
+        dishesRu: "Шашлык из свинины, Хачапури, Вино"
       }));
     } else {
       content = "Ներողություն, այս չափանիշներով նույնիսկ մոտակա տարածքներում կամ բյուջեով ռեստորաններ չգտնվեցին: Խնդրում եմ փորձել ավելացնել բյուջեն:";

@@ -47,6 +47,6 @@ export function getApiUrl(): string {
     return "/api/backend";
   }
   // Server-side: hit the backend directly
-  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
+  return process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:5001/api";
 }
 

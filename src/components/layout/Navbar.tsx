@@ -475,7 +475,7 @@ export default function Navbar() {
           </Link>
 
           {/* Exchange Coins Hover Popup */}
-          {(pathname as string) !== "/exchange" && !isBusinessUser && (
+          {(pathname as string) !== "/exchange" && Boolean(currentUser) && !isBusinessUser && (
             <div className="absolute top-[120%] left-1/2 -translate-x-1/2 opacity-0 invisible group-hover/exchange:opacity-100 group-hover/exchange:visible group-hover/exchange:translate-y-0 translate-y-2 transition-all duration-300 z-50 pointer-events-none group-hover/exchange:pointer-events-auto">
               <div className="relative bg-[hsl(var(--background))]/90 backdrop-blur-xl px-3.5 py-1.5 rounded-xl border border-[hsl(var(--border))] shadow-xl whitespace-nowrap">
                 {/* Little arrow pointing up */}

@@ -121,7 +121,7 @@ export default function DashboardLocations() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this branch?")) return;
+    if (!confirm("Արդյո՞ք ցանկանում եք ջնջել այս մասնաճյուղը:")) return;
     try {
       const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
       await axios.delete(`${getApiUrl()}/businesses/locations/${id}`, {

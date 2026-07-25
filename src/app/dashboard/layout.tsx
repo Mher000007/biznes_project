@@ -85,7 +85,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     fetchUnread();
   }, [pathname, currentUser]);
 
-  const [activePlan, setActivePlan] = useState<"starter" | "standard" | "premium">("starter");
+  const [activePlan, setActivePlan] = useState<string>("starter");
   const [shakingHrefs, setShakingHrefs] = useState<string[]>([]);
 
   useEffect(() => {
@@ -123,8 +123,10 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     loadPlan();
   }, [currentUser]);
 
+  const isStarterPlan = !activePlan || activePlan === "starter" || activePlan === "start" || activePlan === "free" || activePlan === "basic";
+
   const handleLockedClick = (e: React.MouseEvent, href: string) => {
-    if (activePlan === "starter") {
+    if (isStarterPlan) {
       e.preventDefault();
       e.stopPropagation();
       setShakingHrefs((prev) => [...prev, href]);
@@ -144,7 +146,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     { href: "/dashboard/locations", label: navT.myLocations || "My Locations", icon: MapPin },
     { href: "/dashboard/stories", label: navT.stories || "Stories", icon: Sparkles, isPro: true },
     { href: "/dashboard/inquiries", label: navT.inquiries || "Inquiries", icon: MessageSquare },
-    { href: "/dashboard/exchange", label: navT.exchange || "Exchange", icon: ArrowRightLeft },
+    { href: "/dashboard/exchange", label: navT.exchange || "Exchange", icon: ArrowRightLeft, isPro: true },
     { href: "/dashboard/support", label: navT.supportChat || "Support Chat", icon: HeadphonesIcon },
     { href: "/dashboard/settings", label: navT.settings || "Settings", icon: Settings },
   ];
@@ -180,7 +182,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         <div className="flex flex-col flex-1 p-4 gap-1 pt-6">
           <p className="px-3 mb-3 text-xs font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Dashboard</p>
           {links.map((link) => {
-            const isLocked = activePlan === "starter" && link.isPro;
+            const isLocked = isStarterPlan && link.isPro;
             const isShaking = shakingHrefs.includes(link.href);
 
             if (link.href === "/dashboard/profile") {
@@ -206,7 +208,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                     <div className="pl-6 flex flex-col gap-1 border-l border-[hsl(var(--border))]/60 ml-5 mt-1">
                       {profileSubLinks.map((sub) => {
                         const active = isSubActive(sub.href);
-                        const isSubLocked = activePlan === "starter" && sub.isPro;
+                        const isSubLocked = isStarterPlan && sub.isPro;
                         const isSubShaking = shakingHrefs.includes(sub.href);
 
                         return (

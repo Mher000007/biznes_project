@@ -6,6 +6,7 @@ import Subscription from '../models/Subscription.js';
 import BusinessLocation from '../models/BusinessLocation.js';
 import PageVisit from '../models/PageVisit.js';
 import DailySummary from '../models/DailySummary.js';
+import Offer from '../models/Offer.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { triggerOnboardingWebhook } from '../utils/n8n.js';
 import { isValidCity } from '../utils/locationValidator.js';
@@ -113,6 +114,17 @@ export const getBusinesses = asyncHandler(async (req: Request, res: Response): P
       const bizObj = biz.toObject() as any;
       bizObj.plan = plan;
       bizObj.locations = locations || [];
+
+      // Filter heavy base64 image data URLs (> 100KB) from list responses to keep payload light (< 50KB) and prevent proxy ECONNRESET
+      if (Array.isArray(bizObj.images)) {
+        bizObj.images = bizObj.images.map((img: string) => {
+          if (typeof img === 'string' && img.startsWith('data:image') && img.length > 100000) {
+            return '';
+          }
+          return img;
+        }).filter(Boolean);
+      }
+
       return bizObj;
     } catch (e) {
       const bizObj = biz.toObject() as any;
@@ -195,11 +207,13 @@ export const getBusinessBySlug = asyncHandler(
 
     const sub = await Subscription.findOne({ business: business._id, status: 'active' });
     const locations = await BusinessLocation.find({ business: business._id }).sort({ isPrimary: -1, createdAt: 1 });
+    const offers = await Offer.find({ business: business._id }).sort({ createdAt: -1 });
     const plan = sub ? sub.plan : 'starter';
 
     const bizObj = business.toObject() as any;
     bizObj.plan = plan;
     bizObj.locations = locations;
+    bizObj.offers = offers;
 
     res.status(200).json({
       success: true,

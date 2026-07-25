@@ -11,6 +11,7 @@ import ReviewsSection from "@/components/business/ReviewsSection";
 import StoryViewer from "@/components/landing/StoryViewer";
 import { useI18n } from "@/i18n";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/context/ToastContext";
 import dynamic from "next/dynamic";
 import { getOpenStatus } from "@/components/discover/BusinessCard";
 
@@ -89,6 +90,7 @@ export default function BusinessProfilePage() {
   const { slug } = useParams() as { slug: string };
   const router = useRouter();
   const { locale, t } = useI18n();
+  const { showToast } = useToast();
   const [business, setBusiness] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeImgIdx, setActiveImgIdx] = useState(0);
@@ -215,6 +217,10 @@ export default function BusinessProfilePage() {
   }, [business]);
 
   const toggleFavorite = () => {
+    if (!currentUser) {
+      showToast();
+      return;
+    }
     if (typeof window === "undefined" || !business) return;
 
     try {
@@ -560,6 +566,10 @@ export default function BusinessProfilePage() {
 
   // Open booking flow for selected service/menu item
   const openBooking = (item: any) => {
+    if (!currentUser) {
+      showToast();
+      return;
+    }
     setSelectedService(item);
     setIsBookingOpen(true);
     setBookingSuccess(false);
@@ -829,6 +839,10 @@ export default function BusinessProfilePage() {
         {/* Global Instant Booking Trigger */}
         <button
           onClick={() => {
+            if (!currentUser) {
+              showToast();
+              return;
+            }
             if (!isClosed) {
               openBooking({ name: "General Appointment", price: 0 });
             }
@@ -836,7 +850,7 @@ export default function BusinessProfilePage() {
           disabled={isClosed}
           className={`py-3.5 px-6 rounded-xl text-sm font-semibold shadow-lg shrink-0 transition-all ${isClosed
             ? "bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] border border-[hsl(var(--border))] cursor-not-allowed opacity-60"
-            : "btn-primary"
+            : "btn-primary cursor-pointer"
             }`}
         >
           {isClosed ? (t.business?.closed || "Closed") : (t.business?.bookAppointment || "Book Appointment")}
