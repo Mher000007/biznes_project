@@ -49,7 +49,7 @@ export default function UserProfileDashboard() {
   const { currentUser, logout, refreshUser } = useAuth();
   const { t, locale } = useI18n();
 
-  const [activeTab, setActiveTab] = useState<"profile" | "favorites" | "bookings" | "reviews" | "security" | "transfer" | "invite" | "offers">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "favorites" | "bookings" | "reviews" | "security" | "transfer" | "invite" | "offers" | "business">("profile");
 
   // Profile Form States
   const [name, setName] = useState(currentUser?.name || "");
@@ -1242,7 +1242,7 @@ export default function UserProfileDashboard() {
                   const bSlug = rev.businessSlug || "";
                   const mockMatch = MOCK_BUSINESSES.find((b) => b.slug === bSlug || b.id === bSlug);
                   const displayTitle = mockMatch
-                    ? (locale === "hy" ? mockMatch.titleHy || mockMatch.title : mockMatch.titleRu || mockMatch.title)
+                    ? mockMatch.name
                     : rev.businessName || bSlug || "Business";
 
                   const ratingVal = Math.min(5, Math.max(1, Number(rev.rating) || 5));
