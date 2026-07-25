@@ -13,6 +13,7 @@ import {
   resolveReportedReview,
   getUsers,
   deleteUser,
+  topUpUserCoins,
   giftSubscription,
   getSubscriptionGifts,
   getPromoCodes,
@@ -52,6 +53,7 @@ router.put('/reports/:reviewId/resolve', resolveReportedReview);
 // Users
 router.get('/users', getUsers);
 router.delete('/users/:id', deleteUser);
+router.post('/users/:id/coins', topUpUserCoins);
 
 // Gift Subscription
 router.post('/businesses/:id/gift', giftSubscription);

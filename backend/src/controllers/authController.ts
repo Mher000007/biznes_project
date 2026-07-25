@@ -22,6 +22,7 @@ function userPayload(user: IUser) {
     accountType: user.accountType,
     avatar: user.avatar,
     phone: user.phone,
+    findyCoins: user.findyCoins || 0,
   };
 }
 

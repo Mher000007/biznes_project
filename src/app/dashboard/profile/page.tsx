@@ -7,13 +7,14 @@ import BusinessMap from "@/components/map/BusinessMap";
 import { useAuth } from "@/context/AuthContext";
 import { getBusinessProfile, saveBusinessProfile } from "@/lib/auth";
 import Link from "next/link";
-import { Save, CheckCircle, Plus, X, Image as ImageIcon, Star, Phone, Mail, Globe, MapPin, Clock, Camera, Trash2, Eye, ChevronRight, ChevronLeft, Award, PlusCircle, Sparkles, Smartphone, Settings, Grid as GridIcon, User as UserIcon, BadgeCheck, Compass, ArrowLeft, Calendar, Navigation, Lock } from "lucide-react";
+import { Save, CheckCircle, Plus, X, Image as ImageIcon, Star, Phone, Mail, Globe, MapPin, Clock, Camera, Trash2, Eye, ChevronRight, ChevronLeft, Award, PlusCircle, Sparkles, Smartphone, Settings, Grid as GridIcon, User as UserIcon, BadgeCheck, Compass, ArrowLeft, Calendar, Navigation, Lock, Upload } from "lucide-react";
 import axios from "axios";
 import styles from "@/components/dashboard/Dashboard.module.scss";
 import profileStyles from "@/components/business/BusinessProfile.module.scss";
 import { useI18n } from "@/i18n";
 import { getApiUrl } from "@/lib/utils";
 import { useSearchParams, useRouter } from "next/navigation";
+import StoryViewer from "@/components/landing/StoryViewer";
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -138,6 +139,17 @@ export default function DashboardProfilePage() {
     }
   };
 
+  const handleHighlightCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 3 * 1024 * 1024) {
+        alert("File size exceeds 3MB limit");
+        return;
+      }
+      convertFileToBase64(file).then(setHighlightCoverUrl).catch(console.error);
+    }
+  };
+
   const handleStoryUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -242,6 +254,9 @@ export default function DashboardProfilePage() {
   const [newStoryImg, setNewStoryImg] = useState("");
   const [newHighlightTitle, setNewHighlightTitle] = useState("");
   const [newHighlightImg, setNewHighlightImg] = useState("");
+  const [highlightCoverUrl, setHighlightCoverUrl] = useState<string>("");
+  const [editingHighlightId, setEditingHighlightId] = useState<string | null>(null);
+  const [previewingHighlightGroup, setPreviewingHighlightGroup] = useState<any | null>(null);
   const [newGalleryUrl, setNewGalleryUrl] = useState("");
 
   // Active Subscription
@@ -1018,68 +1033,280 @@ export default function DashboardProfilePage() {
                 ) : (
                   <div className="space-y-6 animate-scale-in">
 
-                    {/* Highlights Editor */}
-                    <div>
-                      <h3 className="text-base font-bold text-[hsl(var(--foreground))] mb-1">{t.builder.stories.highlightsTitle}</h3>
-                      <p className="text-xs text-[hsl(var(--muted-foreground))]">{t.builder.stories.highlightsSubtitle}</p>
+                    {/* Highlights Management System */}
+                    {(() => {
+                      const effectiveArchive = (storyArchive && storyArchive.length > 0)
+                        ? storyArchive
+                        : stories.map((s: any, idx: number) => ({
+                            _id: s._id || s.id || `local-story-${idx}`,
+                            mediaUrl: s.imageUrl || s.mediaUrl || s.url || "",
+                            mediaType: s.mediaType || "image",
+                            caption: s.title || `Story #${idx + 1}`,
+                            expiresAt: s.expiresAt || new Date().toISOString()
+                          }));
 
-                      <div className="grid grid-cols-1 gap-2 mt-3">
-                        <input
-                          type="text"
-                          placeholder={t.builder.stories.highlightsPlaceholder}
-                          value={newHighlightTitle}
-                          onChange={e => setNewHighlightTitle(e.target.value)}
-                          className="w-full rounded-lg border border-[hsl(var(--border))] px-2.5 py-1.5 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]"
-                        />
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setIsStoryArchiveModalOpen(true)}
-                            className="flex-1 px-2.5 py-1.5 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] transition-colors border border-[hsl(var(--border))] flex justify-center items-center gap-2 font-semibold"
-                          >
-                            <GridIcon className="h-4 w-4" />
-                            {selectedArchiveStories.length > 0 ? `${selectedArchiveStories.length} stories selected` : "Select from Archive"}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (!newHighlightTitle || selectedArchiveStories.length === 0) return;
-                              const firstSelected = storyArchive.find((s: any) => s._id === selectedArchiveStories[0]);
-                              const newHighlight = {
-                                id: Date.now().toString(),
-                                title: newHighlightTitle,
-                                imageUrl: firstSelected?.mediaUrl || "",
-                                stories: [...selectedArchiveStories]
-                              };
-                              setHighlights([...highlights, newHighlight]);
-                              setNewHighlightTitle("");
-                              setSelectedArchiveStories([]);
-                            }}
-                            disabled={!newHighlightTitle || selectedArchiveStories.length === 0}
-                            className="px-4 py-1.5 bg-[hsl(var(--primary))] text-white font-semibold rounded-lg text-xs hover:opacity-90 disabled:opacity-50"
-                          >
-                            {t.builder.stories.add}
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Highlights list */}
-                      <div className="flex gap-3 overflow-x-auto py-3 mt-2">
-                        {highlights.map(h => (
-                          <div key={h.id} className="relative group flex flex-col items-center shrink-0 w-16">
-                            <img src={h.imageUrl} className="h-10 w-10 object-cover rounded-full border border-[hsl(var(--border))]" alt="" />
-                            <span className="text-[10px] mt-1 text-[hsl(var(--muted-foreground))] truncate w-full text-center">{h.title}</span>
-                            <button
-                              type="button"
-                              onClick={() => removeHighlightItem(h.id)}
-                              className="absolute -top-1 -right-1 p-0.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                            >
-                              <X className="h-2.5 w-2.5" />
-                            </button>
+                      return (
+                        <div className="space-y-6">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h3 className="text-base font-bold text-[hsl(var(--foreground))] mb-1 flex items-center gap-2">
+                                <Sparkles className="h-4.5 w-4.5 text-amber-500" />
+                                {t.builder.stories.highlightsTitle || "Circular Highlights"}
+                              </h3>
+                              <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                                {t.builder.stories.highlightsSubtitle || "Create story collection tags from your archive and publish them on your profile."}
+                              </p>
+                            </div>
+                            {editingHighlightId && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingHighlightId(null);
+                                  setNewHighlightTitle("");
+                                  setSelectedArchiveStories([]);
+                                  setHighlightCoverUrl("");
+                                }}
+                                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors"
+                              >
+                                Cancel Edit
+                              </button>
+                            )}
                           </div>
-                        ))}
-                      </div>
-                    </div>
+
+                          {/* Builder Box */}
+                          <div className="p-4 sm:p-5 rounded-2xl bg-[hsl(var(--muted))]/30 border border-[hsl(var(--border))] space-y-4 shadow-sm">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                              {/* Live Circle Cover Thumbnail (Clickable to Upload) */}
+                              <div className="flex flex-col items-center shrink-0">
+                                <input
+                                  ref={highlightInputRef}
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={handleHighlightCoverUpload}
+                                  className="hidden"
+                                />
+                                <div
+                                  onClick={() => highlightInputRef.current?.click()}
+                                  className="group relative h-16 w-16 rounded-full p-[2px] border-2 border-[hsl(var(--primary))] shadow-sm overflow-hidden cursor-pointer transition-all hover:scale-105 hover:border-amber-500"
+                                  title="Click to upload custom cover photo"
+                                >
+                                  <div className="h-full w-full rounded-full bg-[hsl(var(--background))] overflow-hidden flex items-center justify-center relative">
+                                    {highlightCoverUrl || (selectedArchiveStories.length > 0 && effectiveArchive.find((s: any) => selectedArchiveStories.includes(s._id))?.mediaUrl) ? (
+                                      <img
+                                        src={highlightCoverUrl || effectiveArchive.find((s: any) => selectedArchiveStories.includes(s._id))?.mediaUrl}
+                                        alt="Cover"
+                                        className="h-full w-full rounded-full object-cover group-hover:opacity-70 transition-opacity"
+                                      />
+                                    ) : (
+                                      <span className="text-xl">✨</span>
+                                    )}
+
+                                    {/* Camera Overlay on Hover */}
+                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[9px] font-bold">
+                                      <Camera className="h-4 w-4 mb-0.5" />
+                                      <span>Change</span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => highlightInputRef.current?.click()}
+                                  className="text-[10px] font-bold text-[hsl(var(--primary))] hover:underline mt-1 flex items-center gap-1 cursor-pointer"
+                                >
+                                  <Camera className="h-3 w-3" /> Change Cover
+                                </button>
+                              </div>
+
+                              {/* Inputs & Actions */}
+                              <div className="flex-1 w-full space-y-3">
+                                <div>
+                                  <label className="block text-xs font-semibold text-[hsl(var(--foreground))] mb-1">
+                                    Highlight Title / Label *
+                                  </label>
+                                  <input
+                                    type="text"
+                                    placeholder={t.builder.stories.highlightsPlaceholder || "Highlight Label (e.g. Products, Menu, Reviews)"}
+                                    value={newHighlightTitle}
+                                    onChange={e => setNewHighlightTitle(e.target.value)}
+                                    className="w-full rounded-xl border border-[hsl(var(--border))] px-3.5 py-2 text-xs outline-none bg-[hsl(var(--card))] text-[hsl(var(--foreground))] focus:border-[hsl(var(--primary))] transition-all"
+                                  />
+                                </div>
+
+                                <div className="flex flex-wrap gap-2.5">
+                                  {/* Archive Selector Button */}
+                                  <button
+                                    type="button"
+                                    onClick={() => setIsStoryArchiveModalOpen(true)}
+                                    className="flex-1 min-w-[200px] px-3.5 py-2 bg-[hsl(var(--card))] text-[hsl(var(--foreground))] rounded-xl text-xs hover:border-[hsl(var(--primary))] transition-all border border-[hsl(var(--border))] flex justify-center items-center gap-2 font-semibold shadow-sm"
+                                  >
+                                    <GridIcon className="h-4 w-4 text-[hsl(var(--primary))]" />
+                                    <span>
+                                      {selectedArchiveStories.length > 0
+                                        ? `${selectedArchiveStories.length} stories selected`
+                                        : "Select stories from archive"}
+                                    </span>
+                                  </button>
+
+                                  {/* Publish / Save Button */}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (!newHighlightTitle.trim()) return;
+                                      const effectiveStories = selectedArchiveStories.length > 0
+                                        ? selectedArchiveStories
+                                        : (effectiveArchive.length > 0 ? [effectiveArchive[0]._id] : []);
+
+                                      const coverImageToUse = highlightCoverUrl || (
+                                        effectiveStories.length > 0
+                                          ? (effectiveArchive.find((s: any) => s._id === effectiveStories[0])?.mediaUrl || "")
+                                          : ""
+                                      );
+
+                                      if (editingHighlightId) {
+                                        setHighlights(prev => prev.map(h => h.id === editingHighlightId ? {
+                                          ...h,
+                                          title: newHighlightTitle.trim(),
+                                          imageUrl: coverImageToUse,
+                                          stories: effectiveStories
+                                        } : h));
+                                        setEditingHighlightId(null);
+                                      } else {
+                                        const newHighlight = {
+                                          id: Date.now().toString(),
+                                          title: newHighlightTitle.trim(),
+                                          imageUrl: coverImageToUse,
+                                          stories: effectiveStories
+                                        };
+                                        setHighlights(prev => [...prev, newHighlight]);
+                                      }
+                                      setNewHighlightTitle("");
+                                      setSelectedArchiveStories([]);
+                                      setHighlightCoverUrl("");
+                                    }}
+                                    disabled={!newHighlightTitle.trim()}
+                                    className="px-5 py-2 bg-[hsl(var(--primary))] text-white font-semibold rounded-xl text-xs hover:opacity-90 disabled:opacity-50 transition-all shadow-md shrink-0 flex items-center gap-1.5 cursor-pointer"
+                                  >
+                                    <Sparkles className="h-3.5 w-3.5" />
+                                    {editingHighlightId ? "Update Highlight" : t.builder.stories.add || "Publish Highlight"}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+
+                              {/* Story Cover Selector */}
+                              {selectedArchiveStories.length > 0 && (
+                                <div className="flex items-center gap-2 pt-2 border-t border-[hsl(var(--border))]/50">
+                                  <span className="text-[10px] text-[hsl(var(--muted-foreground))] font-medium whitespace-nowrap">Pick Cover from selected:</span>
+                                  <div className="flex items-center gap-1.5 overflow-x-auto py-1 custom-scrollbar">
+                                    {selectedArchiveStories.map((storyId, idx) => {
+                                      const st = effectiveArchive.find((s: any) => s._id === storyId);
+                                      const isCurrentCover = (highlightCoverUrl || (effectiveArchive.find((s: any) => s._id === selectedArchiveStories[0])?.mediaUrl)) === st?.mediaUrl;
+                                      return (
+                                        <button
+                                          key={storyId}
+                                          type="button"
+                                          onClick={() => setHighlightCoverUrl(st?.mediaUrl || "")}
+                                          className={`relative h-8 w-8 rounded-full overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${isCurrentCover ? 'border-[hsl(var(--primary))] ring-2 ring-[hsl(var(--primary))]/30 scale-105' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                                          title={`Use story #${idx + 1} as cover image`}
+                                        >
+                                          <img src={st?.mediaUrl} className="h-full w-full object-cover" alt="" />
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                          {/* Published Highlights List */}
+                          <div>
+                            <div className="flex items-center justify-between mb-3">
+                              <h4 className="text-xs font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
+                                Published Highlights ({highlights.length})
+                              </h4>
+                            </div>
+
+                            {highlights.length === 0 ? (
+                              <div className="text-center py-6 border border-dashed border-[hsl(var(--border))] rounded-2xl">
+                                <p className="text-xs text-[hsl(var(--muted-foreground))]">No highlights created yet. Build your first highlight collection above!</p>
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5">
+                                {highlights.map((h: any) => (
+                                  <div
+                                    key={h.id}
+                                    className="group relative p-3.5 rounded-2xl bg-[hsl(var(--card))] border border-[hsl(var(--border))] hover:border-[hsl(var(--primary))]/50 transition-all flex flex-col items-center shadow-sm"
+                                  >
+                                    {/* Circle Avatar */}
+                                    <div className="h-14 w-14 rounded-full p-[2px] border-2 border-[hsl(var(--border))] group-hover:border-[hsl(var(--primary))] transition-all overflow-hidden mb-2">
+                                      <div className="h-full w-full rounded-full overflow-hidden bg-[hsl(var(--muted))] flex items-center justify-center">
+                                        {h.imageUrl ? (
+                                          <img src={h.imageUrl} alt={h.title} className="h-full w-full object-cover" />
+                                        ) : (
+                                          <span className="text-lg">✨</span>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    <span className="text-xs font-bold text-[hsl(var(--foreground))] truncate w-full text-center mb-0.5">{h.title}</span>
+                                    <span className="text-[10px] font-medium text-[hsl(var(--muted-foreground))]">
+                                      {h.stories ? `${h.stories.length} stories` : "Highlight"}
+                                    </span>
+
+                                    {/* Card Action Buttons */}
+                                    <div className="flex items-center gap-1.5 mt-2.5 pt-2 border-t border-[hsl(var(--border))]/50 w-full justify-center">
+                                      <button
+                                        type="button"
+                                        title="Edit Highlight"
+                                        onClick={() => {
+                                          setEditingHighlightId(h.id);
+                                          setNewHighlightTitle(h.title);
+                                          setHighlightCoverUrl(h.imageUrl || "");
+                                          setSelectedArchiveStories(h.stories || []);
+                                        }}
+                                        className="p-1.5 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))] rounded-lg transition-colors"
+                                      >
+                                        <Sparkles className="h-3.5 w-3.5" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        title="Preview Stories"
+                                        onClick={() => {
+                                          const storiesToView = (h.stories || []).map((stId: any) => {
+                                            if (typeof stId === 'object') return stId;
+                                            const found = effectiveArchive.find((a: any) => a._id === stId);
+                                            return found || { _id: stId, mediaUrl: h.imageUrl, mediaType: 'image' };
+                                          });
+                                          setPreviewingHighlightGroup({
+                                            business: {
+                                              _id: businessId || "preview",
+                                              name: h.title,
+                                              logo: h.imageUrl || logoUrl
+                                            },
+                                            stories: storiesToView.length > 0 ? storiesToView : [{ _id: '1', mediaUrl: h.imageUrl, mediaType: 'image' }]
+                                          });
+                                        }}
+                                        className="p-1.5 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--primary))] hover:bg-[hsl(var(--primary))]/10 rounded-lg transition-colors"
+                                      >
+                                        <Eye className="h-3.5 w-3.5" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        title="Delete Highlight"
+                                        onClick={() => removeHighlightItem(h.id)}
+                                        className="p-1.5 text-[hsl(var(--muted-foreground))] hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                                      >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 )
               )}
@@ -1275,25 +1502,36 @@ export default function DashboardProfilePage() {
               </div>
 
               {/* Highlights Section */}
-              {highlights && highlights.length > 0 && (
-                <div className={profileStyles.highlightsContainer} style={{ marginBottom: "1.5rem" }}>
-                  <h2 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: "0.75rem" }}>Key Features & Highlights</h2>
-                  <div className={profileStyles.highlightsWrapper}>
-                    {highlights.map((h, i) => (
-                      <div key={i} className={profileStyles.highlightTile} style={{ minWidth: "64px" }}>
-                        <div className={profileStyles.storyRing} style={{ height: "54px", width: "54px" }}>
-                          {h.imageUrl ? (
-                            <img src={h.imageUrl} className={profileStyles.storyThumb} alt={h.title} style={{ borderRadius: "50%" }} />
-                          ) : (
-                            <div className={profileStyles.storyThumb}>✨</div>
-                          )}
+              {(() => {
+                const listToRender = (highlights && highlights.length > 0) ? highlights : [
+                  { id: '1', title: 'Մենյու', icon: '🍽️' },
+                  { id: '2', title: 'Լուսանկարներ', icon: '📸' },
+                  { id: '3', title: 'Կարծիքներ', icon: '⭐' },
+                  { id: '4', title: 'Ժամեր', icon: '🕒' },
+                  { id: '5', title: 'Տեղադրություն', icon: '📍' },
+                ];
+                return (
+                  <div className={profileStyles.highlightsContainer} style={{ marginBottom: "1.5rem" }}>
+                    <div className={profileStyles.highlightsHeader}>
+                      <h2>Ակնարկներ (Highlights)</h2>
+                    </div>
+                    <div className={profileStyles.highlightsWrapper}>
+                      {listToRender.map((h: any, i: number) => (
+                        <div key={h.id || i} className={profileStyles.highlightTile} style={{ minWidth: "64px" }}>
+                          <div className={profileStyles.storyRing} style={{ height: "54px", width: "54px" }}>
+                            {h.imageUrl ? (
+                              <img src={h.imageUrl} className={profileStyles.storyThumb} alt={h.title} style={{ borderRadius: "50%" }} />
+                            ) : (
+                              <div className={profileStyles.storyThumb}>{h.icon || "✨"}</div>
+                            )}
+                          </div>
+                          <span style={{ fontSize: "0.65rem" }}>{h.title}</span>
                         </div>
-                        <span style={{ fontSize: "0.65rem" }}>{h.title}</span>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Showcase Gallery Section */}
               {gallery && gallery.length > 0 && (
@@ -1394,82 +1632,150 @@ export default function DashboardProfilePage() {
         </div>
       </div>
 
-      {/* STORY ARCHIVE MODAL */}
+      {/* STORY ARCHIVE SELECTION MODAL */}
       {isStoryArchiveModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-2xl p-6 shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col relative">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-[hsl(var(--foreground))]">Story Archive</h2>
-              <button
-                onClick={() => setIsStoryArchiveModalOpen(false)}
-                className="p-2 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-full hover:bg-[hsl(var(--border))] transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
+          <div className="bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-2xl p-6 shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col relative">
+            {(() => {
+              const effectiveArchive = (storyArchive && storyArchive.length > 0)
+                ? storyArchive
+                : stories.map((s: any, idx: number) => ({
+                    _id: s._id || s.id || `local-story-${idx}`,
+                    mediaUrl: s.imageUrl || s.mediaUrl || s.url || "",
+                    mediaType: s.mediaType || "image",
+                    caption: s.title || `Story #${idx + 1}`,
+                    expiresAt: s.expiresAt || new Date().toISOString()
+                  }));
 
-            <p className="text-sm text-[hsl(var(--muted-foreground))] mb-4">Select stories to include in this Highlight collection. The first selected story will be used as the cover image.</p>
+              return (
+                <>
+                  <div className="flex items-center justify-between mb-3 pb-3 border-b border-[hsl(var(--border))]">
+                    <div>
+                      <h2 className="text-lg font-bold text-[hsl(var(--foreground))] flex items-center gap-2">
+                        <GridIcon className="h-5 w-5 text-[hsl(var(--primary))]" />
+                        Story Archive ({effectiveArchive.length})
+                      </h2>
+                      <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
+                        Select stories to include in this Highlight. Click the ⭐ star on any story to set it as the Cover Photo.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsStoryArchiveModalOpen(false)}
+                      className="p-2 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-full hover:bg-[hsl(var(--border))] transition-colors"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
 
-            <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar pr-2 pb-4">
-              {storyArchive.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-48 text-center text-[hsl(var(--muted-foreground))]">
-                  <GridIcon className="h-10 w-10 mb-2 opacity-20" />
-                  <p>No stories found in your archive.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                  {storyArchive.map((story) => {
-                    const isSelected = selectedArchiveStories.includes(story._id);
-                    const selectedIndex = selectedArchiveStories.indexOf(story._id);
-                    return (
-                      <div
-                        key={story._id}
-                        onClick={() => {
-                          if (isSelected) {
-                            setSelectedArchiveStories(prev => prev.filter(id => id !== story._id));
-                          } else {
-                            setSelectedArchiveStories(prev => [...prev, story._id]);
-                          }
-                        }}
-                        className={`relative aspect-[9/16] rounded-xl overflow-hidden cursor-pointer border-2 transition-all ${isSelected ? 'border-[hsl(var(--primary))] scale-[0.98] shadow-lg' : 'border-transparent hover:border-[hsl(var(--border))]'}`}
-                      >
-                        {story.mediaType === 'video' ? (
-                          <video src={story.mediaUrl} className="w-full h-full object-cover" />
-                        ) : (
-                          <img src={story.mediaUrl} className="w-full h-full object-cover" alt="Story" />
-                        )}
-
-                        {/* Selected Indicator */}
-                        {isSelected && (
-                          <div className="absolute top-2 right-2 h-6 w-6 rounded-full bg-[hsl(var(--primary))] text-white flex items-center justify-center text-xs font-bold border-2 border-white shadow-sm z-10">
-                            {selectedIndex + 1}
-                          </div>
-                        )}
-
-                        {/* Expiration overlay */}
-                        {new Date(story.expiresAt) < new Date() && (
-                          <div className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded bg-black/60 text-[10px] text-white backdrop-blur-md">
-                            Archived
-                          </div>
-                        )}
+                  <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar pr-1 pb-4 my-2">
+                    {effectiveArchive.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-48 text-center text-[hsl(var(--muted-foreground))] space-y-2">
+                        <GridIcon className="h-10 w-10 opacity-20" />
+                        <p className="text-sm font-medium">No stories found in your archive.</p>
+                        <p className="text-xs max-w-xs">Publish stories first from the Stories page to group them into highlights.</p>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+                    ) : (
+                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                        {effectiveArchive.map((story: any) => {
+                          const isSelected = selectedArchiveStories.includes(story._id);
+                          const selectedIndex = selectedArchiveStories.indexOf(story._id);
+                          const isCover = highlightCoverUrl === story.mediaUrl;
+                          return (
+                            <div
+                              key={story._id}
+                              onClick={() => {
+                                if (isSelected) {
+                                  setSelectedArchiveStories(prev => prev.filter(id => id !== story._id));
+                                } else {
+                                  setSelectedArchiveStories(prev => [...prev, story._id]);
+                                }
+                              }}
+                              className={`relative aspect-[9/16] rounded-xl overflow-hidden cursor-pointer border-2 transition-all group ${isSelected ? 'border-[hsl(var(--primary))] scale-[0.98] shadow-lg ring-2 ring-[hsl(var(--primary))]/20' : 'border-transparent hover:border-[hsl(var(--border))]'}`}
+                            >
+                              {story.mediaType === 'video' ? (
+                                <video src={story.mediaUrl} className="w-full h-full object-cover" />
+                              ) : (
+                                <img src={story.mediaUrl} className="w-full h-full object-cover" alt="Story" />
+                              )}
 
-            <div className="pt-4 border-t border-[hsl(var(--border))] flex justify-end gap-3 mt-auto">
-              <button
-                type="button"
-                onClick={() => setIsStoryArchiveModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-sm font-semibold bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] hover:bg-[hsl(var(--border))]"
-              >
-                Done
-              </button>
-            </div>
+                              {/* Selected Sequence Badge */}
+                              {isSelected && (
+                                <div className="absolute top-2 right-2 h-6 w-6 rounded-full bg-[hsl(var(--primary))] text-white flex items-center justify-center text-xs font-bold border-2 border-white shadow-md z-10">
+                                  {selectedIndex + 1}
+                                </div>
+                              )}
+
+                              {/* Set as Cover Photo Button */}
+                              {isSelected && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setHighlightCoverUrl(story.mediaUrl);
+                                  }}
+                                  className={`absolute top-2 left-2 p-1.5 rounded-full text-[10px] font-bold z-10 transition-all ${isCover ? 'bg-amber-500 text-white shadow-md ring-2 ring-amber-300' : 'bg-black/60 text-white/90 hover:bg-amber-500 hover:text-white'}`}
+                                  title="Set as Highlight Cover Photo"
+                                >
+                                  <Star className={`h-3 w-3 ${isCover ? 'fill-white' : ''}`} />
+                                </button>
+                              )}
+
+                              {/* Caption Overlay */}
+                              <div className="absolute inset-x-0 bottom-0 p-1.5 bg-gradient-to-t from-black/80 via-black/40 to-transparent text-[10px] text-white truncate">
+                                {story.caption || "Story"}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-3 border-t border-[hsl(var(--border))] flex items-center justify-between mt-auto">
+                    <span className="text-xs font-semibold text-[hsl(var(--foreground))]">
+                      {selectedArchiveStories.length} stories selected
+                    </span>
+                    <div className="flex gap-2">
+                      {effectiveArchive.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (selectedArchiveStories.length === effectiveArchive.length) {
+                              setSelectedArchiveStories([]);
+                            } else {
+                              setSelectedArchiveStories(effectiveArchive.map((s: any) => s._id));
+                            }
+                          }}
+                          className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] hover:bg-[hsl(var(--border))] transition-colors"
+                        >
+                          {selectedArchiveStories.length === effectiveArchive.length ? "Deselect All" : "Select All"}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setIsStoryArchiveModalOpen(false)}
+                        className="btn-primary px-5 py-1.5 rounded-xl text-xs font-semibold"
+                      >
+                        Done
+                      </button>
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </div>
+      )}
+
+      {/* STORY VIEWER PREVIEW OVERLAY FOR VENDOR */}
+      {previewingHighlightGroup && (
+        <StoryViewer
+          groups={[previewingHighlightGroup]}
+          initialGroupIndex={0}
+          onClose={() => setPreviewingHighlightGroup(null)}
+          onStoriesViewedUpdate={() => {}}
+        />
       )}
 
       {/* FULLSCREEN PREVIEW OVERLAY */}
@@ -1562,25 +1868,36 @@ export default function DashboardProfilePage() {
               </div>
 
               {/* Highlights Section (Story circles) */}
-              {highlights && highlights.length > 0 && (
-                <div className={profileStyles.highlightsContainer}>
-                  <h2>Key Features & Highlights</h2>
-                  <div className={profileStyles.highlightsWrapper}>
-                    {highlights.map((h, i) => (
-                      <div key={i} className={profileStyles.highlightTile}>
-                        <div className={profileStyles.storyRing}>
-                          {h.imageUrl ? (
-                            <img src={h.imageUrl} className={profileStyles.storyThumb} alt={h.title} style={{ borderRadius: "50%" }} />
-                          ) : (
-                            <div className={profileStyles.storyThumb}>✨</div>
-                          )}
+              {(() => {
+                const listToRender = (highlights && highlights.length > 0) ? highlights : [
+                  { id: '1', title: 'Մենյու', icon: '🍽️' },
+                  { id: '2', title: 'Լուսանկարներ', icon: '📸' },
+                  { id: '3', title: 'Կարծիքներ', icon: '⭐' },
+                  { id: '4', title: 'Ժամեր', icon: '🕒' },
+                  { id: '5', title: 'Տեղադրություն', icon: '📍' },
+                ];
+                return (
+                  <div className={profileStyles.highlightsContainer}>
+                    <div className={profileStyles.highlightsHeader}>
+                      <h2>Ակնարկներ (Highlights)</h2>
+                    </div>
+                    <div className={profileStyles.highlightsWrapper}>
+                      {listToRender.map((h: any, i: number) => (
+                        <div key={h.id || i} className={profileStyles.highlightTile}>
+                          <div className={profileStyles.storyRing}>
+                            {h.imageUrl ? (
+                              <img src={h.imageUrl} className={profileStyles.storyThumb} alt={h.title} style={{ borderRadius: "50%" }} />
+                            ) : (
+                              <div className={profileStyles.storyThumb}>{h.icon || "✨"}</div>
+                            )}
+                          </div>
+                          <span>{h.title}</span>
                         </div>
-                        <span>{h.title}</span>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Showcase Gallery Section */}
               {gallery && gallery.length > 0 && (

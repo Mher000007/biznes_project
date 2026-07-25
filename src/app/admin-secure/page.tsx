@@ -7,7 +7,7 @@ import {
   Mail, Phone, Trash2, CheckCircle2,
   X, Ban, RefreshCw, LogOut, CheckCircle, AlertOctagon,
   UserCircle2, Crown, Briefcase, Star, Eye, Tag, Award,
-  MessageSquare, Send, CheckSquare, Square, HeadphonesIcon
+  MessageSquare, Send, CheckSquare, Square, HeadphonesIcon, Coins
 } from "lucide-react";
 
 const API = getApiUrl();
@@ -71,7 +71,7 @@ interface Review {
 }
 interface User {
   _id: string; name: string; username?: string; email: string;
-  phone?: string; role: "user" | "business_owner" | "admin"; createdAt: string;
+  phone?: string; role: "user" | "business_owner" | "admin"; findyCoins?: number; createdAt: string;
 }
 interface Stats {
   totalBusinesses: number; pendingBusinesses: number; verifiedBusinesses: number;
@@ -344,11 +344,53 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [msgSuccess, setMsgSuccess] = useState("");
   const [msgError, setMsgError] = useState("");
 
+  // Top Up Coins Modal State
+  const [coinModalOpen, setCoinModalOpen] = useState(false);
+  const [coinUser, setCoinUser] = useState<User | null>(null);
+  const [coinAmount, setCoinAmount] = useState<number | string>(500);
+  const [coinAction, setCoinAction] = useState<"add" | "set" | "subtract">("add");
+  const [coinSubmitting, setCoinSubmitting] = useState(false);
+  const [coinSuccessMsg, setCoinSuccessMsg] = useState("");
+
+  const openCoinModal = (user: User) => {
+    setCoinUser(user);
+    setCoinAmount(500);
+    setCoinAction("add");
+    setCoinSuccessMsg("");
+    setCoinModalOpen(true);
+  };
+
+  const handleCoinSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!coinUser) return;
+    setCoinSubmitting(true);
+    setCoinSuccessMsg("");
+    try {
+      const res = await axios.post(
+        `${API}/admin/users/${coinUser._id}/coins`,
+        { amount: Number(coinAmount), action: coinAction },
+        { headers: authHeaders() }
+      );
+      if (res.data?.success) {
+        setCoinSuccessMsg(res.data.message || "Coins updated successfully!");
+        setTimeout(() => {
+          setCoinModalOpen(false);
+          setCoinSuccessMsg("");
+          load();
+        }, 1200);
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Failed to update coins");
+    } finally {
+      setCoinSubmitting(false);
+    }
+  };
+
   const load = useCallback(async () => {
     setLoadingData(true);
     try {
       const h = authHeaders();
-      const [statsRes, bizRes, bookRes, subRes, revRes, usersRes, promosRes, giftsRes] = await Promise.all([
+      const results = await Promise.allSettled([
         axios.get(`${API}/admin/stats`, { headers: h }),
         axios.get(`${API}/admin/businesses`, { headers: h }),
         axios.get(`${API}/admin/bookings`, { headers: h }),
@@ -358,14 +400,17 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         axios.get(`${API}/admin/promos`, { headers: h }),
         axios.get(`${API}/admin/gifts`, { headers: h }),
       ]);
-      if (statsRes.data?.success) setStats(statsRes.data.data);
-      if (bizRes.data?.success) setBusinesses(bizRes.data.data);
-      if (bookRes.data?.success) setBookings(bookRes.data.data);
-      if (subRes.data?.success) setSubscriptions(subRes.data.data);
-      if (revRes.data?.success) setReviews(revRes.data.data);
-      if (usersRes.data?.success) setAllUsers(usersRes.data.data);
-      if (promosRes.data?.success) setPromos(promosRes.data.data);
-      if (giftsRes.data?.success) setGifts(giftsRes.data.data);
+
+      const [statsRes, bizRes, bookRes, subRes, revRes, usersRes, promosRes, giftsRes] = results;
+
+      if (statsRes.status === "fulfilled" && statsRes.value.data?.success) setStats(statsRes.value.data.data);
+      if (bizRes.status === "fulfilled" && bizRes.value.data?.success) setBusinesses(bizRes.value.data.data);
+      if (bookRes.status === "fulfilled" && bookRes.value.data?.success) setBookings(bookRes.value.data.data);
+      if (subRes.status === "fulfilled" && subRes.value.data?.success) setSubscriptions(subRes.value.data.data);
+      if (revRes.status === "fulfilled" && revRes.value.data?.success) setReviews(revRes.value.data.data);
+      if (usersRes.status === "fulfilled" && usersRes.value.data?.success) setAllUsers(usersRes.value.data.data);
+      if (promosRes.status === "fulfilled" && promosRes.value.data?.success) setPromos(promosRes.value.data.data);
+      if (giftsRes.status === "fulfilled" && giftsRes.value.data?.success) setGifts(giftsRes.value.data.data);
     } catch (err) {
       console.error("Admin data load failed:", err);
     }
@@ -1177,6 +1222,28 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                         <span style={{
+                          fontSize: 11, fontWeight: 700, padding: "4px 10px",
+                          borderRadius: 99, background: "rgba(16,185,129,0.12)", color: "#10b981",
+                          border: "1px solid rgba(16,185,129,0.3)", display: "flex", alignItems: "center", gap: 5
+                        }}>
+                          <Coins size={13} color="#10b981" />
+                          {(u.findyCoins || 0).toLocaleString()} Coins
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => openCoinModal(u)}
+                          title="Top Up Findy Coins"
+                          style={{
+                            background: "rgba(16,185,129,0.2)", border: "1px solid rgba(16,185,129,0.4)",
+                            color: "#6ee7b7", borderRadius: 10, padding: "5px 12px", fontSize: 11,
+                            fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
+                            transition: "all 0.15s"
+                          }}
+                        >
+                          <Coins size={13} />
+                          + Coins
+                        </button>
+                        <span style={{
                           fontSize: 10, fontWeight: 800, padding: "3px 10px",
                           borderRadius: 99, background: badgeDim, color: badgeColor,
                           textTransform: "uppercase"
@@ -1934,6 +2001,167 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* TOP UP COINS MODAL */}
+      {coinModalOpen && coinUser && (
+        <div style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)",
+          backdropFilter: "blur(6px)", zIndex: 100, display: "flex",
+          alignItems: "center", justifyContent: "center", padding: 20
+        }}>
+          <div style={{
+            background: C.surface, border: `1px solid ${C.border}`,
+            borderRadius: 24, width: "100%", maxWidth: 460, padding: 28,
+            boxShadow: "0 20px 50px rgba(0,0,0,0.5)"
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(16,185,129,0.15)", color: "#10b981", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Coins size={22} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: C.text }}>Top Up Findy Coins</h3>
+                  <span style={{ fontSize: 12, color: C.muted }}>Manage user's coin balance</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCoinModalOpen(false)}
+                style={{ background: "transparent", border: "none", color: C.muted, cursor: "pointer", padding: 4 }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ background: C.card, borderRadius: 14, padding: 14, marginBottom: 20, border: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <strong style={{ fontSize: 14, color: C.text, display: "block" }}>{coinUser.name}</strong>
+                <span style={{ fontSize: 12, color: C.muted }}>{coinUser.email}</span>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <span style={{ fontSize: 10, color: C.muted, display: "block", fontWeight: 700, textTransform: "uppercase" }}>Current Balance</span>
+                <strong style={{ fontSize: 16, color: "#10b981", display: "flex", alignItems: "center", gap: 4, justifyContent: "flex-end" }}>
+                  <Coins size={16} /> {(coinUser.findyCoins || 0).toLocaleString()} Coins
+                </strong>
+              </div>
+            </div>
+
+            {coinSuccessMsg && (
+              <div style={{ background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.4)", color: "#6ee7b7", borderRadius: 12, padding: 12, fontSize: 13, fontWeight: 700, marginBottom: 16, textAlign: "center" }}>
+                ✓ {coinSuccessMsg}
+              </div>
+            )}
+
+            <form onSubmit={handleCoinSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, color: C.muted, display: "block", marginBottom: 8 }}>ACTION MODE</label>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => setCoinAction("add")}
+                    style={{
+                      padding: "10px 8px", borderRadius: 10, fontSize: 12, fontWeight: 800, cursor: "pointer",
+                      background: coinAction === "add" ? "rgba(16,185,129,0.2)" : C.card,
+                      color: coinAction === "add" ? "#6ee7b7" : C.text,
+                      border: `1px solid ${coinAction === "add" ? "#10b981" : C.border}`
+                    }}
+                  >
+                    + Add Coins
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCoinAction("set")}
+                    style={{
+                      padding: "10px 8px", borderRadius: 10, fontSize: 12, fontWeight: 800, cursor: "pointer",
+                      background: coinAction === "set" ? "rgba(167,139,250,0.2)" : C.card,
+                      color: coinAction === "set" ? C.violet : C.text,
+                      border: `1px solid ${coinAction === "set" ? C.violet : C.border}`
+                    }}
+                  >
+                    = Set Exact
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCoinAction("subtract")}
+                    style={{
+                      padding: "10px 8px", borderRadius: 10, fontSize: 12, fontWeight: 800, cursor: "pointer",
+                      background: coinAction === "subtract" ? "rgba(252,165,165,0.2)" : C.card,
+                      color: coinAction === "subtract" ? C.red : C.text,
+                      border: `1px solid ${coinAction === "subtract" ? C.red : C.border}`
+                    }}
+                  >
+                    - Deduct
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, color: C.muted, display: "block", marginBottom: 8 }}>AMOUNT (COINS)</label>
+                <input
+                  type="number"
+                  min="1"
+                  required
+                  value={coinAmount}
+                  onChange={(e) => setCoinAmount(e.target.value)}
+                  style={{
+                    width: "100%", background: C.card, border: `1px solid ${C.border}`,
+                    borderRadius: 12, padding: "12px 16px", color: C.text, fontSize: 16,
+                    fontWeight: 800, outline: "none"
+                  }}
+                  placeholder="e.g. 500"
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, color: C.faint, display: "block", marginBottom: 6 }}>QUICK PRESETS</label>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {[100, 500, 1000, 2500, 5000].map((amt) => (
+                    <button
+                      key={amt}
+                      type="button"
+                      onClick={() => setCoinAmount(amt)}
+                      style={{
+                        padding: "6px 12px", borderRadius: 8, fontSize: 11, fontWeight: 700,
+                        background: "rgba(255,255,255,0.05)", border: `1px solid ${C.border}`,
+                        color: C.text, cursor: "pointer"
+                      }}
+                    >
+                      +{amt.toLocaleString()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: 12, marginTop: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => setCoinModalOpen(false)}
+                  style={{
+                    flex: 1, padding: 12, borderRadius: 12, background: "transparent",
+                    border: `1px solid ${C.border}`, color: C.text, fontSize: 13,
+                    fontWeight: 700, cursor: "pointer"
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={coinSubmitting}
+                  style={{
+                    flex: 1, padding: 12, borderRadius: 12, background: "#10b981",
+                    border: "none", color: "#fff", fontSize: 13, fontWeight: 800,
+                    cursor: "pointer", opacity: coinSubmitting ? 0.6 : 1,
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6
+                  }}
+                >
+                  <Coins size={16} />
+                  {coinSubmitting ? "Updating..." : "Save Coins"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -25,6 +25,7 @@ export interface IBusiness extends Document {
   verified: boolean;
   featured: boolean;
   active: boolean;
+  plan?: string;
   services?: Array<{
     name: string;
     description?: string;

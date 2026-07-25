@@ -481,7 +481,7 @@ export default function Navbar() {
                 {/* Little arrow pointing up */}
                 <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[hsl(var(--background))]/90 border-t border-l border-[hsl(var(--border))] rotate-45 backdrop-blur-xl"></div>
                 <h3 className="relative text-lg font-black text-[hsl(var(--foreground))] tracking-tight flex items-baseline gap-1">
-                  0 <span className="text-emerald-500 text-[10px] font-extrabold uppercase tracking-[0.15em] drop-shadow-sm">Coins</span>
+                  {(currentUser as any)?.findyCoins || 0} <span className="text-emerald-500 text-[10px] font-extrabold uppercase tracking-[0.15em] drop-shadow-sm">Coins</span>
                 </h3>
               </div>
             </div>

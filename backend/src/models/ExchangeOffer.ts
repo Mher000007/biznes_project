@@ -9,6 +9,8 @@ export interface IExchangeOffer extends Document {
   totalQuantity: number;
   claimedQuantity: number;
   isActive: boolean;
+  image?: string;
+  imageUrl?: string;
   savedBy: mongoose.Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
@@ -52,6 +54,14 @@ const exchangeOfferSchema = new Schema<IExchangeOffer>(
     isActive: {
       type: Boolean,
       default: true,
+    },
+    image: {
+      type: String,
+      default: '',
+    },
+    imageUrl: {
+      type: String,
+      default: '',
     },
     savedBy: [
       {

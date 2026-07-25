@@ -5,8 +5,8 @@ import {
   deleteOffer,
   updateOffer,
   searchOffersForAi
-} from '../controllers/offerController';
-import { authenticate } from '../middleware/auth';
+} from '../controllers/offerController.js';
+import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
 

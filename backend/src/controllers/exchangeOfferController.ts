@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import ExchangeOffer from '../models/ExchangeOffer.js';
 import Business from '../models/Business.js';
+import Subscription from '../models/Subscription.js';
+import User from '../models/User.js';
 import { AuthRequest } from '../middleware/auth.js';
 
 // @desc    Get all exchange offers (for the public exchange page)
@@ -58,7 +60,7 @@ export const getBusinessExchangeOffers = async (req: Request & { user?: any }, r
 // @access  Private
 export const createExchangeOffer = async (req: AuthRequest, res: Response) => {
   try {
-    const { businessId, title, description, category, cost, totalQuantity, isActive } = req.body;
+    const { businessId, title, description, category, cost, totalQuantity, isActive, image, imageUrl } = req.body;
 
     const business = await Business.findById(businessId);
     if (!business) {
@@ -69,6 +71,27 @@ export const createExchangeOffer = async (req: AuthRequest, res: Response) => {
       return res.status(401).json({ success: false, error: 'Not authorized to add an exchange offer to this business' });
     }
 
+    // Check Plan Limits (Pro: max 3 offers, Premium: unlimited)
+    const sub = await Subscription.findOne({ business: businessId, status: 'active' });
+    const userPlan = sub?.plan || (business as any).plan || 'starter';
+
+    if (userPlan === 'starter' || userPlan === 'start' || userPlan === 'free') {
+      return res.status(403).json({
+        success: false,
+        error: 'Findy Coin Offers feature is locked on the Start plan. Please upgrade to Pro or Premium.'
+      });
+    }
+
+    if (userPlan === 'pro') {
+      const existingOfferCount = await ExchangeOffer.countDocuments({ business: businessId });
+      if (existingOfferCount >= 3) {
+        return res.status(403).json({
+          success: false,
+          error: 'Pro փաթեթի դեպքում կարող եք հրապարակել առավելագույնը 3 առաջարկ: Անսահմանափակ առաջարկների համար թարմացրեք փաթեթը Premium-ի:'
+        });
+      }
+    }
+
     const offer = await ExchangeOffer.create({
       business: businessId,
       title,
@@ -77,6 +100,8 @@ export const createExchangeOffer = async (req: AuthRequest, res: Response) => {
       cost,
       totalQuantity,
       isActive: isActive !== undefined ? isActive : true,
+      image: image || imageUrl || '',
+      imageUrl: imageUrl || image || '',
     });
 
     res.status(201).json({
@@ -176,6 +201,70 @@ export const toggleSaveExchangeOffer = async (req: AuthRequest, res: Response) =
       data: offer,
     });
   } catch (error) {
+    res.status(500).json({ success: false, error: 'Server Error' });
+  }
+};
+
+// @desc    Claim/Redeem an exchange offer
+// @route   POST /api/exchange-offers/:id/claim
+// @access  Private
+export const claimExchangeOffer = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Not authorized' });
+    }
+
+    const offerId = req.params.id;
+    if (!offerId || !offerId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ success: false, error: 'Invalid offer ID format' });
+    }
+
+    const offer = await ExchangeOffer.findById(offerId);
+    if (!offer) {
+      return res.status(404).json({ success: false, error: 'Exchange offer not found' });
+    }
+
+    if (!offer.isActive) {
+      return res.status(400).json({ success: false, error: 'Այս առաջարկը ակտիվ չէ:' });
+    }
+
+    if (offer.claimedQuantity >= offer.totalQuantity) {
+      return res.status(400).json({ success: false, error: 'Այս առաջարկի բոլոր օրինակները արդեն սպառվել են:' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    const currentCoins = user.findyCoins || 0;
+    if (currentCoins < offer.cost) {
+      return res.status(400).json({
+        success: false,
+        error: `Դուք չունեք բավարար Findy Coins (${offer.cost} Coins) այս առաջարկը ստանալու համար: Ձեր մնացորդը: ${currentCoins} Coins:`
+      });
+    }
+
+    // Deduct coins and increment claimedQuantity
+    user.findyCoins = currentCoins - offer.cost;
+    await user.save();
+
+    offer.claimedQuantity += 1;
+    await offer.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Փոխանակումը հաջողությամբ կատարվեց:',
+      data: {
+        offerId: offer._id,
+        claimedQuantity: offer.claimedQuantity,
+        totalQuantity: offer.totalQuantity,
+        remainingCoins: user.findyCoins,
+      }
+    });
+  } catch (error) {
+    console.error('Error claiming exchange offer:', error);
     res.status(500).json({ success: false, error: 'Server Error' });
   }
 };

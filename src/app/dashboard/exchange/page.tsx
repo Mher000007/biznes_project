@@ -1,10 +1,11 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getApiUrl } from "@/lib/utils";
 import axios from "axios";
 import Link from "next/link";
-import { Plus, Trash2, Edit2, Coins, Tag, RefreshCw, Heart, Lock } from "lucide-react";
+import { useI18n } from "@/i18n";
+import { Plus, Trash2, Edit2, Coins, Tag, RefreshCw, Heart, Lock, Image as ImageIcon, Camera, Upload, X } from "lucide-react";
 
 interface ExchangeOffer {
   _id: string;
@@ -15,11 +16,14 @@ interface ExchangeOffer {
   totalQuantity: number;
   claimedQuantity: number;
   isActive: boolean;
+  image?: string;
+  imageUrl?: string;
   savedBy?: string[];
   likes?: number;
 }
 
 export default function DashboardExchange() {
+  const { locale } = useI18n();
   const { currentUser } = useAuth();
   const [activePlan, setActivePlan] = useState<string>("starter");
   const [offers, setOffers] = useState<ExchangeOffer[]>([]);
@@ -40,14 +44,19 @@ export default function DashboardExchange() {
         }
       } catch {}
 
+      if ((currentUser as any)?.plan || (currentUser as any)?.business?.plan || (currentUser as any)?.subscriptionPlan) {
+        setActivePlan((currentUser as any)?.plan || (currentUser as any)?.business?.plan || (currentUser as any)?.subscriptionPlan);
+        return;
+      }
+
       if (typeof window !== "undefined") {
         const profilesStr = window.localStorage.getItem("armbiz-business-profiles");
         if (profilesStr) {
           try {
             const profiles = JSON.parse(profilesStr);
             const myProfile = profiles.find((p: any) => p.ownerUsername === currentUser?.username);
-            if (myProfile && myProfile.plan) {
-              setActivePlan(myProfile.plan);
+            if (myProfile && (myProfile.plan || myProfile.subscriptionPlan)) {
+              setActivePlan(myProfile.plan || myProfile.subscriptionPlan);
             }
           } catch (e) {}
         }
@@ -55,7 +64,8 @@ export default function DashboardExchange() {
     };
     loadPlan();
   }, [currentUser]);
-  
+
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: "",
@@ -64,7 +74,33 @@ export default function DashboardExchange() {
     cost: 100 as number | string,
     totalQuantity: 10 as number | string,
     isActive: true,
+    imageUrl: "",
   });
+
+  const convertFileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === "string") resolve(reader.result);
+        else reject(new Error("File conversion failed"));
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 3 * 1024 * 1024) {
+        alert("File size exceeds 3MB limit");
+        return;
+      }
+      convertFileToBase64(file)
+        .then((base64) => setFormData((prev) => ({ ...prev, imageUrl: base64 })))
+        .catch(console.error);
+    }
+  };
 
   const [businessId, setBusinessId] = useState<string | null>(null);
 
@@ -113,9 +149,19 @@ export default function DashboardExchange() {
     }
   }, [isModalOpen]);
 
+  const normalizedPlan = (activePlan || "starter").toLowerCase();
+  const isProPlan = normalizedPlan === "pro" || normalizedPlan === "standard";
+  const isPremiumPlan = normalizedPlan === "premium" || normalizedPlan === "enterprise";
+  const isLimitReached = !editingId && isProPlan && offers.length >= 3;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!businessId) return;
+
+    if (isLimitReached) {
+      alert("Pro փաթեթի դեպքում կարող եք հրապարակել առավելագույնը 3 առաջարկ: Անսահմանափակ առաջարկների համար թարմացրեք փաթեթը Premium-ի:");
+      return;
+    }
 
     try {
       const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
@@ -126,7 +172,9 @@ export default function DashboardExchange() {
         category: formData.category,
         cost: Number(formData.cost),
         totalQuantity: Number(formData.totalQuantity),
-        isActive: formData.isActive
+        isActive: formData.isActive,
+        imageUrl: formData.imageUrl,
+        image: formData.imageUrl
       };
       
       const config = { headers: { Authorization: `Bearer ${token}` } };
@@ -141,8 +189,9 @@ export default function DashboardExchange() {
       setEditingId(null);
       resetForm();
       fetchOffers();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving offer", error);
+      alert(error.response?.data?.error || "Error saving offer");
     }
   };
 
@@ -154,6 +203,7 @@ export default function DashboardExchange() {
       cost: 100,
       totalQuantity: 10,
       isActive: true,
+      imageUrl: "",
     });
   };
 
@@ -165,13 +215,25 @@ export default function DashboardExchange() {
       cost: offer.cost,
       totalQuantity: offer.totalQuantity,
       isActive: offer.isActive,
+      imageUrl: offer.imageUrl || offer.image || "",
     });
     setEditingId(offer._id);
     setIsModalOpen(true);
   };
 
-  const deleteOffer = async (id: string) => {
-    if (!confirm("Արդյո՞ք ցանկանում եք ջնջել այս փոխանակման առաջարկը:")) return;
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  const handleOpenAddModal = () => {
+    if (isProPlan && offers.length >= 3) {
+      alert("Pro փաթեթի դեպքում կարող եք հրապարակել առավելագույնը 3 առաջարկ: Անսահմանափակ առաջարկներ հրապարակելու համար թարմացրեք փաթեթը Premium-ի:");
+      return;
+    }
+    resetForm();
+    setEditingId(null);
+    setIsModalOpen(true);
+  };
+
+  const executeDelete = async (id: string) => {
     try {
       const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
       await axios.delete(`${getApiUrl()}/exchange-offers/${id}`, {
@@ -206,20 +268,17 @@ export default function DashboardExchange() {
 
   return (
     <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-[hsl(var(--foreground))]">Findy Coin Offers</h1>
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">
+          <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1">
             Create offers that users can redeem using Findy Coins.
           </p>
         </div>
         <button
-          onClick={() => {
-            resetForm();
-            setEditingId(null);
-            setIsModalOpen(true);
-          }}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors"
+          onClick={handleOpenAddModal}
+          disabled={isProPlan && offers.length >= 3}
+          className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors cursor-pointer"
         >
           <Plus className="w-5 h-5" />
           Add Offer
@@ -240,11 +299,8 @@ export default function DashboardExchange() {
             Create your first exchange offer to allow users to spend their Findy Coins at your business.
           </p>
           <button
-            onClick={() => {
-              resetForm();
-              setIsModalOpen(true);
-            }}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors inline-flex items-center gap-2"
+            onClick={handleOpenAddModal}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors inline-flex items-center gap-2 cursor-pointer"
           >
             <Plus className="w-5 h-5" />
             Create First Offer
@@ -255,18 +311,29 @@ export default function DashboardExchange() {
           {offers.map((offer) => (
             <div
               key={offer._id}
-              className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-5 hover:shadow-lg transition-shadow relative overflow-hidden group"
+              className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl overflow-hidden hover:shadow-lg transition-shadow relative group flex flex-col"
             >
-              {!offer.isActive && (
-                <div className="absolute top-3 right-3 bg-red-100 text-red-600 text-xs font-bold px-2 py-1 rounded-md">
-                  Inactive
+              {(offer.imageUrl || offer.image) && (
+                <div className="h-40 w-full overflow-hidden relative border-b border-[hsl(var(--border))] bg-[hsl(var(--muted))]/20">
+                  <img
+                    src={offer.imageUrl || offer.image}
+                    alt={offer.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
                 </div>
               )}
-              {offer.isActive && (
-                <div className="absolute top-3 right-3 bg-emerald-100 text-emerald-600 text-xs font-bold px-2 py-1 rounded-md">
-                  Active
-                </div>
-              )}
+
+              <div className="p-5 flex-1 flex flex-col">
+                {!offer.isActive && (
+                  <div className="absolute top-3 right-3 z-10 bg-red-100 text-red-600 text-xs font-bold px-2 py-1 rounded-md shadow-sm">
+                    Inactive
+                  </div>
+                )}
+                {offer.isActive && (
+                  <div className="absolute top-3 right-3 z-10 bg-emerald-100 text-emerald-600 text-xs font-bold px-2 py-1 rounded-md shadow-sm">
+                    Active
+                  </div>
+                )}
               
               <div className="flex items-center gap-3 mb-4 mt-2">
                 <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
@@ -321,11 +388,12 @@ export default function DashboardExchange() {
                   <Edit2 className="w-4 h-4" /> Edit
                 </button>
                 <button
-                  onClick={() => deleteOffer(offer._id)}
-                  className="flex items-center justify-center p-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-colors"
+                  onClick={() => setDeleteConfirmId(offer._id)}
+                  className="flex items-center justify-center p-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-colors cursor-pointer"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
+              </div>
               </div>
             </div>
           ))}
@@ -404,6 +472,8 @@ export default function DashboardExchange() {
                   />
                 </div>
 
+
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-[hsl(var(--foreground))] mb-1.5">Coin Cost</label>
@@ -465,6 +535,49 @@ export default function DashboardExchange() {
                 className="px-5 py-2.5 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-colors flex items-center gap-2"
               >
                 {editingId ? "Save Changes" : "Create Offer"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Delete Confirmation Modal */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200">
+          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4 animate-scale-in text-center">
+            <div className="w-12 h-12 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center mx-auto">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-[hsl(var(--foreground))]">
+                {locale === "hy" ? "Ջնջե՞լ առաջարկը" : locale === "ru" ? "Удалить предложение?" : "Delete Offer?"}
+              </h3>
+              <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1.5 leading-relaxed">
+                {locale === "hy"
+                  ? "Վստա՞հ եք, որ ցանկանում եք ջնջել այս առաջարկը: Այս գործողությունը հնարավոր չէ չեղարկել:"
+                  : locale === "ru"
+                  ? "Вы уверены, что хотите удалить это предложение? Это действие нельзя отменить."
+                  : "Are you sure you want to delete this offer? This action cannot be undone."}
+              </p>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmId(null)}
+                className="flex-1 py-2.5 px-4 rounded-xl border border-[hsl(var(--border))] text-xs font-semibold hover:bg-[hsl(var(--muted))] transition-colors cursor-pointer text-[hsl(var(--foreground))]"
+              >
+                {locale === "hy" ? "Չեղարկել" : locale === "ru" ? "Отмена" : "Cancel"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const idToDelete = deleteConfirmId;
+                  setDeleteConfirmId(null);
+                  executeDelete(idToDelete);
+                }}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-red-500 hover:bg-red-600 text-white text-xs font-semibold shadow-md shadow-red-500/20 transition-all cursor-pointer"
+              >
+                {locale === "hy" ? "Ջնջել" : locale === "ru" ? "Удалить" : "Delete"}
               </button>
             </div>
           </div>

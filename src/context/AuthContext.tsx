@@ -18,6 +18,7 @@ export interface AuthUser {
   accountType?: AccountType;
   avatar?: string;
   phone?: string;
+  findyCoins?: number;
 }
 
 export interface AuthContextValue {

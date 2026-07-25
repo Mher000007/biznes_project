@@ -151,19 +151,37 @@
 }
 
 .highlightsContainer {
-  margin-bottom: 2.5rem;
+  margin-top: 1rem;
+  margin-bottom: 2rem;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  transition: all 0.3s ease;
 
-  h2 {
-    font-size: 1.1rem;
-    font-weight: 700;
+  .highlightsHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     margin-bottom: 1rem;
+
+    h2 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: hsl(var(--foreground));
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0;
+    }
   }
 
   .highlightsWrapper {
     display: flex;
-    gap: 1rem;
+    gap: 1.25rem;
     overflow-x: auto;
-    padding-bottom: 0.5rem;
+    padding: 0.35rem 0.25rem 0.65rem 0.25rem;
     scrollbar-width: none; // Firefox
 
     &::-webkit-scrollbar {
@@ -175,23 +193,31 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
-    min-width: 76px;
+    gap: 0.55rem;
+    min-width: 78px;
     cursor: pointer;
+    user-select: none;
 
     .storyRing {
-      height: 68px;
-      width: 68px;
+      height: 70px;
+      width: 70px;
       border-radius: 50%;
-      padding: 3px;
-      border: 2px solid hsl(var(--primary));
+      padding: 2px;
+      border: 2px solid hsl(var(--border));
+      background: transparent;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: transform 0.2s ease;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 
       &:hover {
-        transform: scale(1.05);
+        transform: scale(1.08) translateY(-2px);
+        border-color: hsl(var(--primary));
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+      }
+
+      &:active {
+        transform: scale(0.96);
       }
     }
 
@@ -199,22 +225,38 @@
       height: 100%;
       width: 100%;
       border-radius: 50%;
-      background: hsl(var(--muted));
-      object-fit: cover;
+      background: hsl(var(--muted)) / 0.4;
+      border: none;
+      overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.25rem;
+      font-size: 1.35rem;
+      color: hsl(var(--foreground));
+      transition: transform 0.2s ease;
+    }
+
+    .storyImg {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
     }
 
     span {
-      font-size: 0.75rem;
-      font-weight: 500;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: hsl(var(--foreground));
       text-align: center;
-      max-width: 80px;
+      max-width: 85px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      transition: color 0.2s ease;
+    }
+
+    &:hover span {
+      color: hsl(var(--primary));
     }
   }
 }

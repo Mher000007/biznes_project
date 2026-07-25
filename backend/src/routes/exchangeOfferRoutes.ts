@@ -6,6 +6,7 @@ import {
   updateExchangeOffer,
   deleteExchangeOffer,
   toggleSaveExchangeOffer,
+  claimExchangeOffer,
 } from '../controllers/exchangeOfferController.js';
 
 import { authenticate } from '../middleware/auth.js';
@@ -24,6 +25,10 @@ router
 router
   .route('/:id/toggle-save')
   .post(authenticate as any, toggleSaveExchangeOffer as any);
+
+router
+  .route('/:id/claim')
+  .post(authenticate as any, claimExchangeOffer as any);
 
 router
   .route('/:id')

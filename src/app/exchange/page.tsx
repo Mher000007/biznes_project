@@ -54,9 +54,10 @@ const MOCK_OFFERS = [
 
 export default function ExchangePage() {
   const { locale, t } = useI18n();
-  const { currentUser } = useAuth();
+  const { currentUser, refreshUser } = useAuth();
   const { showToast } = useToast();
   const isBusinessUser = currentUser?.role === "business_owner" || currentUser?.accountType === "business";
+  const [submittingExchange, setSubmittingExchange] = useState(false);
   
   const [selectedOffer, setSelectedOffer] = useState<any>(null);
   const [offerCategory, setOfferCategory] = useState<string>('All');
@@ -82,13 +83,71 @@ export default function ExchangePage() {
     return list;
   }, [offers, offerCategory, savedOffers, sortOrder]);
 
-  const handleConfirmExchange = () => {
+  const handleConfirmExchange = async () => {
     if (!currentUser) {
       showToast();
       return;
     }
-    alert("Exchange request confirmed!");
-    setSelectedOffer(null);
+    if (!selectedOffer) return;
+
+    const userCoins = (currentUser as any)?.findyCoins || 0;
+    if (userCoins < selectedOffer.cost) {
+      alert(`Դուք չունեք բավարար Findy Coins (${selectedOffer.cost} Coins) այս առաջարկը ստանալու համար: Ձեր մնացորդը: ${userCoins} Coins:`);
+      return;
+    }
+
+    if (selectedOffer.claimedQuantity >= selectedOffer.totalQuantity) {
+      alert("Այս առաջարկի բոլոր օրինակները արդեն սպառվել են:");
+      return;
+    }
+
+    try {
+      setSubmittingExchange(true);
+      const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
+      const isMongoId = selectedOffer.id && typeof selectedOffer.id === "string" && selectedOffer.id.match(/^[0-9a-fA-F]{24}$/);
+      if (token && isMongoId) {
+        await axios.post(`${getApiUrl()}/exchange-offers/${selectedOffer.id}/claim`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      }
+
+      // Update local state claimedQuantity and subtract coins in UI
+      setOffers(prev => prev.map(o => o.id === selectedOffer.id ? { ...o, claimedQuantity: o.claimedQuantity + 1 } : o));
+      setSelectedOffer((prev: any) => prev ? { ...prev, claimedQuantity: prev.claimedQuantity + 1 } : null);
+
+      // Save to user's purchased offers list
+      if (typeof window !== "undefined") {
+        try {
+          const existingStr = localStorage.getItem("armbiz_user_claimed_offers");
+          const existingList: any[] = existingStr ? JSON.parse(existingStr) : [];
+          const newItem = {
+            _id: selectedOffer.id,
+            title: selectedOffer.title,
+            business: selectedOffer.business,
+            businessLogo: selectedOffer.businessLogo,
+            cost: selectedOffer.cost,
+            category: selectedOffer.category,
+            description: selectedOffer.description,
+            claimedAt: new Date().toISOString(),
+            couponCode: `FINDY-${Math.floor(100000 + Math.random() * 900000)}`
+          };
+          localStorage.setItem("armbiz_user_claimed_offers", JSON.stringify([newItem, ...existingList]));
+          window.dispatchEvent(new Event("claimedOffersUpdated"));
+        } catch (e) {}
+      }
+
+      if (refreshUser) {
+        await refreshUser();
+      }
+
+      alert(`🎉 Շնորհավորում ենք: Դուք հաջողությամբ ստացաք "${selectedOffer.title}" առաջարկը: Ձեր հաշվից գանձվեց ${selectedOffer.cost} Coins:`);
+      setSelectedOffer(null);
+    } catch (err: any) {
+      console.error("Failed to confirm exchange", err);
+      alert(err.response?.data?.error || "Փոխանակման ընթացքում տեղի ունեցավ սխալ:");
+    } finally {
+      setSubmittingExchange(false);
+    }
   };
 
   const toggleSavedOffer = async (e: React.MouseEvent, id: string) => {
@@ -187,7 +246,7 @@ export default function ExchangePage() {
 
               {/* Text */}
               <h3 className="text-2xl font-black text-[hsl(var(--foreground))] tracking-tight flex items-baseline gap-1.5">
-                0 <span className="text-emerald-500 text-[11px] font-extrabold uppercase tracking-[0.15em] drop-shadow-sm">Coins</span>
+                {(currentUser as any)?.findyCoins || 0} <span className="text-emerald-500 text-[11px] font-extrabold uppercase tracking-[0.15em] drop-shadow-sm">Coins</span>
               </h3>
             </div>
           </div>
@@ -458,9 +517,10 @@ export default function ExchangePage() {
                 {!isBusinessUser ? (
                   <button
                     onClick={handleConfirmExchange}
-                    className="px-8 py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold shadow-md shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                    disabled={submittingExchange}
+                    className="px-8 py-3.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-bold shadow-md shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center gap-2"
                   >
-                    Confirm Exchange
+                    {submittingExchange ? "Processing..." : "Confirm Exchange"}
                   </button>
                 ) : (
                   <button disabled className="px-8 py-3.5 bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] rounded-xl font-bold cursor-not-allowed">

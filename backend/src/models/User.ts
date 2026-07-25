@@ -16,6 +16,7 @@ export interface IUser extends Document {
   location?: string;
   verified: boolean;
   role: 'user' | 'business_owner' | 'admin';
+  findyCoins?: number;
   createdAt: Date;
   updatedAt: Date;
   matchPassword(enteredPassword: string): Promise<boolean>;
@@ -74,6 +75,11 @@ const userSchema = new Schema<IUser>({
     type: String,
     enum: ['user', 'business_owner', 'admin'],
     default: 'user',
+  },
+  findyCoins: {
+    type: Number,
+    default: 0,
+    min: 0,
   },
   createdAt: {
     type: Date,

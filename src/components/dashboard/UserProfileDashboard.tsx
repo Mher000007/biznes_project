@@ -34,7 +34,14 @@ import {
   Bookmark,
   Coins,
   Send,
-  UserPlus
+  UserPlus,
+  Gift,
+  ShoppingBag,
+  CheckCircle2,
+  Ticket,
+  QrCode,
+  X,
+  Check
 } from "lucide-react";
 import { MOCK_BUSINESSES } from "@/data/mock-businesses";
 
@@ -42,7 +49,7 @@ export default function UserProfileDashboard() {
   const { currentUser, logout, refreshUser } = useAuth();
   const { t, locale } = useI18n();
 
-  const [activeTab, setActiveTab] = useState<"profile" | "favorites" | "bookings" | "reviews" | "security" | "transfer" | "invite">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "favorites" | "bookings" | "reviews" | "security" | "transfer" | "invite" | "offers">("profile");
 
   // Profile Form States
   const [name, setName] = useState(currentUser?.name || "");
@@ -69,11 +76,45 @@ export default function UserProfileDashboard() {
   const [changingPassword, setChangingPassword] = useState(false);
   const [passwordMsg, setPasswordMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  // Favorites, Bookings & Reviews States
+  // Favorites, Bookings, Reviews & Claimed Offers States
   const [savedBusinesses, setSavedBusinesses] = useState<any[]>([]);
   const [userBookings, setUserBookings] = useState<any[]>([]);
   const [userReviewsCount, setUserReviewsCount] = useState<number>(0);
   const [userReviewsList, setUserReviewsList] = useState<any[]>([]);
+  const [claimedOffers, setClaimedOffers] = useState<any[]>([]);
+  const [selectedCoupon, setSelectedCoupon] = useState<any>(null);
+
+  const loadClaimedOffers = () => {
+    if (typeof window === "undefined") return;
+    try {
+      const str = localStorage.getItem("armbiz_user_claimed_offers");
+      if (str) {
+        setClaimedOffers(JSON.parse(str));
+      } else {
+        setClaimedOffers([]);
+      }
+    } catch (e) {
+      setClaimedOffers([]);
+    }
+  };
+
+  const handleRedeemCoupon = (couponCode: string, itemObj?: any) => {
+    if (typeof window === "undefined") return;
+    try {
+      const str = localStorage.getItem("armbiz_user_claimed_offers");
+      if (str) {
+        const list: any[] = JSON.parse(str);
+        const updated = list.filter((item) => item.couponCode !== couponCode && item._id !== itemObj?._id && item._id !== selectedCoupon?._id);
+        localStorage.setItem("armbiz_user_claimed_offers", JSON.stringify(updated));
+        setClaimedOffers(updated);
+        window.dispatchEvent(new Event("claimedOffersUpdated"));
+      }
+      setSelectedCoupon(null);
+      alert(locale === "hy" ? `✓ Կուպոնը (${couponCode}) հաջողությամբ ստուգվեց և հանվեց ցանկից:` : `✓ Coupon (${couponCode}) successfully scanned and redeemed!`);
+    } catch (e) {
+      console.error("Error redeeming coupon:", e);
+    }
+  };
 
   useEffect(() => {
     if (currentUser) {
@@ -320,27 +361,31 @@ export default function UserProfileDashboard() {
     }
   };
 
-  // Load Saved Favorites, Bookings & Reviews from LocalStorage / Backend
+  // Load Saved Favorites, Bookings, Reviews & Claimed Offers from LocalStorage / Backend
   useEffect(() => {
     loadFavorites();
     loadUserBookings();
     loadUserReviews();
+    loadClaimedOffers();
 
     const handleUpdate = () => {
       loadFavorites();
       loadUserBookings();
       loadUserReviews();
+      loadClaimedOffers();
     };
 
     window.addEventListener("favoritesUpdated", handleUpdate);
     window.addEventListener("bookingsUpdated", handleUpdate);
     window.addEventListener("reviewsUpdated", handleUpdate);
+    window.addEventListener("claimedOffersUpdated", handleUpdate);
     window.addEventListener("storage", handleUpdate);
 
     return () => {
       window.removeEventListener("favoritesUpdated", handleUpdate);
       window.removeEventListener("bookingsUpdated", handleUpdate);
       window.removeEventListener("reviewsUpdated", handleUpdate);
+      window.removeEventListener("claimedOffersUpdated", handleUpdate);
       window.removeEventListener("storage", handleUpdate);
     };
   }, [currentUser]);
@@ -548,8 +593,8 @@ export default function UserProfileDashboard() {
   const displayName = currentUser?.name || currentUser?.username || "User";
   const userInitial = displayName.charAt(0).toUpperCase();
 
-  // Calculate Findy Coins (5% of total bookings value)
-  const findyCoins = Math.floor(userBookings.reduce((sum, b) => sum + ((Number(b.totalPrice) || 0) * 0.05), 0));
+  // Calculate Findy Coins (from DB profile or 5% of total bookings value fallback)
+  const findyCoins = currentUser?.findyCoins !== undefined ? currentUser.findyCoins : Math.floor(userBookings.reduce((sum, b) => sum + ((Number(b.totalPrice) || 0) * 0.05), 0));
 
   return (
     <div className="min-h-screen bg-[hsl(var(--background))] text-[hsl(var(--foreground))] py-8 px-4 sm:px-6 lg:px-8">
@@ -781,6 +826,25 @@ export default function UserProfileDashboard() {
                 : "bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] dark:bg-slate-800 dark:text-slate-200"
             }`}>
               {userReviewsCount}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("offers")}
+            className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${
+              activeTab === "offers"
+                ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
+                : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
+            }`}
+          >
+            <Gift className="w-3.5 h-3.5 text-emerald-500" />
+            {locale === "hy" ? "Իմ Գնած Առաջարկները" : locale === "ru" ? "Купленные предложения" : "My Purchased Offers"}
+            <span className={`px-2 py-0.5 rounded-full text-[11px] font-black transition-colors ${
+              activeTab === "offers"
+                ? "bg-emerald-500 text-white shadow-sm"
+                : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+            }`}>
+              {claimedOffers.length}
             </span>
           </button>
 
@@ -1418,6 +1482,175 @@ export default function UserProfileDashboard() {
                 <Building2 className="w-4 h-4" />
                 {locale === "hy" ? "Գրանցել Բիզնես Հաշիվ" : "Register Business Account"}
               </Link>
+            </div>
+          </div>
+        )}
+
+        {/* ── TAB CONTENT: My Purchased Offers ── */}
+        {activeTab === "offers" && (
+          <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
+            <div className="relative overflow-hidden rounded-2xl bg-[hsl(var(--card))] border border-[hsl(var(--border))] p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20 shrink-0">
+                  <Gift className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg text-[hsl(var(--foreground))]">
+                    {locale === "hy" ? "Իմ Գնած Առաջարկները (Findy Coins)" : locale === "ru" ? "Мои купленные предложения (Findy Coins)" : "My Purchased Offers (Findy Coins)"}
+                  </h3>
+                  <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
+                    {locale === "hy" ? "Այստեղ ցուցադրված են Findy Coins-ով ձեր ձեռք բերած բոլոր առաջարկներն ու զեղչային կուպոնները:" : "Here are all the offers and coupons you purchased using Findy Coins."}
+                  </p>
+                </div>
+              </div>
+              <Link href="/exchange" className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold shadow transition-colors shrink-0 flex items-center gap-1.5">
+                <Coins className="w-4 h-4" />
+                {locale === "hy" ? "Գնել Ավելին" : "Buy More Offers"}
+              </Link>
+            </div>
+
+            {claimedOffers.length === 0 ? (
+              <div className="text-center py-16 px-4 bg-[hsl(var(--card))] rounded-2xl border border-[hsl(var(--border))] space-y-4">
+                <div className="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto">
+                  <Gift className="w-8 h-8" />
+                </div>
+                <h3 className="text-lg font-bold text-[hsl(var(--foreground))]">
+                  {locale === "hy" ? "Դեռ չունեք գնված առաջարկներ" : locale === "ru" ? "У вас пока нет купленных предложений" : "No purchased offers yet"}
+                </h3>
+                <p className="text-sm text-[hsl(var(--muted-foreground))] max-w-md mx-auto">
+                  {locale === "hy"
+                    ? "Բացահայտեք Findy Coin Offers էջը, փոխանակեք ձեր կուտակած քոյնները էքսկլյուզիվ առաջարկների հետ:"
+                    : "Explore Findy Coin Offers, exchange your accumulated coins for exclusive deals."}
+                </p>
+                <Link href="/exchange" className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-xs shadow-md transition-all">
+                  <Coins className="w-4 h-4" />
+                  {locale === "hy" ? "Դիտել Առաջարկները" : "Explore Offers"}
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {claimedOffers.map((item, idx) => {
+                  const code = item.couponCode || `FINDY-${Math.floor(100000 + idx * 4521)}`;
+                  const fullItem = { ...item, couponCode: code };
+                  return (
+                    <div
+                      key={item._id || idx}
+                      onClick={() => setSelectedCoupon(fullItem)}
+                      className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] hover:border-emerald-500/60 rounded-2xl p-5 shadow-sm hover:shadow-lg transition-all flex flex-col justify-between space-y-4 relative overflow-hidden cursor-pointer group"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 font-bold shrink-0 overflow-hidden group-hover:scale-105 transition-transform">
+                            {item.businessLogo ? (
+                              <img src={item.businessLogo.startsWith('data:') || item.businessLogo.startsWith('http') ? item.businessLogo : getApiUrl().replace('/api', '') + item.businessLogo} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <Gift className="w-5 h-5" />
+                            )}
+                          </div>
+                          <div>
+                            <span className="text-xs font-bold text-emerald-500 uppercase tracking-wider">{item.business || "Business"}</span>
+                            <h4 className="font-bold text-[hsl(var(--foreground))] text-base leading-tight mt-0.5">{item.title}</h4>
+                          </div>
+                        </div>
+                        <span className="px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-[11px] font-extrabold rounded-lg shrink-0 flex items-center gap-1">
+                          <Coins className="w-3.5 h-3.5" />
+                          {item.cost} Coins
+                        </span>
+                      </div>
+
+                      {item.description && (
+                        <p className="text-xs text-[hsl(var(--muted-foreground))] line-clamp-2 leading-relaxed">
+                          {item.description}
+                        </p>
+                      )}
+
+                      <div className="pt-3 border-t border-[hsl(var(--border))]/50 flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold">
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>{locale === "hy" ? "Ակտիվ Կուպոն" : "Active Coupon"}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedCoupon(fullItem);
+                            }}
+                            className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 px-2.5 py-1 rounded-lg font-bold text-[11px] flex items-center gap-1 transition-colors border border-emerald-500/30"
+                          >
+                            <QrCode className="w-3.5 h-3.5" />
+                            <span>QR</span>
+                          </button>
+                          <div className="bg-[hsl(var(--muted))] px-3 py-1 rounded-lg border border-[hsl(var(--border))] font-mono font-bold text-[11px] text-[hsl(var(--foreground))] group-hover:border-emerald-500/40 transition-colors">
+                            {code}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── COUPON QR MODAL ── */}
+        {selectedCoupon && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+            <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative space-y-6 text-center animate-in zoom-in-95 duration-200">
+              <button
+                type="button"
+                onClick={() => setSelectedCoupon(null)}
+                className="absolute top-4 right-4 p-2 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] rounded-full hover:bg-[hsl(var(--muted))] transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="space-y-1">
+                <span className="text-xs font-bold text-emerald-500 uppercase tracking-wider">{selectedCoupon.business || "Business"}</span>
+                <h3 className="text-xl font-black text-[hsl(var(--foreground))]">{selectedCoupon.title}</h3>
+              </div>
+
+              {/* QR Code Container */}
+              <div className="bg-white p-4 rounded-2xl border-4 border-emerald-500/20 shadow-inner inline-block mx-auto">
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(selectedCoupon.couponCode || "FINDY-COUPON")}`}
+                  alt="Coupon QR Code"
+                  className="w-52 h-52 object-contain mx-auto rounded-lg"
+                />
+              </div>
+
+              {/* Coupon Code Display */}
+              <div className="bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-xl p-3 inline-flex items-center gap-2 mx-auto">
+                <Ticket className="w-4 h-4 text-emerald-500" />
+                <span className="font-mono font-black text-lg tracking-widest text-[hsl(var(--foreground))]">
+                  {selectedCoupon.couponCode || "FINDY-284076"}
+                </span>
+              </div>
+
+              <p className="text-xs text-[hsl(var(--muted-foreground))] leading-relaxed max-w-xs mx-auto">
+                {locale === "hy"
+                  ? "Ցույց տվեք այս QR կոդը բիզնեսի աշխատակցին: Սկանավորելուց կամ հաստատելուց հետո կուպոնը կհանվի ցանկից:"
+                  : "Show this QR code to the business staff. Once scanned or confirmed, the coupon will be redeemed and removed."}
+              </p>
+
+              <div className="pt-2 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSelectedCoupon(null)}
+                  className="flex-1 py-3 bg-[hsl(var(--muted))] hover:bg-[hsl(var(--border))] text-[hsl(var(--foreground))] rounded-xl font-bold text-xs transition-colors"
+                >
+                  {locale === "hy" ? "Փակել" : "Close"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleRedeemCoupon(selectedCoupon.couponCode, selectedCoupon)}
+                  className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-extrabold text-xs shadow-md shadow-emerald-500/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Check className="w-4 h-4" />
+                  {locale === "hy" ? "Հաստատել (Սկանավորվել է)" : "Confirm & Redeem"}
+                </button>
+              </div>
             </div>
           </div>
         )}

@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { MOCK_BUSINESSES } from "@/data/mock-businesses";
-import { Star, MapPin, BadgeCheck, Globe, Phone, Mail, Clock, Users, Calendar, ArrowLeft, Send, X, Compass, ChevronLeft, ChevronRight, CheckCircle, Maximize2, ChevronDown, Heart, Bookmark } from "lucide-react";
+import { Star, MapPin, BadgeCheck, Globe, Phone, Mail, Clock, Users, Calendar, ArrowLeft, Send, X, Compass, ChevronLeft, ChevronRight, CheckCircle, Maximize2, ChevronDown, Heart, Bookmark, Sparkles } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
 import { getApiUrl } from "@/lib/utils";
@@ -134,8 +134,23 @@ export default function BusinessProfilePage() {
   const [activeStoriesGroups, setActiveStoriesGroups] = useState<any[]>([]);
   const [matchingGroupIdx, setMatchingGroupIdx] = useState<number | null>(null);
   const [showStoryViewer, setShowStoryViewer] = useState(false);
+  const [isLogoStoryViewed, setIsLogoStoryViewed] = useState(false);
 
+  useEffect(() => {
+    if (slug && typeof window !== "undefined") {
+      const viewed = localStorage.getItem(`viewed_story_${slug}`);
+      if (viewed === "true") {
+        setIsLogoStoryViewed(true);
+      }
+    }
+  }, [slug]);
 
+  const handleMarkStoryAsViewed = () => {
+    setIsLogoStoryViewed(true);
+    if (slug && typeof window !== "undefined") {
+      localStorage.setItem(`viewed_story_${slug}`, "true");
+    }
+  };
 
   // Highlights Story Viewer State
   const [showHighlightViewer, setShowHighlightViewer] = useState(false);
@@ -758,29 +773,31 @@ export default function BusinessProfilePage() {
       {/* Profile Header Details */}
       <div className={styles.profileHeader}>
 
-        {/* Instagram-style Logo Avatar (Story indicator) */}
+        {/* Logo Avatar (Green Story indicator when active & unviewed) */}
         <div className="flex items-center justify-center shrink-0">
           <div
             onClick={() => {
               if (matchingGroupIdx !== null) {
+                handleMarkStoryAsViewed();
                 setShowStoryViewer(true);
               }
             }}
-            className={`w-20 h-20 rounded-full shrink-0 flex items-center justify-center overflow-hidden ${matchingGroupIdx !== null
-              ? "p-[3px] bg-gradient-to-tr from-pink-500 via-purple-500 to-yellow-500 cursor-pointer hover:scale-105 transition-all shadow"
-              : "border border-[hsl(var(--border))]/60 p-[2px]"
-              }`}
-            title={matchingGroupIdx !== null ? "Click to view active stories" : undefined}
+            className={`w-20 h-20 rounded-full shrink-0 flex items-center justify-center overflow-hidden transition-all cursor-pointer ${
+              matchingGroupIdx !== null && !isLogoStoryViewed
+                ? "p-[3px] bg-emerald-500 hover:scale-105 shadow-md ring-2 ring-emerald-500/20"
+                : "border border-[hsl(var(--border))]/60 p-[2px]"
+            }`}
+            title={matchingGroupIdx !== null ? (isLogoStoryViewed ? "Stories viewed" : "Click to view active stories") : undefined}
           >
-            <div className="w-full h-full rounded-full bg-[hsl(var(--background))] p-[2px] overflow-hidden relative">
+            <div className="w-full h-full rounded-full bg-[hsl(var(--background))] p-[2px] overflow-hidden relative cursor-pointer">
               {business.logo || business.logoUrl ? (
                 <img
                   src={business.logo || business.logoUrl}
-                  className="w-full h-full rounded-full object-cover"
+                  className="w-full h-full rounded-full object-cover cursor-pointer"
                   alt={business.name}
                 />
               ) : (
-                <div className="w-full h-full rounded-full bg-violet-600 flex items-center justify-center text-white text-xl font-bold uppercase">
+                <div className="w-full h-full rounded-full bg-violet-600 flex items-center justify-center text-white text-xl font-bold uppercase cursor-pointer">
                   {business.name[0]}
                 </div>
               )}
@@ -858,31 +875,96 @@ export default function BusinessProfilePage() {
       </div>
 
       {/* Highlights Section (Story circles) */}
-      {business.highlights && business.highlights.length > 0 && (
-        <div className={styles.highlightsContainer}>
-          <h2>Key Features & Highlights</h2>
-          <div className={styles.highlightsWrapper}>
-            {business.highlights.map((h: Highlight, i: number) => (
-              <div key={i} className={styles.highlightTile} onClick={() => openHighlight(i)}>
-                <div className={styles.storyRing}>
-                  <div className={styles.storyThumb}>
-                    {h.imageUrl ? (
-                      <img src={h.imageUrl} alt={h.title} className={styles.storyImg} />
-                    ) : (
-                      h.icon || "✨"
-                    )}
+      {(() => {
+        const defaultSmartHighlights = [
+          ...(business?.menu && business.menu.length > 0 ? [{
+            id: 'highlight-menu',
+            title: locale === 'hy' ? 'Մենյու' : locale === 'ru' ? 'Меню' : 'Menu',
+            icon: '🍽️',
+            sectionId: 'hours-section'
+          }] : []),
+          ...(business?.services && business.services.length > 0 ? [{
+            id: 'highlight-services',
+            title: locale === 'hy' ? 'Ծառայություններ' : locale === 'ru' ? 'Услуги' : 'Services',
+            icon: '🛠️',
+            sectionId: 'hours-section'
+          }] : []),
+          ...(galleryImages && galleryImages.length > 0 ? [{
+            id: 'highlight-gallery',
+            title: locale === 'hy' ? 'Լուսանկարներ' : locale === 'ru' ? 'Галерея' : 'Gallery',
+            icon: '📸',
+            imageUrl: galleryImages[0],
+            sectionId: 'gallery-section'
+          }] : []),
+          {
+            id: 'highlight-reviews',
+            title: locale === 'hy' ? 'Կարծիքներ' : locale === 'ru' ? 'Отзывы' : 'Reviews',
+            icon: '⭐',
+            sectionId: 'reviews-section'
+          },
+          {
+            id: 'highlight-hours',
+            title: locale === 'hy' ? 'Ժամեր' : locale === 'ru' ? 'Часы' : 'Hours',
+            icon: '🕒',
+            sectionId: 'hours-section'
+          },
+          {
+            id: 'highlight-location',
+            title: locale === 'hy' ? 'Տեղադրություն' : locale === 'ru' ? 'Локация' : 'Location',
+            icon: '📍',
+            sectionId: 'location-section'
+          }
+        ];
+
+        const highlightsToRender = (business?.highlights && business.highlights.length > 0)
+          ? business.highlights
+          : defaultSmartHighlights;
+
+        if (!highlightsToRender || highlightsToRender.length === 0) return null;
+
+        return (
+          <div className={styles.highlightsContainer}>
+            <div className={styles.highlightsHeader}>
+              <h2>
+                {locale === 'hy' ? 'Ակնարկներ (Highlights)' : locale === 'ru' ? 'Подборки (Highlights)' : 'Highlights'}
+              </h2>
+            </div>
+            <div className={styles.highlightsWrapper}>
+              {highlightsToRender.map((h: any, i: number) => (
+                <div
+                  key={h.id || i}
+                  className={styles.highlightTile}
+                  onClick={() => {
+                    if (h.sectionId) {
+                      const el = document.getElementById(h.sectionId);
+                      if (el) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }
+                    } else {
+                      openHighlight(i);
+                    }
+                  }}
+                >
+                  <div className={styles.storyRing}>
+                    <div className={styles.storyThumb}>
+                      {h.imageUrl ? (
+                        <img src={h.imageUrl} alt={h.title} className={styles.storyImg} />
+                      ) : (
+                        <span>{h.icon || "✨"}</span>
+                      )}
+                    </div>
                   </div>
+                  <span title={h.title}>{h.title}</span>
                 </div>
-                <span>{h.title}</span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ── Showcase Gallery Section ── */}
       {galleryImages.length > 0 && (
-        <section className={styles.gallerySection}>
+        <section id="gallery-section" className={styles.gallerySection}>
           <div className={styles.sectionHeader}>
             <h2>{t.business.gallery}</h2>
             <span className={styles.photoCount}>
@@ -936,7 +1018,7 @@ export default function BusinessProfilePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-[1fr_280px] lg:grid-cols-[1fr_300px] gap-6 mb-6 items-stretch">
             {/* Operating hours */}
-            <section className="flex flex-col h-full">
+            <section id="hours-section" className="flex flex-col h-full">
               <h2 className="text-lg font-bold mb-3">{t.business?.operatingHours || "Operating Hours"}</h2>
               <div className="flex flex-col gap-1 flex-1">
                 {(business.operatingHours && business.operatingHours.length > 0
@@ -987,7 +1069,7 @@ export default function BusinessProfilePage() {
             </section>
 
             {/* Contact Details */}
-            <section className="flex flex-col h-full">
+            <section id="location-section" className="flex flex-col h-full">
               <h2 className="text-lg font-bold mb-3">{t.business?.contact || "Information"}</h2>
               <div className={`${styles.contactCard} !mt-0 flex-1 flex flex-col justify-center`}>
                 <div className="space-y-4">
@@ -1384,23 +1466,30 @@ export default function BusinessProfilePage() {
       )}
 
       {/* ── Reviews Section ── */}
-      <ReviewsSection
-        businessId={business._id || business.id || ""}
-        businessSlug={slug}
-        initialRating={business.ratingAvg || business.rating || 0}
-        initialReviewCount={business.reviewCount || 0}
-        onRatingUpdate={(rating, count) => {
-          setLiveRating(rating);
-          setLiveReviewCount(count);
-        }}
-      />
+      <div id="reviews-section">
+        <ReviewsSection
+          businessId={business._id || business.id || ""}
+          businessSlug={slug}
+          initialRating={business.ratingAvg || business.rating || 0}
+          initialReviewCount={business.reviewCount || 0}
+          onRatingUpdate={(rating, count) => {
+            setLiveRating(rating);
+            setLiveReviewCount(count);
+          }}
+        />
+      </div>
 
       {showStoryViewer && matchingGroupIdx !== null && (
         <StoryViewer
           groups={activeStoriesGroups}
           initialGroupIndex={matchingGroupIdx}
-          onClose={() => setShowStoryViewer(false)}
-          onStoriesViewedUpdate={() => { }}
+          onClose={() => {
+            setShowStoryViewer(false);
+            handleMarkStoryAsViewed();
+          }}
+          onStoriesViewedUpdate={() => {
+            handleMarkStoryAsViewed();
+          }}
         />
       )}
 
