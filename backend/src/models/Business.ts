@@ -21,6 +21,7 @@ export interface IBusiness extends Document {
   rating: number;
   reviewCount: number;
   views: number;
+  savedCount: number;
   tags?: string[];
   verified: boolean;
   featured: boolean;
@@ -114,6 +115,10 @@ const businessSchema = new Schema<IBusiness>({
     default: 0,
   },
   views: {
+    type: Number,
+    default: 0,
+  },
+  savedCount: {
     type: Number,
     default: 0,
   },

@@ -37,13 +37,25 @@ export default function HeroSection() {
     }
   }, [current]);
 
-  // Fetch premium businesses to display dynamic slideshow backgrounds, or fallback
+  // Fetch admin-configured hero images first, then fallback to premium businesses
   useEffect(() => {
-    const fetchPremium = async () => {
+    const fetchHeroImages = async () => {
       try {
         const API = getApiUrl();
+        // Try admin-configured hero images first
+        const heroRes = await axios.get(`${API}/hero-images`);
+        if (heroRes.data?.success && heroRes.data?.data && heroRes.data.data.length > 0) {
+          const loadedSlides = heroRes.data.data.map((url: string, idx: number) => ({
+            src: url,
+            alt: `Hero image ${idx + 1}`,
+          }));
+          setSlides(loadedSlides);
+          return;
+        }
+
+        // Fallback: premium businesses
         const res = await axios.get(`${API}/businesses?premiumOnly=true`);
-        if (res.data?.success && res.data?.data && res.data?.data.length > 0) {
+        if (res.data?.success && res.data?.data && res.data.data.length > 0) {
           const loadedSlides = res.data.data.map((biz: any) => {
             let img = "/carousel/yerevan.png";
             if (biz.metadata?.coverUrl) {
@@ -57,20 +69,17 @@ export default function HeroSection() {
             } else if (biz.logo) {
               img = biz.logo;
             }
-
-            return {
-              src: img,
-              alt: biz.name,
-            };
+            return { src: img, alt: biz.name };
           });
           setSlides(loadedSlides);
         }
       } catch (err: any) {
-        console.log("Failed to load premium businesses for background slides:", err?.message || "Error");
+        console.log("Failed to load hero images:", err?.message || "Error");
       }
     };
-    fetchPremium();
+    fetchHeroImages();
   }, []);
+
 
   useEffect(() => {
     if (slides.length <= 1 || !isPlaying) return;

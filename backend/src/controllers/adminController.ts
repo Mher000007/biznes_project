@@ -8,6 +8,7 @@ import PromoCode from '../models/PromoCode.js';
 import SubscriptionGift from '../models/SubscriptionGift.js';
 import AuditLog from '../models/AuditLog.js';
 import Notification from '../models/Notification.js';
+import SiteSettings from '../models/SiteSettings.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { AuthRequest } from '../middleware/auth.js';
 import { sendReportResolutionEmail } from '../utils/emailService.js';
@@ -660,5 +661,37 @@ export const topUpUserCoins = asyncHandler(
       message: `Successfully updated ${user.name}'s coins to ${currentCoins.toLocaleString()} Coins`,
       data: { userId: user._id, findyCoins: currentCoins },
     });
+  }
+);
+
+// ─── GET hero carousel images (public) ───────────────────────────────────────
+export const getHeroImages = asyncHandler(
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const setting = await SiteSettings.findOne({ key: 'heroImages' });
+      const images: string[] = setting ? (setting.value as string[]) : [];
+      res.status(200).json({ success: true, data: images });
+    } catch (err) {
+      res.status(200).json({ success: true, data: [] });
+    }
+  }
+);
+
+// ─── UPDATE hero carousel images (admin only) ─────────────────────────────────
+export const updateHeroImages = asyncHandler(
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    const { images } = req.body;
+    if (!Array.isArray(images)) {
+      res.status(400).json({ success: false, message: 'images must be an array of URLs' });
+      return;
+    }
+    // Limit to 12 images
+    const capped = images.slice(0, 12);
+    await SiteSettings.findOneAndUpdate(
+      { key: 'heroImages' },
+      { key: 'heroImages', value: capped },
+      { upsert: true, new: true }
+    );
+    res.status(200).json({ success: true, data: capped });
   }
 );

@@ -21,6 +21,8 @@ import {
   togglePromoCode,
   deletePromoCode,
   sendNotification,
+  getHeroImages,
+  updateHeroImages,
 } from '../controllers/adminController.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 
@@ -67,5 +69,9 @@ router.delete('/promos/:id', deletePromoCode);
 
 // Notifications
 router.post('/notifications/send', sendNotification);
+
+// Hero carousel images
+router.put('/hero-images', updateHeroImages);
+router.get('/hero-images', getHeroImages);
 
 export default router;

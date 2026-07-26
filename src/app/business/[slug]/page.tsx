@@ -218,6 +218,10 @@ export default function BusinessProfilePage() {
   const [isFavorited, setIsFavorited] = useState(false);
 
   useEffect(() => {
+    if (!currentUser) {
+      setIsFavorited(false);
+      return;
+    }
     if (typeof window !== "undefined" && business) {
       try {
         const favsStr = localStorage.getItem("armbiz_favorites");
@@ -225,11 +229,15 @@ export default function BusinessProfilePage() {
           const favs: string[] = JSON.parse(favsStr);
           if (favs.includes(business.id) || (business.slug && favs.includes(business.slug))) {
             setIsFavorited(true);
+          } else {
+            setIsFavorited(false);
           }
+        } else {
+          setIsFavorited(false);
         }
       } catch (e) {}
     }
-  }, [business]);
+  }, [business, currentUser]);
 
   const toggleFavorite = () => {
     if (!currentUser) {

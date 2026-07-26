@@ -120,6 +120,9 @@ export default function ExchangePage() {
         try {
           const existingStr = localStorage.getItem("armbiz_user_claimed_offers");
           const existingList: any[] = existingStr ? JSON.parse(existingStr) : [];
+          const claimedAt = new Date();
+          const expiresAt = new Date(claimedAt);
+          expiresAt.setMonth(expiresAt.getMonth() + 1);
           const newItem = {
             _id: selectedOffer.id,
             title: selectedOffer.title,
@@ -128,7 +131,8 @@ export default function ExchangePage() {
             cost: selectedOffer.cost,
             category: selectedOffer.category,
             description: selectedOffer.description,
-            claimedAt: new Date().toISOString(),
+            claimedAt: claimedAt.toISOString(),
+            expiresAt: expiresAt.toISOString(),
             couponCode: `FINDY-${Math.floor(100000 + Math.random() * 900000)}`
           };
           localStorage.setItem("armbiz_user_claimed_offers", JSON.stringify([newItem, ...existingList]));
@@ -290,16 +294,105 @@ export default function ExchangePage() {
               {t.exchange.heroDesc}
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-4">
-              <a href="#premium-offers" className="w-full sm:w-auto px-8 py-4 bg-emerald-500 text-white rounded-2xl font-bold text-lg shadow-xl shadow-emerald-500/20 hover:scale-105 hover:bg-emerald-600 transition-all flex items-center justify-center gap-2">
-                {t.exchange.startExchanging}
-                <ArrowDown className="w-5 h-5 animate-bounce" />
-              </a>
-            </div>
 
 
           </div>
 
+        </div>
+
+        {/* HOW IT WORKS SECTION */}
+        <div id="how-it-works" className="mt-32 scroll-mt-28">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-[hsl(var(--foreground))]">
+              {locale === "hy" ? "Ինչպե՞ս " : locale === "ru" ? "Как " : "How to "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">
+                {locale === "hy" ? "Օգտագործել Findy Coins?" : locale === "ru" ? "Использовать Findy Coins?" : "Use Findy Coins?"}
+              </span>
+            </h2>
+            <p className="mt-4 text-[hsl(var(--muted-foreground))] max-w-xl mx-auto">
+              {locale === "hy"
+                ? "Ստացեք Findy Coins ամեն ամրագրումից, կուտակեք, ապա փոխանակեք բացառիկ առաջարկների հետ:"
+                : locale === "ru"
+                ? "Зарабатывайте Findy Coins с каждого бронирования, накапливайте их и обменивайте на эксклюзивные предложения."
+                : "Earn Findy Coins with every booking, accumulate them, then exchange for exclusive real-world offers."}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+            {/* Connector line (desktop) */}
+            <div className="hidden md:block absolute top-12 left-[calc(16.66%+1rem)] right-[calc(16.66%+1rem)] h-0.5 bg-gradient-to-r from-emerald-500/30 via-emerald-500/60 to-emerald-500/30 z-0" />
+
+            {/* Step 1 */}
+            <div className="relative z-10 flex flex-col items-center text-center group">
+              <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-2xl shadow-emerald-500/30 mb-6 group-hover:scale-110 transition-transform duration-300">
+                <span className="text-4xl">📍</span>
+              </div>
+              <div className="absolute -top-3 -right-2 md:right-auto md:left-[calc(50%+28px)] w-7 h-7 rounded-full bg-emerald-500 text-white text-xs font-black flex items-center justify-center shadow-lg shadow-emerald-500/40 border-2 border-[hsl(var(--background))]">
+                1
+              </div>
+              <h3 className="text-xl font-bold text-[hsl(var(--foreground))] mb-3">
+                {locale === "hy" ? "Ամրագրեք Բիզնեսներ" : locale === "ru" ? "Бронируйте Бизнесы" : "Book Businesses"}
+              </h3>
+              <p className="text-[hsl(var(--muted-foreground))] text-sm leading-relaxed max-w-[240px]">
+                {locale === "hy"
+                  ? "Գտեք ձեզ հետաքրքրող բիզնեսները, ամրագրեք ծառայություններ և ավտոմատ կերպով ստացեք Findy Coins — ամեն ամրագրման 5%:"
+                  : locale === "ru"
+                  ? "Найдите интересующие вас бизнесы, бронируйте услуги и автоматически получайте Findy Coins — 5% от каждого бронирования."
+                  : "Find the businesses you love, book their services and automatically earn Findy Coins — 5% back from every booking."}
+              </p>
+            </div>
+
+            {/* Step 2 */}
+            <div className="relative z-10 flex flex-col items-center text-center group">
+              <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center shadow-2xl shadow-blue-500/30 mb-6 group-hover:scale-110 transition-transform duration-300">
+                <span className="text-4xl">🪙</span>
+              </div>
+              <div className="absolute -top-3 -right-2 md:right-auto md:left-[calc(50%+28px)] w-7 h-7 rounded-full bg-blue-500 text-white text-xs font-black flex items-center justify-center shadow-lg shadow-blue-500/40 border-2 border-[hsl(var(--background))]">
+                2
+              </div>
+              <h3 className="text-xl font-bold text-[hsl(var(--foreground))] mb-3">
+                {locale === "hy" ? "Կուտակեք Coins" : locale === "ru" ? "Накапливайте Coins" : "Accumulate Coins"}
+              </h3>
+              <p className="text-[hsl(var(--muted-foreground))] text-sm leading-relaxed max-w-[240px]">
+                {locale === "hy"
+                  ? "Ձեր Findy Coins-ները պահվում են ձեր հաշվում: Հետևեք ձեր մնացորդին Dashboard-ում և կուտակեք ավելի շատ:"
+                  : locale === "ru"
+                  ? "Ваши Findy Coins хранятся на вашем счёте. Отслеживайте баланс в Dashboard и накапливайте больше."
+                  : "Your Findy Coins are stored in your account. Track your balance on the Dashboard and keep earning more."}
+              </p>
+            </div>
+
+            {/* Step 3 */}
+            <div className="relative z-10 flex flex-col items-center text-center group">
+              <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-purple-400 to-pink-600 flex items-center justify-center shadow-2xl shadow-purple-500/30 mb-6 group-hover:scale-110 transition-transform duration-300">
+                <span className="text-4xl">🎁</span>
+              </div>
+              <div className="absolute -top-3 -right-2 md:right-auto md:left-[calc(50%+28px)] w-7 h-7 rounded-full bg-purple-500 text-white text-xs font-black flex items-center justify-center shadow-lg shadow-purple-500/40 border-2 border-[hsl(var(--background))]">
+                3
+              </div>
+              <h3 className="text-xl font-bold text-[hsl(var(--foreground))] mb-3">
+                {locale === "hy" ? "Փոխանակեք Պարգևների" : locale === "ru" ? "Обменяйте на Подарки" : "Exchange for Rewards"}
+              </h3>
+              <p className="text-[hsl(var(--muted-foreground))] text-sm leading-relaxed max-w-[240px]">
+                {locale === "hy"
+                  ? "Ընտրեք բացառիկ առաջարկ ստորև, սեղմեք «View Details» և ծախսեք ձեր Coins-ները: Կկստանաք կուպոն:"
+                  : locale === "ru"
+                  ? "Выберите эксклюзивное предложение ниже, нажмите «View Details» и потратьте свои Coins. Получите купон."
+                  : "Pick an exclusive offer below, tap «View Details» and spend your Coins. You'll receive a coupon code instantly."}
+              </p>
+            </div>
+          </div>
+
+          {/* CTA to scroll to offers */}
+          <div className="mt-14 flex justify-center">
+            <a
+              href="#premium-offers"
+              className="inline-flex items-center gap-3 px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-bold text-base shadow-xl shadow-emerald-500/20 hover:scale-105 transition-all duration-300"
+            >
+              <span>{locale === "hy" ? "Տեսնել Բոլոր Առաջարկները" : locale === "ru" ? "Смотреть Предложения" : "Browse All Offers"}</span>
+              <ArrowDown className="w-5 h-5 animate-bounce" />
+            </a>
+          </div>
         </div>
 
         {/* PREMIUM OFFERS SECTION */}

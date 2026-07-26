@@ -12,6 +12,7 @@ import {
   getCalendarSummaries,
   updateDailySummary,
   checkBusinessDateStatus,
+  toggleSaveBusiness,
 } from '../controllers/businessController.js';
 import {
   getLocations,
@@ -39,6 +40,7 @@ router.get('/:id', getBusinessById);
 router.put('/:id', authenticate, updateBusiness);
 router.delete('/:id', authenticate, deleteBusiness);
 router.post('/:id/rate', rateBusiness);
+router.post('/:id/toggle-save', toggleSaveBusiness);
 router.get('/:id/analytics', authenticate, getBusinessAnalytics);
 router.get('/:id/calendar', authenticate, getCalendarSummaries);
 router.post('/:id/calendar/:date', authenticate, updateDailySummary);

@@ -89,7 +89,21 @@ export default function UserProfileDashboard() {
     try {
       const str = localStorage.getItem("armbiz_user_claimed_offers");
       if (str) {
-        setClaimedOffers(JSON.parse(str));
+        const all: any[] = JSON.parse(str);
+        const now = Date.now();
+        // Auto-remove offers whose 1-month window has passed
+        const active = all.filter((item) => {
+          if (!item.expiresAt) {
+            // Legacy items without expiresAt: treat claimedAt + 30 days
+            if (!item.claimedAt) return true;
+            return now < new Date(item.claimedAt).getTime() + 30 * 24 * 60 * 60 * 1000;
+          }
+          return now < new Date(item.expiresAt).getTime();
+        });
+        if (active.length !== all.length) {
+          localStorage.setItem("armbiz_user_claimed_offers", JSON.stringify(active));
+        }
+        setClaimedOffers(active);
       } else {
         setClaimedOffers([]);
       }
@@ -889,9 +903,9 @@ export default function UserProfileDashboard() {
                     </p>
                   </div>
                </div>
-               <button className="px-4 py-2 rounded-xl bg-emerald-500 text-white text-xs font-bold shadow hover:bg-emerald-600 transition-colors shrink-0">
+               <Link href="/exchange#how-it-works" className="px-4 py-2 rounded-xl bg-emerald-500 text-white text-xs font-bold shadow hover:bg-emerald-600 transition-colors shrink-0">
                  {locale === "hy" ? "Ինչպե՞ս օգտագործել" : "How to use?"}
-               </button>
+               </Link>
             </div>
 
             <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl p-6 shadow-sm space-y-6">
@@ -1055,11 +1069,11 @@ export default function UserProfileDashboard() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {savedBusinesses.map((biz) => {
+                {savedBusinesses.map((biz, idx) => {
                   const img = biz.images?.[0] || biz.logoUrl || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80";
                   return (
                     <div
-                      key={biz.id || biz.slug}
+                      key={`saved-${biz.id || biz.slug}-${idx}`}
                       className="group bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl overflow-hidden hover:shadow-lg transition-all flex flex-col"
                     >
                       <div className="relative h-40 overflow-hidden bg-[hsl(var(--muted))]">
@@ -1136,9 +1150,9 @@ export default function UserProfileDashboard() {
               </div>
             ) : (
               <div className="space-y-3">
-                {userBookings.map((b) => (
+                {userBookings.map((b, idx) => (
                   <div
-                    key={b.id}
+                    key={`booking-${b.id || idx}-${idx}`}
                     className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
                   >
                     <div className="space-y-1">
@@ -1529,12 +1543,25 @@ export default function UserProfileDashboard() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {claimedOffers.map((item, idx) => {
+              {claimedOffers.map((item, idx) => {
                   const code = item.couponCode || `FINDY-${Math.floor(100000 + idx * 4521)}`;
                   const fullItem = { ...item, couponCode: code };
+
+                  // Expiry helpers
+                  const expiryDate = item.expiresAt
+                    ? new Date(item.expiresAt)
+                    : item.claimedAt
+                      ? new Date(new Date(item.claimedAt).getTime() + 30 * 24 * 60 * 60 * 1000)
+                      : null;
+                  const daysLeft = expiryDate ? Math.ceil((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+                  const isExpiringSoon = daysLeft !== null && daysLeft <= 7;
+                  const expiryLabel = expiryDate
+                    ? expiryDate.toLocaleDateString(locale === "hy" ? "hy-AM" : locale === "ru" ? "ru-RU" : "en-US", { day: "numeric", month: "short", year: "numeric" })
+                    : null;
+
                   return (
                     <div
-                      key={item._id || idx}
+                      key={`${item._id || ""}-${code}-${idx}`}
                       onClick={() => setSelectedCoupon(fullItem)}
                       className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] hover:border-emerald-500/60 rounded-2xl p-5 shadow-sm hover:shadow-lg transition-all flex flex-col justify-between space-y-4 relative overflow-hidden cursor-pointer group"
                     >
@@ -1564,28 +1591,44 @@ export default function UserProfileDashboard() {
                         </p>
                       )}
 
-                      <div className="pt-3 border-t border-[hsl(var(--border))]/50 flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold">
-                          <CheckCircle2 className="w-4 h-4" />
-                          <span>{locale === "hy" ? "Ակտիվ Կուպոն" : "Active Coupon"}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedCoupon(fullItem);
-                            }}
-                            className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 px-2.5 py-1 rounded-lg font-bold text-[11px] flex items-center gap-1 transition-colors border border-emerald-500/30"
-                          >
-                            <QrCode className="w-3.5 h-3.5" />
-                            <span>QR</span>
-                          </button>
-                          <div className="bg-[hsl(var(--muted))] px-3 py-1 rounded-lg border border-[hsl(var(--border))] font-mono font-bold text-[11px] text-[hsl(var(--foreground))] group-hover:border-emerald-500/40 transition-colors">
-                            {code}
+                      <div className="pt-3 border-t border-[hsl(var(--border))]/50 flex flex-col gap-2 text-xs">
+                        <div className="flex items-center justify-between">
+                          <div className={isExpiringSoon ? "flex items-center gap-1.5 text-orange-500 font-bold" : "flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold"}>
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>{locale === "hy" ? "Ակտիվ Կուպոն" : "Active Coupon"}</span>
+                            {isExpiringSoon && (
+                              <span className="ml-1 px-1.5 py-0.5 rounded-md bg-orange-500/10 border border-orange-500/30 text-orange-500 text-[10px] font-extrabold animate-pulse">
+                                {locale === "hy" ? `${daysLeft}օր մնաց` : `${daysLeft}d left`}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedCoupon(fullItem);
+                              }}
+                              className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 px-2.5 py-1 rounded-lg font-bold text-[11px] flex items-center gap-1 transition-colors border border-emerald-500/30"
+                            >
+                              <QrCode className="w-3.5 h-3.5" />
+                              <span>QR</span>
+                            </button>
+                            <div className="bg-[hsl(var(--muted))] px-3 py-1 rounded-lg border border-[hsl(var(--border))] font-mono font-bold text-[11px] text-[hsl(var(--foreground))] group-hover:border-emerald-500/40 transition-colors">
+                              {code}
+                            </div>
                           </div>
                         </div>
+                        {expiryLabel && (
+                          <div className={`flex items-center gap-1 ${isExpiringSoon ? "text-orange-400" : "text-[hsl(var(--muted-foreground))]"}`}>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            <span>
+                              {locale === "hy" ? `Վավեր է մինչև ${expiryLabel}` : locale === "ru" ? `Действителен до ${expiryLabel}` : `Valid until ${expiryLabel}`}
+                            </span>
+                          </div>
+                        )}
                       </div>
+
                     </div>
                   );
                 })}

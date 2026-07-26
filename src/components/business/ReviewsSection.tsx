@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { Star, ThumbsUp, MessageSquare, CheckCircle, AlertCircle, Loader2, User, Camera, X, Upload } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/context/ToastContext";
 import { getApiUrl } from "@/lib/utils";
 import { useI18n } from "@/i18n";
 import styles from "./ReviewsSection.module.scss";
@@ -239,6 +240,7 @@ export default function ReviewsSection({
   onRatingUpdate
 }: ReviewsSectionProps) {
   const { currentUser } = useAuth();
+  const { showToast } = useToast();
   const { t, locale } = useI18n();
   const isBackend = /^[0-9a-fA-F]{24}$/.test(businessId);
 
@@ -543,7 +545,7 @@ export default function ReviewsSection({
 
       const newReview: Review & { userUsername?: string; userEmail?: string; businessSlug?: string; businessName?: string } = {
         _id: `local-${Date.now()}`,
-        author: currentUser ? { _id: (currentUser as any)._id || (currentUser as any).id || "user", name: currentUser.name || currentUser.username } : null,
+        author: currentUser ? { _id: String((currentUser as any)._id || (currentUser as any).id || "user"), name: currentUser.name || currentUser.username || "Anonymous" } : null,
         authorName: currentUser?.name || currentUser?.username || guestName.trim() || "Anonymous",
         userUsername: currentUser?.username || "",
         userEmail: currentUser?.email || "",
@@ -625,6 +627,10 @@ export default function ReviewsSection({
 
   // ── helpful ──
   const handleHelpful = async (reviewId: string) => {
+    if (!currentUser) {
+      showToast();
+      return;
+    }
     if (helpfulSet.has(reviewId)) return;
     setHelpfulSet((prev) => new Set([...prev, reviewId]));
     setReviews((prev) =>

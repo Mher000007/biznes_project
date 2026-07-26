@@ -21,6 +21,7 @@ import chatRoutes from './routes/chatRoutes.js';
 import offerRoutes from './routes/offerRoutes.js';
 import exchangeOfferRoutes from './routes/exchangeOfferRoutes.js';
 import { getAllReviews } from './controllers/reviewController.js';
+import { getHeroImages } from './controllers/adminController.js';
 
 dotenv.config();
 
@@ -72,6 +73,8 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/offers', offerRoutes);
 app.use('/api/exchange-offers', exchangeOfferRoutes);
 app.get('/api/reviews/all', getAllReviews);
+app.get('/api/hero-images', getHeroImages);
+
 
 // 404 handler
 app.use((req: Request, res: Response) => {

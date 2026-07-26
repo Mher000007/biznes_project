@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import axios from "axios";
 import { getApiUrl } from "@/lib/utils";
 import {
@@ -7,7 +7,7 @@ import {
   Mail, Phone, Trash2, CheckCircle2,
   X, Ban, RefreshCw, LogOut, CheckCircle, AlertOctagon,
   UserCircle2, Crown, Briefcase, Star, Eye, Tag, Award,
-  MessageSquare, Send, CheckSquare, Square, HeadphonesIcon, Coins
+  MessageSquare, Send, CheckSquare, Square, HeadphonesIcon, Coins, ImageIcon, PlusCircle, GripVertical
 } from "lucide-react";
 
 const API = getApiUrl();
@@ -115,7 +115,7 @@ interface PromoCode {
   createdAt: string;
 }
 
-type TabKey = "overview" | "businesses" | "bookings" | "subscriptions" | "reviews" | "users" | "promocodes" | "messages" | "livechat";
+type TabKey = "overview" | "businesses" | "bookings" | "subscriptions" | "reviews" | "users" | "promocodes" | "messages" | "livechat" | "heroimages";
 
 function getToken() {
   return typeof window !== "undefined" ? localStorage.getItem(ADMIN_TOKEN_KEY) : null;
@@ -308,6 +308,45 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [promoSubTab, setPromoSubTab] = useState<"active" | "inactive" | "all">("active");
   const [planSubTab, setPlanSubTab] = useState<"subscriptions" | "gifts">("subscriptions");
 
+  // Hero images state
+  const [heroImages, setHeroImages] = useState<string[]>([]);
+  const [heroImgInput, setHeroImgInput] = useState("");
+  const [heroSaving, setHeroSaving] = useState(false);
+  const [heroSaveMsg, setHeroSaveMsg] = useState("");
+  // Live slides: what HeroSection is actually showing right now
+  const [liveSlides, setLiveSlides] = useState<{ src: string; alt: string; source: "admin" | "business" | "default" }[]>([]);
+  const [heroLoadingLive, setHeroLoadingLive] = useState(false);
+  const [heroShowLive, setHeroShowLive] = useState(false);
+
+  // Users tab hover & filter states
+  const [usersHoverOpen, setUsersHoverOpen] = useState(false);
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [userRoleFilter, setUserRoleFilter] = useState<"all" | "user" | "business_owner" | "admin">("all");
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+
+  const handleUsersMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    const rect = e.currentTarget.getBoundingClientRect();
+    setDropdownPos({ top: rect.bottom + 6, left: Math.max(12, rect.left) });
+    setUsersHoverOpen(true);
+  };
+
+  const handleUsersMouseLeave = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setUsersHoverOpen(false);
+    }, 200);
+  };
+
+  const handleDropdownMouseEnter = () => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    setUsersHoverOpen(true);
+  };
+
+  const handleDropdownMouseLeave = () => {
+    setUsersHoverOpen(false);
+  };
+
   // Gifting subscription state
   const [giftModalOpen, setGiftModalOpen] = useState(false);
   const [giftingBusiness, setGiftingBusiness] = useState<Business | null>(null);
@@ -411,6 +450,13 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       if (usersRes.status === "fulfilled" && usersRes.value.data?.success) setAllUsers(usersRes.value.data.data);
       if (promosRes.status === "fulfilled" && promosRes.value.data?.success) setPromos(promosRes.value.data.data);
       if (giftsRes.status === "fulfilled" && giftsRes.value.data?.success) setGifts(giftsRes.value.data.data);
+
+      // Load hero images (separate call, public)
+      try {
+        const heroRes = await axios.get(`${API}/hero-images`);
+        if (heroRes.data?.success) setHeroImages(heroRes.data.data || []);
+      } catch {}
+
     } catch (err) {
       console.error("Admin data load failed:", err);
     }
@@ -418,6 +464,52 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  // Fetch the live slides (replicating HeroSection logic)
+  const DEFAULT_HERO_SLIDES = [
+    { src: "/carousel/yerevan.png", alt: "Yerevan city center" },
+    { src: "/carousel/cafe.png", alt: "Armenian restaurant" },
+    { src: "/carousel/market.png", alt: "Armenian market" },
+    { src: "/carousel/dilijan.png", alt: "Dilijan resort" },
+  ];
+
+  const fetchLiveSlides = async () => {
+    setHeroLoadingLive(true);
+    try {
+      // 1. Check admin-configured images
+      const heroRes = await axios.get(`${API}/hero-images`);
+      if (heroRes.data?.success && heroRes.data.data?.length > 0) {
+        setLiveSlides(heroRes.data.data.map((url: string, i: number) => ({
+          src: url, alt: `Hero image ${i + 1}`, source: "admin" as const
+        })));
+        setHeroLoadingLive(false);
+        return;
+      }
+      // 2. Check premium businesses
+      const bizRes = await axios.get(`${API}/businesses?premiumOnly=true`);
+      if (bizRes.data?.success && bizRes.data.data?.length > 0) {
+        const slides = bizRes.data.data.map((biz: any) => {
+          let img = "/carousel/yerevan.png";
+          if (biz.metadata?.coverUrl) {
+            img = Array.isArray(biz.metadata.coverUrl) ? biz.metadata.coverUrl[0] : biz.metadata.coverUrl;
+          } else if (biz.images?.length > 0) {
+            img = biz.images[0];
+          } else if (biz.logo) {
+            img = biz.logo;
+          }
+          return { src: img, alt: biz.name, source: "business" as const };
+        });
+        setLiveSlides(slides);
+        setHeroLoadingLive(false);
+        return;
+      }
+      // 3. Default static slides
+      setLiveSlides(DEFAULT_HERO_SLIDES.map(s => ({ ...s, source: "default" as const })));
+    } catch {
+      setLiveSlides(DEFAULT_HERO_SLIDES.map(s => ({ ...s, source: "default" as const })));
+    }
+    setHeroLoadingLive(false);
+  };
 
   const approveBiz = async (id: string) => {
     await axios.put(`${API}/admin/businesses/${id}/approve`, {}, { headers: authHeaders() }); load();
@@ -606,6 +698,18 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     return true;
   });
 
+  const filteredUsers = allUsers.filter(u => {
+    if (userRoleFilter !== "all" && u.role !== userRoleFilter) return false;
+    if (userSearchQuery.trim()) {
+      const q = userSearchQuery.toLowerCase().trim();
+      const nameMatch = u.name?.toLowerCase().includes(q);
+      const emailMatch = u.email?.toLowerCase().includes(q);
+      const usernameMatch = u.username?.toLowerCase().includes(q);
+      return nameMatch || emailMatch || usernameMatch;
+    }
+    return true;
+  });
+
   type TabDef = { key: TabKey; label: string; Icon: React.ElementType };
   const tabs: TabDef[] = [
     { key: "overview", label: "Overview", Icon: BarChart3 },
@@ -617,10 +721,130 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     { key: "promocodes", label: "Promo Codes", Icon: Tag },
     { key: "messages", label: "Notifications", Icon: MessageSquare },
     { key: "livechat", label: "Live Chat", Icon: HeadphonesIcon },
+    { key: "heroimages", label: "Hero Images", Icon: ImageIcon },
   ];
 
   const tabBtn = (t: TabDef) => {
     const active = tab === t.key;
+
+    if (t.key === "users") {
+      const userCounts = {
+        all: allUsers.length,
+        user: allUsers.filter(u => u.role === "user").length,
+        business_owner: allUsers.filter(u => u.role === "business_owner").length,
+        admin: allUsers.filter(u => u.role === "admin").length,
+      };
+
+      return (
+        <div key={t.key} style={{ display: "inline-block" }}>
+          <button
+            onClick={() => setTab(t.key)}
+            onMouseEnter={handleUsersMouseEnter}
+            onMouseLeave={handleUsersMouseLeave}
+            style={{
+              display: "flex", alignItems: "center", gap: 6,
+              padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer",
+              fontSize: 12, fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0,
+              background: active ? C.violetDim : "rgba(255,255,255,0.05)",
+              color: active ? C.violet : C.text,
+              transition: "all 0.15s"
+            }}
+          >
+            <t.Icon size={14} />
+            {t.label}
+            {userRoleFilter !== "all" && (
+              <span style={{
+                fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 4,
+                background: "rgba(167,139,250,0.25)", color: C.violet,
+                textTransform: "uppercase"
+              }}>
+                {userRoleFilter === "user" ? "Users" : userRoleFilter === "business_owner" ? "Biz Owners" : "Admins"}
+              </span>
+            )}
+            {allUsers.length > 0 ? (
+              <span style={{
+                background: "#7c3aed", color: "#fff", fontSize: 9, fontWeight: 800,
+                padding: "2px 6px", borderRadius: 99
+              }}>{allUsers.length}</span>
+            ) : null}
+          </button>
+
+          {usersHoverOpen && (
+            <div
+              onMouseEnter={handleDropdownMouseEnter}
+              onMouseLeave={handleDropdownMouseLeave}
+              style={{
+                position: "fixed",
+                top: dropdownPos.top,
+                left: dropdownPos.left,
+                minWidth: 220,
+                background: "#252538",
+                border: `1px solid ${C.border}`,
+                borderRadius: 12,
+                padding: 6,
+                boxShadow: "0 20px 48px rgba(0,0,0,0.8)",
+                zIndex: 99999,
+                display: "flex",
+                flexDirection: "column",
+                gap: 2,
+                backdropFilter: "blur(16px)"
+              }}
+            >
+              <div style={{ padding: "6px 10px 6px", fontSize: 10, fontWeight: 800, color: C.faint, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                Filter Users by Role
+              </div>
+              {[
+                { key: "all", label: "All Users", count: userCounts.all, icon: Users, color: C.violet },
+                { key: "user", label: "Standard Users", count: userCounts.user, icon: UserCircle2, color: C.muted },
+                { key: "business_owner", label: "Business Owners", count: userCounts.business_owner, icon: Briefcase, color: C.sky },
+                { key: "admin", label: "Admins", count: userCounts.admin, icon: Crown, color: C.violet },
+              ].map(item => {
+                const isSelected = active && userRoleFilter === item.key;
+                const ItemIcon = item.icon;
+                return (
+                  <button
+                    key={item.key}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setTab("users");
+                      setUserRoleFilter(item.key as any);
+                      setUsersHoverOpen(false);
+                    }}
+                    style={{
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                      padding: "8px 10px", borderRadius: 8, border: "none",
+                      background: isSelected ? "rgba(167,139,250,0.18)" : "transparent",
+                      color: isSelected ? C.violet : C.text,
+                      cursor: "pointer", fontSize: 12, fontWeight: 600,
+                      transition: "background 0.15s", width: "100%", textAlign: "left"
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isSelected) e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSelected) e.currentTarget.style.background = "transparent";
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <ItemIcon size={14} color={item.color} />
+                      <span>{item.label}</span>
+                    </div>
+                    <span style={{
+                      fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 99,
+                      background: isSelected ? C.violet : "rgba(255,255,255,0.08)",
+                      color: isSelected ? "#1e1e2e" : C.muted
+                    }}>
+                      {item.count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      );
+    }
+
     return (
       <button key={t.key} onClick={() => setTab(t.key)}
         style={{
@@ -644,12 +868,6 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             background: C.red, color: "#fff", fontSize: 9, fontWeight: 800,
             padding: "2px 6px", borderRadius: 99
           }}>{stats.flaggedReviews}</span>
-        ) : null}
-        {t.key === "users" && allUsers.length > 0 ? (
-          <span style={{
-            background: "#7c3aed", color: "#fff", fontSize: 9, fontWeight: 800,
-            padding: "2px 6px", borderRadius: 99
-          }}>{allUsers.length}</span>
         ) : null}
       </button>
     );
@@ -709,6 +927,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         ::-webkit-scrollbar-track { background: ${C.bg}; }
         ::-webkit-scrollbar-thumb { background: rgba(167,139,250,0.3); border-radius: 4px; }
         @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+        @keyframes pulse { 0%,100%{opacity:1;box-shadow:0 0 6px #10b981} 50%{opacity:0.5;box-shadow:0 0 2px #10b981} }
         /* Hide Navbar/Footer/ChatWidget on admin page */
         body.admin-dark > main > *:not([data-admin-panel]) { display: none !important; }
       `}</style>
@@ -1188,10 +1407,80 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         {/* USERS */}
         {tab === "users" && (
           <div>
-            {sectionHead("All Users", "View and moderate all registered users.")}
-            {allUsers.length === 0 ? emptyState(Users, "No registered users found") : (
+            <div style={{
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              flexWrap: "wrap", gap: 16, marginBottom: 16
+            }}>
+              {sectionHead("Users & Accounts", `View and moderate registered accounts (${filteredUsers.length} shown).`)}
+              
+              {/* Role filter subtabs */}
+              <div style={{
+                display: "flex", background: "rgba(255,255,255,0.05)",
+                borderRadius: 10, padding: 4, gap: 2, alignItems: "center", flexWrap: "wrap"
+              }}>
+                {[
+                  { key: "all", label: "All Users", count: allUsers.length },
+                  { key: "user", label: "Users", count: allUsers.filter(u => u.role === "user").length },
+                  { key: "business_owner", label: "Business Owners", count: allUsers.filter(u => u.role === "business_owner").length },
+                  { key: "admin", label: "Admins", count: allUsers.filter(u => u.role === "admin").length },
+                ].map(f => (
+                  <button
+                    key={f.key}
+                    onClick={() => setUserRoleFilter(f.key as any)}
+                    style={{
+                      padding: "6px 14px", borderRadius: 8, border: "none",
+                      cursor: "pointer", fontSize: 12, fontWeight: 700,
+                      background: userRoleFilter === f.key ? "rgba(167,139,250,0.22)" : "transparent",
+                      color: userRoleFilter === f.key ? C.violet : C.muted,
+                      transition: "all 0.15s", display: "flex", alignItems: "center", gap: 6
+                    }}
+                  >
+                    {f.label}
+                    <span style={{
+                      fontSize: 10, fontWeight: 800, padding: "2px 6px", borderRadius: 99,
+                      background: userRoleFilter === f.key ? C.violet : "rgba(255,255,255,0.08)",
+                      color: userRoleFilter === f.key ? "#1e1e2e" : C.muted
+                    }}>
+                      {f.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Search Bar */}
+            <div style={{ marginBottom: 20, position: "relative", maxWidth: 400 }}>
+              <input
+                type="text"
+                value={userSearchQuery}
+                onChange={e => setUserSearchQuery(e.target.value)}
+                placeholder="Search by name, email, or @username..."
+                style={{
+                  width: "100%", background: C.card, border: `1px solid ${C.border}`,
+                  borderRadius: 12, padding: "10px 14px 10px 38px", fontSize: 13,
+                  color: C.text, outline: "none", boxSizing: "border-box"
+                }}
+              />
+              <UserCircle2 size={16} color={C.muted} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
+              {userSearchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setUserSearchQuery("")}
+                  style={{
+                    position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+                    background: "none", border: "none", color: C.muted, cursor: "pointer", padding: 0
+                  }}
+                >
+                  <X size={15} />
+                </button>
+              )}
+            </div>
+
+            {allUsers.length === 0 ? emptyState(Users, "No registered users found") : filteredUsers.length === 0 ? (
+              emptyState(Users, "No users match your criteria")
+            ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {allUsers.map(u => {
+                {filteredUsers.map(u => {
                   const isAdmin = u.role === "admin";
                   const Icon = isAdmin ? Crown : u.role === "business_owner" ? Briefcase : UserCircle2;
                   const badgeColor = isAdmin ? C.violet : u.role === "business_owner" ? C.sky : C.muted;
@@ -1537,7 +1826,438 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           </div>
         )}
 
+        {/* HERO IMAGES */}
+        {tab === "heroimages" && (
+          <div>
+            {sectionHead("Hero Section Images", "View and manage the background slideshow on the homepage. What you see here is exactly what visitors see.")}
+
+            {/* ── LIVE PREVIEW PANEL ── */}
+            <div style={{
+              background: C.card, borderRadius: 16, border: `1px solid ${C.border}`,
+              marginBottom: 24, overflow: "hidden"
+            }}>
+              {/* Header row */}
+              <div style={{
+                padding: "14px 20px", borderBottom: `1px solid ${C.border}`,
+                display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{
+                    width: 8, height: 8, borderRadius: "50%",
+                    background: "#10b981",
+                    boxShadow: "0 0 6px #10b981",
+                    animation: "pulse 2s ease-in-out infinite"
+                  }} />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>Currently Active on Homepage</span>
+                  {liveSlides.length > 0 && (
+                    <span style={{
+                      fontSize: 11, fontWeight: 700,
+                      background: liveSlides[0]?.source === "admin"
+                        ? "rgba(124,58,237,0.25)" : liveSlides[0]?.source === "business"
+                        ? "rgba(16,185,129,0.18)" : "rgba(255,255,255,0.07)",
+                      color: liveSlides[0]?.source === "admin"
+                        ? C.violet : liveSlides[0]?.source === "business"
+                        ? "#10b981" : C.muted,
+                      padding: "3px 9px", borderRadius: 99
+                    }}>
+                      {liveSlides[0]?.source === "admin" ? "Custom Images" :
+                       liveSlides[0]?.source === "business" ? "Premium Businesses" : "Default Images"}
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setHeroShowLive(true); fetchLiveSlides(); }}
+                  disabled={heroLoadingLive}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 6,
+                    padding: "7px 14px", borderRadius: 8, border: "none",
+                    background: "rgba(167,139,250,0.15)", color: C.violet,
+                    cursor: heroLoadingLive ? "wait" : "pointer",
+                    fontSize: 12, fontWeight: 700
+                  }}
+                >
+                  {heroLoadingLive
+                    ? <><RefreshCw size={13} style={{ animation: "spin 1s linear infinite" }} /> Loading…</>
+                    : <><Eye size={13} /> {liveSlides.length > 0 ? "Refresh" : "Show Live Slides"}</>
+                  }
+                </button>
+              </div>
+
+              {/* Slides grid */}
+              {!heroShowLive && liveSlides.length === 0 ? (
+                <div style={{ padding: "28px 20px", textAlign: "center" }}>
+                  <ImageIcon size={32} style={{ color: "rgba(200,200,255,0.2)", marginBottom: 10 }} />
+                  <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>
+                    Click <strong style={{ color: C.violet }}>"Show Live Slides"</strong> to see what's currently active on the homepage
+                  </p>
+                </div>
+              ) : heroLoadingLive ? (
+                <div style={{ padding: 28, textAlign: "center" }}>
+                  <RefreshCw size={24} style={{ color: C.violet, animation: "spin 1s linear infinite" }} />
+                </div>
+              ) : (
+                <div style={{ padding: 16 }}>
+                  {/* Horizontal scroll thumbnail strip */}
+                  <div style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+                    gap: 10
+                  }}>
+                    {liveSlides.map((slide, idx) => (
+                      <div key={idx} style={{
+                        borderRadius: 12, overflow: "hidden", position: "relative",
+                        background: "rgba(255,255,255,0.04)",
+                        border: `1px solid ${C.border}`,
+                        cursor: "default"
+                      }}>
+                        {/* Image */}
+                        <div style={{ height: 90, overflow: "hidden" }}>
+                          <img
+                            src={slide.src}
+                            alt={slide.alt}
+                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                            onError={e => { (e.currentTarget as HTMLImageElement).src = "/carousel/yerevan.png"; }}
+                          />
+                        </div>
+                        {/* Label */}
+                        <div style={{ padding: "8px 10px" }}>
+                          <p style={{
+                            fontSize: 11, fontWeight: 600, color: C.text,
+                            margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"
+                          }} title={slide.alt}>
+                            {slide.alt}
+                          </p>
+                          <p style={{
+                            fontSize: 10, color: C.faint, margin: "2px 0 0",
+                            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"
+                          }} title={slide.src}>
+                            {slide.src.startsWith("/") ? "Local file" : new URL(slide.src).hostname}
+                          </p>
+                        </div>
+                        {/* Badge */}
+                        <span style={{
+                          position: "absolute", top: 6, left: 6,
+                          fontSize: 9, fontWeight: 800,
+                          background: "rgba(0,0,0,0.65)", color: "#fff",
+                          padding: "2px 6px", borderRadius: 99, backdropFilter: "blur(4px)"
+                        }}>#{idx + 1}</span>
+                        {/* Action buttons */}
+                        <div style={{
+                          position: "absolute", top: 6, right: 6,
+                          display: "flex", gap: 4
+                        }}>
+                          {/* Import into managed list */}
+                          {!heroImages.includes(slide.src) && (
+                            <button
+                              type="button"
+                              title="Add to managed list"
+                              onClick={() => setHeroImages(prev =>
+                                prev.includes(slide.src) ? prev : [...prev, slide.src]
+                              )}
+                              style={{
+                                background: "rgba(124,58,237,0.85)", border: "none",
+                                color: "#fff", borderRadius: 6, padding: "4px 7px",
+                                fontSize: 10, fontWeight: 700, cursor: "pointer",
+                                backdropFilter: "blur(4px)"
+                              }}
+                            >+ Add</button>
+                          )}
+                          {heroImages.includes(slide.src) && (
+                            <span style={{
+                              background: "rgba(16,185,129,0.85)", color: "#fff",
+                              borderRadius: 6, padding: "4px 7px",
+                              fontSize: 10, fontWeight: 700, backdropFilter: "blur(4px)"
+                            }}>✓ Added</span>
+                          )}
+                          {/* Remove from live slideshow */}
+                          <button
+                            type="button"
+                            title="Remove from homepage slideshow"
+                            onClick={() => {
+                              // Import all remaining slides (minus this one) into heroImages
+                              const remaining = liveSlides
+                                .filter((_, i) => i !== idx)
+                                .map(s => s.src);
+                              setHeroImages(remaining);
+                              // Update liveSlides immediately for visual feedback
+                              setLiveSlides(prev => prev.filter((_, i) => i !== idx));
+                            }}
+                            style={{
+                              background: "rgba(239,68,68,0.82)", border: "none",
+                              color: "#fff", borderRadius: 6, padding: "4px 7px",
+                              fontSize: 10, fontWeight: 700, cursor: "pointer",
+                              backdropFilter: "blur(4px)"
+                            }}
+                          >✕</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {liveSlides[0]?.source !== "admin" && (
+                    <p style={{ fontSize: 11, color: C.faint, marginTop: 12, textAlign: "center" }}>
+                      💡 <strong style={{ color: "#ef4444" }}>✕</strong> to remove a slide · <strong style={{ color: C.violet }}>+ Add</strong> to move it to Custom Images · then press <strong style={{ color: "#10b981" }}>Save</strong>
+                    </p>
+                  )}
+
+                  {/* ── Add image: device file picker + URL input ── */}
+                  <div style={{
+                    marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C.border}`
+                  }}>
+                    {/* Primary: device file picker */}
+                    <label style={{
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                      padding: "11px 0", borderRadius: 10, cursor: "pointer",
+                      background: "linear-gradient(135deg,rgba(124,58,237,0.25),rgba(79,70,229,0.18))",
+                      border: `1px dashed rgba(167,139,250,0.45)`,
+                      color: C.violet, fontWeight: 700, fontSize: 13,
+                      transition: "all 0.15s", marginBottom: 8
+                    }}>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        style={{ display: "none" }}
+                        onChange={e => {
+                          const files = Array.from(e.target.files || []);
+                          files.forEach(file => {
+                            const reader = new FileReader();
+                            reader.onload = ev => {
+                              const result = ev.target?.result as string;
+                              if (result) setHeroImages(prev => [...prev, result]);
+                            };
+                            reader.readAsDataURL(file);
+                          });
+                          e.target.value = ""; // reset so same file can be re-picked
+                        }}
+                      />
+                      <ImageIcon size={15} /> Choose from Device
+                    </label>
+
+                    {/* Secondary: paste URL */}
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <input
+                        type="text"
+                        value={heroImgInput}
+                        onChange={e => setHeroImgInput(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === "Enter" && heroImgInput.trim()) {
+                            setHeroImages(prev => [...prev, heroImgInput.trim()]);
+                            setHeroImgInput("");
+                          }
+                        }}
+                        placeholder="…or paste an image URL"
+                        style={{
+                          flex: 1, background: C.surface, border: `1px solid ${C.border}`,
+                          borderRadius: 10, padding: "8px 14px", fontSize: 12, color: C.text, outline: "none"
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (heroImgInput.trim()) {
+                            setHeroImages(prev => [...prev, heroImgInput.trim()]);
+                            setHeroImgInput("");
+                          }
+                        }}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 5,
+                          padding: "8px 14px", borderRadius: 10, border: "none",
+                          background: "rgba(167,139,250,0.18)", color: C.violet,
+                          cursor: "pointer", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap"
+                        }}
+                      >
+                        <PlusCircle size={13} /> Add URL
+                      </button>
+                    </div>
+                  </div>
+
+                </div>
+              )}
+            </div>
+
+            {/* ── CUSTOM IMAGES EDITOR ── */}
+            <div style={{
+              background: C.card, borderRadius: 16, border: `1px solid ${C.border}`,
+              marginBottom: 24, overflow: "hidden"
+            }}>
+              <div style={{
+                padding: "14px 20px", borderBottom: `1px solid ${C.border}`,
+                display: "flex", alignItems: "center", gap: 10
+              }}>
+                <ImageIcon size={15} color={C.violet} />
+                <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>Custom Images</span>
+                {heroImages.length > 0 && (
+                  <span style={{
+                    fontSize: 11, fontWeight: 700,
+                    background: "rgba(124,58,237,0.25)", color: C.violet,
+                    padding: "2px 8px", borderRadius: 99
+                  }}>{heroImages.length} / 12</span>
+                )}
+                <span style={{ flex: 1 }} />
+                {heroImages.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => { if (confirm("Clear all custom images?")) setHeroImages([]); }}
+                    style={{
+                      background: "rgba(239,68,68,0.1)", border: "none",
+                      color: C.red, borderRadius: 7, padding: "5px 10px",
+                      fontSize: 11, fontWeight: 700, cursor: "pointer"
+                    }}
+                  >Clear All</button>
+                )}
+              </div>
+
+              <div style={{ padding: 16 }}>
+                {/* Image list */}
+                {heroImages.length === 0 ? (
+                  <div style={{
+                    textAlign: "center", padding: "28px 16px",
+                    borderRadius: 12, border: `1px dashed rgba(255,255,255,0.12)`
+                  }}>
+                    <ImageIcon size={28} style={{ color: "rgba(200,200,255,0.2)", marginBottom: 8 }} />
+                    <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>
+                      No custom images yet — paste a URL above or import from live slides
+                    </p>
+                    <p style={{ fontSize: 11, color: C.faint, marginTop: 4 }}>
+                      Without custom images, the homepage uses Premium Businesses or Default Images
+                    </p>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {heroImages.map((url, idx) => (
+                      <div key={idx} style={{
+                        background: C.surface, borderRadius: 12, padding: "10px 14px",
+                        border: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 12
+                      }}>
+                        {/* Index */}
+                        <span style={{
+                          fontSize: 10, fontWeight: 800, color: C.muted,
+                          background: "rgba(255,255,255,0.06)", borderRadius: 5,
+                          padding: "2px 7px", flexShrink: 0
+                        }}>#{idx + 1}</span>
+
+                        {/* Thumbnail */}
+                        <div style={{
+                          width: 64, height: 42, borderRadius: 7, overflow: "hidden",
+                          background: "rgba(255,255,255,0.05)", flexShrink: 0
+                        }}>
+                          <img
+                            src={url}
+                            alt={`Slide ${idx + 1}`}
+                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                            onError={e => { (e.currentTarget as HTMLImageElement).src = "/carousel/yerevan.png"; }}
+                          />
+                        </div>
+
+                        {/* URL text */}
+                        <span style={{
+                          fontSize: 12, color: C.muted, flex: 1,
+                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"
+                        }} title={url}>{url}</span>
+
+                        {/* Reorder */}
+                        <div style={{ display: "flex", gap: 3, flexShrink: 0 }}>
+                          <button type="button" disabled={idx === 0}
+                            onClick={() => {
+                              const a = [...heroImages];
+                              [a[idx - 1], a[idx]] = [a[idx], a[idx - 1]];
+                              setHeroImages(a);
+                            }}
+                            style={{
+                              background: "rgba(255,255,255,0.05)", border: "none",
+                              color: idx === 0 ? "rgba(220,220,255,0.15)" : C.muted,
+                              padding: "4px 7px", borderRadius: 6,
+                              cursor: idx === 0 ? "default" : "pointer", fontSize: 11, fontWeight: 800
+                            }}>↑</button>
+                          <button type="button" disabled={idx === heroImages.length - 1}
+                            onClick={() => {
+                              const a = [...heroImages];
+                              [a[idx + 1], a[idx]] = [a[idx], a[idx + 1]];
+                              setHeroImages(a);
+                            }}
+                            style={{
+                              background: "rgba(255,255,255,0.05)", border: "none",
+                              color: idx === heroImages.length - 1 ? "rgba(220,220,255,0.15)" : C.muted,
+                              padding: "4px 7px", borderRadius: 6,
+                              cursor: idx === heroImages.length - 1 ? "default" : "pointer", fontSize: 11, fontWeight: 800
+                            }}>↓</button>
+                        </div>
+
+                        {/* Delete */}
+                        {iconBtn(
+                          () => setHeroImages(prev => prev.filter((_, i) => i !== idx)),
+                          <Trash2 size={13} />, C.red, C.redDim, "Remove"
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Save / success */}
+            {heroSaveMsg && (
+              <div style={{
+                background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.3)",
+                borderRadius: 10, padding: "10px 16px", marginBottom: 14,
+                color: "#10b981", fontSize: 13, fontWeight: 600
+              }}>
+                ✓ {heroSaveMsg}
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <button
+                type="button"
+                disabled={heroSaving}
+                onClick={async () => {
+                  setHeroSaving(true);
+                  setHeroSaveMsg("");
+                  try {
+                    const res = await axios.put(
+                      `${API}/admin/hero-images`,
+                      { images: heroImages },
+                      { headers: authHeaders() }
+                    );
+                    if (res.data?.success) {
+                      setHeroSaveMsg("Saved! Refresh the homepage to see the new slideshow.");
+                      setTimeout(() => setHeroSaveMsg(""), 6000);
+                      // Refresh live slides
+                      fetchLiveSlides();
+                    }
+                  } catch (err: any) {
+                    alert(err.response?.data?.message || "Failed to save hero images");
+                  } finally {
+                    setHeroSaving(false);
+                  }
+                }}
+                style={{
+                  display: "flex", alignItems: "center", gap: 8,
+                  padding: "12px 28px", borderRadius: 12, border: "none",
+                  background: heroSaving ? "rgba(167,139,250,0.15)" : "linear-gradient(135deg,#7c3aed,#4f46e5)",
+                  color: "#fff", fontSize: 14, fontWeight: 700,
+                  cursor: heroSaving ? "not-allowed" : "pointer",
+                  boxShadow: heroSaving ? "none" : "0 4px 20px rgba(124,58,237,0.4)",
+                  transition: "all 0.2s"
+                }}
+              >
+                {heroSaving ? <RefreshCw size={15} style={{ animation: "spin 1s linear infinite" }} /> : <ImageIcon size={15} />}
+                {heroSaving ? "Saving…" : heroImages.length === 0
+                  ? "Save (clears custom — use defaults)"
+                  : `Save ${heroImages.length} Image${heroImages.length !== 1 ? "s" : ""} to Homepage`
+                }
+              </button>
+              {heroImages.length > 0 && (
+                <span style={{ fontSize: 11, color: C.faint }}>
+                  These will override premium businesses & defaults
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
       </main>
+
 
       {/* ── GIFT SUBSCRIPTION MODAL ── */}
       {giftModalOpen && giftingBusiness && (

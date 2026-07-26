@@ -672,3 +672,35 @@ export const checkBusinessDateStatus = asyncHandler(
     });
   }
 );
+
+// Toggle save (bookmark) a business — increments/decrements savedCount
+export const toggleSaveBusiness = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+  const { action } = req.body; // "save" | "unsave"
+
+  if (!id || !id.match(/^[0-9a-fA-F]{24}$/)) {
+    res.status(400).json({ success: false, message: 'Invalid business ID' });
+    return;
+  }
+
+  const increment = action === 'unsave' ? -1 : 1;
+
+  const updated = await Business.findByIdAndUpdate(
+    id,
+    { $inc: { savedCount: increment } },
+    { new: true, select: 'savedCount' }
+  );
+
+  if (!updated) {
+    res.status(404).json({ success: false, message: 'Business not found' });
+    return;
+  }
+
+  // Clamp to 0 if it went negative
+  if (updated.savedCount < 0) {
+    await Business.findByIdAndUpdate(id, { $set: { savedCount: 0 } });
+    updated.savedCount = 0;
+  }
+
+  res.status(200).json({ success: true, savedCount: updated.savedCount });
+});

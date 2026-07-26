@@ -2,6 +2,8 @@
 import Link from "next/link";
 import styles from "./About.module.scss";
 import { useI18n } from "@/i18n";
+import { useEffect, useState } from "react";
+import { getApiUrl } from "@/lib/utils";
 
 const MOCK_CARDS = [
   { icon: "🍕", title: "Lavash Restaurant", sub: "★ 4.9 · Yerevan", color: "hsla(145,65%,45%,0.12)" },
@@ -10,15 +12,37 @@ const MOCK_CARDS = [
   { icon: "🍷", title: "Dolmama", sub: "★ 4.8 · Yerevan", color: "hsla(145,65%,45%,0.12)" },
 ];
 
+function formatBusinessCount(count: number): string {
+  if (count < 100) return String(count);
+  const floor = Math.floor(count / 100) * 100;
+  return `${floor}+`;
+}
+
 export default function AboutClient() {
   const { t } = useI18n();
+  const [businessCount, setBusinessCount] = useState<string>("...");
+
+  useEffect(() => {
+    const fetchCount = async () => {
+      try {
+        const res = await fetch(`${getApiUrl()}/businesses?limit=1`);
+        if (!res.ok) throw new Error("failed");
+        const json = await res.json();
+        const total: number = json?.pagination?.total_count ?? 0;
+        setBusinessCount(formatBusinessCount(total));
+      } catch {
+        setBusinessCount("100+");
+      }
+    };
+    fetchCount();
+  }, []);
 
   const STATS = [
-    { value: "900+", label: t.about.stats.businesses },
+    { value: businessCount, label: t.about.stats.businesses },
     { value: "HoReCa", label: t.about.stats.sector },
-    { value: "3", label: t.about.stats.plans },
     { value: "24/7", label: t.about.stats.availability },
   ];
+
 
   return (
     <div className={styles.aboutPage}>

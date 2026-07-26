@@ -100,6 +100,10 @@ export default function BusinessCard({ business, viewMode = "list" }: { business
   const [isFavorited, setIsFavorited] = useState(false);
 
   useEffect(() => {
+    if (!currentUser) {
+      setIsFavorited(false);
+      return;
+    }
     if (typeof window !== "undefined") {
       try {
         const favsStr = localStorage.getItem("armbiz_favorites");
@@ -107,11 +111,15 @@ export default function BusinessCard({ business, viewMode = "list" }: { business
           const favs: string[] = JSON.parse(favsStr);
           if (favs.includes(business.id) || (business.slug && favs.includes(business.slug))) {
             setIsFavorited(true);
+          } else {
+            setIsFavorited(false);
           }
+        } else {
+          setIsFavorited(false);
         }
       } catch (e) { }
     }
-  }, [business.id, business.slug]);
+  }, [business.id, business.slug, currentUser]);
 
   const toggleFavorite = (e: React.MouseEvent) => {
     e.preventDefault();
