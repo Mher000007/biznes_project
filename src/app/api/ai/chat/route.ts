@@ -11,6 +11,8 @@ interface ChatSession {
   step: 'ask_pax' | 'ask_budget' | 'booking_datetime' | 'booking_details' | 'booking_confirm' | null;
   pax?: number;
   budget?: number;
+  location?: string;
+  atmosphere?: string;
   selectedBizId?: string;
   selectedBizName?: string;
   bookingDateTime?: string;

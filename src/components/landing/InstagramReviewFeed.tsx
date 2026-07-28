@@ -6,6 +6,8 @@ import { Heart, Loader2, ChevronLeft, ChevronRight, Volume2, VolumeX, Quote, Arr
 import { getApiUrl } from "@/lib/utils";
 import { MOCK_BUSINESSES } from "@/data/mock-businesses";
 import { useI18n } from "@/i18n";
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/context/ToastContext";
 
 interface UserProfile {
   name: string;
@@ -48,17 +50,17 @@ const FALLBACK_REVIEWS: ReviewCardData[] = [
     rating: 5,
     likes: 42,
     caption: "Amazing traditional food! The lavash is always hot and fresh, and the khorovats was perfectly cooked. Excellent service too.",
-    businessId: "mock-biz-1",
+    businessId: "mock-1"
   },
   {
     id: "mock-2",
-    user: { name: "Gevorg Harutyunyan", initials: "GH" },
-    biz: { name: "ArmStone Materials", slug: "armstone-materials", address: "14 Tumanyan St", city: "Yerevan" },
-    time: "1d ago",
-    media: [{ url: "https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=800&auto=format&fit=crop&q=80", type: 'image' }],
+    user: { name: "Karen Vardanyan", initials: "KV" },
+    biz: { name: "Dargett Craft Brewery", slug: "dargett-craft-brewery", address: "72 Aram St", city: "Yerevan" },
+    time: "5h ago",
+    media: [{ url: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800&auto=format&fit=crop&q=80", type: 'image' }],
     rating: 5,
     likes: 24,
-    caption: "Outstanding tufa and basalt quality. We ordered in bulk for our home facade and they delivered on time with perfect specifications.",
+    caption: "Great atmosphere and huge selection of local craft beers. The apricot ale is a must-try!",
     businessId: "mock-biz-2",
   },
   {
@@ -97,6 +99,8 @@ function getInitials(name: string): string {
 }
 
 export default function InstagramReviewFeed() {
+  const { currentUser } = useAuth();
+  const { showToast } = useToast();
   const [reviews, setReviews] = useState<ReviewCardData[]>([]);
   const [loading, setLoading] = useState(true);
   const [likedMap, setLikedMap] = useState<Record<string, { liked: boolean; count: number }>>({});
@@ -264,6 +268,11 @@ export default function InstagramReviewFeed() {
   }, []);
 
   const handleLike = async (reviewId: string, businessId: string) => {
+    if (!currentUser) {
+      showToast();
+      return;
+    }
+
     const isLiked = likedMap[reviewId]?.liked;
     const currentCount = likedMap[reviewId]?.count ?? 0;
 
@@ -406,6 +415,10 @@ export default function InstagramReviewFeed() {
                   <div
                     className="relative w-full aspect-square bg-[hsl(var(--muted))] overflow-hidden border-y border-[hsl(var(--border))] cursor-pointer group"
                     onDoubleClick={() => {
+                      if (!currentUser) {
+                        showToast();
+                        return;
+                      }
                       setHeartPopMap((prev) => ({ ...prev, [review.id]: true }));
                       setTimeout(() => {
                         setHeartPopMap((prev) => ({ ...prev, [review.id]: false }));

@@ -97,10 +97,12 @@ export default function BusinessCard({ business, viewMode = "list" }: { business
   const { showToast } = useToast();
   const status = getOpenStatus(business.operatingHours, t);
 
+  const isBusinessUser = currentUser?.role === "business_owner" || currentUser?.accountType === "business";
+
   const [isFavorited, setIsFavorited] = useState(false);
 
   useEffect(() => {
-    if (!currentUser) {
+    if (!currentUser || isBusinessUser) {
       setIsFavorited(false);
       return;
     }
@@ -124,6 +126,8 @@ export default function BusinessCard({ business, viewMode = "list" }: { business
   const toggleFavorite = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
+    if (isBusinessUser) return;
 
     if (!currentUser) {
       showToast();
@@ -198,23 +202,25 @@ export default function BusinessCard({ business, viewMode = "list" }: { business
             </div>
           )}
         </Link>
-        <button
-          type="button"
-          onClick={toggleFavorite}
-          aria-label="Add to favorites"
-          title={isFavorited ? "Remove from favorites" : "Save to favorites"}
-          className={`absolute top-2 right-2 p-1.5 transition-all hover:scale-110 cursor-pointer z-10 bg-transparent border-0 ${
-            isFavorited ? "opacity-100 scale-100" : "opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100"
-          }`}
-        >
-          <Bookmark
-            className="h-5 w-5 transition-all drop-shadow-md"
-            style={{
-              stroke: isFavorited ? "#f59e0b" : "white",
-              fill: isFavorited ? "#f59e0b" : "none",
-            }}
-          />
-        </button>
+        {!isBusinessUser && (
+          <button
+            type="button"
+            onClick={toggleFavorite}
+            aria-label="Add to favorites"
+            title={isFavorited ? "Remove from favorites" : "Save to favorites"}
+            className={`absolute top-2 right-2 p-1.5 transition-all hover:scale-110 cursor-pointer z-10 bg-transparent border-0 ${
+              isFavorited ? "opacity-100 scale-100" : "opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100"
+            }`}
+          >
+            <Bookmark
+              className="h-5 w-5 transition-all drop-shadow-md"
+              style={{
+                stroke: isFavorited ? "#f59e0b" : "white",
+                fill: isFavorited ? "#f59e0b" : "none",
+              }}
+            />
+          </button>
+        )}
       </div>
 
       {/* Details container */}
@@ -282,21 +288,23 @@ export default function BusinessCard({ business, viewMode = "list" }: { business
         </div>
 
         <div className={styles.footerRow}>
-          <button
-            type="button"
-            onClick={toggleFavorite}
-            aria-label="Add to favorites"
-            title={isFavorited ? "Remove from favorites" : "Save to favorites"}
-            className="bg-transparent border-0 p-1.5 transition-transform hover:scale-115 cursor-pointer flex items-center justify-center shrink-0"
-          >
-            <Bookmark
-              className={`h-5 w-5 transition-all ${isFavorited ? "scale-110 drop-shadow-sm" : ""}`}
-              style={{
-                stroke: isFavorited ? "#f59e0b" : "hsl(var(--muted-foreground))",
-                fill: isFavorited ? "#f59e0b" : "none",
-              }}
-            />
-          </button>
+          {!isBusinessUser && (
+            <button
+              type="button"
+              onClick={toggleFavorite}
+              aria-label="Add to favorites"
+              title={isFavorited ? "Remove from favorites" : "Save to favorites"}
+              className="bg-transparent border-0 p-1.5 transition-transform hover:scale-115 cursor-pointer flex items-center justify-center shrink-0"
+            >
+              <Bookmark
+                className={`h-5 w-5 transition-all ${isFavorited ? "scale-110 drop-shadow-sm" : ""}`}
+                style={{
+                  stroke: isFavorited ? "#f59e0b" : "hsl(var(--muted-foreground))",
+                  fill: isFavorited ? "#f59e0b" : "none",
+                }}
+              />
+            </button>
+          )}
 
           <Link href={`/business/${business.slug}`} className={styles.actionButton}>
             {t.discover?.bookNow || "Visit"}

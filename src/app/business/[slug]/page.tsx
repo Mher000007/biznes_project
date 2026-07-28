@@ -187,6 +187,7 @@ export default function BusinessProfilePage() {
   };
 
   const { currentUser } = useAuth();
+  const isBusinessUser = currentUser?.role === "business_owner" || currentUser?.accountType === "business";
   // Booking Modal State
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<any>(null);
@@ -218,7 +219,7 @@ export default function BusinessProfilePage() {
   const [isFavorited, setIsFavorited] = useState(false);
 
   useEffect(() => {
-    if (!currentUser) {
+    if (!currentUser || isBusinessUser) {
       setIsFavorited(false);
       return;
     }
@@ -240,6 +241,7 @@ export default function BusinessProfilePage() {
   }, [business, currentUser]);
 
   const toggleFavorite = () => {
+    if (isBusinessUser) return;
     if (!currentUser) {
       showToast();
       return;
@@ -589,6 +591,7 @@ export default function BusinessProfilePage() {
 
   // Open booking flow for selected service/menu item
   const openBooking = (item: any) => {
+    if (isBusinessUser) return;
     if (!currentUser) {
       showToast();
       return;
@@ -623,6 +626,7 @@ export default function BusinessProfilePage() {
 
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isBusinessUser) return;
     setBookingLoading(true);
 
     if (isCustomDateClosed || todayOperatingHours?.closed) {
@@ -843,14 +847,16 @@ export default function BusinessProfilePage() {
               );
             })()}
 
-            <button
-              type="button"
-              onClick={toggleFavorite}
-              className="bg-transparent border-0 p-1.5 transition-transform hover:scale-115 cursor-pointer flex items-center justify-center"
-              title={isFavorited ? "Remove from favorites" : "Save to favorites"}
-            >
-              <Bookmark className={`h-6 w-6 transition-all ${isFavorited ? "fill-amber-500 text-amber-500 scale-110 drop-shadow-sm" : "text-[hsl(var(--muted-foreground))] hover:text-amber-500"}`} />
-            </button>
+            {!isBusinessUser && (
+              <button
+                type="button"
+                onClick={toggleFavorite}
+                className="bg-transparent border-0 p-1.5 transition-transform hover:scale-115 cursor-pointer flex items-center justify-center"
+                title={isFavorited ? "Remove from favorites" : "Save to favorites"}
+              >
+                <Bookmark className={`h-6 w-6 transition-all ${isFavorited ? "fill-amber-500 text-amber-500 scale-110 drop-shadow-sm" : "text-[hsl(var(--muted-foreground))] hover:text-amber-500"}`} />
+              </button>
+            )}
           </div>
           <p className="text-[hsl(var(--muted-foreground))] mt-1 text-base">{business.shortDescription || business.description}</p>
 
@@ -862,24 +868,26 @@ export default function BusinessProfilePage() {
         </div>
 
         {/* Global Instant Booking Trigger */}
-        <button
-          onClick={() => {
-            if (!currentUser) {
-              showToast();
-              return;
-            }
-            if (!isClosed) {
-              openBooking({ name: "General Appointment", price: 0 });
-            }
-          }}
-          disabled={isClosed}
-          className={`py-3.5 px-6 rounded-xl text-sm font-semibold shadow-lg shrink-0 transition-all ${isClosed
-            ? "bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] border border-[hsl(var(--border))] cursor-not-allowed opacity-60"
-            : "btn-primary cursor-pointer"
-            }`}
-        >
-          {isClosed ? (t.business?.closed || "Closed") : (t.business?.bookAppointment || "Book Appointment")}
-        </button>
+        {!isBusinessUser && (
+          <button
+            onClick={() => {
+              if (!currentUser) {
+                showToast();
+                return;
+              }
+              if (!isClosed) {
+                openBooking({ name: "General Appointment", price: 0 });
+              }
+            }}
+            disabled={isClosed}
+            className={`py-3.5 px-6 rounded-xl text-sm font-semibold shadow-lg shrink-0 transition-all ${isClosed
+              ? "bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] border border-[hsl(var(--border))] cursor-not-allowed opacity-60"
+              : "btn-primary cursor-pointer"
+              }`}
+          >
+            {isClosed ? (t.business?.closed || "Closed") : (t.business?.bookAppointment || "Book Appointment")}
+          </button>
+        )}
       </div>
 
       {/* Highlights Section (Story circles) */}

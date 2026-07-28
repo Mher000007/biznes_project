@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Eye, MessageSquare, Star, TrendingUp, TrendingDown, Minus, ArrowUpRight, Award, Gem, AlertTriangle, Lock, ShieldAlert, Sparkles, CheckCircle, Bell, MapPin, BadgeCheck } from "lucide-react";
+import { Eye, MessageSquare, Star, TrendingUp, TrendingDown, Minus, ArrowUpRight, Award, Gem, AlertTriangle, Lock, ShieldAlert, Sparkles, CheckCircle, Bell, MapPin, BadgeCheck, Bookmark } from "lucide-react";
 import DashboardPublish from "./DashboardPublish";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useAuth } from "@/context/AuthContext";
@@ -64,6 +64,7 @@ export default function DashboardPage() {
 
   const [stats, setStats] = useState(DEFAULT_STATS);
   const [totalViews, setTotalViews] = useState(0);
+  const [savedCount, setSavedCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [businessId, setBusinessId] = useState<string | null>(null);
   const [userBusinesses, setUserBusinesses] = useState<any[]>([]);
@@ -167,6 +168,8 @@ export default function DashboardPage() {
 
         const views = biz.views || 0;
         setTotalViews(views);
+        const saves = biz.savedCount || 0;
+        setSavedCount(saves);
         const rating = biz.rating || 0;
         let reviewCount = biz.reviewCount || 0;
 
@@ -232,6 +235,7 @@ export default function DashboardPage() {
           { label: "Inquiries", value: bookingCount.toLocaleString(), change: "+0%", icon: MessageSquare, iconColor: "text-blue-500 fill-blue-500", iconBg: "bg-blue-500/10", iconAnimate: "animate-message-pop" },
           { label: "Avg. Rating", value: `${rating.toFixed(1)} (${reviewCount} review${reviewCount !== 1 ? "s" : ""})`, change: "", icon: Star, iconColor: "text-amber-400 fill-amber-400", iconBg: "bg-amber-400/10", iconAnimate: "animate-gold-twinkle" },
           { label: "Profile Rank", value: rankVal, change: "", icon: rankIcon, iconColor: rankIconColor, iconBg: rankIconBg, iconAnimate: rankAnimate, badge: isTop5 ? "Top 5 in Armenia" : undefined },
+          { label: "Saves", value: saves.toLocaleString(), change: saves > 0 ? `+${saves}` : "+0", icon: Bookmark, iconColor: "text-purple-500 fill-purple-500", iconBg: "bg-purple-500/10", iconAnimate: "animate-pulse" },
         ]);
       } catch (err) {
         console.warn("Dashboard data load failed", err);
@@ -289,13 +293,16 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className={`grid grid-cols-1 sm:grid-cols-2 ${activePlan === "starter" ? "xl:grid-cols-2" : "xl:grid-cols-4"} gap-4 mb-8`}>
+          <div className={`grid grid-cols-1 sm:grid-cols-2 ${activePlan === "starter" ? "xl:grid-cols-2" : "xl:grid-cols-5"} gap-4 mb-8`}>
             {stats
               .filter((stat) => {
                 if (activePlan === "starter") {
-                  return stat.label !== "Inquiries" && stat.label !== "Avg. Rating";
+                  return stat.label !== "Inquiries" && stat.label !== "Avg. Rating" && stat.label !== "Saves";
                 }
-                return true;
+                if (activePlan === "standard" || activePlan === "premium") {
+                  return true;
+                }
+                return stat.label !== "Saves";
               })
               .map((stat) => (
                 <div 

@@ -146,8 +146,9 @@ const DISH_GLOSSARY: Record<string, { hy: string; en: string; ru: string }> = {
 
 const fetchGoogleTranslate = async (text: string, fromLang: string, toLang: string): Promise<string | null> => {
   try {
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${fromLang}&tl=${toLang}&dt=t&q=${encodeURIComponent(text.trim())}`;
-    const res = await axios.get(url, { timeout: 3500 });
+    // Use the server-side proxy to avoid CORS issues with translate.googleapis.com
+    const url = `/api/translate?q=${encodeURIComponent(text.trim())}&sl=${fromLang}&tl=${toLang}`;
+    const res = await axios.get(url, { timeout: 5000 });
     if (res.data && Array.isArray(res.data[0])) {
       const parts = res.data[0].map((part: any) => part[0]).filter(Boolean);
       const full = parts.join("").trim();

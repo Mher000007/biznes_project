@@ -712,16 +712,16 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
   type TabDef = { key: TabKey; label: string; Icon: React.ElementType };
   const tabs: TabDef[] = [
-    { key: "overview", label: "Overview", Icon: BarChart3 },
-    { key: "businesses", label: "Businesses", Icon: Building2 },
-    { key: "bookings", label: "Bookings", Icon: CalendarDays },
-    { key: "subscriptions", label: "Plans", Icon: Gem },
-    { key: "reviews", label: "Reports", Icon: Flag },
-    { key: "users", label: "Users", Icon: Users },
-    { key: "promocodes", label: "Promo Codes", Icon: Tag },
-    { key: "messages", label: "Notifications", Icon: MessageSquare },
-    { key: "livechat", label: "Live Chat", Icon: HeadphonesIcon },
-    { key: "heroimages", label: "Hero Images", Icon: ImageIcon },
+    { key: "overview", label: "Ակնարկ", Icon: BarChart3 },
+    { key: "businesses", label: "Բիզնեսներ", Icon: Building2 },
+    { key: "bookings", label: "Ամրագրումներ", Icon: CalendarDays },
+    { key: "subscriptions", label: "Պլաններ", Icon: Gem },
+    { key: "reviews", label: "Բողոքներ", Icon: Flag },
+    { key: "users", label: "Օգտատերեր", Icon: Users },
+    { key: "promocodes", label: "Պրոմո Կոդեր", Icon: Tag },
+    { key: "messages", label: "Ծանուցումներ", Icon: MessageSquare },
+    { key: "livechat", label: "Կենդանի Չաթ", Icon: HeadphonesIcon },
+    { key: "heroimages", label: "Հերո Պատկերներ", Icon: ImageIcon },
   ];
 
   const tabBtn = (t: TabDef) => {
@@ -758,7 +758,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                 background: "rgba(167,139,250,0.25)", color: C.violet,
                 textTransform: "uppercase"
               }}>
-                {userRoleFilter === "user" ? "Users" : userRoleFilter === "business_owner" ? "Biz Owners" : "Admins"}
+                {userRoleFilter === "user" ? "Օգտ․" : userRoleFilter === "business_owner" ? "Բիզ․ Տերեր" : "Ադմ․"}
               </span>
             )}
             {allUsers.length > 0 ? (
@@ -791,13 +791,13 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               }}
             >
               <div style={{ padding: "6px 10px 6px", fontSize: 10, fontWeight: 800, color: C.faint, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                Filter Users by Role
+                Ֆիլտրել ըստ Դերի
               </div>
               {[
-                { key: "all", label: "All Users", count: userCounts.all, icon: Users, color: C.violet },
-                { key: "user", label: "Standard Users", count: userCounts.user, icon: UserCircle2, color: C.muted },
-                { key: "business_owner", label: "Business Owners", count: userCounts.business_owner, icon: Briefcase, color: C.sky },
-                { key: "admin", label: "Admins", count: userCounts.admin, icon: Crown, color: C.violet },
+                { key: "all", label: "Բոլոր Օգտ․", count: userCounts.all, icon: Users, color: C.violet },
+                { key: "user", label: "Սովորական Օգտ․", count: userCounts.user, icon: UserCircle2, color: C.muted },
+                { key: "business_owner", label: "Բիզնես Տերեր", count: userCounts.business_owner, icon: Briefcase, color: C.sky },
+                { key: "admin", label: "Ադմինիստրատորներ", count: userCounts.admin, icon: Crown, color: C.violet },
               ].map(item => {
                 const isSelected = active && userRoleFilter === item.key;
                 const ItemIcon = item.icon;
@@ -964,7 +964,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                 borderRadius: 8, background: "none", border: "none", color: C.muted,
                 cursor: "pointer", fontSize: 12, fontWeight: 600
               }}>
-              <LogOut size={14} /> Sign out
+              <LogOut size={14} /> Ելք
             </button>
           </div>
         </div>
@@ -993,16 +993,16 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         {/* OVERVIEW */}
         {tab === "overview" && stats && (
           <div>
-            {sectionHead("Platform Overview", "Live statistics across all registered businesses and users.")}
+            {sectionHead("Հարթակի Ակնարկ", "Բոլոր բիզնեսների և օգտատերերի կենդանի վիճակագրություն:")}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px,1fr))", gap: 16 }}>
-              <StatCard label="Total Businesses" value={stats.totalBusinesses} sub={`${stats.verifiedBusinesses} verified`} color={C.violet} />
-              <StatCard label="Pending Approval" value={stats.pendingBusinesses} sub="Awaiting review" color={C.amber} />
-              <StatCard label="Total Bookings" value={stats.totalBookings} sub={`${stats.confirmedBookings} confirmed`} color={C.emerald} />
-              <StatCard label="Active Plans" value={stats.activeSubscriptions} sub="Subscriptions" color={C.sky} />
-              <StatCard label="Total Users" value={stats.totalUsers} sub="Registered accounts" color={C.pink} />
-              <StatCard label="Reviews" value={stats.totalReviews} sub={`${stats.flaggedReviews} flagged`} color="#fb923c" />
-              <StatCard label="Revenue (AMD)" value={`֏${stats.totalRevenue.toLocaleString()}`} sub="Active subscriptions" color={C.yellow} />
-              <StatCard label="Cancelled Bookings" value={stats.cancelledBookings} color={C.red} />
+              <StatCard label="Բիզնեսների Ընդ." value={stats.totalBusinesses} sub={`${stats.verifiedBusinesses} հաստատված`} color={C.violet} />
+              <StatCard label="Ստուգման Սպասող" value={stats.pendingBusinesses} sub="Ակնկալում են հաստատում" color={C.amber} />
+              <StatCard label="Ամրագրումների Ընդ." value={stats.totalBookings} sub={`${stats.confirmedBookings} հաստատված`} color={C.emerald} />
+              <StatCard label="Ակտիվ Պլաններ" value={stats.activeSubscriptions} sub="Բաժանորդագրություններ" color={C.sky} />
+              <StatCard label="Օգտ. Ընդ." value={stats.totalUsers} sub="Գրանցված հաշիվներ" color={C.pink} />
+              <StatCard label="Կարծիքներ" value={stats.totalReviews} sub={`${stats.flaggedReviews} բողոքված`} color="#fb923c" />
+              <StatCard label="Եկամուտ (AMD)" value={`֏${stats.totalRevenue.toLocaleString()}`} sub="Ակտիվ բաժանորդ." color={C.yellow} />
+              <StatCard label="Չեղ. Ամրագրումներ" value={stats.cancelledBookings} color={C.red} />
             </div>
           </div>
         )}
@@ -1015,8 +1015,8 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               flexWrap: "wrap", gap: 12, marginBottom: 20
             }}>
               <div>
-                <h2 style={{ fontSize: 18, fontWeight: 800, color: C.text, margin: 0 }}>Businesses</h2>
-                <p style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>Review, verify, and moderate registered businesses.</p>
+                <h2 style={{ fontSize: 18, fontWeight: 800, color: C.text, margin: 0 }}>Բիզնեսներ</h2>
+                <p style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>Վերանայեք, հաստատեք և կառավարեք գրանցված բիզնեսները:</p>
               </div>
               <div style={{
                 display: "flex", background: "rgba(255,255,255,0.05)",
@@ -1045,7 +1045,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                 ))}
               </div>
             </div>
-            {filteredBiz.length === 0 ? emptyState(Building2, "No businesses found") : (
+            {filteredBiz.length === 0 ? emptyState(Building2, "Բիզնեսներ չեն գտնվել") : (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {filteredBiz.map(b => (
                   <div key={b._id} style={{
@@ -1062,7 +1062,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                           background: b.verified ? C.greenDim : C.amberDim,
                           color: b.verified ? C.green : C.amber
                         }}>
-                          {b.verified ? "Verified" : "Pending"}
+                          {b.verified ? "Հաստատված" : "Սպասում է"}
                         </span>
                       </div>
                       <p style={{ fontSize: 12, color: C.muted, margin: "6px 0 0" }}>
@@ -1091,17 +1091,17 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                     </div>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                       {!b.verified
-                        ? btnSm("Approve", () => approveBiz(b._id), "#16a34a", C.greenDim, <CheckCircle2 size={13} />)
-                        : btnSm("Suspend", () => rejectBiz(b._id), "#b45309", C.amberDim, <Ban size={13} />)
+                        ? btnSm("Հաստատել", () => approveBiz(b._id), "#16a34a", C.greenDim, <CheckCircle2 size={13} />)
+                        : btnSm("Կասեցնել", () => rejectBiz(b._id), "#b45309", C.amberDim, <Ban size={13} />)
                       }
-                      {btnSm("Gift Plan", () => {
+                      {btnSm("Նվիրել Պլան", () => {
                         setGiftingBusiness(b);
                         const hasActive = subscriptions.some(s => s.business?._id === b._id && s.plan !== 'starter' && s.status === 'active' && new Date(s.endDate) > new Date());
                         setGiftActionType(hasActive ? 'extend' : 'overwrite');
                         setGiftError("");
                         setGiftModalOpen(true);
                       }, "#7c3aed", C.violetDim, <Award size={13} />)}
-                      {btnSm("Delete", () => deleteBiz(b._id), "#dc2626", C.redDim, <Trash2 size={13} />)}
+                      {btnSm("Ջնջել", () => deleteBiz(b._id), "#dc2626", C.redDim, <Trash2 size={13} />)}
                     </div>
                   </div>
                 ))}
@@ -1113,8 +1113,8 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         {/* BOOKINGS */}
         {tab === "bookings" && (
           <div>
-            {sectionHead("Bookings", "View and remove registered appointments across the platform.")}
-            {bookings.length === 0 ? emptyState(CalendarDays, "No bookings registered") : (
+            {sectionHead("Ամրագրումներ", "Դիտեք և ջնջեք հարթակում գրանցված ամրագրումները:")}
+            {bookings.length === 0 ? emptyState(CalendarDays, "Ամրագրումներ չկան") : (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {bookings.map(bk => (
                   <div key={bk._id} style={{
@@ -1145,7 +1145,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                       }}>
                         {bk.status}
                       </span>
-                      {iconBtn(() => deleteBook(bk._id), <Trash2 size={14} />, C.red, C.redDim, "Delete booking")}
+                      {iconBtn(() => deleteBook(bk._id), <Trash2 size={14} />, C.red, C.redDim, "Ջնջել ամրագրումը")}
                     </div>
                   </div>
                 ))}
@@ -1192,7 +1192,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             </div>
 
             {planSubTab === "subscriptions" ? (
-              subscriptions.length === 0 ? emptyState(Gem, "No active subscriptions") : (
+              subscriptions.length === 0 ? emptyState(Gem, "Ակտիվ բաժանորդագրություններ չկան") : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                   {subscriptions.map(s => (
                     <div key={s._id} style={{
@@ -1224,14 +1224,14 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                         }}>
                           {s.status}
                         </span>
-                        {iconBtn(() => deleteSub(s._id), <Trash2 size={14} />, C.red, C.redDim, "Cancel subscription")}
+                        {iconBtn(() => deleteSub(s._id), <Trash2 size={14} />, C.red, C.redDim, "Չեղարկել բաժ.")}
                       </div>
                     </div>
                   ))}
                 </div>
               )
             ) : (
-              gifts.length === 0 ? emptyState(Award, "No subscription gifts recorded") : (
+              gifts.length === 0 ? emptyState(Award, "Նվիրված բաժ. չկան") : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                   {gifts.map(g => (
                     <div key={g._id} style={{
@@ -1267,7 +1267,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                       </div>
                       <div style={{ textAlign: "right" }}>
                         <p style={{ fontSize: 11, color: C.muted, margin: 0 }}>Gifted by:</p>
-                        <p style={{ fontSize: 12, fontWeight: 700, color: C.text, margin: 0 }}>{g.giftedBy?.name || "Admin"}</p>
+                        <p style={{ fontSize: 12, fontWeight: 700, color: C.text, margin: 0 }}>{g.giftedBy?.name || "Ադմին"}</p>
                         <p style={{ fontSize: 11, color: C.faint, margin: 0 }}>{g.giftedBy?.email}</p>
                       </div>
                     </div>
@@ -1281,7 +1281,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         {/* REPORTS / REVIEWS */}
         {tab === "reviews" && (
           <div>
-            {sectionHead("Review Moderation", "Inspect flagged reviews and respond to business owner report appeals.")}
+            {sectionHead("Կարծիքների Կառավարում", "Ստուգեք բողոքված կարծիքները և արձագանքեք բիզնես տերերի բողոքներին:")}
             {reviews.length === 0 ? (
               <div style={{
                 textAlign: "center", padding: "64px 0", background: C.card,
@@ -1314,7 +1314,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                           display: "flex", alignItems: "center", gap: 8, marginTop: 6,
                           fontSize: 12, color: C.muted
                         }}>
-                          <span>By: <strong style={{ color: C.text }}>{r.author?.name || "Anonymous"}</strong></span>
+                          <span>Հեղ.՝ <strong style={{ color: C.text }}>{r.author?.name || "Անանուն"}</strong></span>
                           <span>•</span>
                           <span style={{ color: C.amber }}>Rating: {r.rating} ★</span>
                           {r.reportedAt && (
@@ -1324,8 +1324,8 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                       </div>
                       {resolvingId !== r._id && (
                         <div style={{ display: "flex", gap: 8 }}>
-                          {btnSm("Keep Review", () => { setResolvingId(r._id); setResolveAction("keep"); }, "#16a34a", C.greenDim)}
-                          {btnSm("Delete Review", () => { setResolvingId(r._id); setResolveAction("delete"); }, "#dc2626", C.redDim)}
+                          {btnSm("Թողնել", () => { setResolvingId(r._id); setResolveAction("keep"); }, "#16a34a", C.greenDim)}
+                          {btnSm("Ջնջել", () => { setResolvingId(r._id); setResolveAction("delete"); }, "#dc2626", C.redDim)}
                         </div>
                       )}
                     </div>
@@ -1353,7 +1353,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                           Report Reason
                         </span>
                         <p style={{ fontSize: 13, color: C.text, margin: 0 }}>
-                          {r.reportedReason || "Inappropriate content"}
+                          {r.reportedReason || "Անպատշաճ բովանդակություն"}
                         </p>
                       </div>
                     </div>
@@ -1419,10 +1419,10 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                 borderRadius: 10, padding: 4, gap: 2, alignItems: "center", flexWrap: "wrap"
               }}>
                 {[
-                  { key: "all", label: "All Users", count: allUsers.length },
-                  { key: "user", label: "Users", count: allUsers.filter(u => u.role === "user").length },
-                  { key: "business_owner", label: "Business Owners", count: allUsers.filter(u => u.role === "business_owner").length },
-                  { key: "admin", label: "Admins", count: allUsers.filter(u => u.role === "admin").length },
+                  { key: "all", label: "Բոլորը", count: allUsers.length },
+                  { key: "user", label: "Օգտ.", count: allUsers.filter(u => u.role === "user").length },
+                  { key: "business_owner", label: "Բիզ. Տերեր", count: allUsers.filter(u => u.role === "business_owner").length },
+                  { key: "admin", label: "Ադմ.", count: allUsers.filter(u => u.role === "admin").length },
                 ].map(f => (
                   <button
                     key={f.key}
@@ -1476,8 +1476,8 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               )}
             </div>
 
-            {allUsers.length === 0 ? emptyState(Users, "No registered users found") : filteredUsers.length === 0 ? (
-              emptyState(Users, "No users match your criteria")
+            {allUsers.length === 0 ? emptyState(Users, "Գրանցված օգտ. չկան") : filteredUsers.length === 0 ? (
+              emptyState(Users, "Ոչ մի օգտ. չի համապատասխանում")
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {filteredUsers.map(u => {
@@ -1521,7 +1521,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                         <button
                           type="button"
                           onClick={() => openCoinModal(u)}
-                          title="Top Up Findy Coins"
+                          title="Լրացնել Findy Մետաղադրամ"
                           style={{
                             background: "rgba(16,185,129,0.2)", border: "1px solid rgba(16,185,129,0.4)",
                             color: "#6ee7b7", borderRadius: 10, padding: "5px 12px", fontSize: 11,
@@ -1539,7 +1539,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                         }}>
                           {u.role.replace("_", " ")}
                         </span>
-                        {!isAdmin && iconBtn(() => deleteUserById(u._id), <Trash2 size={14} />, C.red, C.redDim, "Delete user")}
+                        {!isAdmin && iconBtn(() => deleteUserById(u._id), <Trash2 size={14} />, C.red, C.redDim, "Ջնջել օգտ.")}
                       </div>
                     </div>
                   );
@@ -1597,7 +1597,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                       }}
                     >
                       <Send size={15} />
-                      {sendingMsg ? "Sending..." : "Send"}
+                      {sendingMsg ? "Ուղարկվում..." : "Ուղարկել"}
                     </button>
                   </div>
                   
@@ -1634,7 +1634,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             </form>
 
             {/* Users List */}
-            {allUsers.length === 0 ? emptyState(Users, "No users available") : (
+            {allUsers.length === 0 ? emptyState(Users, "Օգտ. չկան") : (
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 16 }}>
                 {allUsers.map(u => {
                   const isSelected = selectedMsgUsers.includes('all') || selectedMsgUsers.includes(u._id);
@@ -1729,7 +1729,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                     </button>
                   ))}
                 </div>
-                {btnSm("Create Promo", () => {
+                {btnSm("Ստեղծել Պրոմո", () => {
                   setPromoError("");
                   setPromoSuccess("");
                   setCreatePromoModalOpen(true);
@@ -1737,7 +1737,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               </div>
             </div>
 
-            {promos.length === 0 ? emptyState(Tag, "No promo codes created yet") : (
+            {promos.length === 0 ? emptyState(Tag, "Պրոմո կոդեր դեռ ստեղծված չեն") : (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {promos
                   .filter(p => {
@@ -1808,8 +1808,8 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                           )}
                         </div>
                         <div style={{ display: "flex", gap: 8 }}>
-                          {btnSm(p.isActive ? "Deactivate" : "Activate", () => handleTogglePromo(p._id), p.isActive ? "#b45309" : "#16a34a", p.isActive ? C.amberDim : C.greenDim)}
-                          {btnSm("Delete", () => handleDeletePromo(p._id), "#dc2626", C.redDim, <Trash2 size={13} />)}
+                          {btnSm(p.isActive ? "Անջատել" : "Ակտիվացնել", () => handleTogglePromo(p._id), p.isActive ? "#b45309" : "#16a34a", p.isActive ? C.amberDim : C.greenDim)}
+                          {btnSm("Ջնջել", () => handleDeletePromo(p._id), "#dc2626", C.redDim, <Trash2 size={13} />)}
                         </div>
                       </div>
                     );
@@ -1829,7 +1829,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         {/* HERO IMAGES */}
         {tab === "heroimages" && (
           <div>
-            {sectionHead("Hero Section Images", "View and manage the background slideshow on the homepage. What you see here is exactly what visitors see.")}
+            {sectionHead("Հերո Բաժնի Պատկերներ", "Կառավարեք գլխավոր էջի ֆոնի սլայդշոուն: Այն ինչ տեսնում եք այստեղ — ճիշտ այն է, ինչ տեսնում են այցելուները:")}
 
             {/* ── LIVE PREVIEW PANEL ── */}
             <div style={{
@@ -1860,8 +1860,8 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                         ? "#10b981" : C.muted,
                       padding: "3px 9px", borderRadius: 99
                     }}>
-                      {liveSlides[0]?.source === "admin" ? "Custom Images" :
-                       liveSlides[0]?.source === "business" ? "Premium Businesses" : "Default Images"}
+                      {liveSlides[0]?.source === "admin" ? "Հատուկ Պատկերներ" :
+                       liveSlides[0]?.source === "business" ? "Պրեմիում Բիզնեսներ" : "Կանխ. Պատկերներ"}
                     </span>
                   )}
                 </div>
@@ -1879,7 +1879,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                 >
                   {heroLoadingLive
                     ? <><RefreshCw size={13} style={{ animation: "spin 1s linear infinite" }} /> Loading…</>
-                    : <><Eye size={13} /> {liveSlides.length > 0 ? "Refresh" : "Show Live Slides"}</>
+                    : <><Eye size={13} /> {liveSlides.length > 0 ? "Թարմացնել" : "Ցուցադրել Կենդ. Սլայդ"}</>
                   }
                 </button>
               </div>
@@ -1889,7 +1889,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                 <div style={{ padding: "28px 20px", textAlign: "center" }}>
                   <ImageIcon size={32} style={{ color: "rgba(200,200,255,0.2)", marginBottom: 10 }} />
                   <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>
-                    Click <strong style={{ color: C.violet }}>"Show Live Slides"</strong> to see what's currently active on the homepage
+                    Սեղմեք <strong style={{ color: C.violet }}>"Ցուցադրել Կենդ. Սլայդ"</strong>՝ գլխավոր էջում ակտիվ կոնտենտը դիտելու համար
                   </p>
                 </div>
               ) : heroLoadingLive ? (
@@ -1932,7 +1932,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                             fontSize: 10, color: C.faint, margin: "2px 0 0",
                             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"
                           }} title={slide.src}>
-                            {slide.src.startsWith("/") ? "Local file" : new URL(slide.src).hostname}
+                            {slide.src ? (slide.src.startsWith("/") ? "Տեղական ֆայл" : new URL(slide.src).hostname) : "Աղ. չկա"}
                           </p>
                         </div>
                         {/* Badge */}
@@ -1951,7 +1951,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                           {!heroImages.includes(slide.src) && (
                             <button
                               type="button"
-                              title="Add to managed list"
+                              title="Ավելացնել ցուցակին"
                               onClick={() => setHeroImages(prev =>
                                 prev.includes(slide.src) ? prev : [...prev, slide.src]
                               )}
@@ -1973,7 +1973,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                           {/* Remove from live slideshow */}
                           <button
                             type="button"
-                            title="Remove from homepage slideshow"
+                            title="Հեռացնել հերո սլայդ"
                             onClick={() => {
                               // Import all remaining slides (minus this one) into heroImages
                               const remaining = liveSlides
@@ -2187,7 +2187,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                         {/* Delete */}
                         {iconBtn(
                           () => setHeroImages(prev => prev.filter((_, i) => i !== idx)),
-                          <Trash2 size={13} />, C.red, C.redDim, "Remove"
+                          <Trash2 size={13} />, C.red, C.redDim, "Հեռացնել"
                         )}
                       </div>
                     ))}
@@ -2397,7 +2397,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                     border: "none", color: "#fff", cursor: giftingInProgress ? "not-allowed" : "pointer",
                     fontSize: 13, fontWeight: 700, opacity: giftingInProgress ? 0.7 : 1
                   }}>
-                  {giftingInProgress ? "Gifting Plan..." : "Gift Plan"}
+                  {giftingInProgress ? "Նվիրվում..." : "Նվիրել Պլան"}
                 </button>
               </div>
             </form>
@@ -2629,7 +2629,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                     border: "none", color: "#fff", cursor: creatingPromo ? "not-allowed" : "pointer",
                     fontSize: 13, fontWeight: 700, opacity: creatingPromo ? 0.7 : 1
                   }}>
-                  {creatingPromo ? "Creating..." : "Create"}
+                  {creatingPromo ? "Ստեղծվում..." : "Ստեղծել"}
                 </button>
               </div>
             </form>
@@ -2667,7 +2667,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                   background: selectedBusiness.verified ? C.greenDim : C.amberDim,
                   color: selectedBusiness.verified ? C.green : C.amber, textTransform: "uppercase"
                 }}>
-                  {selectedBusiness.verified ? "Verified" : "Pending"}
+                  {selectedBusiness.verified ? "Հաստատված" : "Սպասում է"}
                 </span>
                 <span style={{ fontSize: 13, color: C.muted }}>
                   {selectedBusiness.category?.name || "Uncategorized"}
@@ -2688,7 +2688,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                   <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><UserCircle2 size={14} /> {selectedBusiness.owner?.name || "N/A"}</p>
                   <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><Mail size={14} /> {selectedBusiness.owner?.email || "N/A"}</p>
                   <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><Briefcase size={14} /> Username: <span style={{ color: C.emerald, fontWeight: 600 }}>{selectedBusiness.owner?.username || "N/A"}</span></p>
-                  <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><Ban size={14} /> Password: <span style={{ color: C.red, fontWeight: 600 }}>{selectedBusiness.owner?.plainPassword || "HIDDEN"}</span></p>
+                  <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><Ban size={14} /> Գաղ. բառ․: <span style={{ color: C.red, fontWeight: 600 }}>{selectedBusiness.owner?.plainPassword || "ԹԱՔՆՎԱԾ"}</span></p>
                   <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><Phone size={14} /> Contact Phone: {selectedBusiness.owner?.phone || "N/A"}</p>
                   <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><Mail size={14} /> Contact Email: {selectedBusiness.owner?.contactEmail || "N/A"}</p>
                 </div>
@@ -2878,7 +2878,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                   }}
                 >
                   <Coins size={16} />
-                  {coinSubmitting ? "Updating..." : "Save Coins"}
+                  {coinSubmitting ? "Թարմ. է..." : "Պահ. Մետ."}
                 </button>
               </div>
             </form>
