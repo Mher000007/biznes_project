@@ -127,6 +127,7 @@ export const hy: Translations = {
       stories: "Սթորիներ",
       inquiries: "Հարցումներ",
       exchange: "Փոխանակում",
+      qrScanner: "QR Սկաներ",
       supportChat: "Աջակցման չաթ",
       settings: "Կարգավորումներ",
     },

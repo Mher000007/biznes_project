@@ -41,7 +41,8 @@ import {
   Ticket,
   QrCode,
   X,
-  Check
+  Check,
+  Copy
 } from "lucide-react";
 import { MOCK_BUSINESSES } from "@/data/mock-businesses";
 
@@ -83,6 +84,31 @@ export default function UserProfileDashboard() {
   const [userReviewsList, setUserReviewsList] = useState<any[]>([]);
   const [claimedOffers, setClaimedOffers] = useState<any[]>([]);
   const [selectedCoupon, setSelectedCoupon] = useState<any>(null);
+
+  const [copiedInvite, setCopiedInvite] = useState(false);
+  const inviteCode = currentUser?.username || (currentUser as any)?.id || (currentUser as any)?._id || "u882jK1";
+  const inviteUrl = typeof window !== "undefined"
+    ? `${window.location.origin}/signup?ref=${inviteCode}`
+    : `https://findy.am/signup?ref=${inviteCode}`;
+
+  const handleCopyInviteLink = async () => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(inviteUrl);
+      } else {
+        const tempInput = document.createElement("input");
+        tempInput.value = inviteUrl;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand("copy");
+        document.body.removeChild(tempInput);
+      }
+      setCopiedInvite(true);
+      setTimeout(() => setCopiedInvite(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy link:", err);
+    }
+  };
 
   const loadClaimedOffers = () => {
     if (typeof window === "undefined") return;
@@ -151,7 +177,7 @@ export default function UserProfileDashboard() {
       const favIds: string[] = favStr ? JSON.parse(favStr) : [];
       const itemsMap: Record<string, any> = itemsStr ? JSON.parse(itemsStr) : {};
 
-      if (favIds.length === 0) {
+      if (favIds.length === 0 && Object.keys(itemsMap).length === 0) {
         setSavedBusinesses([]);
         return;
       }
@@ -159,25 +185,33 @@ export default function UserProfileDashboard() {
       const list: any[] = [];
       const seen = new Set<string>();
 
+      // 1. Process items from itemsMap
+      Object.entries(itemsMap).forEach(([k, item]) => {
+        if (!item) return;
+        const itemKey = item.id || item.slug || k;
+        if (!seen.has(itemKey)) {
+          list.push(item);
+          seen.add(itemKey);
+          if (item.id) seen.add(String(item.id));
+          if (item.slug) seen.add(String(item.slug));
+        }
+      });
+
+      // 2. Process items from favIds
       for (const key of favIds) {
         if (seen.has(key)) continue;
 
-        // 1. Check cached items map
-        if (itemsMap[key]) {
-          list.push(itemsMap[key]);
-          seen.add(key);
-          continue;
-        }
-
-        // 2. Check MOCK_BUSINESSES
+        // Check MOCK_BUSINESSES
         const mockMatch = MOCK_BUSINESSES.find(b => b.id === key || b.slug === key);
         if (mockMatch) {
           list.push(mockMatch);
           seen.add(key);
+          if (mockMatch.id) seen.add(String(mockMatch.id));
+          if (mockMatch.slug) seen.add(String(mockMatch.slug));
           continue;
         }
 
-        // 3. Check custom local profiles
+        // Check custom local profiles
         const profilesStr = localStorage.getItem("armbiz-business-profiles");
         if (profilesStr) {
           try {
@@ -203,9 +237,24 @@ export default function UserProfileDashboard() {
                 shortDescription: customMatch.shortDesc || ""
               });
               seen.add(key);
+              continue;
             }
-          } catch (e) {}
+          } catch (e) { }
         }
+
+        // Fallback card
+        list.push({
+          id: key,
+          slug: key,
+          name: key.replace(/^custom-/, '').replace(/-/g, ' ').toUpperCase(),
+          city: "Yerevan",
+          category: { name: "Business" },
+          ratingAvg: 5.0,
+          images: [],
+          logoUrl: "",
+          shortDescription: ""
+        });
+        seen.add(key);
       }
 
       setSavedBusinesses(list);
@@ -299,7 +348,7 @@ export default function UserProfileDashboard() {
               }
             });
           }
-        } catch (e) {}
+        } catch (e) { }
       }
 
       // 2. Scan all armbiz-reviews- keys in localStorage for user-added reviews
@@ -337,7 +386,7 @@ export default function UserProfileDashboard() {
                   }
                 });
               }
-            } catch (e) {}
+            } catch (e) { }
           }
         }
       }
@@ -445,7 +494,7 @@ export default function UserProfileDashboard() {
               localStorage.setItem("user", JSON.stringify(u));
               refreshUser?.();
             }
-          } catch (err) {}
+          } catch (err) { }
         }
         setProfileMsg({
           type: "success",
@@ -542,7 +591,7 @@ export default function UserProfileDashboard() {
 
       setSavedBusinesses((prev) => prev.filter((b) => b.id !== id && b.slug !== id));
       window.dispatchEvent(new Event("favoritesUpdated"));
-    } catch (e) {}
+    } catch (e) { }
   };
 
   const removeBooking = (id: string) => {
@@ -701,11 +750,10 @@ export default function UserProfileDashboard() {
               </Link>
               <button
                 onClick={() => setActiveTab("security")}
-                className={`h-10 px-4 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${
-                  activeTab === "security"
+                className={`h-10 px-4 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${activeTab === "security"
                     ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
                     : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
-                }`}
+                  }`}
               >
                 <Lock className="w-3.5 h-3.5" />
                 {locale === "hy" ? "Անվտանգություն" : locale === "ru" ? "Безопасность" : "Security & Password"}
@@ -776,11 +824,10 @@ export default function UserProfileDashboard() {
         <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar border-b border-[hsl(var(--border))]">
           <button
             onClick={() => setActiveTab("profile")}
-            className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${
-              activeTab === "profile"
+            className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${activeTab === "profile"
                 ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
                 : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
-            }`}
+              }`}
           >
             <User className="w-3.5 h-3.5" />
             {locale === "hy" ? "Անձնական Տվյալներ" : locale === "ru" ? "Личные данные" : "Personal Profile"}
@@ -788,76 +835,68 @@ export default function UserProfileDashboard() {
 
           <button
             onClick={() => setActiveTab("favorites")}
-            className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${
-              activeTab === "favorites"
+            className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${activeTab === "favorites"
                 ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
                 : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
-            }`}
+              }`}
           >
             <Bookmark className="w-3.5 h-3.5" />
             {locale === "hy" ? "Իմ Նախընտրածները" : locale === "ru" ? "Избранное" : "Saved Places"}
-            <span className={`px-2 py-0.5 rounded-full text-[11px] font-black transition-colors ${
-              activeTab === "favorites"
+            <span className={`px-2 py-0.5 rounded-full text-[11px] font-black transition-colors ${activeTab === "favorites"
                 ? "bg-white text-slate-950 dark:bg-slate-950 dark:text-white shadow-sm"
                 : "bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] dark:bg-slate-800 dark:text-slate-200"
-            }`}>
+              }`}>
               {savedBusinesses.length}
             </span>
           </button>
 
           <button
             onClick={() => setActiveTab("bookings")}
-            className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${
-              activeTab === "bookings"
+            className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${activeTab === "bookings"
                 ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
                 : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
-            }`}
+              }`}
           >
             <Calendar className="w-3.5 h-3.5" />
             {locale === "hy" ? "Իմ Ամրագրումները" : locale === "ru" ? "Мои бронирования" : "My Bookings"}
-            <span className={`px-2 py-0.5 rounded-full text-[11px] font-black transition-colors ${
-              activeTab === "bookings"
+            <span className={`px-2 py-0.5 rounded-full text-[11px] font-black transition-colors ${activeTab === "bookings"
                 ? "bg-white text-slate-950 dark:bg-slate-950 dark:text-white shadow-sm"
                 : "bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] dark:bg-slate-800 dark:text-slate-200"
-            }`}>
+              }`}>
               {userBookings.length}
             </span>
           </button>
 
           <button
             onClick={() => setActiveTab("reviews")}
-            className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${
-              activeTab === "reviews"
+            className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${activeTab === "reviews"
                 ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
                 : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
-            }`}
+              }`}
           >
             <MessageSquare className="w-3.5 h-3.5" />
             {locale === "hy" ? "Իմ Մեկնաբանությունները" : locale === "ru" ? "Мои отзывы" : "My Reviews"}
-            <span className={`px-2 py-0.5 rounded-full text-[11px] font-black transition-colors ${
-              activeTab === "reviews"
+            <span className={`px-2 py-0.5 rounded-full text-[11px] font-black transition-colors ${activeTab === "reviews"
                 ? "bg-white text-slate-950 dark:bg-slate-950 dark:text-white shadow-sm"
                 : "bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] dark:bg-slate-800 dark:text-slate-200"
-            }`}>
+              }`}>
               {userReviewsCount}
             </span>
           </button>
 
           <button
             onClick={() => setActiveTab("offers")}
-            className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${
-              activeTab === "offers"
+            className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${activeTab === "offers"
                 ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
                 : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
-            }`}
+              }`}
           >
             <Gift className="w-3.5 h-3.5 text-emerald-500" />
             {locale === "hy" ? "Իմ Գնած Առաջարկները" : locale === "ru" ? "Купленные предложения" : "My Purchased Offers"}
-            <span className={`px-2 py-0.5 rounded-full text-[11px] font-black transition-colors ${
-              activeTab === "offers"
+            <span className={`px-2 py-0.5 rounded-full text-[11px] font-black transition-colors ${activeTab === "offers"
                 ? "bg-emerald-500 text-white shadow-sm"
                 : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-            }`}>
+              }`}>
               {claimedOffers.length}
             </span>
           </button>
@@ -865,11 +904,10 @@ export default function UserProfileDashboard() {
 
           <button
             onClick={() => setActiveTab("transfer")}
-            className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${
-              activeTab === "transfer"
+            className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${activeTab === "transfer"
                 ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
                 : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
-            }`}
+              }`}
           >
             <Coins className="w-3.5 h-3.5" />
             {locale === "hy" ? "Ուղարկել Քոյն" : locale === "ru" ? "Отправить монеты" : "Send Coins"}
@@ -877,11 +915,10 @@ export default function UserProfileDashboard() {
 
           <button
             onClick={() => setActiveTab("invite")}
-            className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${
-              activeTab === "invite"
+            className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${activeTab === "invite"
                 ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
                 : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
-            }`}
+              }`}
           >
             <UserPlus className="w-3.5 h-3.5" />
             {locale === "hy" ? "Հրավիրել Ընկերներ" : locale === "ru" ? "Пригласить друзей" : "Invite Friends"}
@@ -893,19 +930,19 @@ export default function UserProfileDashboard() {
           <div className="space-y-6">
             {/* Findy Coin Balance Card */}
             <div className="bg-gradient-to-r from-emerald-500/10 via-[hsl(var(--card))] to-[hsl(var(--card))] border border-emerald-500/30 rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-               <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20 shrink-0">
-                    <Coins className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
-                      {locale === "hy" ? "Դուք վաստակում եք 5% ամեն ամրագրումից" : locale === "ru" ? "Вы зарабатываете 5% с каждого бронирования" : "You earn 5% back from all your bookings"}
-                    </p>
-                  </div>
-               </div>
-               <Link href="/exchange#how-it-works" className="px-4 py-2 rounded-xl bg-emerald-500 text-white text-xs font-bold shadow hover:bg-emerald-600 transition-colors shrink-0">
-                 {locale === "hy" ? "Ինչպե՞ս օգտագործել" : "How to use?"}
-               </Link>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20 shrink-0">
+                  <Coins className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
+                    {locale === "hy" ? "Դուք վաստակում եք 5% ամեն ամրագրումից" : locale === "ru" ? "Вы зарабатываете 5% с каждого бронирования" : "You earn 5% back from all your bookings"}
+                  </p>
+                </div>
+              </div>
+              <Link href="/exchange#how-it-works" className="px-4 py-2 rounded-xl bg-emerald-500 text-white text-xs font-bold shadow hover:bg-emerald-600 transition-colors shrink-0">
+                {locale === "hy" ? "Ինչպե՞ս օգտագործել" : "How to use?"}
+              </Link>
             </div>
 
             <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl p-6 shadow-sm space-y-6">
@@ -918,124 +955,123 @@ export default function UserProfileDashboard() {
                 </p>
               </div>
 
-            {profileMsg && (
-              <div
-                className={`p-4 rounded-xl text-sm border flex items-center gap-2 ${
-                  profileMsg.type === "success"
-                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
-                    : "bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-400"
-                }`}
-              >
-                {profileMsg.type === "success" ? <CheckCircle className="w-4 h-4 shrink-0" /> : <ShieldCheck className="w-4 h-4 shrink-0" />}
-                <span>{profileMsg.text}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleSaveProfile} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold mb-1.5 text-[hsl(var(--foreground))]">{t.auth.name || "Full Name"}</label>
-                  <div className="relative">
-                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[hsl(var(--muted-foreground))]" />
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      required
-                      className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] pl-10 pr-4 py-2.5 text-sm outline-none focus:border-primary transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold mb-1.5 text-[hsl(var(--foreground))]">{t.auth.username || "Username"}</label>
-                  <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-[hsl(var(--muted-foreground))]">@</span>
-                    <input
-                      type="text"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      disabled
-                      className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] pl-8 pr-4 py-2.5 text-sm outline-none cursor-not-allowed opacity-80"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold mb-1.5 text-[hsl(var(--foreground))]">{t.auth.email || "Email Address"}</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[hsl(var(--muted-foreground))]" />
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      disabled
-                      className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] pl-10 pr-4 py-2.5 text-sm outline-none cursor-not-allowed opacity-80"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold mb-1.5 text-[hsl(var(--foreground))]">
-                    {locale === "hy" ? "Հեռախոսահամար" : "Phone Number"}
-                  </label>
-                  <div className="flex w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] overflow-hidden focus-within:border-primary transition-all">
-                    <div className="px-3.5 py-2.5 bg-[hsl(var(--muted))]/60 border-r border-[hsl(var(--border))] flex items-center gap-1.5 text-xs font-bold text-[hsl(var(--foreground))] select-none shrink-0">
-                      <Phone className="w-3.5 h-3.5 text-[hsl(var(--muted-foreground))]" />
-                      <span>+374</span>
-                    </div>
-                    <input
-                      type="tel"
-                      inputMode="numeric"
-                      value={phone}
-                      onChange={(e) => {
-                        const digitsOnly = e.target.value.replace(/\D/g, "").slice(0, 8);
-                        const formatted = digitsOnly.match(/.{1,2}/g)?.join(" ") || "";
-                        setPhone(formatted);
-                      }}
-                      maxLength={11}
-                      placeholder="99 12 34 56"
-                      className="w-full bg-transparent text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] px-3.5 py-2.5 text-sm outline-none font-medium tracking-wider"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold mb-1.5 text-[hsl(var(--foreground))]">{locale === "hy" ? "Քաղաք / Վայր" : "City / Location"}</label>
-                <div className="relative">
-                  <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[hsl(var(--muted-foreground))]" />
-                  <input
-                    type="text"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    placeholder="Yerevan, Armenia"
-                    className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] pl-10 pr-4 py-2.5 text-sm outline-none focus:border-primary transition-all"
-                  />
-                </div>
-              </div>
-
-
-
-              <div className="pt-2 flex justify-end">
-                <button
-                  type="submit"
-                  disabled={savingProfile}
-                  className="h-11 px-6 rounded-xl text-xs font-bold bg-primary text-white hover:bg-primary/90 transition-all flex items-center gap-2 shadow-md disabled:opacity-50"
+              {profileMsg && (
+                <div
+                  className={`p-4 rounded-xl text-sm border flex items-center gap-2 ${profileMsg.type === "success"
+                      ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                      : "bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-400"
+                    }`}
                 >
-                  {savingProfile ? (
-                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <Save className="w-4 h-4" />
-                  )}
-                  {locale === "hy" ? "Պահպանել փոփոխությունները" : "Save Profile"}
-                </button>
-              </div>
-            </form>
+                  {profileMsg.type === "success" ? <CheckCircle className="w-4 h-4 shrink-0" /> : <ShieldCheck className="w-4 h-4 shrink-0" />}
+                  <span>{profileMsg.text}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleSaveProfile} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold mb-1.5 text-[hsl(var(--foreground))]">{t.auth.name || "Full Name"}</label>
+                    <div className="relative">
+                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[hsl(var(--muted-foreground))]" />
+                      <input
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        required
+                        className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] pl-10 pr-4 py-2.5 text-sm outline-none focus:border-primary transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold mb-1.5 text-[hsl(var(--foreground))]">{t.auth.username || "Username"}</label>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-[hsl(var(--muted-foreground))]">@</span>
+                      <input
+                        type="text"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        disabled
+                        className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] pl-8 pr-4 py-2.5 text-sm outline-none cursor-not-allowed opacity-80"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold mb-1.5 text-[hsl(var(--foreground))]">{t.auth.email || "Email Address"}</label>
+                    <div className="relative">
+                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[hsl(var(--muted-foreground))]" />
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        disabled
+                        className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] pl-10 pr-4 py-2.5 text-sm outline-none cursor-not-allowed opacity-80"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold mb-1.5 text-[hsl(var(--foreground))]">
+                      {locale === "hy" ? "Հեռախոսահամար" : "Phone Number"}
+                    </label>
+                    <div className="flex w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] overflow-hidden focus-within:border-primary transition-all">
+                      <div className="px-3.5 py-2.5 bg-[hsl(var(--muted))]/60 border-r border-[hsl(var(--border))] flex items-center gap-1.5 text-xs font-bold text-[hsl(var(--foreground))] select-none shrink-0">
+                        <Phone className="w-3.5 h-3.5 text-[hsl(var(--muted-foreground))]" />
+                        <span>+374</span>
+                      </div>
+                      <input
+                        type="tel"
+                        inputMode="numeric"
+                        value={phone}
+                        onChange={(e) => {
+                          const digitsOnly = e.target.value.replace(/\D/g, "").slice(0, 8);
+                          const formatted = digitsOnly.match(/.{1,2}/g)?.join(" ") || "";
+                          setPhone(formatted);
+                        }}
+                        maxLength={11}
+                        placeholder="99 12 34 56"
+                        className="w-full bg-transparent text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] px-3.5 py-2.5 text-sm outline-none font-medium tracking-wider"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5 text-[hsl(var(--foreground))]">{locale === "hy" ? "Քաղաք / Վայր" : "City / Location"}</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[hsl(var(--muted-foreground))]" />
+                    <input
+                      type="text"
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                      placeholder="Yerevan, Armenia"
+                      className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] pl-10 pr-4 py-2.5 text-sm outline-none focus:border-primary transition-all"
+                    />
+                  </div>
+                </div>
+
+
+
+                <div className="pt-2 flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={savingProfile}
+                    className="h-11 px-6 rounded-xl text-xs font-bold bg-primary text-white hover:bg-primary/90 transition-all flex items-center gap-2 shadow-md disabled:opacity-50"
+                  >
+                    {savingProfile ? (
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
+                    {locale === "hy" ? "Պահպանել փոփոխությունները" : "Save Profile"}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
         )}
 
         {/* ── TAB CONTENT: Favorites ── */}
@@ -1159,13 +1195,12 @@ export default function UserProfileDashboard() {
                       <div className="flex items-center gap-2">
                         <h4 className="font-bold text-base text-[hsl(var(--foreground))]">{b.businessName}</h4>
                         <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                            b.status === "confirmed"
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${b.status === "confirmed"
                               ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
                               : b.status === "pending"
-                              ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
-                              : "bg-gray-500/10 text-gray-500"
-                          }`}
+                                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                                : "bg-gray-500/10 text-gray-500"
+                            }`}
                         >
                           {b.status}
                         </span>
@@ -1223,8 +1258,8 @@ export default function UserProfileDashboard() {
                   {locale === "hy"
                     ? "Ձեր կողմից թողնված բոլոր կարծիքներն ու մեկնաբանությունները"
                     : locale === "ru"
-                    ? "Все оставленные вами отзывы и комментарии"
-                    : "All reviews and comments submitted by you."}
+                      ? "Все оставленные вами отзывы и комментарии"
+                      : "All reviews and comments submitted by you."}
                 </p>
               </div>
             </div>
@@ -1296,11 +1331,10 @@ export default function UserProfileDashboard() {
                               {[1, 2, 3, 4, 5].map((star) => (
                                 <Star
                                   key={star}
-                                  className={`w-3.5 h-3.5 ${
-                                    star <= ratingVal
+                                  className={`w-3.5 h-3.5 ${star <= ratingVal
                                       ? "fill-amber-400 text-amber-400"
                                       : "fill-transparent text-slate-300 dark:text-slate-600"
-                                  }`}
+                                    }`}
                                 />
                               ))}
                             </div>
@@ -1373,11 +1407,10 @@ export default function UserProfileDashboard() {
 
             {passwordMsg && (
               <div
-                className={`p-4 rounded-xl text-sm border flex items-center gap-2 ${
-                  passwordMsg.type === "success"
+                className={`p-4 rounded-xl text-sm border flex items-center gap-2 ${passwordMsg.type === "success"
                     ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
                     : "bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-400"
-                }`}
+                  }`}
               >
                 {passwordMsg.type === "success" ? <CheckCircle className="w-4 h-4 shrink-0" /> : <ShieldCheck className="w-4 h-4 shrink-0" />}
                 <span>{passwordMsg.text}</span>
@@ -1543,7 +1576,7 @@ export default function UserProfileDashboard() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {claimedOffers.map((item, idx) => {
+                {claimedOffers.map((item, idx) => {
                   const code = item.couponCode || `FINDY-${Math.floor(100000 + idx * 4521)}`;
                   const fullItem = { ...item, couponCode: code };
 
@@ -1621,7 +1654,7 @@ export default function UserProfileDashboard() {
                         </div>
                         {expiryLabel && (
                           <div className={`flex items-center gap-1 ${isExpiringSoon ? "text-orange-400" : "text-[hsl(var(--muted-foreground))]"}`}>
-                            <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
                             <span>
                               {locale === "hy" ? `Վավեր է մինչև ${expiryLabel}` : locale === "ru" ? `Действителен до ${expiryLabel}` : `Valid until ${expiryLabel}`}
                             </span>
@@ -1677,21 +1710,13 @@ export default function UserProfileDashboard() {
                   : "Show this QR code to the business staff. Once scanned or confirmed, the coupon will be redeemed and removed."}
               </p>
 
-              <div className="pt-2 flex gap-3">
+              <div className="pt-2">
                 <button
                   type="button"
                   onClick={() => setSelectedCoupon(null)}
-                  className="flex-1 py-3 bg-[hsl(var(--muted))] hover:bg-[hsl(var(--border))] text-[hsl(var(--foreground))] rounded-xl font-bold text-xs transition-colors"
+                  className="w-full py-3 bg-[hsl(var(--muted))] hover:bg-[hsl(var(--border))] text-[hsl(var(--foreground))] rounded-xl font-bold text-xs transition-colors cursor-pointer"
                 >
                   {locale === "hy" ? "Փակել" : "Close"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleRedeemCoupon(selectedCoupon.couponCode, selectedCoupon)}
-                  className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-extrabold text-xs shadow-md shadow-emerald-500/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <Check className="w-4 h-4" />
-                  {locale === "hy" ? "Հաստատել (Սկանավորվել է)" : "Confirm & Redeem"}
                 </button>
               </div>
             </div>
@@ -1707,7 +1732,7 @@ export default function UserProfileDashboard() {
               </div>
               <h3 className="text-2xl font-black mb-2">{locale === "hy" ? "Ուղարկել ընկերոջը" : "Send to a Friend"}</h3>
               <p className="text-[hsl(var(--muted-foreground))] mb-8">{locale === "hy" ? "Անմիջապես փոխանցեք Findy Coins ձեր հրավիրած ընկերներին:" : "Transfer Findy Coins instantly to friends you have invited."}</p>
-              
+
               <div className="space-y-5">
                 <div>
                   <label className="text-sm font-bold text-[hsl(var(--muted-foreground))] mb-2 block">{locale === "hy" ? "Ընտրել ընկերոջը" : "Select Friend"}</label>
@@ -1747,14 +1772,36 @@ export default function UserProfileDashboard() {
                   <>Share your unique invite link with friends. When they sign up and verify their account, you both get <span className="font-bold text-emerald-500">500 Coins!</span></>
                 )}
               </p>
-              
-              <div className="bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-2xl p-2 flex items-center gap-2 max-w-lg mx-auto">
-                <input type="text" readOnly value="https://findy.am/invite/u882jK1" className="flex-1 bg-transparent px-4 font-medium text-[hsl(var(--muted-foreground))] outline-none" />
-                <button className="px-6 py-3 bg-[hsl(var(--foreground))] text-[hsl(var(--background))] rounded-xl font-bold hover:scale-105 active:scale-95 transition-all whitespace-nowrap">
-                  {locale === "hy" ? "Պատճենել" : "Copy Link"}
+
+              <div className={`bg-[hsl(var(--background))] border rounded-2xl p-2 flex items-center gap-2 max-w-lg mx-auto transition-all ${copiedInvite ? "border-emerald-500 shadow-md shadow-emerald-500/10" : "border-[hsl(var(--border))] focus-within:border-emerald-500"}`}>
+                <input
+                  type="text"
+                  readOnly
+                  value={inviteUrl}
+                  onClick={(e) => (e.target as HTMLInputElement).select()}
+                  className="flex-1 bg-transparent px-4 font-mono font-medium text-xs sm:text-sm text-[hsl(var(--foreground))] outline-none select-all truncate"
+                />
+                <button
+                  onClick={handleCopyInviteLink}
+                  className={`px-6 py-3 rounded-xl font-bold transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer active:scale-95 ${copiedInvite
+                      ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 scale-105"
+                      : "bg-[hsl(var(--foreground))] text-[hsl(var(--background))] hover:scale-105"
+                    }`}
+                >
+                  {copiedInvite ? (
+                    <>
+                      <Check className="w-4 h-4 text-white animate-in zoom-in-50" />
+                      <span>{locale === "hy" ? "Պատճենված է!" : locale === "ru" ? "Скопировано!" : "Copied!"}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4" />
+                      <span>{locale === "hy" ? "Պատճենել" : locale === "ru" ? "Скопировать" : "Copy Link"}</span>
+                    </>
+                  )}
                 </button>
               </div>
-              
+
               <div className="mt-8 pt-8 border-t border-[hsl(var(--border))]/50 flex justify-center gap-8 text-sm">
                 <div>
                   <p className="font-black text-2xl text-[hsl(var(--foreground))] mb-1">12</p>

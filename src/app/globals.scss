@@ -652,17 +652,17 @@ section:has(.relative.rounded-2xl.overflow-hidden.group) {
 
 /* ========== STORIES OVERHAUL & COLLAPSE ========== */
 .stories-section-container {
-  background: $bg-global !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
-  transition: padding 0.35s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.35s ease, box-shadow 0.35s ease, border-radius 0.35s ease;
+  background-color: hsl(var(--card)) !important;
+  border-bottom: 1px solid hsl(var(--border) / 0.5) !important;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   position: sticky;
   top: 64px;
   z-index: 40;
 
   // Active story rings
   .bg-gradient-to-tr {
-    background: linear-gradient(135deg, $accent-booking, $accent-highlight) !important;
-    box-shadow: 0 0 10px rgba(0, 230, 118, 0.2);
+    background: linear-gradient(135deg, #10b981, #14b8a6) !important;
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
   }
 
   .stories-content-wrapper {
@@ -672,13 +672,30 @@ section:has(.relative.rounded-2xl.overflow-hidden.group) {
     overflow: hidden;
   }
 
-  // Smooth slide transition for toggle button
+  // Smooth slide transition for pull tab toggle button
   >button {
     position: absolute;
-    bottom: 0;
+    top: 100%;
+    bottom: auto;
     left: 50%;
-    transform: translate(-50%, 50%) !important;
-    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease, scale 0.2s ease !important;
+    transform: translateX(-50%) !important;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    background-color: hsl(var(--card)) !important;
+    border-top: none !important;
+    border-left: 1px solid hsl(var(--border) / 0.8) !important;
+    border-right: 1px solid hsl(var(--border) / 0.8) !important;
+    border-bottom: 1px solid hsl(var(--border) / 0.8) !important;
+    border-bottom-left-radius: 0.75rem !important;
+    border-bottom-right-radius: 0.75rem !important;
+    border-top-left-radius: 0 !important;
+    border-top-right-radius: 0 !important;
+    color: hsl(var(--foreground)) !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1) !important;
+
+    &:hover {
+      background-color: hsl(var(--muted)) !important;
+      border-color: rgba(16, 185, 129, 0.6) !important;
+    }
   }
 
   @media (min-width: 768px) {
@@ -688,6 +705,8 @@ section:has(.relative.rounded-2xl.overflow-hidden.group) {
       border-bottom-color: transparent !important;
       box-shadow: none !important;
       border-radius: 0 !important;
+      height: 0 !important;
+      min-height: 0 !important;
 
       .stories-content-wrapper {
         max-height: 0 !important;
@@ -696,12 +715,21 @@ section:has(.relative.rounded-2xl.overflow-hidden.group) {
         pointer-events: none;
       }
 
-      // Reposition button fixed to the bottom of the header (top: 64px) when collapsed
+      // Reposition pull-tab button right under header
       >button {
-        position: fixed !important;
-        top: 64px !important;
+        position: absolute !important;
+        top: 0 !important;
         bottom: auto !important;
-        transform: translate(-50%, 0) !important;
+        transform: translateX(-50%) !important;
+        border-top: none !important;
+        border-left: 1px solid hsl(var(--border) / 0.8) !important;
+        border-right: 1px solid hsl(var(--border) / 0.8) !important;
+        border-bottom: 1px solid hsl(var(--border) / 0.8) !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+
+        &:hover {
+          border-color: rgba(16, 185, 129, 0.6) !important;
+        }
       }
     }
   }

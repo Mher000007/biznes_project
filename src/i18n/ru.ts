@@ -26,7 +26,7 @@ export const ru: Translations = {
     overview: "Обзор",
     profile: "Профиль",
     settings: "Настройки",
-    nav: { overview: "Обзор", businessProfile: "Профиль компании", branding: "Брендинг", credentials: "Документы", storiesHighlights: "Сториз и Хайлайтс", operatingHours: "Часы работы", menusOffers: "Меню и предложения", myLocations: "Мои локации", stories: "Сториз", inquiries: "Запросы", exchange: "Обмен", supportChat: "Чат поддержки", settings: "Настройки" },
+    nav: { overview: "Обзор", businessProfile: "Профиль компании", branding: "Брендинг", credentials: "Документы", storiesHighlights: "Сториз и Хайлайтс", operatingHours: "Часы работы", menusOffers: "Меню и предложения", myLocations: "Мои локации", stories: "Сториз", inquiries: "Запросы", exchange: "Обмен", qrScanner: "QR Сканер", supportChat: "Чат поддержки", settings: "Настройки" },
     offers: {
       pageTitle: "Меню и предложения",
       pageSub: "Управляйте банкетными меню, сетами и специальными предложениями для ИИ поиска.",

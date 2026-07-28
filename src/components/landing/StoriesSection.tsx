@@ -84,8 +84,10 @@ export default function StoriesSection() {
     );
   }
 
-  // If no stories are active, and user is not logged in, hide the section
-  if (groups.length === 0 && !currentUser) {
+  const isBusinessUser = currentUser && (currentUser.accountType === "business" || currentUser.role === "business_owner" || (currentUser as any)?.isBusiness);
+
+  // If no stories are published and current user is not a business user, hide the entire section
+  if (groups.length === 0 && !isBusinessUser) {
     return null;
   }
 
@@ -94,20 +96,22 @@ export default function StoriesSection() {
       <div className="mx-auto max-w-6xl px-5 sm:px-8 stories-content-wrapper">
         <div className="flex items-center gap-5 overflow-x-auto scrollbar-none py-1.5 -mx-2 px-2">
 
-          {/* "Your Story" circle for all users */}
-          <Link
-            href="/dashboard/stories"
-            className="flex flex-col items-center gap-1.5 cursor-pointer shrink-0 group"
-          >
-            <div className="relative w-[68px] h-[68px] rounded-full p-[2px] bg-[hsl(var(--border))] group-hover:bg-[hsl(var(--primary))]/30 transition-colors flex items-center justify-center bg-[hsl(var(--background))]">
-              <div className="w-full h-full rounded-full bg-[hsl(var(--card))] border border-[hsl(var(--border))] flex items-center justify-center transition-all group-hover:scale-95">
-                <span className="text-2xl font-bold text-[hsl(var(--primary))]" style={{ marginTop: "-2px" }}>+</span>
+          {/* "Add Story" circle only for business users */}
+          {isBusinessUser && (
+            <Link
+              href="/dashboard/stories"
+              className="flex flex-col items-center gap-1.5 cursor-pointer shrink-0 group"
+            >
+              <div className="relative w-[68px] h-[68px] rounded-full p-[2px] bg-[hsl(var(--border))] group-hover:bg-[hsl(var(--primary))]/30 transition-colors flex items-center justify-center bg-[hsl(var(--background))]">
+                <div className="w-full h-full rounded-full bg-[hsl(var(--card))] border border-[hsl(var(--border))] flex items-center justify-center transition-all group-hover:scale-95">
+                  <span className="text-2xl font-bold text-[hsl(var(--primary))]" style={{ marginTop: "-2px" }}>+</span>
+                </div>
               </div>
-            </div>
-            <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--foreground))] tracking-tight truncate max-w-[72px] transition-colors">
-              {t.stories.addStory}
-            </span>
-          </Link>
+              <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--foreground))] tracking-tight truncate max-w-[72px] transition-colors">
+                {t.stories.addStory}
+              </span>
+            </Link>
+          )}
 
           {/* Active Business Stories */}
           {groups.map((group, idx) => {
@@ -150,17 +154,14 @@ export default function StoriesSection() {
         </div>
       </div>
 
-      {/* Centered up/down toggle button - hidden on small devices, active on md+ */}
+      {/* Centered pull-tab toggle button - narrow rectangular with rounded bottom corners */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-8 h-8 rounded-full bg-[hsl(var(--background))] border border-[hsl(var(--border))]/30 flex items-center justify-center hover:bg-[hsl(var(--muted))] hover:scale-105 active:scale-95 transition-all shadow-md z-20 cursor-pointer hidden md:flex"
+        className="absolute top-full left-1/2 -translate-x-1/2 w-14 h-6 rounded-b-xl rounded-t-none bg-[hsl(var(--card))] border-b border-x border-t-0 border-[hsl(var(--border))] flex items-center justify-center text-[hsl(var(--foreground))] hover:border-emerald-500/60 hover:text-emerald-500 hover:bg-[hsl(var(--muted))] active:scale-95 transition-all duration-300 shadow-sm z-20 cursor-pointer hidden md:flex group"
         aria-label={isOpen ? "Collapse stories" : "Expand stories"}
+        title={isOpen ? "Collapse Stories" : "Expand Stories"}
       >
-        {isOpen ? (
-          <ChevronUp className="w-4 h-4 text-[hsl(var(--foreground))]" />
-        ) : (
-          <ChevronDown className="w-4 h-4 text-[hsl(var(--foreground))]" />
-        )}
+        <ChevronUp className={`w-4 h-4 transition-transform duration-300 ${!isOpen ? "rotate-180 text-emerald-500" : "text-[hsl(var(--foreground))] group-hover:text-emerald-500"}`} />
       </button>
 
       {/* Story Lightbox Player Modal */}

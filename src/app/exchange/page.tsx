@@ -133,7 +133,9 @@ export default function ExchangePage() {
             description: selectedOffer.description,
             claimedAt: claimedAt.toISOString(),
             expiresAt: expiresAt.toISOString(),
-            couponCode: `FINDY-${Math.floor(100000 + Math.random() * 900000)}`
+            couponCode: `FINDY-${Math.floor(100000 + Math.random() * 900000)}`,
+            userName: currentUser?.name || currentUser?.username || "Արմեն Մ․",
+            userEmail: currentUser?.email || "",
           };
           localStorage.setItem("armbiz_user_claimed_offers", JSON.stringify([newItem, ...existingList]));
           window.dispatchEvent(new Event("claimedOffersUpdated"));
@@ -387,10 +389,10 @@ export default function ExchangePage() {
           <div className="mt-14 flex justify-center">
             <a
               href="#premium-offers"
-              className="inline-flex items-center gap-3 px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-bold text-base shadow-xl shadow-emerald-500/20 hover:scale-105 transition-all duration-300"
+              className="inline-flex items-center gap-3 px-8 py-4 bg-emerald-500 hover:bg-emerald-600 !text-white text-white rounded-2xl font-bold text-base shadow-xl shadow-emerald-500/20 hover:scale-105 transition-all duration-300"
             >
-              <span>{locale === "hy" ? "Տեսնել Բոլոր Առաջարկները" : locale === "ru" ? "Смотреть Предложения" : "Browse All Offers"}</span>
-              <ArrowDown className="w-5 h-5 animate-bounce" />
+              <span className="!text-white text-white">{locale === "hy" ? "Տեսնել Բոլոր Առաջարկները" : locale === "ru" ? "Смотреть Предложения" : "Browse All Offers"}</span>
+              <ArrowDown className="w-5 h-5 animate-bounce !text-white text-white" />
             </a>
           </div>
         </div>
@@ -414,47 +416,49 @@ export default function ExchangePage() {
                 {/* Primary Filters */}
                 <div className="inline-flex items-center p-1.5 bg-[hsl(var(--muted))]/30 border border-[hsl(var(--border))]/50 rounded-full shadow-inner backdrop-blur-md shrink-0">
                   {/* All Button with Price Sort Hover Dropdown */}
-                  <div className="relative group/all inline-block">
+                  <div className={`relative inline-block ${offerCategory === 'All' ? 'group/all' : ''}`}>
                     <button 
                       onClick={() => setOfferCategory('All')}
                       className={`relative px-6 py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-all duration-300 flex items-center gap-1.5 cursor-pointer ${
                         offerCategory === 'All'
-                          ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' 
+                          ? 'bg-emerald-500 !text-white text-white shadow-lg shadow-emerald-500/30' 
                           : 'bg-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/80'
                       }`}
                     >
-                      <span>All</span>
-                      {sortOrder === 'highToLow' && <ArrowDown className="w-3.5 h-3.5 text-white" />}
-                      {sortOrder === 'lowToHigh' && <ArrowUp className="w-3.5 h-3.5 text-white" />}
+                      <span className={offerCategory === 'All' ? '!text-white text-white' : ''}>All</span>
+                      {sortOrder === 'highToLow' && <ArrowDown className="w-3.5 h-3.5 !text-white text-white" />}
+                      {sortOrder === 'lowToHigh' && <ArrowUp className="w-3.5 h-3.5 !text-white text-white" />}
                     </button>
 
                     {/* Hover Dropdown Popup for Price Sorting */}
-                    <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover/all:opacity-100 group-hover/all:visible group-hover/all:translate-y-0 translate-y-2 transition-all duration-300 z-[100] pointer-events-none group-hover/all:pointer-events-auto">
-                      <div className="inline-flex items-center p-1 bg-[hsl(var(--card))]/95 border border-[hsl(var(--border))] rounded-2xl shadow-2xl backdrop-blur-xl ring-1 ring-[hsl(var(--border))]/50 whitespace-nowrap">
-                        <button
-                          onClick={() => setSortOrder(prev => prev === 'highToLow' ? 'default' : 'highToLow')}
-                          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 flex items-center gap-1.5 cursor-pointer ${
-                            sortOrder === 'highToLow'
-                              ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/25'
-                              : 'bg-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/60'
-                          }`}
-                        >
-                          <span>{locale === "hy" ? "Թանկից էժան" : locale === "ru" ? "От дорогих к дешевым" : "Expensive to Cheap"}</span>
-                          <ArrowDown className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => setSortOrder(prev => prev === 'lowToHigh' ? 'default' : 'lowToHigh')}
-                          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 flex items-center gap-1.5 cursor-pointer ${
-                            sortOrder === 'lowToHigh'
-                              ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/25'
-                              : 'bg-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/60'
-                          }`}
-                        >
-                          <span>{locale === "hy" ? "Էժանից թանկ" : locale === "ru" ? "От дешевых к дорогим" : "Cheap to Expensive"}</span>
-                          <ArrowUp className="w-3.5 h-3.5" />
-                        </button>
+                    {offerCategory === 'All' && (
+                      <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover/all:opacity-100 group-hover/all:visible group-hover/all:translate-y-0 translate-y-2 transition-all duration-300 z-[100] pointer-events-none group-hover/all:pointer-events-auto">
+                        <div className="inline-flex items-center p-1 bg-[hsl(var(--card))]/95 border border-[hsl(var(--border))] rounded-2xl shadow-2xl backdrop-blur-xl ring-1 ring-[hsl(var(--border))]/50 whitespace-nowrap">
+                          <button
+                            onClick={() => setSortOrder(prev => prev === 'highToLow' ? 'default' : 'highToLow')}
+                            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 flex items-center gap-1.5 cursor-pointer ${
+                              sortOrder === 'highToLow'
+                                ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/25'
+                                : 'bg-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/60'
+                            }`}
+                          >
+                            <span>{locale === "hy" ? "Թանկից էժան" : locale === "ru" ? "От дорогих к дешевым" : "Expensive to Cheap"}</span>
+                            <ArrowDown className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setSortOrder(prev => prev === 'lowToHigh' ? 'default' : 'lowToHigh')}
+                            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 flex items-center gap-1.5 cursor-pointer ${
+                              sortOrder === 'lowToHigh'
+                                ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/25'
+                                : 'bg-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/60'
+                            }`}
+                          >
+                            <span>{locale === "hy" ? "Էժանից թանկ" : locale === "ru" ? "От дешевых к дорогим" : "Cheap to Expensive"}</span>
+                            <ArrowUp className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
 
                   <button 

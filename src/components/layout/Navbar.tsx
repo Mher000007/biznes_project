@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X, Search, MapPin, Bookmark, ArrowUp, ArrowDown } from "lucide-react";
+import { Menu, X, Search, MapPin, Bookmark, ArrowUp, ArrowDown, LogOut } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { useI18n } from "@/i18n";
@@ -497,7 +497,7 @@ export default function Navbar() {
         </div>
 
         {currentUser ? (
-          <>
+          <div className="flex items-center gap-2">
             <div className={`relative ${isBusinessUser ? '' : 'group/fav'} flex items-center`}>
               <Link
                 href="/dashboard"
@@ -547,7 +547,20 @@ export default function Navbar() {
                 </div>
               )}
             </div>
-          </>
+
+            {/* Logout Icon Button */}
+            <button
+              onClick={() => {
+                logout();
+                router.push("/");
+              }}
+              title="Ելք (Log out)"
+              aria-label="Log Out"
+              className="hidden lg:flex h-8 w-8 items-center justify-center rounded-lg bg-transparent border-0 text-[hsl(var(--muted-foreground))] hover:text-red-500 hover:bg-red-500/10 transition-all hover:scale-105 active:scale-95 cursor-pointer ml-1"
+            >
+              <LogOut className="h-4 w-4 transition-colors" />
+            </button>
+          </div>
         ) : (
           <Link
             href="/signin"

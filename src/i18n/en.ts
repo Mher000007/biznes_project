@@ -135,6 +135,7 @@ export const en = {
       stories: "Stories",
       inquiries: "Inquiries",
       exchange: "Exchange",
+      qrScanner: "QR Scanner",
       supportChat: "Support Chat",
       settings: "Settings",
     },
