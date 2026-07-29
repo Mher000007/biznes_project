@@ -111,7 +111,7 @@ export default function SignUpPage() {
     });
     
     if (regResult.success) {
-      router.push("/dashboard");
+      router.push("/profile");
       return;
     }
     
@@ -122,7 +122,7 @@ export default function SignUpPage() {
       });
       
       if (loginResult.success) {
-        router.push("/dashboard");
+        router.push("/profile");
         return;
       }
     }
@@ -175,7 +175,7 @@ export default function SignUpPage() {
       return;
     }
 
-    router.push("/dashboard");
+    router.push("/profile");
   };
 
   if (!accountType) {

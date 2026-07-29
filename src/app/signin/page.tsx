@@ -62,7 +62,7 @@ export default function SignInPage() {
     });
     
     if (loginResult.success) {
-      router.push("/dashboard");
+      router.push("/profile");
       return;
     }
     
@@ -77,7 +77,7 @@ export default function SignInPage() {
     });
     
     if (regResult.success) {
-      router.push("/dashboard");
+      router.push("/profile");
       return;
     }
     
@@ -129,7 +129,12 @@ export default function SignInPage() {
       localStorage.removeItem("armbiz_remember_me");
     }
 
-    router.push("/dashboard");
+    const uType = result.user?.accountType || (result.user as any)?.role;
+    if (uType === "business" || uType === "business_owner") {
+      router.push("/dashboard");
+    } else {
+      router.push("/profile");
+    }
   };
 
   const handleSignUpSubmit = async (e: React.FormEvent) => {
@@ -149,7 +154,7 @@ export default function SignInPage() {
       return;
     }
 
-    router.push("/dashboard");
+    router.push("/profile");
   };
 
   return (

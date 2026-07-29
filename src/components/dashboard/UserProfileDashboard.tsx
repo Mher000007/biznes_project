@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useI18n } from "@/i18n";
 import { getApiUrl } from "@/lib/utils";
@@ -49,8 +50,17 @@ import { MOCK_BUSINESSES } from "@/data/mock-businesses";
 export default function UserProfileDashboard() {
   const { currentUser, logout, refreshUser } = useAuth();
   const { t, locale } = useI18n();
+  const searchParams = useSearchParams();
 
   const [activeTab, setActiveTab] = useState<"profile" | "favorites" | "bookings" | "reviews" | "security" | "transfer" | "invite" | "offers" | "business">("profile");
+
+  useEffect(() => {
+    if (!searchParams) return;
+    const tabParam = searchParams.get("tab");
+    if (tabParam && ["profile", "favorites", "bookings", "reviews", "security", "transfer", "invite", "offers", "business"].includes(tabParam)) {
+      setActiveTab(tabParam as any);
+    }
+  }, [searchParams]);
 
   // Profile Form States
   const [name, setName] = useState(currentUser?.name || "");

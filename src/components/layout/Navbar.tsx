@@ -647,7 +647,7 @@ export default function Navbar() {
               onMouseLeave={() => setIsFavOpen(false)}
             >
               <Link
-                href="/dashboard?tab=favorites"
+                href={isBusinessUser ? "/dashboard" : "/profile"}
                 className={`hidden lg:inline-flex items-center gap-1.5 text-[13px] font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors cursor-pointer ${styles.authText}`}
               >
                 {!isBusinessUser && (
@@ -697,7 +697,7 @@ export default function Navbar() {
                         </div>
                         <div className="pt-2 border-t border-[hsl(var(--border))]/50 mt-1">
                           <Link
-                            href="/dashboard?tab=favorites"
+                            href="/profile?tab=favorites"
                             className="flex items-center justify-between text-xs font-bold text-violet-600 dark:text-violet-400 hover:underline px-2 py-1"
                           >
                             <span>{locale === 'hy' ? "Տեսնել բոլորը" : locale === 'ru' ? "Посмотреть все" : "View all saved"}</span>
@@ -802,7 +802,7 @@ export default function Navbar() {
           {currentUser ? (
             <>
               <Link
-                href="/dashboard"
+                href={isBusinessUser ? "/dashboard" : "/profile"}
                 onClick={() => setIsOpen(false)}
                 className="flex items-center gap-1.5 py-2 text-sm text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
               >

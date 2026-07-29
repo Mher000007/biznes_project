@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Eye, MessageSquare, Star, TrendingUp, TrendingDown, Minus, ArrowUpRight, Award, Gem, AlertTriangle, Lock, ShieldAlert, Sparkles, CheckCircle, Bell, MapPin, BadgeCheck, Bookmark } from "lucide-react";
 import DashboardPublish from "./DashboardPublish";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
@@ -60,6 +61,7 @@ import UserProfileDashboard from "@/components/dashboard/UserProfileDashboard";
 
 export default function DashboardPage() {
   const { currentUser } = useAuth();
+  const router = useRouter();
   const displayName = currentUser?.name || currentUser?.username || "User";
 
   const [stats, setStats] = useState(DEFAULT_STATS);
@@ -248,8 +250,14 @@ export default function DashboardPage() {
     loadDashboardData();
   }, [currentUser]);
 
+  useEffect(() => {
+    if (currentUser && (currentUser.accountType === "personal" || currentUser.role === "user")) {
+      router.replace("/profile");
+    }
+  }, [currentUser, router]);
+
   if (currentUser && (currentUser.accountType === "personal" || currentUser.role === "user")) {
-    return <UserProfileDashboard />;
+    return null;
   }
 
   return (
