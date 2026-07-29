@@ -10,7 +10,7 @@ import { useI18n } from "@/i18n";
 export default function SignInPage() {
   const router = useRouter();
   const { login, register } = useAuth();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   // Mode state: "login" or "signup"
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -28,6 +28,18 @@ export default function SignInPage() {
   const [email, setEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [showRegPassword, setShowRegPassword] = useState(false);
+  const [inviteCode, setInviteCode] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const refParam = urlParams.get("ref") || urlParams.get("invite") || urlParams.get("code");
+      if (refParam) {
+        setInviteCode(refParam);
+        setMode("signup");
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const handleAuthMessage = (event: MessageEvent) => {
@@ -128,7 +140,8 @@ export default function SignInPage() {
       displayName: name,
       email,
       password: regPassword,
-      accountType: "personal"
+      accountType: "personal",
+      inviteCode
     });
 
     if (!result.success) {
@@ -310,6 +323,23 @@ export default function SignInPage() {
                     {showRegPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
+              </div>
+              <div>
+                <div className="flex flex-wrap justify-between items-center gap-1.5 mb-1.5">
+                  <label className="text-sm font-semibold">
+                    {locale === 'hy' ? "Հրավերի Կոդ (Invite Code)" : "Invite Code (Optional)"}
+                  </label>
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                    +100 Coins reward
+                  </span>
+                </div>
+                <input
+                  value={inviteCode}
+                  onChange={(e) => setInviteCode(e.target.value)}
+                  type="text"
+                  placeholder="e.g. MHER100 or username"
+                  className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))]/50 px-4 py-2.5 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-mono uppercase"
+                />
               </div>
               <button type="submit" className="w-full h-11 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90 transition-colors mt-2 shadow-md hover:shadow-lg">
                 {t.auth.signUp}

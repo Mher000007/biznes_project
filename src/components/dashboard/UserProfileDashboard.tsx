@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useI18n } from "@/i18n";
@@ -85,6 +85,14 @@ export default function UserProfileDashboard() {
   const [claimedOffers, setClaimedOffers] = useState<any[]>([]);
   const [selectedCoupon, setSelectedCoupon] = useState<any>(null);
   const [copiedCouponCode, setCopiedCouponCode] = useState<string | null>(null);
+  const [copiedInviteCode, setCopiedInviteCode] = useState(false);
+
+  const handleCopyInviteCode = (code: string) => {
+    if (!code) return;
+    navigator.clipboard.writeText(code);
+    setCopiedInviteCode(true);
+    setTimeout(() => setCopiedInviteCode(false), 2000);
+  };
 
   const handleCopyCouponCode = (code: string) => {
     if (!code) return;
@@ -106,35 +114,345 @@ export default function UserProfileDashboard() {
     }
   };
 
-  const [copiedInvite, setCopiedInvite] = useState(false);
-  const inviteCode = currentUser?.username || (currentUser as any)?.id || (currentUser as any)?._id || "u882jK1";
-  const inviteUrl = typeof window !== "undefined"
-    ? `${window.location.origin}/signup?ref=${inviteCode}`
-    : `https://findy.am/signup?ref=${inviteCode}`;
+  const [inputInviteCode, setInputInviteCode] = useState("");
+  const [appliedInviteCode, setAppliedInviteCode] = useState("");
+  const [inviteCodeMsg, setInviteCodeMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  const handleCopyInviteLink = async () => {
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(inviteUrl);
-      } else {
-        const tempInput = document.createElement("input");
-        tempInput.value = inviteUrl;
-        document.body.appendChild(tempInput);
-        tempInput.select();
-        document.execCommand("copy");
-        document.body.removeChild(tempInput);
+  useEffect(() => {
+    if (currentUser) {
+      const uKey = currentUser.username || currentUser.email || "";
+      const savedCode = (currentUser as any).redeemedInviteCode || (uKey ? localStorage.getItem(`armbiz_redeemed_code_${uKey}`) : null);
+      if (savedCode) {
+        setAppliedInviteCode(savedCode);
       }
-      setCopiedInvite(true);
-      setTimeout(() => setCopiedInvite(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy link:", err);
+    }
+  }, [currentUser]);
+
+  const handleApplyInviteCode = () => {
+    if (!currentUser) return;
+    const code = inputInviteCode.trim();
+    if (!code) {
+      setInviteCodeMsg({
+        type: "error",
+        text: locale === "hy" ? "Խնդրում ենք մուտքագրել հրավերի կոդ" : "Please enter an invite code"
+      });
+      return;
+    }
+
+    if (code.toLowerCase() === (currentUser.username || "").toLowerCase()) {
+      setInviteCodeMsg({
+        type: "error",
+        text: locale === "hy" ? "Դուք չեք կարող մուտքագրել Ձեր սեփական կոդը" : "You cannot enter your own invite code"
+      });
+      return;
+    }
+
+    const uKey = currentUser.username || currentUser.email || (currentUser as any).id || "";
+    try {
+      const existingCoinsStr = uKey ? localStorage.getItem(`armbiz_user_coins_${uKey}`) : null;
+      let currentCoins = existingCoinsStr !== null && !isNaN(Number(existingCoinsStr))
+        ? Number(existingCoinsStr)
+        : ((currentUser as any).findyCoins || 0);
+
+      const newCoins = currentCoins + 100;
+
+      if (uKey) {
+        localStorage.setItem(`armbiz_user_coins_${uKey}`, String(newCoins));
+        localStorage.setItem(`armbiz_redeemed_code_${uKey}`, code);
+      }
+
+      const usersStr = localStorage.getItem("armbiz_users");
+      if (usersStr) {
+        try {
+          const users: any[] = JSON.parse(usersStr);
+          const idx = users.findIndex((u) => u.username === currentUser.username || u.email === currentUser.email);
+          if (idx !== -1) {
+            users[idx].findyCoins = newCoins;
+            users[idx].redeemedInviteCode = code;
+            localStorage.setItem("armbiz_users", JSON.stringify(users));
+          }
+        } catch (e) { }
+      }
+      const updatedUser = { ...currentUser, findyCoins: newCoins, redeemedInviteCode: code };
+      localStorage.setItem("armbiz_current_user", JSON.stringify(updatedUser));
+      (currentUser as any).findyCoins = newCoins;
+      (currentUser as any).redeemedInviteCode = code;
+
+      setAppliedInviteCode(code);
+      setInviteCodeMsg({
+        type: "success",
+        text: locale === "hy" ? "Հրավերի կոդը ակտիվացվեց! +100 FindyCoins ավելացվեց:" : "Invite code activated! +100 FindyCoins added!"
+      });
+      window.dispatchEvent(new Event("userUpdated"));
+      window.dispatchEvent(new Event("coinsUpdated"));
+    } catch (e) {
+      setInviteCodeMsg({
+        type: "error",
+        text: locale === "hy" ? "Սխալ տեղի ունեցավ: Խնդրում ենք փորձել նորից:" : "An error occurred. Please try again."
+      });
+    }
+  };
+
+  const [selectedFriendUsername, setSelectedFriendUsername] = useState("");
+  const [transferAmount, setTransferAmount] = useState("");
+  const [transferMsg, setTransferMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  interface TransferRecord {
+    id: string;
+    recipientUsername: string;
+    recipientDisplayName: string;
+    amount: number;
+    dateStr: string;
+    timeStr: string;
+    createdAt: string;
+  }
+
+  const [transferHistory, setTransferHistory] = useState<TransferRecord[]>([]);
+
+  const loadTransferHistory = useCallback(() => {
+    if (typeof window === "undefined" || !currentUser) {
+      setTransferHistory([]);
+      return;
+    }
+    try {
+      const uKey = currentUser.username || currentUser.email || "";
+      const keyName = uKey ? `armbiz_user_transfers_${uKey}` : "armbiz_user_transfers";
+      const str = localStorage.getItem(keyName);
+      if (str) {
+        setTransferHistory(JSON.parse(str));
+      } else {
+        setTransferHistory([]);
+      }
+    } catch (e) {
+      setTransferHistory([]);
+    }
+  }, [currentUser]);
+
+  useEffect(() => {
+    loadTransferHistory();
+  }, [loadTransferHistory]);
+
+  const [cooldownRemainingSec, setCooldownRemainingSec] = useState<number>(0);
+
+  const formatCountdown = (totalSec: number) => {
+    const hours = Math.floor(totalSec / 3600);
+    const minutes = Math.floor((totalSec % 3600) / 60);
+    const seconds = totalSec % 60;
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  };
+
+  useEffect(() => {
+    if (!currentUser || typeof window === "undefined") return;
+    const uKey = currentUser.username || currentUser.email || (currentUser as any).id || "";
+    if (!uKey) return;
+
+    const checkCooldown = () => {
+      const lastTs = localStorage.getItem(`armbiz_user_last_transfer_${uKey}`);
+      if (lastTs) {
+        const lastTime = Number(lastTs);
+        const cooldownEndTime = lastTime + 24 * 60 * 60 * 1000;
+        const diffSec = Math.max(0, Math.floor((cooldownEndTime - Date.now()) / 1000));
+        setCooldownRemainingSec(diffSec);
+      } else {
+        setCooldownRemainingSec(0);
+      }
+    };
+
+    checkCooldown();
+    const interval = setInterval(checkCooldown, 1000);
+    return () => clearInterval(interval);
+  }, [currentUser]);
+
+  const invitedFriends = useMemo(() => {
+    if (!currentUser) return [];
+    const myUserKey = (currentUser.username || "").toLowerCase().trim();
+    const myEmail = (currentUser.email || "").toLowerCase().trim();
+    const myName = ((currentUser as any).displayName || currentUser.name || "").toLowerCase().trim();
+
+    const friendsMap = new Map<string, { username: string; displayName: string }>();
+
+    if (typeof window === "undefined" || typeof localStorage === "undefined") return [];
+
+    // 1. Scan localStorage for armbiz_redeemed_code_* keys
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith("armbiz_redeemed_code_")) {
+        const friendKey = key.replace("armbiz_redeemed_code_", "").trim();
+        const codeVal = (localStorage.getItem(key) || "").toLowerCase().trim();
+
+        if (
+          friendKey &&
+          friendKey.toLowerCase() !== myUserKey &&
+          friendKey.toLowerCase() !== myEmail &&
+          (codeVal === myUserKey || codeVal === myEmail || (myName && codeVal === myName))
+        ) {
+          friendsMap.set(friendKey, {
+            username: friendKey,
+            displayName: friendKey.charAt(0).toUpperCase() + friendKey.slice(1),
+          });
+        }
+      }
+    }
+
+    // 2. Scan armbiz_users array
+    const usersStr = localStorage.getItem("armbiz_users");
+    if (usersStr) {
+      try {
+        const allUsers: any[] = JSON.parse(usersStr);
+        allUsers.forEach((u) => {
+          if (!u) return;
+          const uName = (u.username || "").toLowerCase().trim();
+          const uEmail = (u.email || "").toLowerCase().trim();
+          if ((uName && uName === myUserKey) || (uEmail && uEmail === myEmail)) return;
+
+          const redeemed = (u.redeemedInviteCode || u.inviteCode || "").toLowerCase().trim();
+          if (
+            redeemed &&
+            (redeemed === myUserKey || redeemed === myEmail || (myName && redeemed === myName))
+          ) {
+            const friendUsername = u.username || u.email || "user";
+            friendsMap.set(friendUsername, {
+              username: friendUsername,
+              displayName: u.displayName || u.name || friendUsername,
+            });
+          }
+        });
+      } catch (e) { }
+    }
+
+    return Array.from(friendsMap.values());
+  }, [currentUser]);
+
+  const handleTransferCoins = () => {
+    if (!currentUser) return;
+    setTransferMsg(null);
+
+    const uKey = currentUser.username || currentUser.email || (currentUser as any).id || "";
+
+    // 1. Check 24-hour daily cooldown
+    if (cooldownRemainingSec > 0) {
+      setTransferMsg({
+        type: "error",
+        text: locale === "hy"
+          ? `Փոխանցումը սահմանափակված է: Հաջորդ փոխանցումը հնարավոր կլինի ${formatCountdown(cooldownRemainingSec)} հետո:`
+          : `Daily limit reached. Next transfer available in ${formatCountdown(cooldownRemainingSec)}.`
+      });
+      return;
+    }
+
+    const amount = Number(transferAmount);
+    if (!selectedFriendUsername) {
+      setTransferMsg({
+        type: "error",
+        text: locale === "hy" ? "Խնդրում ենք ընտրել հրավիրված ընկերոջը" : "Please select an invited friend"
+      });
+      return;
+    }
+    if (!amount || isNaN(amount) || amount <= 0) {
+      setTransferMsg({
+        type: "error",
+        text: locale === "hy" ? "Խնդրում ենք մուտքագրել ճիշտ քանակ" : "Please enter a valid amount"
+      });
+      return;
+    }
+
+    // 2. Check 200 Coins max limit
+    if (amount > 200) {
+      setTransferMsg({
+        type: "error",
+        text: locale === "hy"
+          ? "Օրական առավելագույն փոխանցման չափը 200 FindyCoins է:"
+          : "Maximum transfer amount is 200 FindyCoins per day."
+      });
+      return;
+    }
+
+    const savedCoinsStr = uKey ? localStorage.getItem(`armbiz_user_coins_${uKey}`) : null;
+    const currentCoins = savedCoinsStr !== null && !isNaN(Number(savedCoinsStr))
+      ? Number(savedCoinsStr)
+      : ((currentUser as any).findyCoins || 0);
+
+    if (amount > currentCoins) {
+      setTransferMsg({
+        type: "error",
+        text: locale === "hy" ? "Դուք չունեք բավարար Findy Coins փոխանցելու համար" : "You don't have enough Findy Coins"
+      });
+      return;
+    }
+
+    try {
+      const newSenderCoins = currentCoins - amount;
+      if (uKey) localStorage.setItem(`armbiz_user_coins_${uKey}`, String(newSenderCoins));
+      (currentUser as any).findyCoins = newSenderCoins;
+
+      const recipientCoinsStr = localStorage.getItem(`armbiz_user_coins_${selectedFriendUsername}`);
+      const recipientCurrentCoins = recipientCoinsStr !== null && !isNaN(Number(recipientCoinsStr))
+        ? Number(recipientCoinsStr)
+        : 0;
+      const newRecipientCoins = recipientCurrentCoins + amount;
+      localStorage.setItem(`armbiz_user_coins_${selectedFriendUsername}`, String(newRecipientCoins));
+
+      const usersStr = localStorage.getItem("armbiz_users");
+      if (usersStr) {
+        try {
+          const users: any[] = JSON.parse(usersStr);
+          const senderIdx = users.findIndex((u) => u.username === currentUser.username || u.email === currentUser.email);
+          if (senderIdx !== -1) users[senderIdx].findyCoins = newSenderCoins;
+          const recipientIdx = users.findIndex((u) => u.username === selectedFriendUsername);
+          if (recipientIdx !== -1) users[recipientIdx].findyCoins = newRecipientCoins;
+          localStorage.setItem("armbiz_users", JSON.stringify(users));
+        } catch (e) { }
+      }
+
+      const recipientFriend = invitedFriends.find((f: any) => f.username === selectedFriendUsername);
+      const now = new Date();
+      const newRecord: TransferRecord = {
+        id: "tr_" + Date.now(),
+        recipientUsername: selectedFriendUsername,
+        recipientDisplayName: recipientFriend?.displayName || selectedFriendUsername,
+        amount: amount,
+        dateStr: now.toLocaleDateString(locale === "hy" ? "hy-AM" : "en-US", { day: "2-digit", month: "long", year: "numeric" }),
+        timeStr: now.toLocaleTimeString(locale === "hy" ? "hy-AM" : "en-US", { hour: "2-digit", minute: "2-digit" }),
+        createdAt: now.toISOString(),
+      };
+
+      const updatedHistory = [newRecord, ...transferHistory];
+      setTransferHistory(updatedHistory);
+      if (uKey) {
+        localStorage.setItem(`armbiz_user_transfers_${uKey}`, JSON.stringify(updatedHistory));
+      }
+
+      const nowMs = Date.now();
+      if (uKey) {
+        localStorage.setItem(`armbiz_user_last_transfer_${uKey}`, String(nowMs));
+      }
+      setCooldownRemainingSec(24 * 60 * 60);
+
+      setTransferAmount("");
+      setTransferMsg({
+        type: "success",
+        text: locale === "hy" ? `${amount} FindyCoins հաջողությամբ փոխանցվեց ${selectedFriendUsername}-ին:` : `${amount} FindyCoins successfully transferred to ${selectedFriendUsername}!`
+      });
+
+      window.dispatchEvent(new Event("userUpdated"));
+      window.dispatchEvent(new Event("coinsUpdated"));
+    } catch (e) {
+      setTransferMsg({
+        type: "error",
+        text: locale === "hy" ? "Փոխանցման սխալ տեղի ունեցավ" : "Transfer failed"
+      });
     }
   };
 
   const loadClaimedOffers = () => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || !currentUser) {
+      setClaimedOffers([]);
+      return;
+    }
     try {
-      const str = localStorage.getItem("armbiz_user_claimed_offers");
+      const uKey = currentUser.username || currentUser.email || "";
+      const keyName = uKey ? `armbiz_user_claimed_offers_${uKey}` : "armbiz_user_claimed_offers";
+      const str = localStorage.getItem(keyName);
       if (str) {
         const all: any[] = JSON.parse(str);
         const now = Date.now();
@@ -148,7 +466,7 @@ export default function UserProfileDashboard() {
           return now < new Date(item.expiresAt).getTime();
         });
         if (active.length !== all.length) {
-          localStorage.setItem("armbiz_user_claimed_offers", JSON.stringify(active));
+          localStorage.setItem(keyName, JSON.stringify(active));
         }
         setClaimedOffers(active);
       } else {
@@ -189,11 +507,84 @@ export default function UserProfileDashboard() {
     }
   }, [currentUser]);
 
+  const resolveBusinessLogo = (item: any): string => {
+    if (!item) return "";
+    const direct =
+      item.logoUrl ||
+      item.logo ||
+      (Array.isArray(item.images) ? item.images[0] : typeof item.images === "string" ? item.images : "") ||
+      (Array.isArray(item.gallery) ? item.gallery[0] : typeof item.gallery === "string" ? item.gallery : "") ||
+      item.coverImageUrl ||
+      item.coverUrl ||
+      (Array.isArray(item.metadata?.coverUrl) ? item.metadata.coverUrl[0] : item.metadata?.coverUrl) ||
+      item.image ||
+      item.avatar ||
+      "";
+    if (direct && typeof direct === "string" && direct.trim().length > 0) {
+      return direct.trim();
+    }
+
+    const itemKey = item.id || item.slug || "";
+    const itemName = (item.name || item.businessName || "").toLowerCase().trim();
+
+    const mockMatch = MOCK_BUSINESSES.find(
+      (b) =>
+        (itemKey && (b.id === itemKey || b.slug === itemKey)) ||
+        (itemName && b.name && b.name.toLowerCase().trim() === itemName)
+    );
+    if (mockMatch) {
+      const mockLogo =
+        mockMatch.logo ||
+        mockMatch.logoUrl ||
+        (Array.isArray(mockMatch.images) ? mockMatch.images[0] : "") ||
+        mockMatch.coverImageUrl ||
+        "";
+      if (mockLogo) return mockLogo;
+    }
+
+    if (typeof localStorage !== "undefined") {
+      const profilesStr = localStorage.getItem("armbiz-business-profiles");
+      if (profilesStr) {
+        try {
+          const profiles: any[] = JSON.parse(profilesStr);
+          const found = profiles.find((p: any) => {
+            if (!p) return false;
+            const pName = (p.businessName || p.name || "").toLowerCase().trim();
+            const pSlug = pName.replace(/\s+/g, "-").replace(/[^\w\u0531-\u058F-]/g, "");
+            return (
+              (itemKey && (p.id === itemKey || p.slug === itemKey || p.ownerUsername === itemKey || `custom-${p.ownerUsername}` === itemKey || pSlug === itemKey)) ||
+              (itemName && pName && pName === itemName)
+            );
+          });
+          if (found) {
+            const profileLogo =
+              found.logo ||
+              found.logoUrl ||
+              (Array.isArray(found.images) ? found.images[0] : "") ||
+              (Array.isArray(found.gallery) ? found.gallery[0] : "") ||
+              found.coverUrl ||
+              found.coverImageUrl ||
+              (Array.isArray(found.metadata?.coverUrl) ? found.metadata.coverUrl[0] : found.metadata?.coverUrl) ||
+              found.image ||
+              found.avatar ||
+              "";
+            if (profileLogo) return profileLogo;
+          }
+        } catch (e) { }
+      }
+    }
+    return "";
+  };
+
   const loadFavorites = () => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || !currentUser) {
+      setSavedBusinesses([]);
+      return;
+    }
     try {
-      const favStr = localStorage.getItem("armbiz_favorites");
-      const itemsStr = localStorage.getItem("armbiz_favorites_items");
+      const uKey = currentUser.username || currentUser.email || (currentUser as any).id || (currentUser as any)._id || "";
+      const favStr = uKey ? localStorage.getItem(`armbiz_favorites_${uKey}`) : null;
+      const itemsStr = uKey ? localStorage.getItem(`armbiz_favorites_items_${uKey}`) : null;
 
       const favIds: string[] = favStr ? JSON.parse(favStr) : [];
       const itemsMap: Record<string, any> = itemsStr ? JSON.parse(itemsStr) : {};
@@ -211,7 +602,8 @@ export default function UserProfileDashboard() {
         if (!item) return;
         const itemKey = item.id || item.slug || k;
         if (!seen.has(itemKey)) {
-          list.push(item);
+          const logo = resolveBusinessLogo(item);
+          list.push({ ...item, logoUrl: logo, logo: logo });
           seen.add(itemKey);
           if (item.id) seen.add(String(item.id));
           if (item.slug) seen.add(String(item.slug));
@@ -262,20 +654,6 @@ export default function UserProfileDashboard() {
             }
           } catch (e) { }
         }
-
-        // Fallback card
-        list.push({
-          id: key,
-          slug: key,
-          name: key.replace(/^custom-/, '').replace(/-/g, ' ').toUpperCase(),
-          city: "Yerevan",
-          category: { name: "Business" },
-          ratingAvg: 5.0,
-          images: [],
-          logoUrl: "",
-          shortDescription: ""
-        });
-        seen.add(key);
       }
 
       setSavedBusinesses(list);
@@ -285,7 +663,10 @@ export default function UserProfileDashboard() {
   };
 
   const loadUserBookings = () => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || !currentUser) {
+      setUserBookings([]);
+      return;
+    }
     try {
       const localBookingsStr = localStorage.getItem("armbiz-local-bookings");
       const userBookingsStr = localStorage.getItem("armbiz_user_bookings");
@@ -306,21 +687,15 @@ export default function UserProfileDashboard() {
 
       const currentUsername = currentUser?.username?.toLowerCase() || "";
       const currentEmail = currentUser?.email?.toLowerCase() || "";
-      const currentName = currentUser?.name?.toLowerCase() || "";
-      const currentPhone = currentUser?.phone || "";
 
       // Filter ONLY bookings belonging to this current user!
       const filtered = uniqueList.filter((b: any) => {
         if (!b) return false;
         const bUserKey = (b.userKey || "").toLowerCase();
-        const bCustomerName = (b.customerName || "").toLowerCase();
-        const bPhone = b.customerPhone || "";
         const bEmail = (b.userEmail || b.customerEmail || "").toLowerCase();
 
         if (currentUsername && bUserKey === currentUsername) return true;
         if (currentEmail && (bUserKey === currentEmail || bEmail === currentEmail)) return true;
-        if (currentName && (bUserKey === currentName || bCustomerName === currentName)) return true;
-        if (currentPhone && bPhone && bPhone.includes(currentPhone)) return true;
 
         return false;
       });
@@ -365,7 +740,11 @@ export default function UserProfileDashboard() {
           if (Array.isArray(parsed)) {
             parsed.forEach((r) => {
               if (r && r._id && !list.some((existing) => existing._id === r._id)) {
-                list.push(r);
+                const rUsername = (r.userUsername || r.username || r.author?.username || "").toLowerCase().trim();
+                const rEmail = (r.userEmail || r.email || "").toLowerCase().trim();
+                if ((currentUsername && rUsername === currentUsername) || (currentEmail && rEmail === currentEmail)) {
+                  list.push(r);
+                }
               }
             });
           }
@@ -392,11 +771,8 @@ export default function UserProfileDashboard() {
                   const rUsername = (r.userUsername || r.username || r.author?.username || "").toLowerCase().trim();
                   const rEmail = (r.userEmail || r.email || "").toLowerCase().trim();
 
-                  const isUserAdded = r._id.startsWith("local-");
                   const matchesUser =
-                    isUserAdded ||
-                    (currentName && (rName === currentName || rName.includes(currentName) || currentName.includes(rName))) ||
-                    (currentUsername && (rUsername === currentUsername || rName === currentUsername || rName.includes(currentUsername))) ||
+                    (currentUsername && (rUsername === currentUsername || rName === currentUsername)) ||
                     (currentEmail && rEmail === currentEmail);
 
                   if (matchesUser && !list.some((existing) => existing._id === r._id)) {
@@ -458,6 +834,14 @@ export default function UserProfileDashboard() {
       loadUserReviews();
       loadClaimedOffers();
     };
+
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab");
+      if (tabParam === "favorites" || tabParam === "saved") {
+        setActiveTab("favorites");
+      }
+    }
 
     window.addEventListener("favoritesUpdated", handleUpdate);
     window.addEventListener("bookingsUpdated", handleUpdate);
@@ -595,22 +979,52 @@ export default function UserProfileDashboard() {
     }
   };
 
-  const removeFavorite = (id: string) => {
-    if (typeof window === "undefined") return;
+  const removeFavorite = (id: string, bizObj?: any) => {
+    if (typeof window === "undefined" || !currentUser) return;
     try {
-      const favStr = localStorage.getItem("armbiz_favorites");
-      const itemsStr = localStorage.getItem("armbiz_favorites_items");
+      const uKey = currentUser.username || currentUser.email || (currentUser as any).id || (currentUser as any)._id || "";
+      if (!uKey) return;
+      const userFavsKey = `armbiz_favorites_${uKey}`;
+      const userItemsKey = `armbiz_favorites_items_${uKey}`;
+
+      const favStr = localStorage.getItem(userFavsKey);
+      const itemsStr = localStorage.getItem(userItemsKey);
 
       let favIds: string[] = favStr ? JSON.parse(favStr) : [];
       let itemsMap: Record<string, any> = itemsStr ? JSON.parse(itemsStr) : {};
 
-      favIds = favIds.filter((itemKey) => itemKey !== id);
-      delete itemsMap[id];
+      const keysToPurge = new Set<string>();
+      if (id) keysToPurge.add(id);
+      if (bizObj?.id) keysToPurge.add(String(bizObj.id));
+      if (bizObj?.slug) keysToPurge.add(String(bizObj.slug));
+      if (bizObj?.name) {
+        const nameSlug = String(bizObj.name).toLowerCase().trim().replace(/\s+/g, "-");
+        keysToPurge.add(nameSlug);
+      }
 
-      localStorage.setItem("armbiz_favorites", JSON.stringify(favIds));
-      localStorage.setItem("armbiz_favorites_items", JSON.stringify(itemsMap));
+      favIds = favIds.filter((itemKey) => {
+        if (keysToPurge.has(itemKey)) return false;
+        const matchInMap = itemsMap[itemKey];
+        if (matchInMap && (keysToPurge.has(matchInMap.id) || keysToPurge.has(matchInMap.slug))) return false;
+        return true;
+      });
 
-      setSavedBusinesses((prev) => prev.filter((b) => b.id !== id && b.slug !== id));
+      keysToPurge.forEach((k) => delete itemsMap[k]);
+      Object.keys(itemsMap).forEach((k) => {
+        const item = itemsMap[k];
+        if (item && (keysToPurge.has(item.id) || keysToPurge.has(item.slug))) {
+          delete itemsMap[k];
+        }
+      });
+
+      const safeSet = (key: string, val: string) => {
+        try { localStorage.setItem(key, val); } catch (e) { }
+      };
+
+      safeSet(userFavsKey, JSON.stringify(favIds));
+      safeSet(userItemsKey, JSON.stringify(itemsMap));
+
+      setSavedBusinesses((prev) => prev.filter((b) => !keysToPurge.has(b.id) && !keysToPurge.has(b.slug)));
       window.dispatchEvent(new Event("favoritesUpdated"));
     } catch (e) { }
   };
@@ -677,8 +1091,12 @@ export default function UserProfileDashboard() {
   const displayName = currentUser?.name || currentUser?.username || "User";
   const userInitial = displayName.charAt(0).toUpperCase();
 
-  // Calculate Findy Coins (from DB profile or 5% of total bookings value fallback)
-  const findyCoins = currentUser?.findyCoins !== undefined ? currentUser.findyCoins : Math.floor(userBookings.reduce((sum, b) => sum + ((Number(b.totalPrice) || 0) * 0.05), 0));
+  // Calculate Findy Coins (from user-specific storage key or DB profile or 1% of total bookings value fallback)
+  const uKeyForCoins = currentUser?.username || currentUser?.email || (currentUser as any)?.id || "";
+  const savedCoinsStr = uKeyForCoins && typeof localStorage !== "undefined" ? localStorage.getItem(`armbiz_user_coins_${uKeyForCoins}`) : null;
+  const findyCoins = savedCoinsStr !== null && !isNaN(Number(savedCoinsStr))
+    ? Number(savedCoinsStr)
+    : (currentUser?.findyCoins !== undefined ? currentUser.findyCoins : Math.floor(userBookings.reduce((sum, b) => sum + ((Number(b.totalPrice) || 0) * 0.01), 0)));
 
   return (
     <div className="min-h-screen bg-[hsl(var(--background))] text-[hsl(var(--foreground))] py-8 px-4 sm:px-6 lg:px-8">
@@ -772,8 +1190,8 @@ export default function UserProfileDashboard() {
               <button
                 onClick={() => setActiveTab("security")}
                 className={`h-10 px-4 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${activeTab === "security"
-                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
-                    : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
+                  ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
+                  : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
                   }`}
               >
                 <Lock className="w-3.5 h-3.5" />
@@ -846,8 +1264,8 @@ export default function UserProfileDashboard() {
           <button
             onClick={() => setActiveTab("profile")}
             className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${activeTab === "profile"
-                ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
-                : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
+              ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
+              : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
               }`}
           >
             <User className="w-3.5 h-3.5" />
@@ -857,15 +1275,15 @@ export default function UserProfileDashboard() {
           <button
             onClick={() => setActiveTab("favorites")}
             className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${activeTab === "favorites"
-                ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
-                : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
+              ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
+              : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
               }`}
           >
             <Bookmark className="w-3.5 h-3.5" />
             {locale === "hy" ? "Իմ Նախընտրածները" : locale === "ru" ? "Избранное" : "Saved Places"}
             <span className={`px-2 py-0.5 rounded-full text-[11px] font-black transition-colors ${activeTab === "favorites"
-                ? "bg-white text-slate-950 dark:bg-slate-950 dark:text-white shadow-sm"
-                : "bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] dark:bg-slate-800 dark:text-slate-200"
+              ? "bg-white text-slate-950 dark:bg-slate-950 dark:text-white shadow-sm"
+              : "bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] dark:bg-slate-800 dark:text-slate-200"
               }`}>
               {savedBusinesses.length}
             </span>
@@ -874,15 +1292,15 @@ export default function UserProfileDashboard() {
           <button
             onClick={() => setActiveTab("bookings")}
             className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${activeTab === "bookings"
-                ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
-                : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
+              ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
+              : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
               }`}
           >
             <Calendar className="w-3.5 h-3.5" />
             {locale === "hy" ? "Իմ Ամրագրումները" : locale === "ru" ? "Мои бронирования" : "My Bookings"}
             <span className={`px-2 py-0.5 rounded-full text-[11px] font-black transition-colors ${activeTab === "bookings"
-                ? "bg-white text-slate-950 dark:bg-slate-950 dark:text-white shadow-sm"
-                : "bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] dark:bg-slate-800 dark:text-slate-200"
+              ? "bg-white text-slate-950 dark:bg-slate-950 dark:text-white shadow-sm"
+              : "bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] dark:bg-slate-800 dark:text-slate-200"
               }`}>
               {userBookings.length}
             </span>
@@ -891,15 +1309,15 @@ export default function UserProfileDashboard() {
           <button
             onClick={() => setActiveTab("reviews")}
             className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${activeTab === "reviews"
-                ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
-                : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
+              ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
+              : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
               }`}
           >
             <MessageSquare className="w-3.5 h-3.5" />
             {locale === "hy" ? "Իմ Մեկնաբանությունները" : locale === "ru" ? "Мои отзывы" : "My Reviews"}
             <span className={`px-2 py-0.5 rounded-full text-[11px] font-black transition-colors ${activeTab === "reviews"
-                ? "bg-white text-slate-950 dark:bg-slate-950 dark:text-white shadow-sm"
-                : "bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] dark:bg-slate-800 dark:text-slate-200"
+              ? "bg-white text-slate-950 dark:bg-slate-950 dark:text-white shadow-sm"
+              : "bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] dark:bg-slate-800 dark:text-slate-200"
               }`}>
               {userReviewsCount}
             </span>
@@ -908,15 +1326,15 @@ export default function UserProfileDashboard() {
           <button
             onClick={() => setActiveTab("offers")}
             className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${activeTab === "offers"
-                ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
-                : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
+              ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
+              : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
               }`}
           >
             <Gift className="w-3.5 h-3.5 text-emerald-500" />
             {locale === "hy" ? "Իմ Գնած Առաջարկները" : locale === "ru" ? "Купленные предложения" : "My Purchased Offers"}
             <span className={`px-2 py-0.5 rounded-full text-[11px] font-black transition-colors ${activeTab === "offers"
-                ? "bg-emerald-500 text-white shadow-sm"
-                : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+              ? "bg-emerald-500 text-white shadow-sm"
+              : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
               }`}>
               {claimedOffers.length}
             </span>
@@ -926,8 +1344,8 @@ export default function UserProfileDashboard() {
           <button
             onClick={() => setActiveTab("transfer")}
             className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${activeTab === "transfer"
-                ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
-                : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
+              ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
+              : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
               }`}
           >
             <Coins className="w-3.5 h-3.5" />
@@ -937,8 +1355,8 @@ export default function UserProfileDashboard() {
           <button
             onClick={() => setActiveTab("invite")}
             className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${activeTab === "invite"
-                ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
-                : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
+              ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
+              : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
               }`}
           >
             <UserPlus className="w-3.5 h-3.5" />
@@ -979,8 +1397,8 @@ export default function UserProfileDashboard() {
               {profileMsg && (
                 <div
                   className={`p-4 rounded-xl text-sm border flex items-center gap-2 ${profileMsg.type === "success"
-                      ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
-                      : "bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-400"
+                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                    : "bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-400"
                     }`}
                 >
                   {profileMsg.type === "success" ? <CheckCircle className="w-4 h-4 shrink-0" /> : <ShieldCheck className="w-4 h-4 shrink-0" />}
@@ -1127,25 +1545,37 @@ export default function UserProfileDashboard() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {savedBusinesses.map((biz, idx) => {
-                  const img = biz.images?.[0] || biz.logoUrl || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80";
+                  const logo = resolveBusinessLogo(biz);
+                  const bannerImg = (Array.isArray(biz.images) && biz.images.length > 0 ? biz.images[0] : "") || biz.coverImageUrl || biz.coverUrl || (Array.isArray(biz.metadata?.coverUrl) ? biz.metadata.coverUrl[0] : biz.metadata?.coverUrl) || logo;
                   return (
                     <div
                       key={`saved-${biz.id || biz.slug}-${idx}`}
                       className="group bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl overflow-hidden hover:shadow-lg transition-all flex flex-col"
                     >
-                      <div className="relative h-40 overflow-hidden bg-[hsl(var(--muted))]">
-                        <img
-                          src={img}
-                          alt={biz.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
+                      <div className="relative h-40 overflow-hidden bg-gradient-to-br from-violet-600/20 to-indigo-900/30 flex items-center justify-center">
+                        {bannerImg ? (
+                          <img
+                            src={bannerImg}
+                            alt={biz.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white text-2xl font-black shadow-lg">
+                            {biz.name?.charAt(0)?.toUpperCase() || "B"}
+                          </div>
+                        )}
                         <button
-                          onClick={() => removeFavorite(biz.id || biz.slug)}
-                          className="absolute top-2.5 right-2.5 p-2 rounded-full bg-black/60 backdrop-blur text-white hover:bg-red-600 transition-colors shadow"
-                          title="Remove from favorites"
+                          onClick={() => removeFavorite(biz.id || biz.slug, biz)}
+                          className="absolute top-2.5 right-2.5 p-2 rounded-full bg-black/60 backdrop-blur text-amber-400 hover:text-red-400 hover:bg-black/80 transition-colors shadow z-10 group/btn"
+                          title={locale === "hy" ? "Ջնջել պահպանվածներից" : "Remove from favorites"}
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Bookmark className="w-3.5 h-3.5 text-amber-400 fill-amber-400 group-hover/btn:text-red-400 group-hover/btn:fill-red-400/20 transition-colors" />
                         </button>
+                        {logo && bannerImg && logo !== bannerImg && (
+                          <div className="absolute top-2.5 left-2.5 w-10 h-10 rounded-xl overflow-hidden border-2 border-white dark:border-slate-800 shadow-md bg-white">
+                            <img src={logo} alt={biz.name} className="w-full h-full object-cover" />
+                          </div>
+                        )}
                         {biz.category && (
                           <span className="absolute bottom-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-black/70 backdrop-blur text-white">
                             {typeof biz.category === "object" ? biz.category.name : biz.category}
@@ -1192,8 +1622,8 @@ export default function UserProfileDashboard() {
               <h2 className="text-lg font-bold tracking-tight text-[hsl(var(--foreground))]">
                 {locale === "hy" ? "Իմ Ամրագրումները" : "My Reservations"}
               </h2>
-              <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                {locale === "hy" ? "Ձեր կատարած վերապահումները Findy հարթակում" : "Track all your table bookings and reservations."}
+              <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
+                {locale === "hy" ? "Ստացեք 1% քեշբեք Findy Coins-ով ձեր բոլոր ամրագրումներից" : locale === "ru" ? "Вы получаете 1% кэшбэка от всех ваших бронирований" : "You earn 1% back from all your bookings"}
               </p>
             </div>
 
@@ -1217,10 +1647,10 @@ export default function UserProfileDashboard() {
                         <h4 className="font-bold text-base text-[hsl(var(--foreground))]">{b.businessName}</h4>
                         <span
                           className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${b.status === "confirmed"
-                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-                              : b.status === "pending"
-                                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
-                                : "bg-gray-500/10 text-gray-500"
+                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                            : b.status === "pending"
+                              ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                              : "bg-gray-500/10 text-gray-500"
                             }`}
                         >
                           {b.status}
@@ -1353,8 +1783,8 @@ export default function UserProfileDashboard() {
                                 <Star
                                   key={star}
                                   className={`w-3.5 h-3.5 ${star <= ratingVal
-                                      ? "fill-amber-400 text-amber-400"
-                                      : "fill-transparent text-slate-300 dark:text-slate-600"
+                                    ? "fill-amber-400 text-amber-400"
+                                    : "fill-transparent text-slate-300 dark:text-slate-600"
                                     }`}
                                 />
                               ))}
@@ -1429,8 +1859,8 @@ export default function UserProfileDashboard() {
             {passwordMsg && (
               <div
                 className={`p-4 rounded-xl text-sm border flex items-center gap-2 ${passwordMsg.type === "success"
-                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
-                    : "bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-400"
+                  ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                  : "bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-400"
                   }`}
               >
                 {passwordMsg.type === "success" ? <CheckCircle className="w-4 h-4 shrink-0" /> : <ShieldCheck className="w-4 h-4 shrink-0" />}
@@ -1762,95 +2192,367 @@ export default function UserProfileDashboard() {
           </div>
         )}
 
-        {/* ── TAB CONTENT: Transfer Coins ── */}
+        {/* ── TAB CONTENT: Transfer Coins + History Timeline ── */}
         {activeTab === "transfer" && (
-          <div className="animate-in fade-in zoom-in-95 duration-500">
-            <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-3xl p-6 sm:p-10 max-w-2xl mx-auto shadow-sm">
-              <div className="w-16 h-16 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center mb-6">
-                <Coins className="w-8 h-8" />
-              </div>
-              <h3 className="text-2xl font-black mb-2">{locale === "hy" ? "Ուղարկել ընկերոջը" : "Send to a Friend"}</h3>
-              <p className="text-[hsl(var(--muted-foreground))] mb-8">{locale === "hy" ? "Անմիջապես փոխանցեք Findy Coins ձեր հրավիրած ընկերներին:" : "Transfer Findy Coins instantly to friends you have invited."}</p>
+          <div className="animate-in fade-in zoom-in-95 duration-500 max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-              <div className="space-y-5">
-                <div>
-                  <label className="text-sm font-bold text-[hsl(var(--muted-foreground))] mb-2 block">{locale === "hy" ? "Ընտրել ընկերոջը" : "Select Friend"}</label>
-                  <select className="w-full bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-xl px-4 py-3.5 outline-none focus:border-blue-500 transition-colors text-[hsl(var(--foreground))] font-medium">
-                    <option>Aram K. ({locale === "hy" ? "Հրավիրվել է 2 օր առաջ" : "Invited 2 days ago"})</option>
-                    <option>Narek B. ({locale === "hy" ? "Հրավիրվել է 1 շաբաթ առաջ" : "Invited 1 week ago"})</option>
-                    <option>Lilit M. ({locale === "hy" ? "Հրավիրվել է 1 ամիս առաջ" : "Invited 1 month ago"})</option>
-                  </select>
+              {/* LEFT COLUMN: Send Form Card */}
+              <div className="lg:col-span-7 bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-3xl p-6 sm:p-8 shadow-sm">
+                <div className="w-14 h-14 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center mb-6">
+                  <Coins className="w-7 h-7" />
                 </div>
-                <div>
-                  <label className="text-sm font-bold text-[hsl(var(--muted-foreground))] mb-2 block">{locale === "hy" ? "Քանակը" : "Amount to send"}</label>
-                  <div className="relative">
-                    <Coins className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-500" />
-                    <input type="number" placeholder="0" className="w-full bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-xl pl-12 pr-4 py-3.5 outline-none focus:border-blue-500 transition-colors font-bold text-lg" />
+                <h3 className="text-2xl font-black mb-1">{locale === "hy" ? "Ուղարկել ընկերոջը" : "Send to a Friend"}</h3>
+                <p className="text-xs sm:text-sm text-[hsl(var(--muted-foreground))] mb-6">{locale === "hy" ? "Անմիջապես փոխանցեք Findy Coins ձեր հրավիրած ընկերներին:" : "Transfer Findy Coins instantly to friends you have invited."}</p>
+
+                <div className="space-y-5">
+                  {cooldownRemainingSec > 0 && (
+                    <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 space-y-2 text-center animate-in fade-in">
+                      <div className="flex items-center justify-center gap-2">
+                        <Clock className="w-5 h-5 animate-pulse" />
+                        <span className="font-extrabold text-sm">
+                          {locale === "hy" ? "Օրական Սահմանաչափը Սպառված է (1 փոխանցում / 24ժ)" : "Daily Limit Reached (1 transfer / 24h)"}
+                        </span>
+                      </div>
+                      <p className="text-xs opacity-90 leading-relaxed max-w-sm mx-auto">
+                        {locale === "hy"
+                          ? "Դուք արդեն կատարել եք Ձեր օրական 1 փոխանցումը: Հաջորդ փոխանցումը հնարավոր կլինի ճիշտ 24 ժամ անց:"
+                          : "You have completed your 1 daily transfer limit. Next transfer will be available in 24 hours."}
+                      </p>
+                      <div className="pt-1">
+                        <div className="font-mono text-xl font-black text-amber-500 bg-amber-500/10 px-4 py-1.5 rounded-xl border border-amber-500/20 inline-block shadow-sm">
+                          {formatCountdown(cooldownRemainingSec)}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="text-sm font-bold text-[hsl(var(--muted-foreground))] mb-2 block">{locale === "hy" ? "Ընտրել ընկերոջը" : "Select Friend"}</label>
+                    {invitedFriends.length > 0 ? (
+                      <select
+                        disabled={cooldownRemainingSec > 0}
+                        value={selectedFriendUsername}
+                        onChange={(e) => setSelectedFriendUsername(e.target.value)}
+                        className={`w-full bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-xl px-4 py-3.5 outline-none focus:border-blue-500 transition-colors text-[hsl(var(--foreground))] font-medium cursor-pointer ${cooldownRemainingSec > 0 ? "opacity-60 cursor-not-allowed" : ""}`}
+                      >
+                        <option value="">{locale === "hy" ? "-- Ընտրել հրավիրված ընկերոջը --" : "-- Select invited friend --"}</option>
+                        {invitedFriends.map((friend: any) => (
+                          <option key={friend.username} value={friend.username}>
+                            {friend.displayName || friend.username} (@{friend.username})
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <select
+                        disabled
+                        className="w-full bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-xl px-4 py-3.5 outline-none focus:border-blue-500 transition-colors text-[hsl(var(--muted-foreground))] font-medium cursor-not-allowed opacity-75"
+                      >
+                        <option>
+                          {locale === "hy"
+                            ? "Դեռևս չկան ընկերներ, ովքեր ակտիվացրել են Ձեր հրավերի կոդը"
+                            : "No friends have activated your invite code yet"}
+                        </option>
+                      </select>
+                    )}
                   </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm font-bold text-[hsl(var(--muted-foreground))]">{locale === "hy" ? "Քանակը" : "Amount to send"}</label>
+                      <span className="text-[11px] font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+                        {locale === "hy" ? "Առավելագույնը 200 Coin" : "Max 200 Coins"}
+                      </span>
+                    </div>
+                    <div className="relative">
+                      <Coins className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-500" />
+                      <input
+                        type="number"
+                        placeholder="0"
+                        max={200}
+                        disabled={cooldownRemainingSec > 0}
+                        value={transferAmount}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === "") {
+                            setTransferAmount("");
+                            return;
+                          }
+                          const num = Number(val);
+                          if (!isNaN(num)) {
+                            if (num > 200) {
+                              setTransferAmount("200");
+                            } else {
+                              setTransferAmount(val);
+                            }
+                          }
+                        }}
+                        className={`w-full bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-xl pl-12 pr-4 py-3.5 outline-none focus:border-blue-500 transition-colors font-bold text-lg ${cooldownRemainingSec > 0 ? "opacity-60 cursor-not-allowed" : ""}`}
+                      />
+                    </div>
+                  </div>
+                  {transferMsg && (
+                    <p className={`text-xs font-semibold px-1 ${transferMsg.type === "success" ? "text-emerald-500" : "text-red-500"}`}>
+                      {transferMsg.text}
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    disabled={cooldownRemainingSec > 0}
+                    onClick={handleTransferCoins}
+                    className={`w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md shadow-blue-500/20 transition-all hover:scale-[1.01] active:scale-95 mt-2 cursor-pointer flex items-center justify-center gap-2 ${cooldownRemainingSec > 0 ? "opacity-50 cursor-not-allowed hover:scale-100 hover:bg-blue-600" : ""}`}
+                  >
+                    <Send className="w-4 h-4" />
+                    <span>{locale === "hy" ? "Հաստատել" : "Confirm Transfer"}</span>
+                  </button>
                 </div>
-                <button className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-95 mt-2">
-                  {locale === "hy" ? "Հաստատել" : "Confirm Transfer"}
-                </button>
               </div>
+
+              {/* RIGHT COLUMN: Transfer History Timeline */}
+              <div className="lg:col-span-5 bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-3xl p-6 sm:p-8 shadow-sm">
+                <div className="flex items-center justify-between mb-6 pb-4 border-b border-[hsl(var(--border))]">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center">
+                      <Clock className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-extrabold text-lg leading-tight text-[hsl(var(--foreground))]">
+                        {locale === "hy" ? "Փոխանցումների Պատմություն" : "Transfer History"}
+                      </h4>
+                      <p className="text-[11px] text-[hsl(var(--muted-foreground))]">
+                        {locale === "hy" ? "Ժամանակագրություն" : "Timeline"}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                    {transferHistory.length}
+                  </span>
+                </div>
+
+                {transferHistory.length > 0 ? (
+                  <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+                    {transferHistory.map((item) => (
+                      <div
+                        key={item.id}
+                        className="p-3.5 rounded-2xl bg-[hsl(var(--background))] border border-[hsl(var(--border))] flex items-center justify-between gap-3 hover:border-purple-500/40 transition-colors"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 text-white flex items-center justify-center text-xs font-black shadow-sm shrink-0">
+                            {item.recipientDisplayName?.charAt(0)?.toUpperCase() || item.recipientUsername?.charAt(0)?.toUpperCase() || "U"}
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-xs font-bold text-[hsl(var(--foreground))] truncate">
+                              {item.recipientDisplayName || item.recipientUsername}
+                            </span>
+                            <span className="text-[10px] text-[hsl(var(--muted-foreground))] font-mono">
+                              @{item.recipientUsername}
+                            </span>
+                            <span className="text-[10px] text-[hsl(var(--muted-foreground))]/80 flex items-center gap-1 mt-0.5">
+                              <Clock className="w-3 h-3 opacity-60" />
+                              {item.dateStr} • {item.timeStr}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <span className="inline-flex items-center gap-1 font-mono font-bold text-xs text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-xl border border-amber-500/20">
+                            -{item.amount} Coins
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-12 text-center text-[hsl(var(--muted-foreground))] space-y-2">
+                    <Clock className="w-8 h-8 mx-auto opacity-40 mb-2" />
+                    <p className="text-xs font-bold">{locale === "hy" ? "Դեռևս փոխանցումներ չկան" : "No transfers yet"}</p>
+                    <p className="text-[10px] opacity-75">{locale === "hy" ? "Ձեր կատարած փոխանցումների պատմությունը կհայտնվի այստեղ:" : "History of sent coins will appear here."}</p>
+                  </div>
+                )}
+              </div>
+
             </div>
           </div>
         )}
 
-        {/* ── TAB CONTENT: Invite Friends ── */}
+        {/* ── TAB CONTENT: Invite Friends + Invited Friends Panel ── */}
         {activeTab === "invite" && (
-          <div className="animate-in fade-in zoom-in-95 duration-500">
-            <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-3xl p-6 sm:p-10 max-w-2xl mx-auto shadow-sm text-center">
-              <div className="w-20 h-20 rounded-full bg-purple-500/10 text-purple-500 flex items-center justify-center mx-auto mb-6">
-                <UserPlus className="w-10 h-10" />
-              </div>
-              <h3 className="text-2xl font-black mb-2">{locale === "hy" ? "Հրավիրել և Վաստակել" : "Invite & Earn"}</h3>
-              <p className="text-[hsl(var(--muted-foreground))] mb-8 max-w-md mx-auto">
-                {locale === "hy" ? (
-                  <>Կիսվեք ձեր հրավերի հղումով ընկերների հետ: Երբ նրանք գրանցվեն և հաստատեն իրենց հաշիվը, դուք երկուսդ էլ կստանաք <span className="font-bold text-emerald-500">500 Coins!</span></>
-                ) : (
-                  <>Share your unique invite link with friends. When they sign up and verify their account, you both get <span className="font-bold text-emerald-500">500 Coins!</span></>
-                )}
-              </p>
+          <div className="animate-in fade-in zoom-in-95 duration-500 max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-              <div className={`bg-[hsl(var(--background))] border rounded-2xl p-2 flex items-center gap-2 max-w-lg mx-auto transition-all ${copiedInvite ? "border-emerald-500 shadow-md shadow-emerald-500/10" : "border-[hsl(var(--border))] focus-within:border-emerald-500"}`}>
-                <input
-                  type="text"
-                  readOnly
-                  value={inviteUrl}
-                  onClick={(e) => (e.target as HTMLInputElement).select()}
-                  className="flex-1 bg-transparent px-4 font-mono font-medium text-xs sm:text-sm text-[hsl(var(--foreground))] outline-none select-all truncate"
-                />
-                <button
-                  onClick={handleCopyInviteLink}
-                  className={`px-6 py-3 rounded-xl font-bold transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer active:scale-95 ${copiedInvite
-                      ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 scale-105"
-                      : "bg-[hsl(var(--foreground))] text-[hsl(var(--background))] hover:scale-105"
-                    }`}
-                >
-                  {copiedInvite ? (
-                    <>
-                      <Check className="w-4 h-4 text-white animate-in zoom-in-50" />
-                      <span>{locale === "hy" ? "Պատճենված է!" : locale === "ru" ? "Скопировано!" : "Copied!"}</span>
-                    </>
+              {/* LEFT COLUMN: Invite & Earn Card */}
+              <div className="lg:col-span-7 bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-3xl p-6 sm:p-8 shadow-sm text-center">
+                <div className="w-16 h-16 rounded-2xl bg-purple-500/10 text-purple-500 flex items-center justify-center mx-auto mb-5">
+                  <UserPlus className="w-8 h-8" />
+                </div>
+                <h3 className="text-2xl font-black mb-2">{locale === "hy" ? "Հրավիրել և Վաստակել" : "Invite & Earn"}</h3>
+                <p className="text-[hsl(var(--muted-foreground))] mb-6 max-w-md mx-auto text-xs sm:text-sm leading-relaxed">
+                  {locale === "hy" ? (
+                    <>Կիսվեք ձեր հրավերի կոդով կամ հղումով ընկերների հետ: Երբ նրանք գրանցվեն ձեր կոդով, դուք երկուսդ էլ կստանաք <span className="font-bold text-emerald-500">100 Coins!</span></>
+                  ) : locale === "ru" ? (
+                    <>Поделитесь вашим инвайт-кодом или ссылкой с друзьями. Когда они зарегистрируются по вашему коду, вы оба получите <span className="font-bold text-emerald-500">100 Coins!</span></>
                   ) : (
-                    <>
-                      <Copy className="w-4 h-4" />
-                      <span>{locale === "hy" ? "Պատճենել" : locale === "ru" ? "Скопировать" : "Copy Link"}</span>
-                    </>
+                    <>Share your unique invite code or link with friends. When they sign up using your code, you both get <span className="font-bold text-emerald-500">100 Coins!</span></>
                   )}
-                </button>
+                </p>
+
+                {/* Invite Code & Link Boxes */}
+                <div className="space-y-4 max-w-lg mx-auto text-left">
+                  {/* 1. Invite Code Box */}
+                  <div>
+                    <label className="text-xs font-bold text-[hsl(var(--muted-foreground))] uppercase tracking-wider block mb-1.5">
+                      {locale === "hy" ? "Ձեր Հրավերի Կոդը (Invite Code)" : locale === "ru" ? "Ваш инвайт-код (Invite Code)" : "Your Invite Code"}
+                    </label>
+                    <div className={`bg-[hsl(var(--background))] border rounded-2xl p-2 flex items-center gap-2 transition-all ${copiedInviteCode ? "border-emerald-500 shadow-md shadow-emerald-500/10" : "border-[hsl(var(--border))] focus-within:border-emerald-500"}`}>
+                      <div className="flex-1 px-4 font-mono font-black text-base sm:text-lg text-emerald-600 dark:text-emerald-400 tracking-wider">
+                        {currentUser?.username ? currentUser.username.toUpperCase() : "MHER100"}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyInviteCode(currentUser?.username ? currentUser.username.toUpperCase() : "MHER100")}
+                        className={`px-5 py-2.5 rounded-xl font-bold text-xs transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer active:scale-95 ${copiedInviteCode
+                          ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 scale-105"
+                          : "bg-[hsl(var(--foreground))] text-[hsl(var(--background))] hover:scale-105"
+                          }`}
+                      >
+                        {copiedInviteCode ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-white animate-in zoom-in-50" />
+                            <span>{locale === "hy" ? "Պատճենված է!" : locale === "ru" ? "Скопировано!" : "Copied!"}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5" />
+                            <span>{locale === "hy" ? "Պատճենել Կոդը" : locale === "ru" ? "Скопировать Код" : "Copy Code"}</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 2. Redeem Invite Code Box */}
+                  <div>
+                    <label className="text-xs font-bold text-[hsl(var(--muted-foreground))] uppercase tracking-wider block mb-1.5">
+                      {locale === "hy" ? "Մուտքագրել Հրավերի Կոդ (100 Coin)" : locale === "ru" ? "Ввести инвайт-код (100 Coin)" : "Enter Invite Code (100 Coins)"}
+                    </label>
+                    {appliedInviteCode ? (
+                      <div className="bg-[hsl(var(--background))] border border-emerald-500/40 rounded-2xl p-2 flex items-center gap-2 shadow-sm bg-emerald-500/5">
+                        <input
+                          type="text"
+                          readOnly
+                          disabled
+                          value={appliedInviteCode}
+                          className="flex-1 bg-transparent px-4 font-mono font-bold text-xs text-[hsl(var(--foreground))] outline-none opacity-80 cursor-not-allowed"
+                        />
+                        <span className="px-4 py-2.5 rounded-xl font-bold text-xs bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 whitespace-nowrap shrink-0">
+                          <Check className="w-3.5 h-3.5 text-emerald-500" />
+                          <span>{locale === "hy" ? "Ակտիվացված է (+100 Coin)" : "Activated (+100 Coins)"}</span>
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="bg-[hsl(var(--background))] border border-[hsl(var(--border))] focus-within:border-emerald-500 rounded-2xl p-2 flex items-center gap-2 transition-all">
+                          <input
+                            type="text"
+                            value={inputInviteCode}
+                            onChange={(e) => {
+                              setInputInviteCode(e.target.value);
+                              setInviteCodeMsg(null);
+                            }}
+                            placeholder={locale === "hy" ? "Մուտքագրեք ուրիշի հրավերի կոդը (օր. edmon008)" : "Enter someone's invite code (e.g. edmon008)"}
+                            className="flex-1 bg-transparent px-4 font-mono font-medium text-xs text-[hsl(var(--foreground))] outline-none placeholder:text-[hsl(var(--muted-foreground))]/60"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleApplyInviteCode}
+                            className="px-5 py-2.5 rounded-xl font-bold text-xs bg-emerald-500 text-white hover:bg-emerald-600 transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer shadow-md shadow-emerald-500/20 active:scale-95 shrink-0"
+                          >
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>{locale === "hy" ? "Ստանալ 100 Coin" : "Get 100 Coins"}</span>
+                          </button>
+                        </div>
+                        {inviteCodeMsg && (
+                          <p className={`text-xs font-semibold px-2 ${inviteCodeMsg.type === "success" ? "text-emerald-500" : "text-red-500"}`}>
+                            {inviteCodeMsg.text}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="mt-8 pt-8 border-t border-[hsl(var(--border))]/50 flex justify-center gap-8 text-sm">
+                  <div>
+                    <p className="font-black text-2xl text-[hsl(var(--foreground))] mb-1">{invitedFriends.length}</p>
+                    <p className="text-[hsl(var(--muted-foreground))]">{locale === "hy" ? "Հրավիրված Ընկերներ" : "Friends Invited"}</p>
+                  </div>
+                  <div>
+                    <p className="font-black text-2xl text-emerald-500 mb-1">+{(invitedFriends.length * 100).toLocaleString()}</p>
+                    <p className="text-[hsl(var(--muted-foreground))]">{locale === "hy" ? "Վաստակած Քոյններ" : "Coins Earned"}</p>
+                  </div>
+                </div>
               </div>
 
-              <div className="mt-8 pt-8 border-t border-[hsl(var(--border))]/50 flex justify-center gap-8 text-sm">
-                <div>
-                  <p className="font-black text-2xl text-[hsl(var(--foreground))] mb-1">12</p>
-                  <p className="text-[hsl(var(--muted-foreground))]">{locale === "hy" ? "Հրավիրված Ընկերներ" : "Friends Invited"}</p>
+              {/* RIGHT COLUMN: Invited Friends List Panel */}
+              <div className="lg:col-span-5 bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-3xl p-6 sm:p-8 shadow-sm">
+                <div className="flex items-center justify-between mb-6 pb-4 border-b border-[hsl(var(--border))]">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+                      <UserPlus className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-extrabold text-lg leading-tight text-[hsl(var(--foreground))]">
+                        {locale === "hy" ? "Իմ Հրավիրած Ընկերները" : "My Invited Friends"}
+                      </h4>
+                      <p className="text-[11px] text-[hsl(var(--muted-foreground))]">
+                        {locale === "hy" ? "Գրանցված Օգտատերեր" : "Registered Users"}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                    {invitedFriends.length}
+                  </span>
                 </div>
-                <div>
-                  <p className="font-black text-2xl text-emerald-500 mb-1">+6,000</p>
-                  <p className="text-[hsl(var(--muted-foreground))]">{locale === "hy" ? "Վաստակած Քոյններ" : "Coins Earned"}</p>
-                </div>
+
+                {invitedFriends.length > 0 ? (
+                  <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+                    {invitedFriends.map((friend: any) => (
+                      <div
+                        key={friend.username}
+                        className="p-3.5 rounded-2xl bg-[hsl(var(--background))] border border-[hsl(var(--border))] flex items-center justify-between gap-3 hover:border-emerald-500/40 transition-colors shadow-sm"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center text-xs font-black shadow-sm shrink-0">
+                            {friend.displayName?.charAt(0)?.toUpperCase() || friend.username?.charAt(0)?.toUpperCase() || "U"}
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-xs font-bold text-[hsl(var(--foreground))] truncate">
+                              {friend.displayName || friend.username}
+                            </span>
+                            <span className="text-[10px] text-[hsl(var(--muted-foreground))] font-mono">
+                              @{friend.username}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <span className="inline-flex items-center gap-1 font-mono font-bold text-[11px] text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-xl border border-emerald-500/20">
+                            <Sparkles className="w-3 h-3 text-emerald-500" />
+                            +100 Coins
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-12 text-center text-[hsl(var(--muted-foreground))] space-y-2">
+                    <UserPlus className="w-8 h-8 mx-auto opacity-40 mb-2" />
+                    <p className="text-xs font-bold">{locale === "hy" ? "Դեռևս չկան հրավիրված ընկերներ" : "No invited friends yet"}</p>
+                    <p className="text-[10px] opacity-75">{locale === "hy" ? "Ձեր կոդով գրանցված ընկերները կհայտնվեն այստեղ:" : "Friends who register with your code will appear here."}</p>
+                  </div>
+                )}
               </div>
+
             </div>
           </div>
         )}
@@ -1859,3 +2561,4 @@ export default function UserProfileDashboard() {
     </div>
   );
 }
+

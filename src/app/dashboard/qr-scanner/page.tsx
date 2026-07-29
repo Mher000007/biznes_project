@@ -123,7 +123,7 @@ export default function QrScannerPage() {
 
         let newRecord: RedeemedCoupon;
 
-        const currentBizName = currentUser?.businessName || currentUser?.name || currentUser?.username || "";
+        const currentBizName = (currentUser as any)?.businessName || currentUser?.name || currentUser?.username || "";
         const currentBizPrefix = currentBizName.toUpperCase().replace(/[^A-Z0-9]/g, "").substring(0, 6);
 
         if (matchedIndex !== -1) {

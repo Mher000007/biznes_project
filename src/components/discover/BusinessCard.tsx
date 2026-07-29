@@ -108,7 +108,9 @@ export default function BusinessCard({ business, viewMode = "list" }: { business
     }
     if (typeof window !== "undefined") {
       try {
-        const favsStr = localStorage.getItem("armbiz_favorites");
+        const uKey = currentUser.username || currentUser.email || (currentUser as any).id || (currentUser as any)._id || "";
+        const userFavsKey = `armbiz_favorites_${uKey}`;
+        const favsStr = localStorage.getItem(userFavsKey);
         if (favsStr) {
           const favs: string[] = JSON.parse(favsStr);
           if (favs.includes(business.id) || (business.slug && favs.includes(business.slug))) {
@@ -121,7 +123,7 @@ export default function BusinessCard({ business, viewMode = "list" }: { business
         }
       } catch (e) { }
     }
-  }, [business.id, business.slug, currentUser]);
+  }, [business.id, business.slug, currentUser, isBusinessUser]);
 
   const toggleFavorite = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -137,14 +139,27 @@ export default function BusinessCard({ business, viewMode = "list" }: { business
     if (typeof window === "undefined") return;
 
     try {
-      const favsStr = localStorage.getItem("armbiz_favorites");
-      const itemsStr = localStorage.getItem("armbiz_favorites_items");
+      const uKey = currentUser.username || currentUser.email || (currentUser as any).id || (currentUser as any)._id || "";
+      if (!uKey) return;
+      const userFavsKey = `armbiz_favorites_${uKey}`;
+      const userItemsKey = `armbiz_favorites_items_${uKey}`;
+
+      const favsStr = localStorage.getItem(userFavsKey);
+      const itemsStr = localStorage.getItem(userItemsKey);
 
       let favs: string[] = favsStr ? JSON.parse(favsStr) : [];
       let itemsMap: Record<string, any> = itemsStr ? JSON.parse(itemsStr) : {};
 
       const key = business.slug || business.id;
       const isCurrentlyFav = favs.includes(business.id) || (business.slug && favs.includes(business.slug));
+
+      const getSafeLogo = (raw: any) => {
+        if (!raw || typeof raw !== "string") return "";
+        if (raw.startsWith("data:") && raw.length > 500000) return "";
+        return raw;
+      };
+      const rawLogo = (business.logoUrl || business.logo || (Array.isArray(business.images) && business.images[0]) || business.coverImageUrl || (business as any).coverUrl || (business as any).image || (business as any).avatar || "") as string;
+      const logo = getSafeLogo(rawLogo);
 
       if (isCurrentlyFav) {
         favs = favs.filter((id) => id !== business.id && id !== business.slug);
@@ -156,13 +171,12 @@ export default function BusinessCard({ business, viewMode = "list" }: { business
         itemsMap[key] = {
           id: business.id,
           slug: business.slug || business.id,
-          name: business.name,
+          name: business.name ? String(business.name).slice(0, 100) : "",
           city: business.city || "Yerevan",
-          category: business.category,
+          category: typeof business.category === "object" ? business.category?.name : business.category,
           ratingAvg: business.ratingAvg || 5.0,
-          images: business.images || (business.logo ? [business.logo] : business.logoUrl ? [business.logoUrl] : business.coverImageUrl ? [business.coverImageUrl] : []),
-          logoUrl: business.logo || business.logoUrl || business.coverImageUrl || "",
-          shortDescription: business.shortDescription || ""
+          logo: logo,
+          logoUrl: logo
         };
         setIsFavorited(true);
 
@@ -177,8 +191,13 @@ export default function BusinessCard({ business, viewMode = "list" }: { business
         window.dispatchEvent(event);
       }
 
-      localStorage.setItem("armbiz_favorites", JSON.stringify(favs));
-      localStorage.setItem("armbiz_favorites_items", JSON.stringify(itemsMap));
+      const safeSet = (k: string, val: string) => {
+        try { localStorage.setItem(k, val); } catch (err) {}
+      };
+
+      safeSet(userFavsKey, JSON.stringify(favs));
+      safeSet(userItemsKey, JSON.stringify(itemsMap));
+
       window.dispatchEvent(new Event("favoritesUpdated"));
     } catch (e) {
       console.error("Failed to update favorites:", e);

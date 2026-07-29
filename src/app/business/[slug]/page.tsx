@@ -246,7 +246,9 @@ export default function BusinessProfilePage() {
     }
     if (typeof window !== "undefined" && business) {
       try {
-        const favsStr = localStorage.getItem("armbiz_favorites");
+        const uKey = currentUser.username || currentUser.email || (currentUser as any).id || (currentUser as any)._id || "";
+        const userFavsKey = `armbiz_favorites_${uKey}`;
+        const favsStr = localStorage.getItem(userFavsKey);
         if (favsStr) {
           const favs: string[] = JSON.parse(favsStr);
           if (favs.includes(business.id) || (business.slug && favs.includes(business.slug))) {
@@ -257,9 +259,9 @@ export default function BusinessProfilePage() {
         } else {
           setIsFavorited(false);
         }
-      } catch (e) {}
+      } catch (e) { }
     }
-  }, [business, currentUser]);
+  }, [business, currentUser, isBusinessUser]);
 
   const toggleFavorite = () => {
     if (isBusinessUser) return;
@@ -270,14 +272,27 @@ export default function BusinessProfilePage() {
     if (typeof window === "undefined" || !business) return;
 
     try {
-      const favsStr = localStorage.getItem("armbiz_favorites");
-      const itemsStr = localStorage.getItem("armbiz_favorites_items");
+      const uKey = currentUser.username || currentUser.email || (currentUser as any).id || (currentUser as any)._id || "";
+      if (!uKey) return;
+      const userFavsKey = `armbiz_favorites_${uKey}`;
+      const userItemsKey = `armbiz_favorites_items_${uKey}`;
+
+      const favsStr = localStorage.getItem(userFavsKey);
+      const itemsStr = localStorage.getItem(userItemsKey);
 
       let favs: string[] = favsStr ? JSON.parse(favsStr) : [];
       let itemsMap: Record<string, any> = itemsStr ? JSON.parse(itemsStr) : {};
 
       const key = business.slug || business.id;
       const isCurrentlyFav = favs.includes(business.id) || (business.slug && favs.includes(business.slug));
+
+      const getSafeLogo = (raw: any) => {
+        if (!raw || typeof raw !== "string") return "";
+        if (raw.startsWith("data:") && raw.length > 500000) return "";
+        return raw;
+      };
+      const rawLogo = (business.logoUrl || business.logo || (Array.isArray(business.images) && business.images[0]) || business.coverImageUrl || (business as any).coverUrl || (business as any).image || (business as any).avatar || "") as string;
+      const logo = getSafeLogo(rawLogo);
 
       if (isCurrentlyFav) {
         favs = favs.filter((id) => id !== business.id && id !== business.slug);
@@ -289,19 +304,23 @@ export default function BusinessProfilePage() {
         itemsMap[key] = {
           id: business.id,
           slug: business.slug || business.id,
-          name: business.name,
+          name: business.name ? String(business.name).slice(0, 100) : "",
           city: business.city || "Yerevan",
-          category: business.category,
+          category: typeof business.category === "object" ? business.category?.name : business.category,
           ratingAvg: business.ratingAvg || 5.0,
-          images: business.images || (business.logoUrl ? [business.logoUrl] : business.coverImageUrl ? [business.coverImageUrl] : []),
-          logoUrl: business.logoUrl || business.coverImageUrl || "",
-          shortDescription: business.shortDescription || ""
+          logo: logo,
+          logoUrl: logo
         };
         setIsFavorited(true);
       }
 
-      localStorage.setItem("armbiz_favorites", JSON.stringify(favs));
-      localStorage.setItem("armbiz_favorites_items", JSON.stringify(itemsMap));
+      const safeSet = (k: string, val: string) => {
+        try { localStorage.setItem(k, val); } catch (err) { }
+      };
+
+      safeSet(userFavsKey, JSON.stringify(favs));
+      safeSet(userItemsKey, JSON.stringify(itemsMap));
+
       window.dispatchEvent(new Event("favoritesUpdated"));
     } catch (e) {
       console.error("Failed to update favorites:", e);
@@ -817,11 +836,10 @@ export default function BusinessProfilePage() {
                 setShowStoryViewer(true);
               }
             }}
-            className={`w-20 h-20 rounded-full shrink-0 flex items-center justify-center overflow-hidden transition-all cursor-pointer ${
-              matchingGroupIdx !== null && !isLogoStoryViewed
+            className={`w-20 h-20 rounded-full shrink-0 flex items-center justify-center overflow-hidden transition-all cursor-pointer ${matchingGroupIdx !== null && !isLogoStoryViewed
                 ? "p-[3px] bg-emerald-500 hover:scale-105 shadow-md ring-2 ring-emerald-500/20"
                 : "border border-[hsl(var(--border))]/60 p-[2px]"
-            }`}
+              }`}
             title={matchingGroupIdx !== null ? (isLogoStoryViewed ? "Stories viewed" : "Click to view active stories") : undefined}
           >
             <div className="w-full h-full rounded-full bg-[hsl(var(--background))] p-[2px] overflow-hidden relative cursor-pointer">
@@ -1381,9 +1399,8 @@ export default function BusinessProfilePage() {
                     placeholder="Enter your name"
                     disabled={Boolean(currentUser)}
                     readOnly={Boolean(currentUser)}
-                    className={`w-full border border-[hsl(var(--border))] rounded-lg px-3 py-2 text-sm bg-transparent outline-none focus:border-[hsl(var(--primary))] ${
-                      currentUser ? "opacity-80 cursor-not-allowed bg-[hsl(var(--muted))]/50" : ""
-                    }`}
+                    className={`w-full border border-[hsl(var(--border))] rounded-lg px-3 py-2 text-sm bg-transparent outline-none focus:border-[hsl(var(--primary))] ${currentUser ? "opacity-80 cursor-not-allowed bg-[hsl(var(--muted))]/50" : ""
+                      }`}
                   />
                 </div>
 
@@ -1396,9 +1413,8 @@ export default function BusinessProfilePage() {
                       </span>
                     )}
                   </label>
-                  <div className={`flex w-full border border-[hsl(var(--border))] rounded-lg overflow-hidden transition-all ${
-                    currentUser ? "opacity-80 cursor-not-allowed bg-[hsl(var(--muted))]/50" : "bg-transparent focus-within:border-[hsl(var(--primary))] focus-within:ring-1 focus-within:ring-[hsl(var(--primary))]"
-                  }`}>
+                  <div className={`flex w-full border border-[hsl(var(--border))] rounded-lg overflow-hidden transition-all ${currentUser ? "opacity-80 cursor-not-allowed bg-[hsl(var(--muted))]/50" : "bg-transparent focus-within:border-[hsl(var(--primary))] focus-within:ring-1 focus-within:ring-[hsl(var(--primary))]"
+                    }`}>
                     <div className="px-3 py-2 bg-[hsl(var(--muted))]/50 text-sm font-medium border-r border-[hsl(var(--border))] flex items-center justify-center text-[hsl(var(--foreground))] select-none shrink-0">
                       +374
                     </div>
@@ -1416,9 +1432,8 @@ export default function BusinessProfilePage() {
                       readOnly={Boolean(currentUser)}
                       maxLength={11}
                       placeholder="99 12 34 56"
-                      className={`flex-1 px-3 py-2 text-sm outline-none w-full font-medium tracking-wider bg-transparent ${
-                        currentUser ? "cursor-not-allowed" : ""
-                      }`}
+                      className={`flex-1 px-3 py-2 text-sm outline-none w-full font-medium tracking-wider bg-transparent ${currentUser ? "cursor-not-allowed" : ""
+                        }`}
                     />
                   </div>
                 </div>

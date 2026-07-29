@@ -28,7 +28,7 @@ function userPayload(user: IUser) {
 
 // ─── Register ─────────────────────────────────────────────────────────────────
 export const register = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const { name, username, email, password, phone, contactEmail, accountType } = req.body;
+  const { name, username, email, password, phone, contactEmail, accountType, inviteCode } = req.body;
 
   if (!name || !email || !password) {
     res.status(400).json({ success: false, message: 'Please provide name, email, and password' });
@@ -65,6 +65,23 @@ export const register = asyncHandler(async (req: Request, res: Response): Promis
     return;
   }
 
+  // Process invite code bonus (+100 Coins for both inviter & new user)
+  let initialCoins = 0;
+  if (inviteCode && typeof inviteCode === 'string' && inviteCode.trim()) {
+    const cleanInvite = inviteCode.trim().toLowerCase();
+    const inviter = await User.findOne({
+      $or: [
+        { username: cleanInvite },
+        { name: new RegExp(`^${cleanInvite}$`, 'i') }
+      ]
+    });
+    if (inviter) {
+      inviter.findyCoins = (inviter.findyCoins || 0) + 100;
+      await inviter.save();
+      initialCoins = 100;
+    }
+  }
+
   const user = new User({
     name: trimmedName,
     username: trimmedUsername || undefined,
@@ -75,6 +92,7 @@ export const register = asyncHandler(async (req: Request, res: Response): Promis
     contactEmail,
     accountType: accountType || 'personal',
     role: accountType === 'business' ? 'business_owner' : 'user',
+    findyCoins: initialCoins,
   });
 
   await user.save();

@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X, Search, MapPin, Bookmark, ArrowUp, ArrowDown, LogOut } from "lucide-react";
+import { Menu, X, Search, MapPin, Bookmark, ArrowUp, ArrowDown, LogOut, ArrowRight } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { useI18n } from "@/i18n";
@@ -31,26 +31,164 @@ export default function Navbar() {
 
   // Favorites state for dropdown
   const [favorites, setFavorites] = useState<any[]>([]);
+  const [isFavOpen, setIsFavOpen] = useState(false);
+
+  const resolveBusinessLogo = (item: any): string => {
+    if (!item) return "";
+    const direct =
+      item.logoUrl ||
+      item.logo ||
+      (Array.isArray(item.images) ? item.images[0] : typeof item.images === "string" ? item.images : "") ||
+      (Array.isArray(item.gallery) ? item.gallery[0] : typeof item.gallery === "string" ? item.gallery : "") ||
+      item.coverImageUrl ||
+      item.coverUrl ||
+      (Array.isArray(item.metadata?.coverUrl) ? item.metadata.coverUrl[0] : item.metadata?.coverUrl) ||
+      item.image ||
+      item.avatar ||
+      "";
+    if (direct && typeof direct === "string" && direct.trim().length > 0) {
+      return direct.trim();
+    }
+
+    const itemKey = item.id || item.slug || "";
+    const itemName = (item.name || item.businessName || "").toLowerCase().trim();
+
+    const mockMatch = MOCK_BUSINESSES.find(
+      (b) =>
+        (itemKey && (b.id === itemKey || b.slug === itemKey)) ||
+        (itemName && b.name && b.name.toLowerCase().trim() === itemName)
+    );
+    if (mockMatch) {
+      const mockLogo =
+        mockMatch.logo ||
+        mockMatch.logoUrl ||
+        (Array.isArray(mockMatch.images) ? mockMatch.images[0] : "") ||
+        mockMatch.coverImageUrl ||
+        "";
+      if (mockLogo) return mockLogo;
+    }
+
+    if (typeof localStorage !== "undefined") {
+      const profilesStr = localStorage.getItem("armbiz-business-profiles");
+      if (profilesStr) {
+        try {
+          const profiles: any[] = JSON.parse(profilesStr);
+          const found = profiles.find((p: any) => {
+            if (!p) return false;
+            const pName = (p.businessName || p.name || "").toLowerCase().trim();
+            const pSlug = pName.replace(/\s+/g, "-").replace(/[^\w\u0531-\u058F-]/g, "");
+            return (
+              (itemKey && (p.id === itemKey || p.slug === itemKey || p.ownerUsername === itemKey || `custom-${p.ownerUsername}` === itemKey || pSlug === itemKey)) ||
+              (itemName && pName && pName === itemName)
+            );
+          });
+          if (found) {
+            const profileLogo =
+              found.logo ||
+              found.logoUrl ||
+              (Array.isArray(found.images) ? found.images[0] : "") ||
+              (Array.isArray(found.gallery) ? found.gallery[0] : "") ||
+              found.coverUrl ||
+              found.coverImageUrl ||
+              (Array.isArray(found.metadata?.coverUrl) ? found.metadata.coverUrl[0] : found.metadata?.coverUrl) ||
+              found.image ||
+              found.avatar ||
+              "";
+            if (profileLogo) return profileLogo;
+          }
+        } catch (e) {}
+      }
+    }
+    return "";
+  };
 
   useEffect(() => {
     const loadFavorites = () => {
       try {
-        const itemsStr = localStorage.getItem("armbiz_favorites_items");
-        if (itemsStr) {
-          const map = JSON.parse(itemsStr);
-          setFavorites(Object.values(map));
-        } else {
+        if (!currentUser) {
           setFavorites([]);
+          return;
         }
+        const uKey = currentUser.username || currentUser.email || (currentUser as any).id || (currentUser as any)._id || "";
+        const favStr = uKey ? localStorage.getItem(`armbiz_favorites_${uKey}`) : null;
+        const itemsStr = uKey ? localStorage.getItem(`armbiz_favorites_items_${uKey}`) : null;
+
+        const favIds: string[] = favStr ? JSON.parse(favStr) : [];
+        const itemsMap: Record<string, any> = itemsStr ? JSON.parse(itemsStr) : {};
+
+        const list: any[] = [];
+        const seen = new Set<string>();
+
+        // 1. Process items from itemsMap
+        Object.entries(itemsMap).forEach(([k, item]) => {
+          if (!item) return;
+          const itemKey = item.id || item.slug || k;
+          if (!seen.has(itemKey)) {
+            const logo = resolveBusinessLogo(item);
+            list.push({ ...item, logoUrl: logo, logo: logo });
+            seen.add(itemKey);
+            if (item.id) seen.add(String(item.id));
+            if (item.slug) seen.add(String(item.slug));
+          }
+        });
+
+        // 2. Process items from favIds
+        for (const key of favIds) {
+          if (seen.has(key)) continue;
+
+          const mockMatch = MOCK_BUSINESSES.find(b => b.id === key || b.slug === key);
+          if (mockMatch) {
+            const logo = resolveBusinessLogo(mockMatch);
+            list.push({ ...mockMatch, logoUrl: logo, logo: logo });
+            seen.add(key);
+            if (mockMatch.id) seen.add(String(mockMatch.id));
+            if (mockMatch.slug) seen.add(String(mockMatch.slug));
+            continue;
+          }
+
+          const profilesStr = localStorage.getItem("armbiz-business-profiles");
+          if (profilesStr) {
+            try {
+              const profiles: any[] = JSON.parse(profilesStr);
+              const found = profiles.find((p: any) =>
+                p.id === key ||
+                p.slug === key ||
+                p.ownerUsername === key ||
+                `custom-${p.ownerUsername}` === key ||
+                (p.businessName && p.businessName.toLowerCase().trim().replace(/\s+/g, "-") === key)
+              );
+              if (found) {
+                const logo = resolveBusinessLogo(found);
+                list.push({
+                  ...found,
+                  name: found.businessName || found.name,
+                  slug: found.businessName ? found.businessName.toLowerCase().trim().replace(/\s+/g, "-") : key,
+                  logoUrl: logo,
+                  logo: logo
+                });
+                seen.add(key);
+                if (found.id) seen.add(String(found.id));
+                if (found.slug) seen.add(String(found.slug));
+              }
+            } catch (e) { }
+          }
+        }
+
+        setFavorites(list);
       } catch (e) {
         console.error("Failed to load favorites for navbar dropdown", e);
+        setFavorites([]);
       }
     };
 
     loadFavorites();
     window.addEventListener("favoritesUpdated", loadFavorites);
-    return () => window.removeEventListener("favoritesUpdated", loadFavorites);
-  }, []);
+    window.addEventListener("storage", loadFavorites);
+    return () => {
+      window.removeEventListener("favoritesUpdated", loadFavorites);
+      window.removeEventListener("storage", loadFavorites);
+    };
+  }, [currentUser]);
 
   // Live search state
   const [suggestions, setSuggestions] = useState<any[]>([]);
@@ -481,7 +619,12 @@ export default function Navbar() {
                 {/* Little arrow pointing up */}
                 <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[hsl(var(--background))]/90 border-t border-l border-[hsl(var(--border))] rotate-45 backdrop-blur-xl"></div>
                 <h3 className="relative text-lg font-black text-[hsl(var(--foreground))] tracking-tight flex items-baseline gap-1">
-                  {(currentUser as any)?.findyCoins || 0} <span className="text-emerald-500 text-[10px] font-extrabold uppercase tracking-[0.15em] drop-shadow-sm">Coins</span>
+                  {(() => {
+                    const uKey = currentUser?.username || currentUser?.email || (currentUser as any)?.id || "";
+                    const savedCoins = uKey && typeof localStorage !== "undefined" ? localStorage.getItem(`armbiz_user_coins_${uKey}`) : null;
+                    if (savedCoins !== null && !isNaN(Number(savedCoins))) return Number(savedCoins);
+                    return (currentUser as any)?.findyCoins || 0;
+                  })()} <span className="text-emerald-500 text-[10px] font-extrabold uppercase tracking-[0.15em] drop-shadow-sm">Coins</span>
                 </h3>
               </div>
             </div>
@@ -498,9 +641,13 @@ export default function Navbar() {
 
         {currentUser ? (
           <div className="flex items-center gap-2">
-            <div className={`relative ${isBusinessUser ? '' : 'group/fav'} flex items-center`}>
+            <div
+              className={`relative ${isBusinessUser ? '' : 'group/fav'} flex items-center`}
+              onMouseEnter={() => setIsFavOpen(true)}
+              onMouseLeave={() => setIsFavOpen(false)}
+            >
               <Link
-                href="/dashboard"
+                href="/dashboard?tab=favorites"
                 className={`hidden lg:inline-flex items-center gap-1.5 text-[13px] font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors cursor-pointer ${styles.authText}`}
               >
                 {!isBusinessUser && (
@@ -511,36 +658,56 @@ export default function Navbar() {
 
               {/* Favorites Hover Dropdown */}
               {!isBusinessUser && (
-                <div className="absolute top-full right-0 pt-2 w-64 opacity-0 invisible group-hover/fav:opacity-100 group-hover/fav:visible transition-all duration-200 z-50 pointer-events-none group-hover/fav:pointer-events-auto">
+                <div
+                  className={`absolute top-full right-0 pt-2 w-72 transition-all duration-200 z-50 ${isFavOpen
+                      ? "opacity-100 visible pointer-events-auto"
+                      : "opacity-0 invisible pointer-events-none group-hover/fav:opacity-100 group-hover/fav:visible group-hover/fav:pointer-events-auto"
+                    }`}
+                >
                   <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-lg p-2">
-                    <div className="text-xs font-semibold text-[hsl(var(--muted-foreground))] px-2 py-1.5 mb-1 border-b border-[hsl(var(--border))]/50">
-                      Saved Places
+                    <div className="text-xs font-semibold text-[hsl(var(--muted-foreground))] px-2 py-1.5 mb-1 border-b border-[hsl(var(--border))]/50 flex items-center justify-between">
+                      <span>{locale === 'hy' ? "Պահպանված Վայրեր" : locale === 'ru' ? "Сохраненные места" : "Saved Places"}</span>
+                      <span className="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold px-1.5 py-0.5 rounded-full">{favorites.length}</span>
                     </div>
                     {favorites.length > 0 ? (
-                      <div className="max-h-60 overflow-y-auto scrollbar-thin flex flex-col gap-1">
-                        {favorites.map((fav) => (
+                      <>
+                        <div className="max-h-60 overflow-y-auto scrollbar-thin flex flex-col gap-1">
+                          {favorites.map((fav) => {
+                            const logo = resolveBusinessLogo(fav);
+                            return (
+                              <Link
+                                key={fav.id || fav.slug}
+                                href={`/business/${fav.slug || fav.id}`}
+                                className="flex items-center gap-2 p-2 hover:bg-[hsl(var(--muted))] rounded-lg transition-colors"
+                              >
+                                {logo ? (
+                                  <img src={logo} alt={fav.name} className="w-8 h-8 rounded bg-[hsl(var(--background))] object-cover shrink-0" />
+                                ) : (
+                                  <div className="w-8 h-8 rounded bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                                    {fav.name?.charAt(0)?.toUpperCase() || "B"}
+                                  </div>
+                                )}
+                                <div className="flex flex-col min-w-0">
+                                  <span className="text-sm font-medium text-[hsl(var(--foreground))] truncate">{fav.name}</span>
+                                  <span className="text-[10px] text-[hsl(var(--muted-foreground))] truncate">{typeof fav.category === "object" ? fav.category?.name : fav.category || "Place"}</span>
+                                </div>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                        <div className="pt-2 border-t border-[hsl(var(--border))]/50 mt-1">
                           <Link
-                            key={fav.id || fav.slug}
-                            href={`/business/${fav.slug || fav.id}`}
-                            className="flex items-center gap-2 p-2 hover:bg-[hsl(var(--muted))] rounded-lg transition-colors"
+                            href="/dashboard?tab=favorites"
+                            className="flex items-center justify-between text-xs font-bold text-violet-600 dark:text-violet-400 hover:underline px-2 py-1"
                           >
-                            {(fav.logoUrl || fav.logo || fav.images?.[0]) ? (
-                              <img src={fav.logoUrl || fav.logo || fav.images?.[0]} alt={fav.name} className="w-8 h-8 rounded bg-[hsl(var(--background))] object-cover shrink-0" />
-                            ) : (
-                              <div className="w-8 h-8 rounded bg-violet-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                                {fav.name?.charAt(0) || "B"}
-                              </div>
-                            )}
-                            <div className="flex flex-col min-w-0">
-                              <span className="text-sm font-medium text-[hsl(var(--foreground))] truncate">{fav.name}</span>
-                              <span className="text-[10px] text-[hsl(var(--muted-foreground))] truncate">{fav.category?.name || fav.category || "Place"}</span>
-                            </div>
+                            <span>{locale === 'hy' ? "Տեսնել բոլորը" : locale === 'ru' ? "Посмотреть все" : "View all saved"}</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
                           </Link>
-                        ))}
-                      </div>
+                        </div>
+                      </>
                     ) : (
                       <div className="p-4 text-center text-xs text-[hsl(var(--muted-foreground))]">
-                        No saved places yet
+                        {locale === 'hy' ? "Դեռ չկան պահպանված վայրեր" : locale === 'ru' ? "Пока нет сохраненных мест" : "No saved places yet"}
                       </div>
                     )}
                   </div>

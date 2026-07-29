@@ -32,6 +32,7 @@ export interface AuthContextValue {
     accountType: AccountType;
     phone?: string;
     contactEmail?: string;
+    inviteCode?: string;
   }) => Promise<{ success: boolean; error?: string; user?: AuthUser }>;
   login: (input: {
     userOrEmail: string;
@@ -102,6 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     accountType: AccountType;
     phone?: string;
     contactEmail?: string;
+    inviteCode?: string;
   }) => {
     try {
       const res = await axios.post(`${API}/auth/register`, {
@@ -112,12 +114,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         accountType: input.accountType,
         phone: input.phone,
         contactEmail: input.contactEmail,
+        inviteCode: input.inviteCode,
       });
 
       if (res.data?.success) {
         setToken(res.data.token);
-        setCurrentUser(res.data.user);
-        return { success: true, user: res.data.user };
+        const u = res.data.user;
+        const uKey = u.username || u.email || u.id || "";
+        if (input.inviteCode && input.inviteCode.trim()) {
+          const cleanInvite = input.inviteCode.trim();
+          if (uKey) {
+            localStorage.setItem(`armbiz_redeemed_code_${uKey}`, cleanInvite);
+            localStorage.setItem(`armbiz_user_coins_${uKey}`, "100");
+          }
+          u.findyCoins = (u.findyCoins || 0) + 100;
+          u.redeemedInviteCode = cleanInvite;
+        }
+
+        if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
+          try {
+            const usersStr = localStorage.getItem("armbiz_users");
+            const users: any[] = usersStr ? JSON.parse(usersStr) : [];
+            const idx = users.findIndex((ex) => ex.username === u.username || ex.email === u.email);
+            if (idx !== -1) {
+              users[idx] = { ...users[idx], ...u };
+            } else {
+              users.push(u);
+            }
+            localStorage.setItem("armbiz_users", JSON.stringify(users));
+          } catch (e) {}
+        }
+
+        setCurrentUser(u);
+        return { success: true, user: u };
       }
       return { success: false, error: res.data?.message || "Registration failed" };
     } catch (err: any) {

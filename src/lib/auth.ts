@@ -6,6 +6,8 @@ export interface UserAccount {
   email: string;
   password: string;
   accountType: AccountType;
+  findyCoins?: number;
+  redeemedInviteCode?: string;
   createdAt: string;
 }
 
@@ -31,14 +33,14 @@ export interface BusinessProfile {
   createdAt: string;
 }
 
-const USERS_KEY = "armbiz-users";
-const CURRENT_USER_KEY = "armbiz-current-user";
+const USERS_KEY = "armbiz_users";
+const CURRENT_USER_KEY = "armbiz_current_user";
 const BUSINESS_PROFILES_KEY = "armbiz-business-profiles";
 
-function safeParse<T>(value: string | null, fallback: T): T {
-  if (!value) return fallback;
+function safeParse<T>(jsonString: string | null, fallback: T): T {
+  if (!jsonString) return fallback;
   try {
-    return JSON.parse(value) as T;
+    return JSON.parse(jsonString) as T;
   } catch {
     return fallback;
   }
@@ -49,7 +51,7 @@ export function getUsers(): UserAccount[] {
   return safeParse<UserAccount[]>(window.localStorage.getItem(USERS_KEY), []);
 }
 
-export function setUsers(users: UserAccount[]) {
+export function setUsers(users: UserAccount[]): void {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(USERS_KEY, JSON.stringify(users));
 }
@@ -59,25 +61,26 @@ export function getCurrentUser(): UserAccount | null {
   return safeParse<UserAccount | null>(window.localStorage.getItem(CURRENT_USER_KEY), null);
 }
 
-export function setCurrentUser(user: UserAccount | null) {
+export function setCurrentUser(user: UserAccount | null): void {
   if (typeof window === "undefined") return;
-  if (user) {
-    window.localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
-  } else {
+  if (!user) {
     window.localStorage.removeItem(CURRENT_USER_KEY);
+    return;
   }
+  window.localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
 }
 
 export function signOut() {
   setCurrentUser(null);
 }
 
-export function registerUser(input: {
+export function createAccount(input: {
   username: string;
   displayName: string;
   email: string;
   password: string;
   accountType: AccountType;
+  inviteCode?: string;
 }): { success: boolean; error?: string; user?: UserAccount } {
   if (typeof window === "undefined") {
     return { success: false, error: "Client-only auth is not available." };
@@ -85,8 +88,8 @@ export function registerUser(input: {
 
   const users = getUsers();
   const normalizedUsername = input.username.trim().toLowerCase();
-  const normalizedDisplayName = input.displayName.trim().toLowerCase();
   const normalizedEmail = input.email.trim().toLowerCase();
+  const normalizedDisplayName = input.displayName.trim().toLowerCase();
 
   if (!normalizedUsername || !normalizedEmail || !input.password) {
     return { success: false, error: "Please enter username, email, and password." };
@@ -104,17 +107,46 @@ export function registerUser(input: {
     return { success: false, error: "Այս էլ. հասցեով (Email) հաշիվ արդեն գոյություն ունի: / An account with that Email already exists." };
   }
 
+  let initialCoins = 0;
+  let redeemedCode = "";
+  if (input.inviteCode && input.inviteCode.trim()) {
+    const cleanInvite = input.inviteCode.trim();
+    const cleanInviteLower = cleanInvite.toLowerCase();
+    const inviterIndex = users.findIndex((u) => u.username.toLowerCase() === cleanInviteLower || (u.displayName && u.displayName.toLowerCase() === cleanInviteLower));
+    
+    initialCoins = 100;
+    redeemedCode = cleanInvite;
+
+    if (inviterIndex !== -1) {
+      users[inviterIndex] = {
+        ...users[inviterIndex],
+        findyCoins: (users[inviterIndex].findyCoins || 0) + 100
+      };
+    }
+  }
+
   const user: UserAccount = {
     username: normalizedUsername,
     displayName: input.displayName.trim() || normalizedUsername,
     email: normalizedEmail,
     password: input.password,
     accountType: input.accountType,
+    findyCoins: initialCoins,
+    redeemedInviteCode: redeemedCode,
     createdAt: new Date().toISOString(),
   };
 
   setUsers([...users, user]);
   setCurrentUser(user);
+
+  if (redeemedCode) {
+    const uKey = normalizedUsername || normalizedEmail;
+    if (uKey) {
+      localStorage.setItem(`armbiz_redeemed_code_${uKey}`, redeemedCode);
+      localStorage.setItem(`armbiz_user_coins_${uKey}`, String(initialCoins));
+    }
+  }
+
   return { success: true, user };
 }
 

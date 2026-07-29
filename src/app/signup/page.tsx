@@ -11,16 +11,27 @@ import { getApiUrl } from "@/lib/utils";
 
 export default function SignUpPage() {
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { register, login } = useAuth();
   const [accountType, setAccountType] = useState<AccountType | null>(null);
   const [username, setUsername] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const refParam = urlParams.get("ref") || urlParams.get("invite") || urlParams.get("code");
+      if (refParam) {
+        setInviteCode(refParam);
+      }
+    }
+  }, []);
 
   // Debounced check for Username availability
   useEffect(() => {
@@ -151,6 +162,7 @@ export default function SignUpPage() {
       email,
       password,
       accountType,
+      inviteCode,
     });
 
     if (!result.success) {
@@ -285,6 +297,19 @@ export default function SignUpPage() {
               required
               minLength={8}
               className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-sm outline-none transition-colors focus:border-[hsl(var(--foreground))]"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1 flex items-center justify-between">
+              <span>{locale === 'hy' ? "Հրավերի Կոդ (Invite Code)" : "Invite Code (Optional)"}</span>
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">+100 Coins</span>
+            </label>
+            <input
+              value={inviteCode}
+              onChange={(e) => setInviteCode(e.target.value)}
+              type="text"
+              placeholder="e.g. MHER100 or username"
+              className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-sm outline-none transition-colors focus:border-emerald-500 font-mono uppercase"
             />
           </div>
           <button
