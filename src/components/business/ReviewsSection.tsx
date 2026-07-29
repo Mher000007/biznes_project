@@ -46,18 +46,49 @@ function StarRow({ value, size = 16 }: { value: number; size?: number }) {
 }
 
 // ─── Relative time ────────────────────────────────────────────────────────────
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
+function timeAgo(iso?: string, locale: string = "hy"): string {
+  if (!iso) return locale === "hy" ? "Հենց նոր" : locale === "ru" ? "Только что" : "Just now";
+  const dateObj = new Date(iso);
+  const timeMs = dateObj.getTime();
+  if (isNaN(timeMs)) return locale === "hy" ? "Հենց նոր" : locale === "ru" ? "Только что" : "Just now";
+
+  const diffMs = Date.now() - timeMs;
+  if (diffMs < 0) return locale === "hy" ? "Հենց նոր" : locale === "ru" ? "Только что" : "Just now";
+
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) {
+    return locale === "hy" ? "Հենց նոր" : locale === "ru" ? "Только что" : "Just now";
+  }
+  if (mins < 60) {
+    return locale === "hy"
+      ? `${mins} ր առաջ`
+      : locale === "ru"
+      ? `${mins} мин. назад`
+      : `${mins}m ago`;
+  }
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
+  if (hrs < 24) {
+    return locale === "hy"
+      ? `${hrs} ժ առաջ`
+      : locale === "ru"
+      ? `${hrs} ч. назад`
+      : `${hrs}h ago`;
+  }
   const days = Math.floor(hrs / 24);
-  if (days < 30) return `${days}d ago`;
-  const months = Math.floor(days / 30);
-  if (months < 12) return `${months}mo ago`;
-  return `${Math.floor(months / 12)}y ago`;
+  if (days < 30) {
+    return locale === "hy"
+      ? `${days} օր առաջ`
+      : locale === "ru"
+      ? `${days} дն. назад`
+      : `${days}d ago`;
+  }
+  const dateStr = dateObj.toLocaleDateString(locale === "hy" ? "hy-AM" : locale === "ru" ? "ru-RU" : "en-US", {
+    day: "numeric",
+    month: "short",
+    year: "numeric"
+  });
+  const timeStr = dateObj.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return `${dateStr} • ${timeStr}`;
 }
 
 // ─── Avatar initials ──────────────────────────────────────────────────────────
@@ -892,7 +923,7 @@ export default function ReviewsSection({
                         <CheckCircle size={11} /> Verified
                       </span>
                     )}
-                    <span className={styles.reviewTime}>{timeAgo(review.createdAt)}</span>
+                    <span className={styles.reviewTime}>{timeAgo(review.createdAt, locale)}</span>
                   </div>
                   <StarRow value={review.rating} size={14} />
                 </div>

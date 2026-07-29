@@ -47,6 +47,51 @@ import {
 } from "lucide-react";
 import { MOCK_BUSINESSES } from "@/data/mock-businesses";
 
+function formatRelativeTime(iso?: string, locale: string = "hy"): string {
+  if (!iso) return locale === "hy" ? "Հենց նոր" : locale === "ru" ? "Только что" : "Just now";
+  const dateObj = new Date(iso);
+  const timeMs = dateObj.getTime();
+  if (isNaN(timeMs)) return locale === "hy" ? "Հենց նոր" : locale === "ru" ? "Только что" : "Just now";
+
+  const diffMs = Date.now() - timeMs;
+  if (diffMs < 0) return locale === "hy" ? "Հենց նոր" : locale === "ru" ? "Только что" : "Just now";
+
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) {
+    return locale === "hy" ? "Հենց նոր" : locale === "ru" ? "Только что" : "Just now";
+  }
+  if (mins < 60) {
+    return locale === "hy"
+      ? `${mins} ր առաջ`
+      : locale === "ru"
+      ? `${mins} мин. назад`
+      : `${mins}m ago`;
+  }
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) {
+    return locale === "hy"
+      ? `${hrs} ժ առաջ`
+      : locale === "ru"
+      ? `${hrs} ч. назад`
+      : `${hrs}h ago`;
+  }
+  const days = Math.floor(hrs / 24);
+  if (days < 30) {
+    return locale === "hy"
+      ? `${days} օր առաջ`
+      : locale === "ru"
+      ? `${days} дն. назад`
+      : `${days}d ago`;
+  }
+  const dateStr = dateObj.toLocaleDateString(locale === "hy" ? "hy-AM" : locale === "ru" ? "ru-RU" : "en-US", {
+    day: "numeric",
+    month: "short",
+    year: "numeric"
+  });
+  const timeStr = dateObj.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return `${dateStr} • ${timeStr}`;
+}
+
 export default function UserProfileDashboard() {
   const { currentUser, logout, refreshUser } = useAuth();
   const { t, locale } = useI18n();
@@ -1385,7 +1430,7 @@ export default function UserProfileDashboard() {
                 </div>
                 <div>
                   <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
-                    {locale === "hy" ? "Դուք վաստակում եք 5% ամեն ամրագրումից" : locale === "ru" ? "Вы зарабатываете 5% с каждого бронирования" : "You earn 5% back from all your bookings"}
+                    {locale === "hy" ? "Դուք վաստակում եք 1% ամեն ամրագրումից" : locale === "ru" ? "Вы зарабатываете 1% с каждого бронирования" : "You earn 1% back from all your bookings"}
                   </p>
                 </div>
               </div>
@@ -1781,7 +1826,7 @@ export default function UserProfileDashboard() {
                           )}
                           <span className="text-xs text-[hsl(var(--muted-foreground))]">•</span>
                           <span className="text-xs text-[hsl(var(--muted-foreground))]">
-                            {rev.createdAt ? new Date(rev.createdAt).toLocaleDateString() : "Recently"}
+                            {formatRelativeTime(rev.createdAt, locale)}
                           </span>
                         </div>
 
