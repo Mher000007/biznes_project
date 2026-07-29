@@ -466,13 +466,6 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   useEffect(() => { load(); }, [load]);
 
   // Fetch the live slides (replicating HeroSection logic)
-  const DEFAULT_HERO_SLIDES = [
-    { src: "/carousel/yerevan.png", alt: "Yerevan city center" },
-    { src: "/carousel/cafe.png", alt: "Armenian restaurant" },
-    { src: "/carousel/market.png", alt: "Armenian market" },
-    { src: "/carousel/dilijan.png", alt: "Dilijan resort" },
-  ];
-
   const fetchLiveSlides = async () => {
     setHeroLoadingLive(true);
     try {
@@ -488,8 +481,9 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       // 2. Check premium businesses
       const bizRes = await axios.get(`${API}/businesses?premiumOnly=true`);
       if (bizRes.data?.success && bizRes.data.data?.length > 0) {
-        const slides = bizRes.data.data.map((biz: any) => {
-          let img = "/carousel/yerevan.png";
+        const slides: { src: string; alt: string; source: "business" }[] = [];
+        bizRes.data.data.forEach((biz: any) => {
+          let img = "";
           if (biz.metadata?.coverUrl) {
             img = Array.isArray(biz.metadata.coverUrl) ? biz.metadata.coverUrl[0] : biz.metadata.coverUrl;
           } else if (biz.images?.length > 0) {
@@ -497,16 +491,17 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           } else if (biz.logo) {
             img = biz.logo;
           }
-          return { src: img, alt: biz.name, source: "business" as const };
+          if (img) {
+            slides.push({ src: img, alt: biz.name, source: "business" as const });
+          }
         });
         setLiveSlides(slides);
         setHeroLoadingLive(false);
         return;
       }
-      // 3. Default static slides
-      setLiveSlides(DEFAULT_HERO_SLIDES.map(s => ({ ...s, source: "default" as const })));
+      setLiveSlides([]);
     } catch {
-      setLiveSlides(DEFAULT_HERO_SLIDES.map(s => ({ ...s, source: "default" as const })));
+      setLiveSlides([]);
     }
     setHeroLoadingLive(false);
   };
@@ -1917,7 +1912,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                             src={slide.src}
                             alt={slide.alt}
                             style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                            onError={e => { (e.currentTarget as HTMLImageElement).src = "/carousel/yerevan.png"; }}
+                            onError={e => { (e.currentTarget as HTMLImageElement).style.opacity = "0.3"; }}
                           />
                         </div>
                         {/* Label */}
@@ -2146,7 +2141,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                             src={url}
                             alt={`Slide ${idx + 1}`}
                             style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                            onError={e => { (e.currentTarget as HTMLImageElement).src = "/carousel/yerevan.png"; }}
+                            onError={e => { (e.currentTarget as HTMLImageElement).style.opacity = "0.3"; }}
                           />
                         </div>
 

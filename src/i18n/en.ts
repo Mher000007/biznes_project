@@ -38,9 +38,11 @@ export const en = {
   },
   // Featured
   featured: {
-    title: "Top 5 Restaurants",
+    title: "Top 5",
     subtitle: "Highest rated restaurants on Findy",
     viewAll: "View all",
+    premiumTitle: "Offers",
+    premiumSubtitle: "Verified and top recommended offers",
   },
   // Stats
   stats: {

@@ -36,9 +36,11 @@ export const hy: Translations = {
     allSubtitle: "Դիտեք բոլոր արդյունաբերություններ և գտեք ձեզ համար անհրաժեշտ բիզնեսը",
   },
   featured: {
-    title: "Լավագույն 5 Ռեստորանները",
+    title: "Լավագույն 5-ը",
     subtitle: "Ամենաբարձր վարկանիշ ունեցող ռեստորանները Findy-ում",
     viewAll: "Դիտել բոլորը",
+    premiumTitle: "Առաջարկներ",
+    premiumSubtitle: "Երաշխավորված և լավագույն առաջարկներ",
   },
   stats: {
     businesses: "Բիզնեսներ",

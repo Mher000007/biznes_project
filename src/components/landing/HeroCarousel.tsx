@@ -12,15 +12,8 @@ interface SlideItem {
   href?: string;
 }
 
-const DEFAULT_SLIDES: SlideItem[] = [
-  { src: "/carousel/yerevan.png", alt: "Yerevan city center", caption: "Yerevan" },
-  { src: "/carousel/cafe.png", alt: "Armenian restaurant", caption: "Restaurants & Cafes" },
-  { src: "/carousel/market.png", alt: "Armenian market", caption: "Local Markets" },
-  { src: "/carousel/dilijan.png", alt: "Dilijan resort", caption: "Hotels & Resorts" },
-];
-
 export default function HeroCarousel() {
-  const [slides, setSlides] = useState<SlideItem[]>(DEFAULT_SLIDES);
+  const [slides, setSlides] = useState<SlideItem[]>([]);
   const [current, setCurrent] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -43,15 +36,30 @@ export default function HeroCarousel() {
     }
   };
 
-  // Fetch premium businesses on mount
+  // Fetch admin hero images or premium businesses on mount
   useEffect(() => {
-    const fetchPremium = async () => {
+    const fetchSlides = async () => {
       try {
         const API = getApiUrl();
+
+        // 1. Try admin-configured hero images first
+        const heroRes = await axios.get(`${API}/hero-images`);
+        if (heroRes.data?.success && heroRes.data?.data && heroRes.data.data.length > 0) {
+          const loadedSlides = heroRes.data.data.map((url: string, idx: number) => ({
+            src: url,
+            alt: `Hero image ${idx + 1}`,
+            caption: `Slide ${idx + 1}`,
+          }));
+          setSlides(loadedSlides);
+          return;
+        }
+
+        // 2. Fallback: premium businesses
         const res = await axios.get(`${API}/businesses?premiumOnly=true`);
         if (res.data?.success && res.data?.data && res.data?.data.length > 0) {
-          const loadedSlides = res.data.data.map((biz: any) => {
-            let img = "/carousel/yerevan.png";
+          const loadedSlides: SlideItem[] = [];
+          res.data.data.forEach((biz: any) => {
+            let img = "";
             if (biz.metadata?.coverUrl) {
               if (Array.isArray(biz.metadata.coverUrl) && biz.metadata.coverUrl.length > 0) {
                 img = biz.metadata.coverUrl[0];
@@ -64,20 +72,25 @@ export default function HeroCarousel() {
               img = biz.logo;
             }
 
-            return {
-              src: img,
-              alt: biz.name,
-              caption: biz.name,
-              href: `/business/${biz.slug}`,
-            };
+            if (img) {
+              loadedSlides.push({
+                src: img,
+                alt: biz.name,
+                caption: biz.name,
+                href: `/business/${biz.slug}`,
+              });
+            }
           });
           setSlides(loadedSlides);
+        } else {
+          setSlides([]);
         }
       } catch (err: any) {
-        console.log("Failed to load premium businesses for carousel:", err?.message || "Error");
+        console.log("Failed to load hero images for carousel:", err?.message || "Error");
+        setSlides([]);
       }
     };
-    fetchPremium();
+    fetchSlides();
   }, []);
 
   useEffect(() => {

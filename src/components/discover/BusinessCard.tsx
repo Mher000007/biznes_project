@@ -208,9 +208,8 @@ export default function BusinessCard({ business, viewMode = "list" }: { business
             onClick={toggleFavorite}
             aria-label="Add to favorites"
             title={isFavorited ? "Remove from favorites" : "Save to favorites"}
-            className={`absolute top-2 right-2 p-1.5 transition-all hover:scale-110 cursor-pointer z-10 bg-transparent border-0 ${
-              isFavorited ? "opacity-100 scale-100" : "opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100"
-            }`}
+            className={`absolute top-2 right-2 p-1.5 transition-all hover:scale-110 cursor-pointer z-10 bg-transparent border-0 ${isFavorited ? "opacity-100 scale-100" : "opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100"
+              }`}
           >
             <Bookmark
               className="h-5 w-5 transition-all drop-shadow-md"

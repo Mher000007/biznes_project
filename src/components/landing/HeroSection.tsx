@@ -9,15 +9,8 @@ interface SlideItem {
   alt: string;
 }
 
-const DEFAULT_SLIDES: SlideItem[] = [
-  { src: "/carousel/yerevan.png", alt: "Yerevan city center" },
-  { src: "/carousel/cafe.png", alt: "Armenian restaurant" },
-  { src: "/carousel/market.png", alt: "Armenian market" },
-  { src: "/carousel/dilijan.png", alt: "Dilijan resort" },
-];
-
 export default function HeroSection() {
-  const [slides, setSlides] = useState<SlideItem[]>(DEFAULT_SLIDES);
+  const [slides, setSlides] = useState<SlideItem[]>([]);
   const [current, setCurrent] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const activeRef = useRef<HTMLButtonElement>(null);
@@ -53,11 +46,12 @@ export default function HeroSection() {
           return;
         }
 
-        // Fallback: premium businesses
+        // Fallback: premium businesses with valid images
         const res = await axios.get(`${API}/businesses?premiumOnly=true`);
         if (res.data?.success && res.data?.data && res.data.data.length > 0) {
-          const loadedSlides = res.data.data.map((biz: any) => {
-            let img = "/carousel/yerevan.png";
+          const loadedSlides: SlideItem[] = [];
+          res.data.data.forEach((biz: any) => {
+            let img = "";
             if (biz.metadata?.coverUrl) {
               if (Array.isArray(biz.metadata.coverUrl) && biz.metadata.coverUrl.length > 0) {
                 img = biz.metadata.coverUrl[0];
@@ -69,12 +63,18 @@ export default function HeroSection() {
             } else if (biz.logo) {
               img = biz.logo;
             }
-            return { src: img, alt: biz.name };
+
+            if (img) {
+              loadedSlides.push({ src: img, alt: biz.name });
+            }
           });
           setSlides(loadedSlides);
+        } else {
+          setSlides([]);
         }
       } catch (err: any) {
         console.log("Failed to load hero images:", err?.message || "Error");
+        setSlides([]);
       }
     };
     fetchHeroImages();

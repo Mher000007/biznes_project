@@ -56,6 +56,8 @@ export interface Business {
 
   // Tags
   tags: string[];
+  highlights?: string[];
+  locations?: any[];
   plan?: 'starter' | 'standard' | 'premium';
 }
 

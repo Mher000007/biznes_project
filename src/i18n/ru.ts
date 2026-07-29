@@ -3,7 +3,7 @@ export const ru: Translations = {
   nav: { home: "Главная", discover: "Каталог", categories: "Категории", about: "О нас", login: "Войти", getStarted: "Начать", signOut: "Выйти", hello: "Привет, ", serviceOrBusiness: "Поиск ...", allLocations: "Все локации", searchButton: "Найти", popularBusinesses: "Топ поиски", searchResults: "Результаты поиска", useArrowKeys: "Используйте ↑↓ для навигации", noBusinessesFound: "Компании не найдены", exchange: "Обмен" },
   hero: { title: "Найдите нужный рестораныв Армении", subtitle: "Более 900 проверенных компаний во всех отраслях. Находите услуги, читайте отзывы, связывайтесь напрямую.", searchPlaceholder: "Поиск компаний...", search: "Найти", businesses: "компаний", cities: "городов", industries: "отраслей" },
   categories: { title: "Поиск по категориям", subtitle: "Все основные отрасли бизнеса Армении", listed: "в списке", allCategories: "Все категории", allSubtitle: "Просмотрите все отрасли" },
-  featured: { title: "Топ-5 ресторанов", subtitle: "Рестораны с самым высоким рейтингом на Findy", viewAll: "Все" },
+  featured: { title: "Топ-5", subtitle: "Рестораны с самым высоким рейтингом на Findy", viewAll: "Все", premiumTitle: "Предложения", premiumSubtitle: "Проверенные и лучшие предложения" },
   stats: { businesses: "Компаний", cities: "Городов", industries: "Отраслей", visitors: "Посетителей в месяц" },
   reviewsFeed: { loading: "Загрузка отзывов...", title: "Последние отзывы", subtitle: "отзывы и фото клиентов ", showMore: "Показать больше" },
   cta: { title: "Добавьте свой бизнес", subtitle: "Присоединяйтесь к 900+ компаниям на Findy. Создайте профиль, управляйте бронированиями.", getStarted: "Начать бесплатно", browse: "Каталог" },

@@ -5,17 +5,17 @@
   display: flex;
   flex-direction: row;
   padding: 24px;
-  background-color: $bg-primary;
-  border-bottom: 1px solid $border-light;
+  background-color: transparent;
+  border: none;
   text-decoration: none;
   color: inherit;
-  transition: $transition-smooth;
+  transition: none;
   gap: 24px;
   width: 100%;
 
   @include hover-device {
     &:hover {
-      background-color: $bg-secondary;
+      background-color: transparent;
     }
   }
 
@@ -30,20 +30,21 @@
   display: flex;
   flex-direction: column;
   padding: 20px;
-  background-color: $bg-primary;
-  border: 1px solid $border-light;
+  background-color: transparent;
+  border: none;
   border-radius: 12px;
   text-decoration: none;
   color: inherit;
-  transition: all 0.3s ease;
+  transition: none;
   gap: 16px;
   height: 100%;
 
   @include hover-device {
     &:hover {
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
-      transform: translateY(-4px);
-      border-color: #E5E5E5;
+      box-shadow: none;
+      transform: none;
+      border-color: transparent;
+      background-color: transparent;
     }
   }
 
@@ -360,4 +361,50 @@
   fill: hsl(var(--muted-foreground)) !important;
   color: hsl(var(--muted)) !important;
   stroke: hsl(var(--muted)) !important;
+}
+
+.saveButton {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s ease-in-out;
+  padding: 0;
+
+  @include hover-device {
+    &:hover {
+      background: rgba(0, 0, 0, 0.7);
+      transform: scale(1.1);
+    }
+  }
+
+  &:active {
+    transform: scale(0.92);
+  }
+}
+
+.bookmarkIcon {
+  width: 16px;
+  height: 16px;
+  color: #ffffff;
+  stroke: #ffffff;
+  fill: transparent;
+  transition: all 0.2s ease-in-out;
+
+  &.saved {
+    color: #D4AF37;
+    stroke: #D4AF37;
+    fill: #D4AF37;
+  }
 }

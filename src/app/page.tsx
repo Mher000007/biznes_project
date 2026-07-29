@@ -13,8 +13,8 @@ export default function HomePage() {
       <StoriesSection />
       <div className="homepage-grid">
         <PremiumLogoSlider />
-        <InstagramReviewFeed />
         <FeaturedBusinesses />
+        <InstagramReviewFeed />
         {/* <StatsSection /> */}
       </div>
     </div>
