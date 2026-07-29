@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Navbar from "@/components/layout/Navbar";
 import { ExchangeIllustration } from "@/components/ui/ExchangeIllustration";
-import { ArrowDown, ArrowUp, ArrowUpDown, Coins, ShieldCheck, Zap, X, UserPlus, Gift, Send, Heart } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Coins, ShieldCheck, Zap, X, UserPlus, Gift, Send, Heart, CheckCircle2, Sparkles } from "lucide-react";
 import { useI18n } from "@/i18n";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
@@ -26,29 +26,29 @@ const MOCK_OFFERS = [
   },
   {
     id: "2",
-    title: "20% Off Hookah Session",
-    business: "Chill Lounge",
+    title: "20% Off Main Courses",
+    business: "Bistro Yerevan",
     cost: 300,
-    category: "Hookah",
-    bgClass: "bg-purple-500/10",
-    textClass: "text-purple-600 dark:text-purple-400",
-    icon: Zap,
-    description: "Get a 20% discount on any premium hookah blend at Chill Lounge. Perfect for an evening with friends. Minimum spend 10,000 AMD.",
+    category: "Dining",
+    bgClass: "bg-blue-500/10",
+    textClass: "text-blue-600 dark:text-blue-400",
+    icon: Gift,
+    description: "Get a 20% discount on any main dish on the menu at Bistro Yerevan. Perfect for a cozy dinner or business lunch.",
     totalQuantity: 30,
-    claimedQuantity: 12
+    claimedQuantity: 28
   },
   {
     id: "3",
-    title: "1 Month Gym Pass",
-    business: "FitLife Gym",
-    cost: 1000,
-    category: "Food",
-    bgClass: "bg-blue-500/10",
-    textClass: "text-blue-600 dark:text-blue-400",
-    icon: ShieldCheck,
-    description: "Get fully unlimited access to all FitLife Gym facilities, group classes, and sauna for one entire month. Start your premium fitness journey today!",
-    totalQuantity: 20,
-    claimedQuantity: 19
+    title: "1-Hour Massage Session",
+    business: "Serenity Spa",
+    cost: 800,
+    category: "Wellness",
+    bgClass: "bg-purple-500/10",
+    textClass: "text-purple-600 dark:text-purple-400",
+    icon: Gift,
+    description: "Relax and recharge with a 60-minute full body relaxation massage at Serenity Spa. Appointment required 24 hours in advance.",
+    totalQuantity: 10,
+    claimedQuantity: 10
   }
 ];
 
@@ -56,14 +56,20 @@ export default function ExchangePage() {
   const { locale, t } = useI18n();
   const { currentUser, refreshUser } = useAuth();
   const { showToast } = useToast();
-  const isBusinessUser = currentUser?.role === "business_owner" || currentUser?.accountType === "business";
-  const [submittingExchange, setSubmittingExchange] = useState(false);
-  
-  const [selectedOffer, setSelectedOffer] = useState<any>(null);
+  const [selectedOffer, setSelectedOffer] = useState<any | null>(null);
   const [offerCategory, setOfferCategory] = useState<string>('All');
   const [sortOrder, setSortOrder] = useState<'default' | 'highToLow' | 'lowToHigh'>('default');
   const [savedOffers, setSavedOffers] = useState<string[]>([]);
   const [offers, setOffers] = useState<any[]>(MOCK_OFFERS);
+  const [submittingExchange, setSubmittingExchange] = useState(false);
+  const [successModal, setSuccessModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    cost: number;
+    couponCode: string;
+  } | null>(null);
+
+  const isBusinessUser = currentUser?.role === "business_owner" || currentUser?.accountType === "business";
 
   const sortedOffers = useMemo(() => {
     let list = offers.filter(o =>
@@ -111,11 +117,14 @@ export default function ExchangePage() {
         });
       }
 
-      // Update local state claimedQuantity and subtract coins in UI
       setOffers(prev => prev.map(o => o.id === selectedOffer.id ? { ...o, claimedQuantity: o.claimedQuantity + 1 } : o));
-      setSelectedOffer((prev: any) => prev ? { ...prev, claimedQuantity: prev.claimedQuantity + 1 } : null);
+      
+      const bizNameClean = (selectedOffer.business || "FINDY")
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, "")
+        .substring(0, 6) || "FINDY";
+      const generatedCode = `${bizNameClean}-${Math.floor(100000 + Math.random() * 900000)}`;
 
-      // Save to user's purchased offers list
       if (typeof window !== "undefined") {
         try {
           const existingStr = localStorage.getItem("armbiz_user_claimed_offers");
@@ -127,14 +136,15 @@ export default function ExchangePage() {
             _id: selectedOffer.id,
             title: selectedOffer.title,
             business: selectedOffer.business,
+            businessId: selectedOffer.businessId || selectedOffer.business_id || selectedOffer.business,
             businessLogo: selectedOffer.businessLogo,
             cost: selectedOffer.cost,
             category: selectedOffer.category,
             description: selectedOffer.description,
             claimedAt: claimedAt.toISOString(),
             expiresAt: expiresAt.toISOString(),
-            couponCode: `FINDY-${Math.floor(100000 + Math.random() * 900000)}`,
-            userName: currentUser?.name || currentUser?.username || "Արմեն Մ․",
+            couponCode: generatedCode,
+            userName: currentUser?.name || currentUser?.username || "Անուն Ազգանուն",
             userEmail: currentUser?.email || "",
           };
           localStorage.setItem("armbiz_user_claimed_offers", JSON.stringify([newItem, ...existingList]));
@@ -146,8 +156,15 @@ export default function ExchangePage() {
         await refreshUser();
       }
 
-      alert(`🎉 Շնորհավորում ենք: Դուք հաջողությամբ ստացաք "${selectedOffer.title}" առաջարկը: Ձեր հաշվից գանձվեց ${selectedOffer.cost} Coins:`);
+      const offerTitle = selectedOffer.title;
+      const offerCost = selectedOffer.cost;
       setSelectedOffer(null);
+      setSuccessModal({
+        isOpen: true,
+        title: offerTitle,
+        cost: offerCost,
+        couponCode: generatedCode,
+      });
     } catch (err: any) {
       console.error("Failed to confirm exchange", err);
       alert(err.response?.data?.error || "Փոխանակման ընթացքում տեղի ունեցավ սխալ:");
@@ -626,7 +643,77 @@ export default function ExchangePage() {
                 )}
               </div>
             </div>
-            
+          </div>
+        </div>
+      )}
+
+      {/* Congratulatory Success Modal */}
+      {successModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-4 text-center animate-in zoom-in-95 duration-200 relative overflow-hidden">
+            {/* Decorative background glow */}
+            <div className="absolute -top-12 -left-12 w-28 h-28 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none" />
+            <div className="absolute -bottom-12 -right-12 w-28 h-28 bg-teal-500/20 rounded-full blur-2xl pointer-events-none" />
+
+            {/* Decorative icon */}
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 text-emerald-500 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/10">
+              <CheckCircle2 className="w-9 h-9 animate-in zoom-in duration-300" />
+            </div>
+
+            <div>
+              <span className="inline-block px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[11px] font-extrabold uppercase tracking-wider mb-2">
+                {locale === "hy" ? "Փոխանակումը հաստատված է" : locale === "ru" ? "Обмен подтвержден" : "Exchange Confirmed"}
+              </span>
+              <h3 className="text-xl font-black text-[hsl(var(--foreground))] tracking-tight">
+                {locale === "hy" ? "🎉 Շնորհավորում ենք:" : locale === "ru" ? "🎉 Поздравляем!" : "🎉 Congratulations!"}
+              </h3>
+              <p className="text-xs text-[hsl(var(--muted-foreground))] mt-2 leading-relaxed">
+                {locale === "hy"
+                  ? `Դուք հաջողությամբ ստացաք «${successModal.title}» առաջարկը:`
+                  : locale === "ru"
+                  ? `Вы успешно получили предложение «${successModal.title}».`
+                  : `You have successfully claimed "${successModal.title}".`}
+              </p>
+            </div>
+
+            {/* Coupon details box */}
+            <div className="bg-[hsl(var(--muted))]/30 border border-[hsl(var(--border))] rounded-2xl p-4 text-xs space-y-2 text-left">
+              <div className="flex justify-between items-center">
+                <span className="text-[hsl(var(--muted-foreground))] font-semibold">
+                  {locale === "hy" ? "Կուպոնի Կոդ:" : locale === "ru" ? "Код купона:" : "Coupon Code:"}
+                </span>
+                <code className="bg-emerald-500/20 border border-emerald-500/30 px-2.5 py-1 rounded-lg text-emerald-600 dark:text-emerald-400 font-mono font-black text-xs">
+                  {successModal.couponCode}
+                </code>
+              </div>
+              <div className="flex justify-between items-center border-t border-[hsl(var(--border))]/40 pt-2">
+                <span className="text-[hsl(var(--muted-foreground))] font-semibold">
+                  {locale === "hy" ? "Գանձված Findy Coins:" : locale === "ru" ? "Списано Findy Coins:" : "Coins Deducted:"}
+                </span>
+                <span className="font-extrabold text-emerald-500 flex items-center gap-1">
+                  <Coins className="w-3.5 h-3.5" />
+                  {successModal.cost} Coins
+                </span>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-[hsl(var(--muted-foreground))] italic">
+              {locale === "hy"
+                ? "Կուպոնը պահպանվել է Ձեր «Իմ գնված առաջարկները» (My Purchased Offers) բաժնում:"
+                : locale === "ru"
+                ? "Купон сохранен в вашем разделе «Мои купленные предложения»."
+                : "Saved to your My Purchased Offers section."}
+            </p>
+
+            <div className="pt-2">
+              <button
+                onClick={() => setSuccessModal(null)}
+                className="w-full py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white text-xs font-extrabold shadow-lg shadow-emerald-500/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>{locale === "hy" ? "Լավ, հասկացա" : locale === "ru" ? "Отлично, понятно!" : "Great, Got It!"}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

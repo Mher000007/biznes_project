@@ -6,6 +6,8 @@ import { getApiUrl } from "@/lib/utils";
 import { Star, Award, MapPin, Eye, Crown, Medal, BadgeCheck, UtensilsCrossed } from "lucide-react";
 import styles from "@/components/landing/FeaturedBusinesses.module.scss";
 
+import { useI18n } from "@/i18n";
+
 interface Business {
   _id: string;
   name: string;
@@ -21,6 +23,7 @@ interface Business {
 }
 
 export default function TopBusinesses() {
+  const { t } = useI18n();
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -89,9 +92,9 @@ export default function TopBusinesses() {
         <div>
           <h3 className="text-base font-bold text-[hsl(var(--foreground))] flex items-center gap-2">
             <Award className="h-5 w-5 text-amber-500" />
-            Top 5 Ռեստորանները / Բիզնեսները
+            {t.dashboard.top5Businesses}
           </h3>
-          <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">Ամենաբարձր վարկանիշ ունեցողները հարթակում</p>
+          <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">{t.dashboard.highestRatedPlatform}</p>
         </div>
       </div>
 

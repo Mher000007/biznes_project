@@ -84,6 +84,27 @@ export default function UserProfileDashboard() {
   const [userReviewsList, setUserReviewsList] = useState<any[]>([]);
   const [claimedOffers, setClaimedOffers] = useState<any[]>([]);
   const [selectedCoupon, setSelectedCoupon] = useState<any>(null);
+  const [copiedCouponCode, setCopiedCouponCode] = useState<string | null>(null);
+
+  const handleCopyCouponCode = (code: string) => {
+    if (!code) return;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code);
+      } else {
+        const tempInput = document.createElement("input");
+        tempInput.value = code;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand("copy");
+        document.body.removeChild(tempInput);
+      }
+      setCopiedCouponCode(code);
+      setTimeout(() => setCopiedCouponCode(null), 2000);
+    } catch (e) {
+      console.error("Failed to copy code:", e);
+    }
+  };
 
   const [copiedInvite, setCopiedInvite] = useState(false);
   const inviteCode = currentUser?.username || (currentUser as any)?.id || (currentUser as any)?._id || "u882jK1";
@@ -1696,11 +1717,29 @@ export default function UserProfileDashboard() {
                 />
               </div>
 
-              {/* Coupon Code Display */}
-              <div className="bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-xl p-3 inline-flex items-center gap-2 mx-auto">
-                <Ticket className="w-4 h-4 text-emerald-500" />
-                <span className="font-mono font-black text-lg tracking-widest text-[hsl(var(--foreground))]">
-                  {selectedCoupon.couponCode || "FINDY-284076"}
+              {/* Coupon Code Display (Interactive Copy Badge) */}
+              <div className="flex flex-col items-center gap-1.5 mx-auto">
+                <button
+                  type="button"
+                  onClick={() => handleCopyCouponCode(selectedCoupon.couponCode || "FINDY-284076")}
+                  className="bg-[hsl(var(--background))] hover:bg-[hsl(var(--muted))] active:scale-95 border border-[hsl(var(--border))] hover:border-emerald-500/50 rounded-xl p-3 inline-flex items-center gap-2.5 mx-auto transition-all cursor-pointer group shadow-sm"
+                  title={locale === "hy" ? "Սեղմեք կոդը պատճենելու համար" : "Click to copy code"}
+                >
+                  <Ticket className="w-4.5 h-4.5 text-emerald-500 group-hover:rotate-12 transition-transform" />
+                  <span className="font-mono font-black text-lg tracking-widest text-[hsl(var(--foreground))]">
+                    {selectedCoupon.couponCode || "FINDY-284076"}
+                  </span>
+                  {copiedCouponCode === (selectedCoupon.couponCode || "FINDY-284076") ? (
+                    <span className="flex items-center gap-1 text-xs font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20 animate-in fade-in">
+                      <Check className="w-3.5 h-3.5" />
+                      {locale === "hy" ? "Պատճենված է" : "Copied!"}
+                    </span>
+                  ) : (
+                    <Copy className="w-4 h-4 text-[hsl(var(--muted-foreground))] group-hover:text-emerald-500 transition-colors" />
+                  )}
+                </button>
+                <span className="text-[10px] text-[hsl(var(--muted-foreground))] opacity-75">
+                  {locale === "hy" ? "Սեղմեք կոդի վրա պատճենելու համար" : "Click code to copy"}
                 </span>
               </div>
 

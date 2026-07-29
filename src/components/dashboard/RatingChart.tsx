@@ -5,6 +5,8 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recha
 import axios from "axios";
 import { getApiUrl } from "@/lib/utils";
 
+import { useI18n } from "@/i18n";
+
 interface RatingChartProps {
   businessId: string;
 }
@@ -23,6 +25,7 @@ function authHeader() {
 }
 
 export default function RatingChart({ businessId }: RatingChartProps) {
+  const { t } = useI18n();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalReviews, setTotalReviews] = useState(0);
@@ -36,11 +39,11 @@ export default function RatingChart({ businessId }: RatingChartProps) {
         if (res.data?.success && res.data.distribution) {
           const dist = res.data.distribution;
           const chartData = [
-            { name: "5 աստղ", value: dist[5] || 0, color: COLORS[5] },
-            { name: "4 աստղ", value: dist[4] || 0, color: COLORS[4] },
-            { name: "3 աստղ", value: dist[3] || 0, color: COLORS[3] },
-            { name: "2 աստղ", value: dist[2] || 0, color: COLORS[2] },
-            { name: "1 աստղ", value: dist[1] || 0, color: COLORS[1] },
+            { name: t.dashboard.fiveStars, value: dist[5] || 0, color: COLORS[5] },
+            { name: t.dashboard.fourStars, value: dist[4] || 0, color: COLORS[4] },
+            { name: t.dashboard.threeStars, value: dist[3] || 0, color: COLORS[3] },
+            { name: t.dashboard.twoStars, value: dist[2] || 0, color: COLORS[2] },
+            { name: t.dashboard.oneStar, value: dist[1] || 0, color: COLORS[1] },
           ].filter(item => item.value > 0);
           
           setData(chartData);
@@ -53,13 +56,13 @@ export default function RatingChart({ businessId }: RatingChartProps) {
       }
     }
     fetchRatings();
-  }, [businessId]);
+  }, [businessId, t]);
 
   return (
     <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-6 shadow-sm flex flex-col h-full animate-scale-in">
       <div className="w-full mb-4">
-        <h3 className="text-base font-bold text-[hsl(var(--foreground))] mb-1">Գնահատականների բաշխում</h3>
-        <p className="text-xs text-[hsl(var(--muted-foreground))]">Տեսեք Ձեր հաճախորդների տված գնահատականները (Avg. Rating)</p>
+        <h3 className="text-base font-bold text-[hsl(var(--foreground))] mb-1">{t.dashboard.ratingsDistribution}</h3>
+        <p className="text-xs text-[hsl(var(--muted-foreground))]">{t.dashboard.seeRatings}</p>
       </div>
       
       <div className="flex-1 w-full relative min-h-[250px] flex items-center justify-center">

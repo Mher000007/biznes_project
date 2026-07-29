@@ -23,7 +23,7 @@ interface ExchangeOffer {
 }
 
 export default function DashboardExchange() {
-  const { locale } = useI18n();
+  const { t, locale } = useI18n();
   const { currentUser } = useAuth();
   const [activePlan, setActivePlan] = useState<string>("starter");
   const [offers, setOffers] = useState<ExchangeOffer[]>([]);
@@ -270,9 +270,9 @@ export default function DashboardExchange() {
     <div className="p-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[hsl(var(--foreground))]">Findy Coin Offers</h1>
+          <h1 className="text-2xl font-bold text-[hsl(var(--foreground))]">{t.dashboard.exchangeOffers.title}</h1>
           <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1">
-            Create offers that users can redeem using Findy Coins.
+            {t.dashboard.exchangeOffers.subtitle}
           </p>
         </div>
         <button
@@ -281,7 +281,7 @@ export default function DashboardExchange() {
           className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors cursor-pointer"
         >
           <Plus className="w-5 h-5" />
-          Add Offer
+          {t.dashboard.exchangeOffers.addOffer}
         </button>
       </div>
 
@@ -406,7 +406,7 @@ export default function DashboardExchange() {
           <div className="bg-[hsl(var(--card))] w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
             <div className="p-6 border-b border-[hsl(var(--border))] flex justify-between items-center bg-[hsl(var(--muted))]">
               <h2 className="text-xl font-bold text-[hsl(var(--foreground))]">
-                {editingId ? "Edit Exchange Offer" : "Create Exchange Offer"}
+                {editingId ? t.dashboard.exchangeOffers.editModalTitle : t.dashboard.exchangeOffers.addOffer}
               </h2>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -420,19 +420,19 @@ export default function DashboardExchange() {
               <form id="offerForm" onSubmit={handleSubmit} className="space-y-5">
                 
                 <div>
-                  <label className="block text-sm font-semibold text-[hsl(var(--foreground))] mb-1.5">Offer Title</label>
+                  <label className="block text-sm font-semibold text-[hsl(var(--foreground))] mb-1.5">{t.dashboard.exchangeOffers.offerTitle}</label>
                   <input
                     type="text"
                     required
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     className="w-full bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg px-4 py-2.5 text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                    placeholder="e.g. Free Artisan Coffee"
+                    placeholder={t.dashboard.exchangeOffers.offerTitlePlaceholder}
                   />
                 </div>
 
                 <div className="relative">
-                  <label className="block text-sm font-semibold text-[hsl(var(--foreground))] mb-1.5">Category</label>
+                  <label className="block text-sm font-semibold text-[hsl(var(--foreground))] mb-1.5">{t.dashboard.exchangeOffers.category}</label>
                   <div 
                     onClick={() => setIsCategoryOpen(!isCategoryOpen)}
                     className="w-full bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg px-4 py-2.5 text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer flex justify-between items-center group transition-all"
@@ -461,22 +461,20 @@ export default function DashboardExchange() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-[hsl(var(--foreground))] mb-1.5">Description</label>
+                  <label className="block text-sm font-semibold text-[hsl(var(--foreground))] mb-1.5">{t.dashboard.exchangeOffers.description}</label>
                   <textarea
                     required
                     rows={3}
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     className="w-full bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg px-4 py-2.5 text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-emerald-500/50 resize-none"
-                    placeholder="Describe what the user gets..."
+                    placeholder={t.dashboard.exchangeOffers.descPlaceholder}
                   />
                 </div>
 
-
-
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-[hsl(var(--foreground))] mb-1.5">Coin Cost</label>
+                    <label className="block text-sm font-semibold text-[hsl(var(--foreground))] mb-1.5">{t.dashboard.exchangeOffers.coinCost}</label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <Coins className="h-4 w-4 text-emerald-500" />
@@ -492,7 +490,7 @@ export default function DashboardExchange() {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-[hsl(var(--foreground))] mb-1.5">Total Quantity</label>
+                    <label className="block text-sm font-semibold text-[hsl(var(--foreground))] mb-1.5">{t.dashboard.exchangeOffers.totalQuantity}</label>
                     <input
                       type="number"
                       min="1"
@@ -500,7 +498,7 @@ export default function DashboardExchange() {
                       value={formData.totalQuantity}
                       onChange={(e) => setFormData({ ...formData, totalQuantity: e.target.value })}
                       className="w-full bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg px-4 py-2.5 text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                      placeholder="e.g. 100"
+                      placeholder={t.dashboard.exchangeOffers.quantityPlaceholder}
                     />
                   </div>
                 </div>
@@ -514,7 +512,7 @@ export default function DashboardExchange() {
                     className="w-4 h-4 text-emerald-600 rounded border-[hsl(var(--border))] focus:ring-emerald-500"
                   />
                   <label htmlFor="isActive" className="text-sm font-medium text-[hsl(var(--foreground))]">
-                    Active (visible to users)
+                    {t.dashboard.exchangeOffers.activeVisible}
                   </label>
                 </div>
 

@@ -33,7 +33,7 @@ function authHeader() {
 
 export default function InquiriesPage() {
   const { currentUser } = useAuth();
-  const { locale } = useI18n();
+  const { t, locale } = useI18n();
   const [inquiries, setInquiries] = useState<DashboardInquiry[]>([]);
   const [activeTab, setActiveTab] = useState<"all" | "bookings" | "reviews" | "notifications">("all");
   const [loading, setLoading] = useState(true);
@@ -94,6 +94,25 @@ export default function InquiriesPage() {
     } catch (e) {
       console.error("Error updating booking status", e);
     }
+
+    if (newStatus === "confirmed") {
+      const targetInquiry = inquiries.find(inq => inq.id === bookingId);
+      if (targetInquiry && targetInquiry.price && targetInquiry.price > 0) {
+        const earnedCoins = Math.floor(targetInquiry.price * 0.01);
+        if (earnedCoins > 0 && typeof window !== "undefined") {
+          try {
+            const userStr = localStorage.getItem("user");
+            if (userStr) {
+              const uObj = JSON.parse(userStr);
+              uObj.findyCoins = (uObj.findyCoins || 0) + earnedCoins;
+              localStorage.setItem("user", JSON.stringify(uObj));
+              window.dispatchEvent(new Event("userBalanceUpdated"));
+            }
+          } catch (e) {}
+        }
+      }
+    }
+
     setInquiries((prev) => prev.map((inq) => (inq.id === bookingId ? { ...inq, status: newStatus } : inq)));
   };
 
@@ -219,13 +238,13 @@ export default function InquiriesPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight mb-1">Inquiries</h1>
-        <p className="text-sm text-[hsl(var(--muted-foreground))]">Manage messages, bookings, reviews, and notifications all in one place.</p>
+        <h1 className="text-2xl font-bold tracking-tight mb-1">{t.dashboard.inquiriesPage.title}</h1>
+        <p className="text-sm text-[hsl(var(--muted-foreground))]">{t.dashboard.inquiriesPage.subtitle}</p>
       </div>
 
       <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))]">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-5 border-b border-[hsl(var(--border))] gap-3">
-          <h2 className="text-sm font-semibold">All Activity</h2>
+          <h2 className="text-sm font-semibold">{t.dashboard.inquiriesPage.allActivity}</h2>
           <div className="flex gap-1.5 text-xs bg-[hsl(var(--muted))]/50 p-1 rounded-xl self-start sm:self-center">
             {(() => {
               const unreadNotifsCount = inquiries.filter(inq => inq.type === "notification" && inq.status === "unread").length;
@@ -236,6 +255,13 @@ export default function InquiriesPage() {
                 if (tab === "bookings") return pendingBookingsCount;
                 if (tab === "all") return unreadNotifsCount + pendingBookingsCount;
                 return 0;
+              };
+
+              const tabLabels: Record<string, string> = {
+                all: t.dashboard.inquiriesPage.all,
+                bookings: t.dashboard.inquiriesPage.bookings,
+                reviews: t.dashboard.inquiriesPage.reviews,
+                notifications: t.dashboard.inquiriesPage.notifications,
               };
 
               return (["all", "bookings", "reviews", "notifications"] as const).map((tab) => {
@@ -249,7 +275,7 @@ export default function InquiriesPage() {
                       : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] bg-transparent"
                       }`}
                   >
-                    {tab}
+                    {tabLabels[tab] || tab}
                     {count > 0 && (
                       <span className="flex items-center justify-center min-w-[18px] h-4 px-1 rounded-full bg-emerald-500 text-white text-[9px] font-bold">
                         {count}
@@ -384,18 +410,18 @@ export default function InquiriesPage() {
                   {inq.type === "booking" && (
                     <div className="flex gap-1.5 mt-1">
                       {inq.status !== "confirmed" && inq.status !== "replied" && (
-                        <button onClick={() => handleUpdateStatus(inq.id, "confirmed")} className="px-2.5 py-1 text-[10px] font-semibold bg-green-500 hover:bg-green-600 text-white rounded-lg transition-all shadow-sm cursor-pointer">Confirm</button>
+                        <button onClick={() => handleUpdateStatus(inq.id, "confirmed")} className="px-2.5 py-1 text-[10px] font-semibold bg-green-500 hover:bg-green-600 text-white rounded-lg transition-all shadow-sm cursor-pointer">{t.dashboard.inquiriesPage.confirm}</button>
                       )}
                       {inq.status !== "cancelled" && (
-                        <button onClick={() => handleUpdateStatus(inq.id, "cancelled")} className="px-2.5 py-1 text-[10px] font-semibold bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-all shadow-sm cursor-pointer">Cancel</button>
+                        <button onClick={() => handleUpdateStatus(inq.id, "cancelled")} className="px-2.5 py-1 text-[10px] font-semibold bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-all shadow-sm cursor-pointer">{t.dashboard.inquiriesPage.cancel}</button>
                       )}
-                      <button onClick={() => handleDeleteBooking(inq.id)} className="px-2.5 py-1 text-[10px] font-semibold bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all shadow-sm cursor-pointer">Delete</button>
+                      <button onClick={() => handleDeleteBooking(inq.id)} className="px-2.5 py-1 text-[10px] font-semibold bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all shadow-sm cursor-pointer">{t.dashboard.inquiriesPage.delete}</button>
                     </div>
                   )}
                   {inq.type === "review" && (
                     <div className="flex gap-1.5 mt-1">
                       {(!inq.status || inq.status === "approved" || inq.status === "read") && (
-                        <button onClick={() => handleOpenReportModal(inq.id)} className="px-2.5 py-1 text-[10px] font-semibold bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-all shadow-sm cursor-pointer">Report</button>
+                        <button onClick={() => handleOpenReportModal(inq.id)} className="px-2.5 py-1 text-[10px] font-semibold bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-all shadow-sm cursor-pointer">{t.dashboard.inquiriesPage.report}</button>
                       )}
                     </div>
                   )}

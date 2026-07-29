@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { MOCK_BUSINESSES } from "@/data/mock-businesses";
-import { Star, MapPin, BadgeCheck, Globe, Phone, Mail, Clock, Users, Calendar, ArrowLeft, Send, X, Compass, ChevronLeft, ChevronRight, CheckCircle, Maximize2, ChevronDown, Heart, Bookmark, Sparkles } from "lucide-react";
+import { Star, MapPin, BadgeCheck, Globe, Phone, Mail, Clock, Users, Calendar, ArrowLeft, Send, X, Compass, ChevronLeft, ChevronRight, CheckCircle, Maximize2, ChevronDown, Heart, Bookmark, Sparkles, Coins } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
 import { getApiUrl } from "@/lib/utils";
@@ -211,6 +211,27 @@ export default function BusinessProfilePage() {
   const [bookingNotes, setBookingNotes] = useState("");
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
+  const [businessOffers, setBusinessOffers] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function fetchOffersForBiz() {
+      if (!business) return;
+      const bId = business._id || business.id;
+      if (!bId) return;
+      try {
+        const apiURL = getApiUrl();
+        const res = await axios.get(`${apiURL}/offers/business/${bId}`);
+        if (res.data?.success && res.data?.data) {
+          setBusinessOffers(res.data.data);
+        }
+      } catch (e) {
+        if (business.offers && Array.isArray(business.offers)) {
+          setBusinessOffers(business.offers);
+        }
+      }
+    }
+    fetchOffersForBiz();
+  }, [business]);
 
   const isClosed = business
     ? !getOpenStatus(business.operatingHours || business.metadata?.operatingHours, t).isOpen
@@ -644,15 +665,17 @@ export default function BusinessProfilePage() {
     const cleanPhoneDigits = customerPhone.replace(/\D/g, "");
     const fullCustomerPhone = cleanPhoneDigits ? `+374${cleanPhoneDigits}` : "";
 
+    const extraPackageInfo = selectedService?.dishes ? ` [Package: ${selectedService?.packageName || selectedService?.name}, Pax: ${selectedService?.pax || 1}, Dishes: ${Array.isArray(selectedService?.dishes) ? selectedService?.dishes.join(", ") : selectedService?.dishes}]` : "";
+
     const bookingPayload = {
       businessId: business.id || business._id,
       customerName,
       customerPhone: fullCustomerPhone,
       date: bookingDate,
       timeSlot: bookingTime,
-      serviceName: selectedService?.name || "General Service",
+      serviceName: selectedService?.packageName || selectedService?.name || "General Service",
       totalPrice: selectedService?.price || 0,
-      notes: bookingNotes,
+      notes: bookingNotes ? `${bookingNotes}${extraPackageInfo}` : extraPackageInfo.trim(),
       locationId: bookingLocation || undefined
     };
 
@@ -1225,15 +1248,118 @@ export default function BusinessProfilePage() {
             ) : (
               <form onSubmit={handleBookingSubmit} className="space-y-4">
                 <h2>{t.business?.bookAppointment || "Book Appointment"}</h2>
-                <div className="p-3 bg-[hsl(var(--muted))]/50 rounded-xl mb-4 text-xs">
-                  <div className="flex justify-between font-semibold">
-                    <span>Selected:</span>
-                    <span>{selectedService?.name}</span>
+                {/* Selected Package / Service & Menus & Offers Dropdown */}
+                <div className="p-3 bg-[hsl(var(--muted))]/50 rounded-xl mb-4 text-xs border border-[hsl(var(--border))]/60 space-y-2">
+                  <div className="flex items-center justify-between font-semibold">
+                    <span className="text-[hsl(var(--muted-foreground))]">
+                      {locale === 'hy' ? "Ընտրված է:" : locale === 'ru' ? "Выбрано:" : "Selected:"}
+                    </span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                      {selectedService?.packageName || selectedService?.name || "General Appointment"}
+                    </span>
                   </div>
-                  {selectedService?.price > 0 && (
-                    <div className="flex justify-between font-bold text-[hsl(var(--primary))] mt-1">
-                      <span>Rate:</span>
-                      <span>{selectedService?.price.toLocaleString()} AMD</span>
+
+                  {/* Menus & Offers Selector Dropdown */}
+                  {(businessOffers.length > 0 || (business.services && business.services.length > 0)) && (
+                    <div className="pt-2 border-t border-[hsl(var(--border))]/40">
+                      <label className="block text-[11px] font-semibold text-[hsl(var(--muted-foreground))] mb-1">
+                        {locale === 'hy' ? "Ընտրեք «Menus & Offers» առաջարկ կամ ծառայություն:" : locale === 'ru' ? "Выберите предложение «Menus & Offers» или услугу:" : "Choose Package from Menus & Offers or Services:"}
+                      </label>
+                      <select
+                        value={selectedService?._id || selectedService?.id || selectedService?.packageName || selectedService?.name}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const offerMatch = businessOffers.find(o => (o._id || o.packageName) === val);
+                          if (offerMatch) {
+                            setSelectedService({
+                              _id: offerMatch._id,
+                              name: offerMatch.packageName,
+                              packageName: offerMatch.packageName,
+                              price: offerMatch.price,
+                              pax: offerMatch.pax,
+                              dishes: offerMatch.dishes,
+                              inclusions: offerMatch.inclusions,
+                              type: "offer"
+                            });
+                          } else {
+                            const srvMatch = business.services?.find((s: any) => (s._id || s.id || s.name) === val);
+                            if (srvMatch) {
+                              setSelectedService(srvMatch);
+                            } else {
+                              setSelectedService({ name: "General Appointment", price: 0 });
+                            }
+                          }
+                        }}
+                        className="w-full bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-lg px-2.5 py-1.5 text-xs text-[hsl(var(--foreground))] outline-none focus:border-[hsl(var(--primary))] font-medium cursor-pointer"
+                      >
+                        <option value="General Appointment">
+                          {locale === 'hy' ? "Ընդհանուր այցելություն (General Appointment)" : locale === 'ru' ? "Обычная запись (General Appointment)" : "General Appointment"}
+                        </option>
+
+                        {businessOffers.length > 0 && (
+                          <optgroup label={locale === 'hy' ? "🍽️ Menus & Offers Առաջարկներ" : locale === 'ru' ? "🍽️ Предложения Menus & Offers" : "🍽️ Menus & Offers Packages"}>
+                            {businessOffers.map((off: any) => (
+                              <option key={off._id || off.packageName} value={off._id || off.packageName}>
+                                {off.packageName} — {off.price ? `${Number(off.price).toLocaleString()} AMD` : ""} ({off.pax || 1} {locale === 'hy' ? "անձ" : locale === 'ru' ? "чел." : "pax"})
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
+
+                        {business.services && business.services.length > 0 && (
+                          <optgroup label={locale === 'hy' ? "💼 Ծառայություններ" : locale === 'ru' ? "💼 Услуги" : "💼 Services"}>
+                            {business.services.map((srv: any, idx: number) => (
+                              <option key={srv._id || srv.id || idx} value={srv._id || srv.id || srv.name}>
+                                {srv.name} {srv.price ? `— ${Number(srv.price).toLocaleString()} AMD` : ""}
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Details of the selected offer/package */}
+                  {selectedService && (
+                    <div className="pt-2 border-t border-[hsl(var(--border))]/40 space-y-1">
+                      {selectedService.price > 0 && (
+                        <div className="flex justify-between font-bold text-[hsl(var(--primary))]">
+                          <span>{locale === 'hy' ? "Արժեքը:" : locale === 'ru' ? "Стоимость:" : "Rate:"}</span>
+                          <span>{Number(selectedService.price).toLocaleString()} AMD</span>
+                        </div>
+                      )}
+                      {/* 1% Findy Coins Cashback Reward */}
+                      {selectedService.price > 0 && (
+                        <div className="flex items-center justify-between p-2 my-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs">
+                          <div className="flex items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400">
+                            <Coins className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                            <span>
+                              +{Math.floor(Number(selectedService.price) * 0.01).toLocaleString()} {locale === 'hy' ? "Coins (1% քեշբեք)" : locale === 'ru' ? "Coins (1% кэшбэк)" : "Coins (1% cashback)"}
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-[hsl(var(--muted-foreground))]">
+                            {locale === 'hy' ? "Հաստատվելուց հետո" : locale === 'ru' ? "После подтверждения" : "Upon confirmation"}
+                          </span>
+                        </div>
+                      )}
+                      {selectedService.pax > 0 && (
+                        <div className="flex justify-between text-[11px] text-[hsl(var(--muted-foreground))]">
+                          <span>{locale === 'hy' ? "Անձանց քանակը:" : locale === 'ru' ? "Количество человек:" : "Persons (Pax):"}</span>
+                          <span className="font-semibold text-[hsl(var(--foreground))]">{selectedService.pax} {locale === 'hy' ? "անձ" : locale === 'ru' ? "чел." : "pax"}</span>
+                        </div>
+                      )}
+                      {selectedService.dishes && (Array.isArray(selectedService.dishes) ? selectedService.dishes.length > 0 : Boolean(selectedService.dishes)) && (
+                        <div className="text-[11px]">
+                          <span className="font-semibold text-[hsl(var(--foreground))]">{locale === 'hy' ? "Ուտեստներ: " : locale === 'ru' ? "Блюда: " : "Dishes: "}</span>
+                          <span className="text-[hsl(var(--muted-foreground))] italic">{Array.isArray(selectedService.dishes) ? selectedService.dishes.join(", ") : selectedService.dishes}</span>
+                        </div>
+                      )}
+                      {selectedService.inclusions && (Array.isArray(selectedService.inclusions) ? selectedService.inclusions.length > 0 : Boolean(selectedService.inclusions)) && (
+                        <div className="text-[11px]">
+                          <span className="font-semibold text-[hsl(var(--foreground))]">{locale === 'hy' ? "Ներառված է: " : locale === 'ru' ? "Включено: " : "Inclusions: "}</span>
+                          <span className="text-[hsl(var(--muted-foreground))] italic">{Array.isArray(selectedService.inclusions) ? selectedService.inclusions.join(", ") : selectedService.inclusions}</span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

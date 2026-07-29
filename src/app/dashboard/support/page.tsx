@@ -3,9 +3,11 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
 import { getApiUrl } from "@/lib/utils";
+import { useI18n } from "@/i18n";
 import { Send, HeadphonesIcon, Loader2 } from "lucide-react";
 
 export default function SupportChatPage() {
+  const { t } = useI18n();
   const { currentUser } = useAuth();
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -73,10 +75,10 @@ export default function SupportChatPage() {
         <div>
           <h1 className="text-2xl font-black tracking-tight text-[hsl(var(--foreground))] flex items-center gap-3">
             <HeadphonesIcon className="h-6 w-6 text-[hsl(var(--primary))]" />
-            Live Support
+            {t.dashboard.supportPage.title}
           </h1>
           <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1">
-            Direct communication with the administration team.
+            {t.dashboard.supportPage.subtitle}
           </p>
         </div>
       </div>

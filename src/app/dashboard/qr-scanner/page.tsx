@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { QrCode, Scan, CheckCircle2, AlertCircle, RefreshCw, Sparkles, ShieldCheck, History, Trash2, Search, UserCheck, Ticket } from "lucide-react";
+import Link from "next/link";
+import { QrCode, Scan, CheckCircle2, AlertCircle, RefreshCw, Sparkles, ShieldCheck, History, Trash2, Search, UserCheck, Ticket, Lock } from "lucide-react";
 import { useI18n } from "@/i18n";
 import { useAuth } from "@/context/AuthContext";
+import axios from "axios";
+import { getApiUrl } from "@/lib/utils";
 
 export interface RedeemedCoupon {
   id: string;
@@ -24,6 +27,49 @@ export default function QrScannerPage() {
   const [isScanning, setIsScanning] = useState(false);
   const [redeemedList, setRedeemedList] = useState<RedeemedCoupon[]>([]);
   const [searchFilter, setSearchFilter] = useState("");
+  const [activePlan, setActivePlan] = useState<string | null>(null);
+
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    type: "single" | "all";
+    id?: string;
+    code?: string;
+  }>({ isOpen: false, type: "single" });
+
+  useEffect(() => {
+    async function loadPlan() {
+      if (!currentUser) return;
+      try {
+        const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
+        if (!token) return;
+        const bizRes = await axios.get(`${getApiUrl()}/businesses/me/all`, { headers: { Authorization: `Bearer ${token}` } });
+        if (bizRes.data?.success && bizRes.data.data?.length > 0) {
+          const bizId = bizRes.data.data[0]._id;
+          try {
+            const subRes = await axios.get(`${getApiUrl()}/subscriptions/business/${bizId}`, { headers: { Authorization: `Bearer ${token}` } });
+            if (subRes.data?.success && subRes.data.data.plan) {
+              setActivePlan(subRes.data.data.plan);
+              return;
+            }
+          } catch {}
+        }
+      } catch {}
+
+      if (typeof window !== "undefined") {
+        const profilesStr = window.localStorage.getItem("armbiz-business-profiles");
+        if (profilesStr) {
+          try {
+            const profiles = JSON.parse(profilesStr);
+            const myProfile = profiles.find((p: any) => p.ownerUsername === currentUser?.username);
+            if (myProfile && myProfile.plan) {
+              setActivePlan(myProfile.plan);
+            }
+          } catch (e) {}
+        }
+      }
+    }
+    loadPlan();
+  }, [currentUser]);
 
   // Load redeemed coupons history
   const loadRedeemedCoupons = () => {
@@ -77,9 +123,33 @@ export default function QrScannerPage() {
 
         let newRecord: RedeemedCoupon;
 
+        const currentBizName = currentUser?.businessName || currentUser?.name || currentUser?.username || "";
+        const currentBizPrefix = currentBizName.toUpperCase().replace(/[^A-Z0-9]/g, "").substring(0, 6);
+
         if (matchedIndex !== -1) {
           const matchedItem = claimedList[matchedIndex];
           
+          // Verify business ownership matching
+          const couponBizName = matchedItem.business || "";
+          const couponBizPrefix = (matchedItem.couponCode || "").split("-")[0];
+
+          const isMatch = !currentBizName || !couponBizName || 
+            currentBizName.toLowerCase().includes(couponBizName.toLowerCase()) || 
+            couponBizName.toLowerCase().includes(currentBizName.toLowerCase()) ||
+            (currentBizPrefix && couponBizPrefix && (currentBizPrefix === couponBizPrefix || currentBizPrefix.startsWith(couponBizPrefix) || couponBizPrefix.startsWith(currentBizPrefix)));
+
+          if (!isMatch) {
+            setScanResult({
+              status: "error",
+              message: locale === "hy"
+                ? `⚠️ Սխալ Բիզնեսի Կուպոն: Այս QR/Կուպոնային կոդը (${cleanCode}) պատկանում է «${matchedItem.business}» բիզնեսին և չի համապատասխանում Ձեր բիզնեսին:`
+                : locale === "ru"
+                ? `⚠️ Неверный купон бизнеса: Этот QR/купон код (${cleanCode}) принадлежит бизнесу «${matchedItem.business}» и не соответствует вашему бизнесу.`
+                : `⚠️ Wrong Business Coupon: This QR/coupon code (${cleanCode}) belongs to "${matchedItem.business}" and does not match your business.`,
+            });
+            return;
+          }
+
           // Remove from claimed offers (so it disappears from My Purchased Offers)
           const updatedClaimedList = claimedList.filter((_, idx) => idx !== matchedIndex);
           localStorage.setItem("armbiz_user_claimed_offers", JSON.stringify(updatedClaimedList));
@@ -95,24 +165,40 @@ export default function QrScannerPage() {
             customerEmail: matchedItem.userEmail || currentUser?.email || "",
             redeemedAt: new Date().toISOString(),
           };
-        } else if (cleanCode.startsWith("FINDY-") || cleanCode.startsWith("OFFER-") || cleanCode.length >= 6) {
-          // Demo / Direct verification fallback
-          newRecord = {
-            id: `redeemed-${Date.now()}-${Math.random()}`,
-            couponCode: cleanCode,
-            offerTitle: locale === "hy" ? "20% Զեղչ հատուկ ճաշացանկի համար" : "20% Discount Special Set",
-            businessName: currentUser?.name || "Business",
-            cost: 50,
-            customerName: "Արմեն Մ․",
-            customerEmail: "armen@example.com",
-            redeemedAt: new Date().toISOString(),
-          };
         } else {
-          setScanResult({
-            status: "error",
-            message: locale === "hy" ? "Անվավեր կամ գոյություն չունեցող QR կոդ:" : "Invalid or non-existent QR code.",
-          });
-          return;
+          // Check prefix for manual / direct input
+          const inputPrefix = cleanCode.split("-")[0];
+          if (inputPrefix && currentBizPrefix && inputPrefix !== "FINDY" && inputPrefix !== "OFFER" && currentBizPrefix !== "FINDY" && inputPrefix !== currentBizPrefix && !currentBizPrefix.startsWith(inputPrefix) && !inputPrefix.startsWith(currentBizPrefix)) {
+            setScanResult({
+              status: "error",
+              message: locale === "hy"
+                ? `⚠️ Սխալ Բիզնեսի Կուպոն: Այս QR/Կուպոնային կոդը (${cleanCode}) պատկանում է «${inputPrefix}» բիզնեսին և չի համապատասխանում Ձեր բիզնեսին:`
+                : locale === "ru"
+                ? `⚠️ Неверный купон бизнеса: Этот QR/купон код (${cleanCode}) принадлежит бизнесу «${inputPrefix}» и не соответствует вашему бизнесу.`
+                : `⚠️ Wrong Business Coupon: This QR/coupon code (${cleanCode}) belongs to "${inputPrefix}" and does not match your business.`,
+            });
+            return;
+          }
+
+          if (cleanCode.startsWith("FINDY-") || cleanCode.startsWith("OFFER-") || cleanCode.length >= 6) {
+            // Demo / Direct verification fallback
+            newRecord = {
+              id: `redeemed-${Date.now()}-${Math.random()}`,
+              couponCode: cleanCode,
+              offerTitle: locale === "hy" ? "20% Զեղչ հատուկ ճաշացանկի համար" : "20% Discount Special Set",
+              businessName: currentUser?.name || "Business",
+              cost: 50,
+              customerName: "Արմեն Մ․",
+              customerEmail: "armen@example.com",
+              redeemedAt: new Date().toISOString(),
+            };
+          } else {
+            setScanResult({
+              status: "error",
+              message: locale === "hy" ? "Անվավեր կամ գոյություն չունեցող QR կոդ:" : "Invalid or non-existent QR code.",
+            });
+            return;
+          }
         }
 
         // Save to redeemed history
@@ -140,12 +226,22 @@ export default function QrScannerPage() {
     }, 600);
   };
 
-  const handleClearHistory = () => {
-    if (confirm(locale === "hy" ? "Վստա՞հ եք, որ ցանկանում եք մաքրել վավերացված կուպոնների պատմությունը:" : "Are you sure you want to clear redeemed coupon history?")) {
+  const handleConfirmDelete = () => {
+    if (deleteModal.type === "all") {
       localStorage.removeItem("armbiz_redeemed_coupons");
       setRedeemedList([]);
       window.dispatchEvent(new Event("redeemedCouponsUpdated"));
+    } else if (deleteModal.type === "single" && deleteModal.id) {
+      try {
+        const updated = redeemedList.filter((item) => item.id !== deleteModal.id);
+        localStorage.setItem("armbiz_redeemed_coupons", JSON.stringify(updated));
+        setRedeemedList(updated);
+        window.dispatchEvent(new Event("redeemedCouponsUpdated"));
+      } catch (e) {
+        console.error("Failed to delete record:", e);
+      }
     }
+    setDeleteModal({ isOpen: false, type: "single" });
   };
 
   const filteredList = redeemedList.filter((item) => {
@@ -156,6 +252,37 @@ export default function QrScannerPage() {
       item.offerTitle.toLowerCase().includes(q)
     );
   });
+
+  const isStarterPlan = !activePlan || activePlan === "start" || activePlan === "starter" || activePlan === "free" || activePlan === "basic";
+
+  if (isStarterPlan) {
+    return (
+      <div className="max-w-2xl mx-auto py-12 px-6 text-center bg-[hsl(var(--card))] rounded-3xl shadow-xl border border-[hsl(var(--border))] mt-10 space-y-4">
+        <div className="w-16 h-16 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-center mx-auto text-amber-500 shadow-inner">
+          <Lock className="w-8 h-8" />
+        </div>
+        <h2 className="text-xl font-bold tracking-tight text-[hsl(var(--foreground))]">
+          {locale === "hy" ? "QR Սկաները հասանելի է միայն Pro և Premium փաթեթներում" : locale === "ru" ? "QR-сканер доступен только в тарифных планах Pro и Premium" : "QR Scanner Available on Pro & Premium Plans"}
+        </h2>
+        <p className="text-xs sm:text-sm text-[hsl(var(--muted-foreground))] leading-relaxed max-w-md mx-auto">
+          {locale === "hy"
+            ? "QR սկանավորման և կուպոնների վավերացման ֆունկցիան հասանելի է միայն Pro և Premium բիզնես օգտատերերին: Թարմացրեք Ձեր սակագնային փաթեթը:"
+            : locale === "ru"
+            ? "Функция сканирования QR-кодов и проверки купонов доступна только бизнес-аккаунтам с тарифом Pro и Premium. Обновите ваш тарифный план."
+            : "The QR scanning & coupon validation feature is exclusively available for Pro and Premium business accounts. Upgrade your plan to access QR Scanner."}
+        </p>
+        <div className="pt-2">
+          <Link
+            href="/dashboard/settings"
+            className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-xs transition-all inline-flex items-center gap-2 shadow-lg shadow-emerald-500/20 hover:scale-105"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>{locale === "hy" ? "Թարմացնել Փաթեթը" : locale === "ru" ? "Обновить тариф" : "Upgrade Plan"}</span>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -240,7 +367,7 @@ export default function QrScannerPage() {
                   disabled={!manualCode.trim() || isScanning}
                   className="px-5 py-3 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold text-sm rounded-xl shadow-md transition-all cursor-pointer whitespace-nowrap"
                 >
-                  {locale === "hy" ? "Ստուգել" : "Verify"}
+                  {locale === "hy" ? "Ստուగել" : "Verify"}
                 </button>
               </div>
             </div>
@@ -302,8 +429,8 @@ export default function QrScannerPage() {
               </div>
 
               <button
-                onClick={handleClearHistory}
-                className="p-2 text-[hsl(var(--muted-foreground))] hover:text-red-500 rounded-xl hover:bg-red-500/10 transition-colors"
+                onClick={() => setDeleteModal({ isOpen: true, type: "all" })}
+                className="p-2 text-[hsl(var(--muted-foreground))] hover:text-red-500 rounded-xl hover:bg-red-500/10 transition-colors cursor-pointer"
                 title={locale === "hy" ? "Մաքրել պատմությունը" : "Clear History"}
               >
                 <Trash2 className="w-4 h-4" />
@@ -322,6 +449,7 @@ export default function QrScannerPage() {
                   <th className="pb-3 px-3">{locale === "hy" ? "Առաջարկ" : "Offer"}</th>
                   <th className="pb-3 px-3">{locale === "hy" ? "Ամսաթիվ" : "Date"}</th>
                   <th className="pb-3 px-3 text-right">{locale === "hy" ? "Կարգավիճակ" : "Status"}</th>
+                  <th className="pb-3 px-3 text-right">{locale === "hy" ? "Ջնջել" : "Action"}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[hsl(var(--border))]/40">
@@ -356,6 +484,15 @@ export default function QrScannerPage() {
                         {locale === "hy" ? "Վավերացված" : "Validated"}
                       </span>
                     </td>
+                    <td className="py-3 px-3 text-right">
+                      <button
+                        onClick={() => setDeleteModal({ isOpen: true, type: "single", id: item.id, code: item.couponCode })}
+                        className="p-1.5 text-[hsl(var(--muted-foreground))] hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
+                        title={locale === "hy" ? "Հեռացնել այս պատմությունը" : "Delete record"}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -375,6 +512,47 @@ export default function QrScannerPage() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteModal.isOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4 text-center animate-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center mx-auto">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-[hsl(var(--foreground))]">
+                {deleteModal.type === "all"
+                  ? (locale === "hy" ? "Ջնջե՞լ ամբողջ պատմությունը:" : "Delete History?")
+                  : (locale === "hy" ? "Ջնջե՞լ այս առաջարկը:" : "Delete Package?")}
+              </h3>
+              <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1.5 leading-relaxed">
+                {deleteModal.type === "all"
+                  ? (locale === "hy"
+                      ? "Վստա՞հ եք, որ ցանկանում եք հեռացնել վավերացված կուպոնների ամբողջ պատմությունը: Այս գործողությունը հնարավոր չէ չեղարկել:"
+                      : "Are you sure you want to delete all redeemed coupons history? This action cannot be undone.")
+                  : (locale === "hy"
+                      ? `Վստա՞հ եք, որ ցանկանում եք հեռացնել${deleteModal.code ? ` (${deleteModal.code})` : ""} կուպոնի պատմությունը: Այս գործողությունը հնարավոր չէ չեղարկել:`
+                      : "Are you sure you want to delete this offer? This action cannot be undone.")}
+              </p>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setDeleteModal({ isOpen: false, type: "single" })}
+                className="flex-1 py-2.5 px-4 rounded-xl border border-[hsl(var(--border))] text-xs font-semibold text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))] transition-colors cursor-pointer"
+              >
+                {locale === "hy" ? "Չեղարկել" : "Cancel"}
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-red-500 hover:bg-red-600 active:scale-95 text-white text-xs font-semibold shadow-md shadow-red-500/20 transition-all cursor-pointer"
+              >
+                {locale === "hy" ? "Ջնջել" : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

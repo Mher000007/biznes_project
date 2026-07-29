@@ -5,6 +5,8 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import axios from "axios";
 import { getApiUrl } from "@/lib/utils";
 
+import { useI18n } from "@/i18n";
+
 interface TotalViewsChartProps {
   totalViews: number;
   businessId: string;
@@ -27,6 +29,7 @@ function authHeader() {
 }
 
 export default function TotalViewsChart({ totalViews, businessId }: TotalViewsChartProps) {
+  const { t } = useI18n();
   const [period, setPeriod] = useState<string>('7d');
   const [chartData, setChartData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -111,8 +114,8 @@ export default function TotalViewsChart({ totalViews, businessId }: TotalViewsCh
     <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-6 shadow-sm h-full flex flex-col animate-scale-in relative">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
-          <h3 className="text-base font-bold text-[hsl(var(--foreground))] mb-1">Դիտումների դինամիկա</h3>
-          <p className="text-xs text-[hsl(var(--muted-foreground))]">Վերլուծեք ձեր բիզնեսի էջի այցելությունները (իրական տվյալներ)</p>
+          <h3 className="text-base font-bold text-[hsl(var(--foreground))] mb-1">{t.dashboard.viewsDynamics}</h3>
+          <p className="text-xs text-[hsl(var(--muted-foreground))]">{t.dashboard.analyzeVisits}</p>
         </div>
         
         {/* Time Period Filter */}

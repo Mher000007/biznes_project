@@ -148,7 +148,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     { href: "/dashboard/stories", label: navT.stories || "Stories", icon: Sparkles, isPro: true },
     { href: "/dashboard/inquiries", label: navT.inquiries || "Inquiries", icon: MessageSquare },
     { href: "/dashboard/exchange", label: navT.exchange || "Exchange", icon: ArrowRightLeft, isPro: true },
-    { href: "/dashboard/qr-scanner", label: navT.qrScanner || "QR Scanner", icon: QrCode },
+    { href: "/dashboard/qr-scanner", label: navT.qrScanner || "QR Scanner", icon: QrCode, isPro: true },
     { href: "/dashboard/support", label: navT.supportChat || "Support Chat", icon: HeadphonesIcon },
     { href: "/dashboard/settings", label: navT.settings || "Settings", icon: Settings },
   ];

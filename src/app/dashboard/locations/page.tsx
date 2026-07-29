@@ -5,6 +5,7 @@ import { getApiUrl } from "@/lib/utils";
 import axios from "axios";
 import { MapPin, Plus, Trash2, Edit2, Star, Clock, Phone } from "lucide-react";
 import { LocationSelect } from "@/components/ui/LocationSelect";
+import { useI18n } from "@/i18n";
 import dynamic from "next/dynamic";
 
 const LeafletMap = dynamic(() => import("@/components/map/LeafletMap"), { ssr: false });
@@ -25,6 +26,7 @@ interface Location {
 }
 
 export default function DashboardLocations() {
+  const { t } = useI18n();
   const { currentUser } = useAuth();
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
@@ -168,11 +170,11 @@ export default function DashboardLocations() {
     <div className="max-w-5xl mx-auto space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">My Locations</h1>
-          <p className="text-[hsl(var(--muted-foreground))]">Manage your business branches and addresses.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t.dashboard.locations.myLocations}</h1>
+          <p className="text-[hsl(var(--muted-foreground))]">{t.dashboard.locations.manageBranches}</p>
         </div>
         <button onClick={openAdd} className="btn-primary flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Add Branch
+          <Plus className="w-4 h-4" /> {t.dashboard.locations.addBranch}
         </button>
       </div>
 

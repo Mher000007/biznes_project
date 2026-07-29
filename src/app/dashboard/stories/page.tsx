@@ -5,7 +5,7 @@ import { getApiUrl } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { useI18n } from "@/i18n";
 import Link from "next/link";
-import { Sparkles, Trash2, Eye, Calendar, Upload, Link as LinkIcon, AlertCircle, CheckCircle, Lock } from "lucide-react";
+import { Sparkles, Trash2, Eye, Calendar, Upload, Link as LinkIcon, AlertCircle, CheckCircle, Lock, Clock, ChevronDown, Check } from "lucide-react";
 
 const API = getApiUrl();
 
@@ -307,24 +307,57 @@ export default function DashboardStoriesPage() {
               />
             </div>
 
-            {/* Duration Select */}
-            <div className="space-y-1">
-              <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))]">Story Duration</label>
-              <select
-                value={duration}
-                onChange={(e) => setDuration(Number(e.target.value))}
-                disabled={activePlan !== "premium"}
-                className="w-full text-xs rounded-xl bg-[hsl(var(--input))] p-3 outline-none focus:bg-[hsl(var(--card))] border-0 text-[hsl(var(--foreground))] disabled:opacity-50"
-              >
-                <option value={24}>24 Hours {activePlan !== "premium" ? "(Pro)" : ""}</option>
-                {activePlan === "premium" && (
-                  <>
-                    <option value={48}>48 Hours</option>
-                    <option value={72}>3 Days</option>
-                    <option value={168}>1 Week</option>
-                  </>
-                )}
-              </select>
+            {/* Duration Select (Custom details/summary list design) */}
+            <div className="space-y-1.5 relative">
+              <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))]">{t.stories.duration}</label>
+              
+              {(() => {
+                const durationOptions = [
+                  { value: 24, label: `${t.stories.durations?.hours24 || "24 Hours"} ${activePlan !== "premium" ? "(Pro)" : ""}` },
+                  { value: 48, label: t.stories.durations?.hours48 || "48 Hours" },
+                  { value: 72, label: t.stories.durations?.days3 || "3 Days" },
+                  { value: 168, label: t.stories.durations?.week1 || "1 Week" },
+                ].filter(opt => opt.value === 24 || activePlan === "premium");
+
+                const currentOpt = durationOptions.find(o => o.value === duration) || durationOptions[0];
+
+                return (
+                  <details className="relative group w-full">
+                    <summary className="list-none cursor-pointer flex items-center justify-between gap-2 px-3.5 py-2.5 bg-[hsl(var(--input))] hover:bg-[hsl(var(--muted))] rounded-xl text-xs font-medium text-[hsl(var(--foreground))] select-none border border-[hsl(var(--border))]/50 hover:border-[hsl(var(--border))] transition-all shadow-sm">
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
+                        <span>{currentOpt?.label}</span>
+                      </div>
+                      <ChevronDown className="w-4 h-4 opacity-60 transition-transform group-open:rotate-180 duration-200" />
+                    </summary>
+                    
+                    <div className="absolute left-0 right-0 top-full mt-1.5 p-1.5 bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl z-50 shadow-xl backdrop-blur-lg flex flex-col gap-0.5 animate-in fade-in zoom-in-95 duration-150">
+                      {durationOptions.map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={(e) => {
+                            setDuration(opt.value);
+                            const details = e.currentTarget.closest('details');
+                            if (details) details.removeAttribute('open');
+                          }}
+                          className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-lg transition-all text-left font-medium ${
+                            duration === opt.value
+                              ? "bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))] font-semibold"
+                              : "text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]"
+                          }`}
+                        >
+                          <span className="flex items-center gap-2">
+                            {opt.label}
+                          </span>
+                          {duration === opt.value && <Check className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />}
+                        </button>
+                      ))}
+                    </div>
+                  </details>
+                );
+              })()}
+
               {activePlan !== "premium" && (
                 <p className="text-[9px] text-[hsl(var(--primary))] mt-1">Upgrade to Premium for custom durations.</p>
               )}

@@ -1,12 +1,13 @@
 import { Request, Response } from 'express';
 import Booking from '../models/Booking.js';
 import Business from '../models/Business.js';
+import User from '../models/User.js';
 import DailySummary from '../models/DailySummary.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { triggerBookingWebhook } from '../utils/n8n.js';
 
 // Create Booking
-export const createBooking = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+export const createBooking = asyncHandler(async (req: Request & { user?: any }, res: Response): Promise<void> => {
   const { businessId, customerName, customerPhone, date, timeSlot, serviceName, totalPrice, notes, locationId } = req.body;
 
   if (!businessId || !customerName || !customerPhone || !date || !timeSlot || !serviceName || totalPrice === undefined) {
@@ -112,8 +113,35 @@ export const updateBookingStatus = asyncHandler(async (req: Request & { user?: a
     return;
   }
 
+  const previousStatus = booking.status;
   booking.status = status;
   await booking.save();
+
+  // 1% Cashback Coins Reward logic when business confirms booking
+  if (status === 'confirmed' && previousStatus !== 'confirmed' && booking.totalPrice && booking.totalPrice > 0) {
+    const coinsToCredit = Math.floor(booking.totalPrice * 0.01);
+    if (coinsToCredit > 0) {
+      let customerUser = null;
+      if (booking.customerPhone) {
+        const cleanPhone = booking.customerPhone.replace(/\D/g, "");
+        customerUser = await User.findOne({
+          $or: [
+            { phone: booking.customerPhone },
+            { phone: cleanPhone },
+            { phone: `+${cleanPhone}` }
+          ]
+        });
+      }
+      if (!customerUser && booking.customerName) {
+        customerUser = await User.findOne({ name: new RegExp(`^${booking.customerName.trim()}$`, "i") });
+      }
+
+      if (customerUser) {
+        customerUser.findyCoins = (customerUser.findyCoins || 0) + coinsToCredit;
+        await customerUser.save();
+      }
+    }
+  }
 
   res.status(200).json({
     success: true,
