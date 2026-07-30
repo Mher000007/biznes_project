@@ -7,7 +7,6 @@ export interface IUser extends Document {
   email: string;
   contactEmail?: string;
   password: string;
-  plainPassword?: string;
   phone?: string;
   avatar?: string;
   bio?: string;
@@ -17,6 +16,10 @@ export interface IUser extends Document {
   verified: boolean;
   role: 'user' | 'business_owner' | 'admin';
   findyCoins?: number;
+  resetPasswordToken?: string;
+  resetPasswordExpire?: Date;
+  emailVerificationToken?: string;
+  emailVerificationExpire?: Date;
   createdAt: Date;
   updatedAt: Date;
   matchPassword(enteredPassword: string): Promise<boolean>;
@@ -50,11 +53,7 @@ const userSchema = new Schema<IUser>({
   password: {
     type: String,
     required: [true, 'Please provide a password'],
-    minlength: 6,
-    select: false,
-  },
-  plainPassword: {
-    type: String,
+    minlength: [8, 'Password must be at least 8 characters long'],
     select: false,
   },
   phone: String,
@@ -81,6 +80,10 @@ const userSchema = new Schema<IUser>({
     default: 0,
     min: 0,
   },
+  resetPasswordToken: String,
+  resetPasswordExpire: Date,
+  emailVerificationToken: String,
+  emailVerificationExpire: Date,
   createdAt: {
     type: Date,
     default: Date.now,

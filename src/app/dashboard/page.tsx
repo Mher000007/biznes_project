@@ -5,8 +5,7 @@ import { Eye, MessageSquare, Star, TrendingUp, TrendingDown, Minus, ArrowUpRight
 import DashboardPublish from "./DashboardPublish";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useAuth } from "@/context/AuthContext";
-import axios from "axios";
-import { getApiUrl } from "@/lib/utils";
+import api from "@/lib/api";
 import styles from "@/components/dashboard/Dashboard.module.scss";
 import TotalViewsChart from "@/components/dashboard/TotalViewsChart";
 import dynamic from "next/dynamic";
@@ -14,8 +13,6 @@ import RatingChart from "@/components/dashboard/RatingChart";
 import TopBusinesses from "@/components/dashboard/TopBusinesses";
 
 const LeafletMap = dynamic(() => import("@/components/map/LeafletMap"), { ssr: false });
-
-const API = getApiUrl();
 
 interface StatItem {
   label: string;
@@ -52,11 +49,6 @@ interface DashboardInquiry {
   adminReply?: string;
 }
 
-function authHeader() {
-  const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
 import UserProfileDashboard from "@/components/dashboard/UserProfileDashboard";
 
 export default function DashboardPage() {
@@ -86,14 +78,12 @@ export default function DashboardPage() {
     setActivePlan(plan);
     try {
       if (businessId) {
-        await axios.post(`${API}/subscriptions/subscribe`, {
+        await api.post("/subscriptions/subscribe", {
           businessId,
           plan
-        }, {
-          headers: authHeader()
         });
         // Reload subscription details
-        const subRes = await axios.get(`${API}/subscriptions/business/${businessId}`, { headers: authHeader() });
+        const subRes = await api.get(`/subscriptions/business/${businessId}`);
         if (subRes.data?.success && subRes.data.data) {
           setActivePlan(subRes.data.data.plan);
           setActiveSubscription(subRes.data.data);
@@ -111,20 +101,19 @@ export default function DashboardPage() {
     setPromoMessage("");
     setPromoMessageType("");
     try {
-      const res = await axios.post(
-        `${API}/subscriptions/promo/activate`,
+      const res = await api.post(
+        "/subscriptions/promo/activate",
         {
           businessId,
           code: promoCodeInput.trim(),
-        },
-        { headers: authHeader() }
+        }
       );
       if (res.data?.success) {
         setPromoMessageType("success");
         setPromoMessage(res.data.message || "Promo code applied successfully!");
         setPromoCodeInput("");
         // Reload subscription details
-        const subRes = await axios.get(`${API}/subscriptions/business/${businessId}`, { headers: authHeader() });
+        const subRes = await api.get(`/subscriptions/business/${businessId}`);
         if (subRes.data?.success && subRes.data.data) {
           setActivePlan(subRes.data.data.plan);
           setActiveSubscription(subRes.data.data);
@@ -142,7 +131,7 @@ export default function DashboardPage() {
     async function loadDashboardData() {
       if (!currentUser) return;
       try {
-        const bizRes = await axios.get(`${API}/businesses/me/all`, { headers: authHeader() });
+        const bizRes = await api.get("/businesses/me/all");
         const businesses = bizRes.data?.data || [];
 
         if (businesses.length === 0) {
@@ -159,7 +148,7 @@ export default function DashboardPage() {
 
         // Load active subscription
         try {
-          const subRes = await axios.get(`${API}/subscriptions/business/${biz._id}`, { headers: authHeader() });
+          const subRes = await api.get(`/subscriptions/business/${biz._id}`);
           if (subRes.data?.success && subRes.data.data) {
             setActivePlan(subRes.data.data.plan);
             setActiveSubscription(subRes.data.data);
@@ -179,7 +168,7 @@ export default function DashboardPage() {
         let bookingCount = 0;
         let breakdown: any[] = [];
         try {
-          const bookingsRes = await axios.get(`${API}/bookings/business/${biz._id}`, { headers: authHeader() });
+          const bookingsRes = await api.get(`/bookings/business/${biz._id}`);
           if (bookingsRes.data?.success) {
             const allBookings = bookingsRes.data.data || [];
             bookingCount = allBookings.length;

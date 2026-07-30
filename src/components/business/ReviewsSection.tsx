@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
-import axios from "axios";
+import api from "@/lib/api";
 import { Star, ThumbsUp, MessageSquare, CheckCircle, AlertCircle, Loader2, User, Camera, X, Upload } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
@@ -390,9 +390,8 @@ export default function ReviewsSection({
     if (!isBackend) return;
     setLoading(true);
     try {
-      const apiURL = getApiUrl();
-      const res = await axios.get(
-        `${apiURL}/businesses/${businessId}/reviews?page=${p}&limit=3`
+      const res = await api.get(
+        `/businesses/${businessId}/reviews?page=${p}&limit=3`
       );
       if (res.data?.success) {
         setReviews(res.data.data);
@@ -484,17 +483,10 @@ export default function ReviewsSection({
 
     if (isBackend) {
       try {
-        const token = localStorage.getItem("token");
-        if (!token && (!guestName || guestName.trim().length < 2)) {
+        if (!currentUser && (!guestName || guestName.trim().length < 2)) {
           setSubmitError("Please enter your name (minimum 2 characters).");
           setSubmitting(false);
           return;
-        }
-
-        const apiURL = getApiUrl();
-        const headers: any = {};
-        if (token) {
-          headers.Authorization = `Bearer ${token}`;
         }
 
         const images = mediaFiles
@@ -504,16 +496,15 @@ export default function ReviewsSection({
           .filter(m => (m as any).type === 'video')
           .map(m => m.url);
 
-        const res = await axios.post(
-          `${apiURL}/businesses/${businessId}/reviews`,
+        const res = await api.post(
+          `/businesses/${businessId}/reviews`,
           {
             rating: selectedRating,
             comment: comment.trim(),
             images: images.length > 0 ? images : undefined,
             videos: videos.length > 0 ? videos : undefined,
             authorName: guestName.trim() || undefined
-          },
-          { headers }
+          }
         );
 
         if (res.data?.success) {
@@ -670,8 +661,7 @@ export default function ReviewsSection({
 
     if (isBackend) {
       try {
-        const apiURL = getApiUrl();
-        await axios.post(`${apiURL}/businesses/${businessId}/reviews/${reviewId}/helpful`);
+        await api.post(`/businesses/${businessId}/reviews/${reviewId}/helpful`);
       } catch { /* optimistic – ignore error */ }
     }
   };

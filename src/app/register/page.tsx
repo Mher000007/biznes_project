@@ -7,7 +7,7 @@ import { saveBusinessProfile } from "@/lib/auth";
 import { useAuth } from "@/context/AuthContext";
 import { Building2, CheckCircle, ChevronRight, ChevronLeft, ShieldCheck, Sparkles, Star, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
-import axios from "axios";
+import api from "@/lib/api";
 import { getApiUrl } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import styles from "./Register.module.scss";
@@ -195,9 +195,6 @@ export default function RegisterPage() {
 
     // 3. Try backend listing creation
     try {
-      const token = typeof window !== 'undefined' ? window.localStorage.getItem('token') : null;
-      const apiURL = getApiUrl();
-      
       const payload = {
         name,
         description: shortDesc,
@@ -222,9 +219,7 @@ export default function RegisterPage() {
         }
       };
 
-      const response = await axios.post(`${apiURL}/businesses/onboard`, payload, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
-      });
+      const response = await api.post("/businesses/onboard", payload);
 
       if (response.data?.success && response.data.data?._id) {
         // Business created successfully (subscription will be picked later from dashboard)

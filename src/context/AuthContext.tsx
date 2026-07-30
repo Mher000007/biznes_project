@@ -1,9 +1,6 @@
 "use client";
 import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
-import axios from "axios";
-import { getApiUrl } from "@/lib/utils";
-
-const API = getApiUrl();
+import api from "@/lib/api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -19,6 +16,7 @@ export interface AuthUser {
   avatar?: string;
   phone?: string;
   findyCoins?: number;
+  verified?: boolean;
 }
 
 export interface AuthContextValue {
@@ -38,7 +36,7 @@ export interface AuthContextValue {
     userOrEmail: string;
     password: string;
   }) => Promise<{ success: boolean; error?: string; user?: AuthUser }>;
-  logout: () => void;
+  logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
@@ -52,38 +50,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const getToken = () =>
-    typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
-
-  const setToken = (token: string) => {
-    if (typeof window !== "undefined") window.localStorage.setItem("token", token);
-  };
-
-  const clearToken = () => {
-    if (typeof window !== "undefined") window.localStorage.removeItem("token");
-  };
-
   // ── Load user on mount ────────────────────────────────────────────────────
   const refreshUser = useCallback(async () => {
-    const token = getToken();
-    if (!token) {
-      setCurrentUser(null);
-      setIsLoading(false);
-      return;
-    }
     try {
-      const res = await axios.get(`${API}/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get("/auth/me");
       if (res.data?.success && res.data?.user) {
         setCurrentUser(res.data.user);
       } else {
-        clearToken();
         setCurrentUser(null);
       }
     } catch {
-      // Token invalid / expired — clear it silently
-      clearToken();
       setCurrentUser(null);
     } finally {
       setIsLoading(false);
@@ -93,6 +69,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     refreshUser();
   }, [refreshUser]);
+
+  // Listen for unauthorized events from api interceptor
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      setCurrentUser(null);
+    };
+    window.addEventListener("armbiz_auth_unauthorized", handleUnauthorized);
+    return () => window.removeEventListener("armbiz_auth_unauthorized", handleUnauthorized);
+  }, []);
 
   // ── Register ──────────────────────────────────────────────────────────────
   const register = useCallback(async (input: {
@@ -106,7 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     inviteCode?: string;
   }) => {
     try {
-      const res = await axios.post(`${API}/auth/register`, {
+      const res = await api.post("/auth/register", {
         name: input.displayName,
         username: input.username,
         email: input.email,
@@ -118,7 +103,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (res.data?.success) {
-        setToken(res.data.token);
         const u = res.data.user;
         const uKey = u.username || u.email || u.id || "";
         if (input.inviteCode && input.inviteCode.trim()) {
@@ -129,20 +113,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
           u.findyCoins = (u.findyCoins || 0) + 100;
           u.redeemedInviteCode = cleanInvite;
-        }
-
-        if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
-          try {
-            const usersStr = localStorage.getItem("armbiz_users");
-            const users: any[] = usersStr ? JSON.parse(usersStr) : [];
-            const idx = users.findIndex((ex) => ex.username === u.username || ex.email === u.email);
-            if (idx !== -1) {
-              users[idx] = { ...users[idx], ...u };
-            } else {
-              users.push(u);
-            }
-            localStorage.setItem("armbiz_users", JSON.stringify(users));
-          } catch (e) {}
         }
 
         setCurrentUser(u);
@@ -160,13 +130,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // ── Login ─────────────────────────────────────────────────────────────────
   const login = useCallback(async (input: { userOrEmail: string; password: string }) => {
     try {
-      const res = await axios.post(`${API}/auth/login`, {
-        email: input.userOrEmail,   // field name 'email' accepts both email & username on backend
+      const res = await api.post("/auth/login", {
+        email: input.userOrEmail,
         password: input.password,
       });
 
       if (res.data?.success) {
-        setToken(res.data.token);
         setCurrentUser(res.data.user);
         return { success: true, user: res.data.user };
       }
@@ -180,9 +149,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // ── Logout ────────────────────────────────────────────────────────────────
-  const logout = useCallback(() => {
-    clearToken();
-    setCurrentUser(null);
+  const logout = useCallback(async () => {
+    try {
+      await api.post("/auth/logout");
+    } catch (e) {
+      // Ignore network errors on logout
+    } finally {
+      setCurrentUser(null);
+    }
   }, []);
 
   const value = useMemo(

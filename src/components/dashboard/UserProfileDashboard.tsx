@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useI18n } from "@/i18n";
 import { getApiUrl } from "@/lib/utils";
-import axios from "axios";
+import api from "@/lib/api";
 import {
   User,
   Mail,
@@ -919,14 +919,12 @@ export default function UserProfileDashboard() {
     setProfileMsg(null);
 
     try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-      if (token) {
+      if (currentUser) {
         const cleanDigits = phone.replace(/\D/g, "");
         const fullPhone = cleanDigits ? `+374${cleanDigits}` : "";
-        const res = await axios.put(
-          `${getApiUrl()}/auth/profile`,
-          { name, phone: fullPhone, bio, avatar, location },
-          { headers: { Authorization: `Bearer ${token}` } }
+        const res = await api.put(
+          "/auth/profile",
+          { name, phone: fullPhone, bio, avatar, location }
         );
         if (res.data?.success) {
           setProfileMsg({
@@ -994,12 +992,10 @@ export default function UserProfileDashboard() {
     setChangingPassword(true);
 
     try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-      if (token) {
-        const res = await axios.put(
-          `${getApiUrl()}/auth/change-password`,
-          { currentPassword, newPassword },
-          { headers: { Authorization: `Bearer ${token}` } }
+      if (currentUser) {
+        const res = await api.put(
+          "/auth/change-password",
+          { currentPassword, newPassword }
         );
         if (res.data?.success) {
           setPasswordMsg({

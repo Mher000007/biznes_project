@@ -7,7 +7,7 @@ import { ArrowDown, ArrowUp, ArrowUpDown, Coins, ShieldCheck, Zap, X, UserPlus, 
 import { useI18n } from "@/i18n";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
-import axios from "axios";
+import api from "@/lib/api";
 import { getApiUrl } from "@/lib/utils";
 
 const MOCK_OFFERS = [
@@ -109,12 +109,9 @@ export default function ExchangePage() {
 
     try {
       setSubmittingExchange(true);
-      const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
       const isMongoId = selectedOffer.id && typeof selectedOffer.id === "string" && selectedOffer.id.match(/^[0-9a-fA-F]{24}$/);
-      if (token && isMongoId) {
-        await axios.post(`${getApiUrl()}/exchange-offers/${selectedOffer.id}/claim`, {}, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+      if (currentUser && isMongoId) {
+        await api.post(`/exchange-offers/${selectedOffer.id}/claim`, {});
       }
 
       setOffers(prev => prev.map(o => o.id === selectedOffer.id ? { ...o, claimedQuantity: o.claimedQuantity + 1 } : o));
@@ -184,12 +181,9 @@ export default function ExchangePage() {
     setSavedOffers(prev =>
       prev.includes(id) ? prev.filter(offerId => offerId !== id) : [...prev, id]
     );
-    const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
-    if (token && id !== "1" && id !== "2" && id !== "3") {
+    if (currentUser && id !== "1" && id !== "2" && id !== "3") {
       try {
-        await axios.post(`${getApiUrl()}/exchange-offers/${id}/toggle-save`, {}, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await api.post(`/exchange-offers/${id}/toggle-save`, {});
       } catch (err) {
         console.error("Failed to toggle save offer", err);
       }
@@ -210,7 +204,7 @@ export default function ExchangePage() {
   useEffect(() => {
     const fetchOffers = async () => {
       try {
-        const res = await axios.get(`${getApiUrl()}/exchange-offers`);
+        const res = await api.get("/exchange-offers");
         if (res.data.success && res.data.data.length > 0) {
           const loadedSaved: string[] = [];
           const mappedOffers = res.data.data.map((o: any, idx: number) => {

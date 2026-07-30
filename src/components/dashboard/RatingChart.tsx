@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import axios from "axios";
-import { getApiUrl } from "@/lib/utils";
+import api from "@/lib/api";
 
 import { useI18n } from "@/i18n";
 
@@ -19,11 +18,6 @@ const COLORS = {
   1: "#ef4444", // red-500
 };
 
-function authHeader() {
-  const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
 export default function RatingChart({ businessId }: RatingChartProps) {
   const { t } = useI18n();
   const [data, setData] = useState<any[]>([]);
@@ -34,8 +28,7 @@ export default function RatingChart({ businessId }: RatingChartProps) {
     async function fetchRatings() {
       if (!businessId) return;
       try {
-        const API = getApiUrl();
-        const res = await axios.get(`${API}/businesses/${businessId}/reviews`, { headers: authHeader() });
+        const res = await api.get(`/businesses/${businessId}/reviews`);
         if (res.data?.success && res.data.distribution) {
           const dist = res.data.distribution;
           const chartData = [

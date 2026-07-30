@@ -1,9 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import axios from "axios";
+import api from "@/lib/api";
 import { Bell, Check, Info } from "lucide-react";
-import { getApiUrl } from "@/lib/utils";
-
-const API = getApiUrl();
 
 interface Notification {
   _id: string;
@@ -38,12 +35,8 @@ export default function NotificationsDropdown() {
   }, []);
 
   const loadNotifications = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
     try {
-      const res = await axios.get(`${API}/notifications`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.get("/notifications");
       if (res.data?.success) {
         setNotifications(res.data.data);
       }
@@ -62,12 +55,9 @@ export default function NotificationsDropdown() {
   }, [userId]);
 
   const markAsRead = async (id: string) => {
-    const token = localStorage.getItem("token");
-    if (!token || !userId) return;
+    if (!userId) return;
     try {
-      await axios.put(`${API}/notifications/${id}/read`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.put(`/notifications/${id}/read`, {});
       setNotifications(prev => 
         prev.map(n => n._id === id ? { ...n, readBy: [...n.readBy, userId] } : n)
       );

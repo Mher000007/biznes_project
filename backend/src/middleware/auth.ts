@@ -12,10 +12,10 @@ export interface AuthRequest extends Request {
 
 export const authenticate = (req: AuthRequest, res: Response, next: NextFunction): void => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
+    const token = req.cookies?.armbiz_at || req.headers.authorization?.split(' ')[1];
 
     if (!token) {
-      res.status(401).json({ message: 'No token provided' });
+      res.status(401).json({ success: false, message: 'No token provided' });
       return;
     }
 
@@ -23,7 +23,7 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
     req.user = decoded as AuthRequest['user'];
     next();
   } catch (error) {
-    res.status(401).json({ message: 'Invalid token' });
+    res.status(401).json({ success: false, message: 'Invalid or expired token' });
   }
 };
 

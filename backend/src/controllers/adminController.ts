@@ -94,7 +94,7 @@ export const getBusinesses = asyncHandler(
     try {
       const businesses = await Business.find()
         .sort({ createdAt: -1 })
-        .populate({ path: 'owner', select: 'name email username plainPassword phone contactEmail' })
+        .populate({ path: 'owner', select: 'name email username phone contactEmail' })
         .populate('category', 'name slug')
         .lean();
       res.status(200).json({ success: true, data: businesses || [] });

@@ -4,8 +4,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useI18n } from "@/i18n";
 import { useState, useEffect } from "react";
-import axios from "axios";
-import { getApiUrl } from "@/lib/utils";
+import api from "@/lib/api";
 import {
   LayoutDashboard,
   Building2,
@@ -55,14 +54,11 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     async function fetchUnread() {
       if (!currentUser) return;
       try {
-        const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
-        if (!token) return;
-        
         let count = 0;
 
         // Fetch notifications
         try {
-          const res = await axios.get(`${getApiUrl()}/notifications`, { headers: { Authorization: `Bearer ${token}` } });
+          const res = await api.get("/notifications");
           if (res.data?.success) {
             count += (res.data.data || []).filter((n: any) => !n.readBy?.includes(currentUser.id)).length;
           }
@@ -70,10 +66,10 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
         // Fetch pending bookings
         try {
-          const bizRes = await axios.get(`${getApiUrl()}/businesses/me/all`, { headers: { Authorization: `Bearer ${token}` } });
+          const bizRes = await api.get("/businesses/me/all");
           if (bizRes.data?.success && bizRes.data.data?.length > 0) {
             const bizId = bizRes.data.data[0]._id;
-            const bookRes = await axios.get(`${getApiUrl()}/bookings/business/${bizId}`, { headers: { Authorization: `Bearer ${token}` } });
+            const bookRes = await api.get(`/bookings/business/${bizId}`);
             if (bookRes.data?.success) {
               count += (bookRes.data.data || []).filter((b: any) => b.status === "pending" || b.status === "new").length;
             }
@@ -93,13 +89,11 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     async function loadPlan() {
       if (!currentUser) return;
       try {
-        const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
-        if (!token) return;
-        const bizRes = await axios.get(`${getApiUrl()}/businesses/me/all`, { headers: { Authorization: `Bearer ${token}` } });
+        const bizRes = await api.get("/businesses/me/all");
         if (bizRes.data?.success && bizRes.data.data?.length > 0) {
           const bizId = bizRes.data.data[0]._id;
           try {
-            const subRes = await axios.get(`${getApiUrl()}/subscriptions/business/${bizId}`, { headers: { Authorization: `Bearer ${token}` } });
+            const subRes = await api.get(`/subscriptions/business/${bizId}`);
             if (subRes.data?.success && subRes.data.data?.plan) {
               setActivePlan(subRes.data.data.plan);
               return;

@@ -1,50 +1,42 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { resetPassword } from "@/lib/auth";
+import api from "@/lib/api";
 
 export default function ForgotPasswordPage() {
-  const router = useRouter();
-  const [userOrEmail, setUserOrEmail] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setSuccess(false);
+    setMessage(null);
+    setLoading(true);
 
-    if (newPassword !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
+    try {
+      const res = await api.post("/auth/forgot-password", { email });
+      if (res.data?.success) {
+        setMessage(res.data.message || "If an account with that email exists, a password reset link has been sent.");
+      } else {
+        setError(res.data?.message || "Failed to request password reset.");
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to request password reset. Please try again.");
+    } finally {
+      setLoading(false);
     }
-
-    if (newPassword.length < 8) {
-      setError("Password must be at least 8 characters.");
-      return;
-    }
-
-    const result = resetPassword({ userOrEmail, newPassword });
-
-    if (!result.success) {
-      setError(result.error ?? "Unable to reset password.");
-      return;
-    }
-
-    setSuccess(true);
-    setTimeout(() => router.push("/signin"), 1500);
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center px-5 py-20">
       <div className="w-full max-w-sm">
         <div className="mb-8">
-
-          <h1 className="text-xl font-bold tracking-tight mb-1">Reset your password</h1>
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">Use your username or email to reset your password.</p>
+          <h1 className="text-xl font-bold tracking-tight mb-1">Forgot your password?</h1>
+          <p className="text-sm text-[hsl(var(--muted-foreground))]">
+            Enter your email address and we'll send you a link to reset your password.
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
@@ -53,45 +45,28 @@ export default function ForgotPasswordPage() {
               {error}
             </div>
           )}
-          {success && (
-            <div className="rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
-              Password reset successfully. Redirecting to login...
+          {message && (
+            <div className="rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700 leading-relaxed">
+              {message}
             </div>
           )}
           <div>
-            <label className="block text-sm font-medium mb-1">Username or Email</label>
+            <label className="block text-sm font-medium mb-1">Email address</label>
             <input
-              value={userOrEmail}
-              onChange={(e) => setUserOrEmail(e.target.value)}
-              type="text"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              type="email"
               required
+              placeholder="name@example.com"
               className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-sm outline-none transition-colors focus:border-[hsl(var(--foreground))]"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">New password</label>
-            <input
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              type="password"
-              required
-              minLength={8}
-              className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-sm outline-none transition-colors focus:border-[hsl(var(--foreground))]"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Confirm password</label>
-            <input
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              type="password"
-              required
-              minLength={8}
-              className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-sm outline-none transition-colors focus:border-[hsl(var(--foreground))]"
-            />
-          </div>
-          <button type="submit" className="w-full h-10 rounded-lg text-sm font-medium btn-primary mt-1">
-            Reset password
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full h-10 rounded-lg text-sm font-medium btn-primary mt-1 disabled:opacity-50"
+          >
+            {loading ? "Sending link..." : "Send reset link"}
           </button>
         </form>
 

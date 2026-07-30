@@ -1,5 +1,7 @@
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
 import 'express-async-errors';
 import dotenv from 'dotenv';
 
@@ -28,6 +30,9 @@ dotenv.config();
 const app: Express = express();
 const PORT = Number(process.env.PORT) || 5001;
 
+// Security headers
+app.use(helmet({ contentSecurityPolicy: false }));
+
 // Middleware
 const allowedOrigins = [
   process.env.FRONTEND_URL || 'http://localhost:3000',
@@ -37,8 +42,13 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, curl, Postman)
-    if (!origin) return callback(null, true);
+    // In production, reject requests with no origin (e.g. arbitrary curl scripts)
+    if (!origin) {
+      if (process.env.NODE_ENV === 'production') {
+        return callback(new Error('CORS: Direct no-origin requests strictly forbidden in production'));
+      }
+      return callback(null, true);
+    }
     if (allowedOrigins.includes(origin)) return callback(null, true);
     callback(new Error(`CORS: origin ${origin} not allowed`));
   },
@@ -50,6 +60,7 @@ app.use(cors({
 // Handle pre-flight OPTIONS for all routes
 app.options('*', cors());
 
+app.use(cookieParser());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 

@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import axios from "axios";
-import { getApiUrl } from "@/lib/utils";
+import api from "@/lib/api";
 
 import { useI18n } from "@/i18n";
 
@@ -23,11 +22,6 @@ const PERIODS = [
   { id: 'all', label: 'Ամբողջը' },
 ];
 
-function authHeader() {
-  const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
 export default function TotalViewsChart({ totalViews, businessId }: TotalViewsChartProps) {
   const { t } = useI18n();
   const [period, setPeriod] = useState<string>('7d');
@@ -39,10 +33,7 @@ export default function TotalViewsChart({ totalViews, businessId }: TotalViewsCh
       if (!businessId) return;
       setLoading(true);
       try {
-        const apiURL = getApiUrl();
-        const res = await axios.get(`${apiURL}/businesses/${businessId}/analytics?period=${period}`, {
-          headers: authHeader()
-        });
+        const res = await api.get(`/businesses/${businessId}/analytics?period=${period}`);
         
         if (res.data?.success) {
           const rawData = res.data.data;
