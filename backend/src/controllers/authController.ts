@@ -41,7 +41,7 @@ function validatePasswordPolicy(password: string): { valid: boolean; message?: s
 
 function signAccessToken(user: IUser) {
   return jwt.sign(
-    { id: user._id, name: user.name, email: user.email, role: user.role },
+    { id: user._id, name: user.name, email: user.email, role: user.role, verified: user.verified },
     process.env.JWT_SECRET || 'armbiz_dev_secret_key_2026',
     { expiresIn: '15m' }
   );
@@ -570,6 +570,12 @@ export const oauthSuccessCallback = asyncHandler(async (req: Request & { user?: 
   if (!req.user) {
     res.redirect(`${frontendUrl}/signin?error=oauth_failed`);
     return;
+  }
+
+  // Ensure user.verified is true for OAuth logins in case any legacy account was missing it
+  if (!req.user.verified) {
+    req.user.verified = true;
+    await req.user.save();
   }
 
   await createAndSetTokens(res, req.user);

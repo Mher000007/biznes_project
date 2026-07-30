@@ -26,6 +26,10 @@ export function configurePassport(): void {
           // 1. Match by googleId
           let user = await User.findOne({ googleId });
           if (user) {
+            if (!user.verified) {
+              user.verified = true;
+              await user.save();
+            }
             return done(null, user);
           }
 

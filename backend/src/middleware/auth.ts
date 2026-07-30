@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
 
 declare global {
   namespace Express {
@@ -34,22 +35,46 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
   }
 };
 
-export const requireVerified = (req: AuthRequest, res: Response, next: NextFunction): void => {
+export const requireVerified = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   if (!req.user) {
     res.status(401).json({ success: false, message: 'Not authenticated' });
     return;
   }
 
-  if (!req.user.verified) {
-    res.status(403).json({
-      success: false,
-      code: 'EMAIL_NOT_VERIFIED',
-      message: 'Please verify your email address to access this feature.',
-    });
+  // Fast path: if verified boolean is in JWT payload, check directly
+  if (typeof req.user.verified === 'boolean') {
+    if (!req.user.verified) {
+      res.status(403).json({
+        success: false,
+        code: 'EMAIL_NOT_VERIFIED',
+        message: 'Please verify your email address to access this feature.',
+      });
+      return;
+    }
+    next();
     return;
   }
 
-  next();
+  // Fallback for tokens where verified was omitted: query DB
+  try {
+    const userDoc = await User.findById(req.user.id);
+    if (!userDoc || !userDoc.verified) {
+      res.status(403).json({
+        success: false,
+        code: 'EMAIL_NOT_VERIFIED',
+        message: 'Please verify your email address to access this feature.',
+      });
+      return;
+    }
+    req.user.verified = userDoc.verified;
+    next();
+  } catch (err) {
+    res.status(403).json({
+      success: false,
+      code: 'EMAIL_NOT_VERIFIED',
+      message: 'Verification check failed',
+    });
+  }
 };
 
 export const authorize = (...roles: string[]) => {

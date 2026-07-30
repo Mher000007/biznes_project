@@ -52,10 +52,6 @@ export default function SignInPage() {
     window.location.href = `${getApiUrl()}/auth/google`;
   };
 
-  const handleFacebookClick = () => {
-    window.location.href = `${getApiUrl()}/auth/facebook`;
-  };
-
   useEffect(() => {
     const saved = localStorage.getItem("armbiz_remember_me");
     if (saved && mode === "login") {
@@ -92,6 +88,11 @@ export default function SignInPage() {
         localStorage.setItem("armbiz_remember_me", JSON.stringify({ userOrEmail, password }));
       } else {
         localStorage.removeItem("armbiz_remember_me");
+      }
+
+      if (result.user?.verified === false) {
+        router.push("/verify-pending");
+        return;
       }
 
       const uType = result.user?.accountType || (result.user as any)?.role;
@@ -131,7 +132,7 @@ export default function SignInPage() {
         return;
       }
 
-      router.push("/profile");
+      router.push("/verify-pending");
     } finally {
       setLoading(false);
     }
@@ -215,11 +216,11 @@ export default function SignInPage() {
               <div className="relative flex justify-center text-xs uppercase"><span className="bg-[hsl(var(--card))] px-2 text-[hsl(var(--muted-foreground))]">Or continue with</span></div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-3">
               <button
                 type="button"
                 onClick={handleGoogleClick}
-                className="flex items-center justify-center gap-2 h-10 rounded-xl border border-[hsl(var(--border))] bg-white dark:bg-slate-800 text-sm font-medium text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                className="flex items-center justify-center gap-2 h-10 rounded-xl border border-[hsl(var(--border))] bg-white dark:bg-slate-800 text-sm font-medium text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm"
               >
                 <svg className="h-4 w-4" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -228,17 +229,6 @@ export default function SignInPage() {
                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                 </svg>
                 Google
-              </button>
-
-              <button
-                type="button"
-                onClick={handleFacebookClick}
-                className="flex items-center justify-center gap-2 h-10 rounded-xl border border-[hsl(var(--border))] bg-[#1877F2] text-sm font-medium text-white hover:bg-[#166fe5] transition-colors"
-              >
-                <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
-                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                </svg>
-                Facebook
               </button>
             </div>
 
@@ -329,28 +319,39 @@ export default function SignInPage() {
                   <span className="text-xs text-emerald-600 font-medium">+100 Coins Bonus</span>
                 </div>
                 <input
+                  type="text"
                   value={inviteCode}
                   onChange={(e) => setInviteCode(e.target.value)}
-                  type="text"
                   placeholder="e.g. MHER100 or username"
                   className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))]/50 px-4 py-2.5 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-mono uppercase"
                 />
               </div>
-              <button type="submit" disabled={loading} className="w-full h-11 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90 transition-colors mt-2 shadow-md hover:shadow-lg disabled:opacity-50">
-                {loading ? "..." : t.auth.signUp}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full h-11 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90 transition-colors mt-2 shadow-md hover:shadow-lg disabled:opacity-50"
+              >
+                {loading ? "Creating account..." : t.auth.signUp}
               </button>
             </form>
 
-            <div className="relative my-5">
-              <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-[hsl(var(--border))]"></span></div>
-              <div className="relative flex justify-center text-xs uppercase"><span className="bg-[hsl(var(--card))] px-2 text-[hsl(var(--muted-foreground))]">Or continue with</span></div>
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-[hsl(var(--border))]" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-[hsl(var(--card))] px-3 text-[hsl(var(--muted-foreground))] font-medium">
+                  Or continue with
+                </span>
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-3">
               <button
                 type="button"
                 onClick={handleGoogleClick}
-                className="flex items-center justify-center gap-2 h-10 rounded-xl border border-[hsl(var(--border))] bg-white dark:bg-slate-800 text-sm font-medium text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                className="flex items-center justify-center gap-2 h-10 rounded-xl border border-[hsl(var(--border))] bg-white dark:bg-slate-800 text-sm font-medium text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm"
               >
                 <svg className="h-4 w-4" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -359,17 +360,6 @@ export default function SignInPage() {
                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                 </svg>
                 Google
-              </button>
-
-              <button
-                type="button"
-                onClick={handleFacebookClick}
-                className="flex items-center justify-center gap-2 h-10 rounded-xl border border-[hsl(var(--border))] bg-[#1877F2] text-sm font-medium text-white hover:bg-[#166fe5] transition-colors"
-              >
-                <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
-                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                </svg>
-                Facebook
               </button>
             </div>
 

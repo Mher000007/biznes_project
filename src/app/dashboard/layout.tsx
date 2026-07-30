@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useI18n } from "@/i18n";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import api from "@/lib/api";
 import {
   LayoutDashboard,
@@ -24,37 +24,38 @@ import {
   ArrowRightLeft,
   QrCode,
 } from "lucide-react";
-
 import UnverifiedBanner from "@/components/dashboard/UnverifiedBanner";
-
-import { Suspense } from "react";
 
 function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { currentUser, logout } = useAuth();
+  const { currentUser, isLoading, logout } = useAuth();
+  const { t } = useI18n();
 
   const [profileExpanded, setProfileExpanded] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [activePlan, setActivePlan] = useState<string>("starter");
+  const [shakingHrefs, setShakingHrefs] = useState<string[]>([]);
 
-  const currentTab = searchParams.get("tab") || "branding";
+  // 1. Unverified route guard effect
+  useEffect(() => {
+    if (!isLoading && currentUser && currentUser.verified === false) {
+      router.push("/verify-pending");
+    }
+  }, [currentUser, isLoading, router]);
 
-  const handleSignOut = () => {
-    logout();
-    router.push("/");
-  };
-
+  // 2. Profile tab expansion effect
   useEffect(() => {
     if (pathname.startsWith("/dashboard/profile")) {
       setProfileExpanded(true);
     }
   }, [pathname]);
 
-  const [unreadCount, setUnreadCount] = useState(0);
-
+  // 3. Unread notification & booking count effect
   useEffect(() => {
     async function fetchUnread() {
-      if (!currentUser) return;
+      if (!currentUser || currentUser.verified === false) return;
       try {
         let count = 0;
 
@@ -84,12 +85,10 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     fetchUnread();
   }, [pathname, currentUser]);
 
-  const [activePlan, setActivePlan] = useState<string>("starter");
-  const [shakingHrefs, setShakingHrefs] = useState<string[]>([]);
-
+  // 4. Subscription plan loading effect
   useEffect(() => {
     async function loadPlan() {
-      if (!currentUser) return;
+      if (!currentUser || currentUser.verified === false) return;
       try {
         const bizRes = await api.get("/businesses/me/all");
         if (bizRes.data?.success && bizRes.data.data?.length > 0) {
@@ -120,6 +119,25 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     loadPlan();
   }, [currentUser]);
 
+  // ── CONDITIONAL EARLY RETURNS (ALL HOOKS HAVE BEEN CALLED ABOVE) ──────────
+
+  if (isLoading) {
+    return <div className="pt-24 p-8 text-center text-sm text-[hsl(var(--muted-foreground))]">Loading...</div>;
+  }
+
+  if (currentUser?.verified === false) {
+    return null;
+  }
+
+  // ── DERIVED VALUES & EVENT HANDLERS ───────────────────────────────────────
+
+  const currentTab = searchParams.get("tab") || "branding";
+
+  const handleSignOut = () => {
+    logout();
+    router.push("/");
+  };
+
   const isStarterPlan = !activePlan || activePlan === "starter" || activePlan === "start" || activePlan === "free" || activePlan === "basic";
 
   const handleLockedClick = (e: React.MouseEvent, href: string) => {
@@ -133,7 +151,6 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const { t } = useI18n();
   const navT = (t as any).dashboard?.nav || {};
 
   const links = [
