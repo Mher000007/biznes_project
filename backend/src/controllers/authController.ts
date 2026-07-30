@@ -557,3 +557,15 @@ export const verifyEmail = asyncHandler(async (req: Request, res: Response): Pro
     user: userPayload(user),
   });
 });
+
+// ─── OAuth Callback Handler ───────────────────────────────────────────────────
+export const oauthSuccessCallback = asyncHandler(async (req: Request & { user?: any }, res: Response): Promise<void> => {
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  if (!req.user) {
+    res.redirect(`${frontendUrl}/signin?error=oauth_failed`);
+    return;
+  }
+
+  await createAndSetTokens(res, req.user);
+  res.redirect(`${frontendUrl}/dashboard`);
+});

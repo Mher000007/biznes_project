@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Building2, User, ArrowRight, ChevronLeft, X } from "lucide-react";
+import { Building2, User, ArrowRight, ChevronLeft } from "lucide-react";
 import { AccountType, getUsers } from "@/lib/auth";
 import { useAuth } from "@/context/AuthContext";
 import { useI18n } from "@/i18n";
@@ -12,7 +12,7 @@ import { getApiUrl } from "@/lib/utils";
 export default function SignUpPage() {
   const router = useRouter();
   const { t, locale } = useI18n();
-  const { register, login } = useAuth();
+  const { register } = useAuth();
   const [accountType, setAccountType] = useState<AccountType | null>(null);
   const [username, setUsername] = useState("");
   const [name, setName] = useState("");
@@ -27,8 +27,12 @@ export default function SignUpPage() {
     if (typeof window !== "undefined") {
       const urlParams = new URLSearchParams(window.location.search);
       const refParam = urlParams.get("ref") || urlParams.get("invite") || urlParams.get("code");
+      const errParam = urlParams.get("error");
       if (refParam) {
         setInviteCode(refParam);
+      }
+      if (errParam) {
+        setError("OAuth sign up failed or was cancelled. Please try again.");
       }
     }
   }, []);
@@ -42,14 +46,14 @@ export default function SignUpPage() {
     const timer = setTimeout(async () => {
       try {
         const res = await axios.get(`${getApiUrl()}/auth/check-availability?username=${encodeURIComponent(username.trim())}`);
-        if (res.data?.usernameTaken) {
+        if (res.data?.available === false) {
           setUsernameError("Այս Օգտանունը (Username) արդեն զբաղված է:");
         } else {
           setUsernameError(null);
         }
       } catch (err) {
         const users = getUsers();
-        if (users.some((u) => u.username.toLowerCase() === username.trim().toLowerCase())) {
+        if (users.some((u) => u.username?.toLowerCase() === username.trim().toLowerCase())) {
           setUsernameError("Այս Օգտանունը (Username) արդեն զբաղված է:");
         } else {
           setUsernameError(null);
@@ -68,7 +72,7 @@ export default function SignUpPage() {
     const timer = setTimeout(async () => {
       try {
         const res = await axios.get(`${getApiUrl()}/auth/check-availability?name=${encodeURIComponent(name.trim())}`);
-        if (res.data?.nameTaken) {
+        if (res.data?.available === false) {
           setNameError("Այս Անունը (Name) արդեն զբաղված է:");
         } else {
           setNameError(null);
@@ -85,61 +89,12 @@ export default function SignUpPage() {
     return () => clearTimeout(timer);
   }, [name]);
 
-  useEffect(() => {
-    const handleAuthMessage = (event: MessageEvent) => {
-      if (event.origin !== window.location.origin) return;
-      if (event.data?.type === "GOOGLE_AUTH_SUCCESS") {
-        handleGoogleAccountSelect(event.data.email, event.data.name);
-      }
-    };
-    window.addEventListener("message", handleAuthMessage);
-    return () => window.removeEventListener("message", handleAuthMessage);
-  }, []);
-
-  const handleGoogleAccountSelect = async (gEmail: string, gName: string) => {
-    setError(null);
-    
-    // Generate username from email
-    const usernameFromEmail = gEmail.split("@")[0];
-    
-    const regResult = await register({
-      username: usernameFromEmail,
-      displayName: gName,
-      email: gEmail,
-      password: "GoogleAuthMock_2026!",
-      accountType: "personal"
-    });
-    
-    if (regResult.success) {
-      router.push("/profile");
-      return;
-    }
-    
-    if (regResult.error?.toLowerCase().includes("exist")) {
-      const loginResult = await login({
-        userOrEmail: gEmail,
-        password: "GoogleAuthMock_2026!"
-      });
-      
-      if (loginResult.success) {
-        router.push("/profile");
-        return;
-      }
-    }
-    
-    setError(regResult.error ?? "Google authentication failed.");
+  const handleGoogleClick = () => {
+    window.location.href = `${getApiUrl()}/auth/google`;
   };
 
-  const handleGoogleClick = () => {
-    const width = 500;
-    const height = 600;
-    const left = window.screenX + (window.outerWidth - width) / 2;
-    const top = window.screenY + (window.outerHeight - height) / 2;
-    window.open(
-      "/google-signup-mock",
-      "Google Sign In",
-      `width=${width},height=${height},left=${left},top=${top}`
-    );
+  const handleFacebookClick = () => {
+    window.location.href = `${getApiUrl()}/auth/facebook`;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -220,7 +175,10 @@ export default function SignUpPage() {
           </div>
 
           <p className="mt-6 text-center text-sm text-[hsl(var(--muted-foreground))]">
-            {t.auth.haveAccount} <Link href="/signin" className="font-semibold text-primary hover:text-primary/80 transition-colors">{t.auth.login}</Link>
+            {t.auth.haveAccount}{" "}
+            <Link href="/signin" className="font-medium text-[hsl(var(--foreground))] hover:underline">
+              {t.auth.login}
+            </Link>
           </p>
         </div>
       </div>
@@ -231,55 +189,46 @@ export default function SignUpPage() {
     <div className="min-h-screen flex items-center justify-center px-5 py-20">
       <div className="w-full max-w-sm">
         <div className="mb-8">
-
-          <div className="inline-flex items-center gap-1.5 rounded-md bg-[hsl(var(--muted))] px-2 py-1 text-xs mb-3">
-            {accountType === "business" ? <Building2 className="h-3 w-3" /> : <User className="h-3 w-3" />}
+          <h1 className="text-xl font-bold tracking-tight mb-1">
             {accountType === "business" ? t.auth.business : t.auth.personal}
-          </div>
-          <h1 className="text-xl font-bold tracking-tight mb-1">{t.auth.createAccount}</h1>
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            {accountType === "business" ? t.auth.businessSetup : t.auth.personalSetup}
-          </p>
+          </h1>
+          <p className="text-sm text-[hsl(var(--muted-foreground))]">{(t.auth as any).personalSetup || "Enter your details to get started"}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
           {error && (
-            <div className="rounded-xl border border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-900/50 px-3 py-2 text-sm text-red-700 dark:text-red-400 font-medium">
+            <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
               {error}
             </div>
           )}
           <div>
-            <label className="block text-sm font-medium mb-1">Username</label>
+            <label className="block text-sm font-medium mb-1">{t.auth.username}</label>
             <input
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               type="text"
               required
-              className={`w-full rounded-lg border px-3 py-2 text-sm outline-none transition-colors ${
-                usernameError ? "border-red-500 focus:border-red-500" : "border-[hsl(var(--border))] focus:border-[hsl(var(--foreground))]"
-              }`}
+              className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-sm outline-none transition-colors focus:border-[hsl(var(--foreground))]"
             />
             {usernameError && (
-              <p className="text-xs text-red-500 font-medium mt-1">{usernameError}</p>
+              <p className="text-xs text-red-500 mt-1">{usernameError}</p>
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Name</label>
+            <label className="block text-sm font-medium mb-1">{t.auth.name}</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               type="text"
               required
-              className={`w-full rounded-lg border px-3 py-2 text-sm outline-none transition-colors ${
-                nameError ? "border-red-500 focus:border-red-500" : "border-[hsl(var(--border))] focus:border-[hsl(var(--foreground))]"
-              }`}
+              className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-sm outline-none transition-colors focus:border-[hsl(var(--foreground))]"
             />
             {nameError && (
-              <p className="text-xs text-red-500 font-medium mt-1">{nameError}</p>
+              <p className="text-xs text-red-500 mt-1">{nameError}</p>
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Email</label>
+            <label className="block text-sm font-medium mb-1">{t.auth.email}</label>
             <input
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -289,7 +238,7 @@ export default function SignUpPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Password</label>
+            <label className="block text-sm font-medium mb-1">{t.auth.password}</label>
             <input
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -325,22 +274,35 @@ export default function SignUpPage() {
           <>
             <div className="relative my-4">
               <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-[hsl(var(--border))]"></span></div>
-              <div className="relative flex justify-center text-xs uppercase"><span className="bg-[hsl(var(--background))] px-2 text-[hsl(var(--muted-foreground))]">Or</span></div>
+              <div className="relative flex justify-center text-xs uppercase"><span className="bg-[hsl(var(--background))] px-2 text-[hsl(var(--muted-foreground))]">Or continue with</span></div>
             </div>
 
-            <button
-              type="button"
-              onClick={handleGoogleClick}
-              className="w-full flex items-center justify-center gap-2.5 h-10 rounded-lg border border-[hsl(var(--border))] bg-white dark:bg-slate-800 text-sm font-medium text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-            >
-              <svg className="h-4 w-4" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22c-.22-.66-.35-1.36-.35-2.09z" />
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-              </svg>
-              Continue with Google
-            </button>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={handleGoogleClick}
+                className="flex items-center justify-center gap-2 h-10 rounded-lg border border-[hsl(var(--border))] bg-white dark:bg-slate-800 text-sm font-medium text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22c-.22-.66-.35-1.36-.35-2.09z" />
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                </svg>
+                Google
+              </button>
+
+              <button
+                type="button"
+                onClick={handleFacebookClick}
+                className="flex items-center justify-center gap-2 h-10 rounded-lg border border-[hsl(var(--border))] bg-[#1877F2] text-sm font-medium text-white hover:bg-[#166fe5] transition-colors"
+              >
+                <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
+                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                </svg>
+                Facebook
+              </button>
+            </div>
           </>
         )}
 

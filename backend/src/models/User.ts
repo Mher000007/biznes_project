@@ -20,6 +20,9 @@ export interface IUser extends Document {
   resetPasswordExpire?: Date;
   emailVerificationToken?: string;
   emailVerificationExpire?: Date;
+  googleId?: string;
+  facebookId?: string;
+  oauthProviders?: string[];
   createdAt: Date;
   updatedAt: Date;
   matchPassword(enteredPassword: string): Promise<boolean>;
@@ -52,7 +55,9 @@ const userSchema = new Schema<IUser>({
   },
   password: {
     type: String,
-    required: [true, 'Please provide a password'],
+    required: function(this: IUser) {
+      return !this.googleId && !this.facebookId && (!this.oauthProviders || this.oauthProviders.length === 0);
+    },
     minlength: [8, 'Password must be at least 8 characters long'],
     select: false,
   },
@@ -84,6 +89,17 @@ const userSchema = new Schema<IUser>({
   resetPasswordExpire: Date,
   emailVerificationToken: String,
   emailVerificationExpire: Date,
+  googleId: {
+    type: String,
+    unique: true,
+    sparse: true,
+  },
+  facebookId: {
+    type: String,
+    unique: true,
+    sparse: true,
+  },
+  oauthProviders: [String],
   createdAt: {
     type: Date,
     default: Date.now,
