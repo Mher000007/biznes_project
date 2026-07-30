@@ -61,7 +61,7 @@ export const en = {
   // CTA
   cta: {
     title: "List your business",
-    subtitle: "Join 900+ businesses on ArmBiz. Create your profile, manage bookings, and reach thousands of customers across Armenia.",
+    subtitle: "Join 900+ businesses on Findy. Create your profile, manage bookings, and reach thousands of customers across Armenia.",
     getStarted: "Get started free",
     browse: "Browse directory",
   },
@@ -76,7 +76,7 @@ export const en = {
   // Auth
   auth: {
     createAccount: "Create an account",
-    chooseType: "Choose how you want to use ArmBiz",
+    chooseType: "Choose how you want to use Findy",
     personal: "Personal account",
     personalDesc: "Browse, review, and book services",
     business: "Business account",

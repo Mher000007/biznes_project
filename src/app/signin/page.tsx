@@ -73,27 +73,35 @@ export default function SignInPage() {
     setError(null);
   };
 
+  const [loading, setLoading] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    const result = await login({ userOrEmail, password });
+    setLoading(true);
 
-    if (!result.success) {
-      setError(result.error ?? "Unable to sign in.");
-      return;
-    }
+    try {
+      const result = await login({ userOrEmail, password });
 
-    if (rememberMe) {
-      localStorage.setItem("armbiz_remember_me", JSON.stringify({ userOrEmail, password }));
-    } else {
-      localStorage.removeItem("armbiz_remember_me");
-    }
+      if (!result.success) {
+        setError(result.error ?? "Unable to sign in.");
+        return;
+      }
 
-    const uType = result.user?.accountType || (result.user as any)?.role;
-    if (uType === "business" || uType === "business_owner") {
-      router.push("/dashboard");
-    } else {
-      router.push("/profile");
+      if (rememberMe) {
+        localStorage.setItem("armbiz_remember_me", JSON.stringify({ userOrEmail, password }));
+      } else {
+        localStorage.removeItem("armbiz_remember_me");
+      }
+
+      const uType = result.user?.accountType || (result.user as any)?.role;
+      if (uType === "business" || uType === "business_owner") {
+        router.push("/dashboard");
+      } else {
+        router.push("/profile");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -106,21 +114,27 @@ export default function SignInPage() {
       return;
     }
 
-    const result = await register({
-      username: username.trim(),
-      displayName: name.trim(),
-      email: email.trim().toLowerCase(),
-      password: regPassword,
-      accountType: "personal",
-      inviteCode: inviteCode.trim() || undefined,
-    });
+    setLoading(true);
 
-    if (!result.success) {
-      setError(result.error ?? "Unable to create account.");
-      return;
+    try {
+      const result = await register({
+        username: username.trim(),
+        displayName: name.trim(),
+        email: email.trim().toLowerCase(),
+        password: regPassword,
+        accountType: "personal",
+        inviteCode: inviteCode.trim() || undefined,
+      });
+
+      if (!result.success) {
+        setError(result.error ?? "Unable to create account.");
+        return;
+      }
+
+      router.push("/profile");
+    } finally {
+      setLoading(false);
     }
-
-    router.push("/profile");
   };
 
   return (
@@ -191,8 +205,8 @@ export default function SignInPage() {
                 </label>
               </div>
 
-              <button type="submit" className="w-full h-11 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90 transition-colors mt-2 shadow-md hover:shadow-lg">
-                {t.auth.loginBtn}
+              <button type="submit" disabled={loading} className="w-full h-11 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90 transition-colors mt-2 shadow-md hover:shadow-lg disabled:opacity-50">
+                {loading ? "..." : t.auth.loginBtn}
               </button>
             </form>
 
@@ -322,8 +336,8 @@ export default function SignInPage() {
                   className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))]/50 px-4 py-2.5 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-mono uppercase"
                 />
               </div>
-              <button type="submit" className="w-full h-11 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90 transition-colors mt-2 shadow-md hover:shadow-lg">
-                {t.auth.signUp}
+              <button type="submit" disabled={loading} className="w-full h-11 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90 transition-colors mt-2 shadow-md hover:shadow-lg disabled:opacity-50">
+                {loading ? "..." : t.auth.signUp}
               </button>
             </form>
 

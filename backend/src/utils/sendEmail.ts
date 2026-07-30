@@ -12,7 +12,7 @@ export const sendEmail = async (options: SendEmailOptions): Promise<boolean> => 
   const port = Number(process.env.SMTP_PORT) || 587;
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
-  const from = process.env.SMTP_FROM || 'ArmBiz Auth <no-reply@armbiz.am>';
+  const from = process.env.SMTP_FROM || 'Findy Auth <no-reply@findy.am>';
   const secure = process.env.SMTP_SECURE === 'true' || port === 465;
 
   if (!host || !user || !pass) {

@@ -97,6 +97,8 @@ export default function SignUpPage() {
     window.location.href = `${getApiUrl()}/auth/facebook`;
   };
 
+  const [loading, setLoading] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -111,26 +113,32 @@ export default function SignUpPage() {
       return;
     }
 
-    const result = await register({
-      username,
-      displayName: name,
-      email,
-      password,
-      accountType,
-      inviteCode,
-    });
+    setLoading(true);
 
-    if (!result.success) {
-      setError(result.error ?? "Unable to create your account.");
-      return;
+    try {
+      const result = await register({
+        username,
+        displayName: name,
+        email,
+        password,
+        accountType,
+        inviteCode,
+      });
+
+      if (!result.success) {
+        setError(result.error ?? "Unable to create your account.");
+        return;
+      }
+
+      if (accountType === "business") {
+        router.push("/register");
+        return;
+      }
+
+      router.push("/profile");
+    } finally {
+      setLoading(false);
     }
-
-    if (accountType === "business") {
-      router.push("/register");
-      return;
-    }
-
-    router.push("/profile");
   };
 
   if (!accountType) {
@@ -263,10 +271,10 @@ export default function SignUpPage() {
           </div>
           <button
             type="submit"
-            disabled={!!usernameError || !!nameError}
+            disabled={loading || !!usernameError || !!nameError}
             className="w-full h-10 rounded-lg text-sm font-medium btn-primary mt-1 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {accountType === "business" ? "Continue" : "Create account"}
+            {loading ? "..." : accountType === "business" ? "Continue" : "Create account"}
           </button>
         </form>
 

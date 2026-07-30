@@ -3,6 +3,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import api from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 
 function VerifyEmailInner() {
@@ -12,6 +13,8 @@ function VerifyEmailInner() {
 
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [message, setMessage] = useState<string>("");
+
+  const { updateUserVerifiedState } = useAuth();
 
   useEffect(() => {
     if (!token) {
@@ -26,6 +29,7 @@ function VerifyEmailInner() {
         if (res.data?.success) {
           setStatus("success");
           setMessage(res.data.message || "Your email address has been verified successfully!");
+          updateUserVerifiedState(true);
           setTimeout(() => {
             router.push("/profile");
           }, 3000);

@@ -1,5 +1,20 @@
 export type AccountType = "personal" | "business";
 
+export interface User {
+  id: string;
+  name: string;
+  username?: string;
+  email: string;
+  accountType: AccountType;
+  role: string;
+  verified: boolean;
+  phone?: string;
+  findyCoins?: number;
+  redeemedInviteCode?: string;
+  avatar?: string;
+  locale?: "hy" | "en" | "ru";
+}
+
 export interface UserAccount {
   username: string;
   displayName: string;

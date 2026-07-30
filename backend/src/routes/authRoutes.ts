@@ -13,11 +13,13 @@ import {
   resetPassword,
   sendEmailVerification,
   verifyEmail,
+  deleteAccount,
   oauthSuccessCallback,
 } from '../controllers/authController.js';
 import { authenticate } from '../middleware/auth.js';
 import {
   authLimiter,
+  registerLimiter,
   passwordResetLimiter,
   availabilityLimiter,
   verificationLimiter,
@@ -25,7 +27,7 @@ import {
 
 const router = Router();
 
-router.post('/register', authLimiter, register);
+router.post('/register', registerLimiter, register);
 router.get('/check-availability', availabilityLimiter, checkAvailability);
 router.post('/login', authLimiter, login);
 router.post('/logout', logout);
@@ -55,5 +57,6 @@ router.post('/verify-email', verifyEmail);
 router.get('/me', authenticate, getCurrentUser);
 router.put('/profile', authenticate, updateProfile);
 router.put('/change-password', authenticate, changePassword);
+router.delete('/account', authenticate, deleteAccount);
 
 export default router;

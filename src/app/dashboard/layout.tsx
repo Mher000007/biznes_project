@@ -25,6 +25,8 @@ import {
   QrCode,
 } from "lucide-react";
 
+import UnverifiedBanner from "@/components/dashboard/UnverifiedBanner";
+
 import { Suspense } from "react";
 
 function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
@@ -161,11 +163,18 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   };
 
   if (currentUser && (currentUser.accountType === "personal" || currentUser.role === "user")) {
-    return <div className="pt-16 min-h-screen">{children}</div>;
+    return (
+      <div className="pt-16 min-h-screen flex flex-col">
+        <UnverifiedBanner />
+        <div className="flex-1">{children}</div>
+      </div>
+    );
   }
 
   return (
-    <div className="pt-16 min-h-screen flex">
+    <div className="pt-16 min-h-screen flex flex-col">
+      <UnverifiedBanner />
+      <div className="flex flex-1">
       <style jsx global>{`
         @keyframes planLockShake {
           0%, 100% { transform: translateX(0); }
@@ -282,6 +291,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       {/* Content */}
       <div className="flex-1 min-w-0 p-6 lg:p-8 lg:ml-64">
         {children}
+      </div>
       </div>
     </div>
   );

@@ -575,3 +575,54 @@ export const oauthSuccessCallback = asyncHandler(async (req: Request & { user?: 
   await createAndSetTokens(res, req.user);
   res.redirect(`${frontendUrl}/dashboard`);
 });
+
+// ─── Delete Account ───────────────────────────────────────────────────────────
+export const deleteAccount = asyncHandler(async (req: Request & { user?: any }, res: Response): Promise<void> => {
+  const userId = req.user?.id;
+  const { confirmation } = req.body;
+
+  if (!userId) {
+    res.status(401).json({ success: false, message: 'Not authenticated' });
+    return;
+  }
+
+  if (confirmation !== 'DELETE') {
+    res.status(400).json({ success: false, message: 'Please type DELETE to confirm account deletion' });
+    return;
+  }
+
+  const user = await User.findById(userId);
+  if (!user) {
+    res.status(404).json({ success: false, message: 'User not found' });
+    return;
+  }
+
+  // Delete User document
+  await User.findByIdAndDelete(userId);
+
+  // Cascade delete refresh tokens & related user data
+  await RefreshToken.deleteMany({ user: userId });
+
+  // Safe background cleanup for auxiliary collections
+  try {
+    const models = User.db.models;
+    if (models.Business) await models.Business.deleteMany({ owner: userId });
+    if (models.Booking) await models.Booking.deleteMany({ $or: [{ user: userId }, { customerId: userId }] });
+    if (models.Notification) await models.Notification.deleteMany({ user: userId });
+    if (models.Inquiry) await models.Inquiry.deleteMany({ user: userId });
+    if (models.Story) await models.Story.deleteMany({ author: userId });
+    if (models.Offer) await models.Offer.deleteMany({ user: userId });
+    if (models.ExchangeOffer) await models.ExchangeOffer.deleteMany({ user: userId });
+    if (models.Review) await models.Review.deleteMany({ user: userId });
+    if (models.ChatMessage) await models.ChatMessage.deleteMany({ $or: [{ sender: userId }, { recipient: userId }] });
+  } catch (err) {
+    console.warn('[deleteAccount] Auxiliary cascade delete warning:', err);
+  }
+
+  clearAuthCookies(res);
+
+  res.status(200).json({
+    success: true,
+    message: 'Account and all associated data permanently deleted',
+  });
+});

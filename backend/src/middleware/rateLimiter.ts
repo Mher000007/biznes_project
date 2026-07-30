@@ -1,6 +1,6 @@
 import rateLimit from 'express-rate-limit';
 
-// Rate limiter for login & registration: 10 attempts per 15 minutes per IP
+// Rate limiter for login: 10 attempts per 15 minutes per IP
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 10,
@@ -8,7 +8,19 @@ export const authLimiter = rateLimit({
   legacyHeaders: false,
   message: {
     success: false,
-    message: 'Too many authentication attempts from this IP. Please try again after 15 minutes.',
+    message: 'Too many login attempts from this IP. Please try again after 15 minutes.',
+  },
+});
+
+// Rate limiter for registration: 20 attempts per 15 minutes per IP (allows normal form validation retries)
+export const registerLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many registration attempts from this IP. Please try again after 15 minutes.',
   },
 });
 
