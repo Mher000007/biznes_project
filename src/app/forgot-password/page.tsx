@@ -2,8 +2,10 @@
 import Link from "next/link";
 import { useState } from "react";
 import api from "@/lib/api";
+import { useI18n } from "@/i18n";
 
 export default function ForgotPasswordPage() {
+  const { locale } = useI18n();
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -16,7 +18,7 @@ export default function ForgotPasswordPage() {
     setLoading(true);
 
     try {
-      const res = await api.post("/auth/forgot-password", { email });
+      const res = await api.post("/auth/forgot-password", { email, locale });
       if (res.data?.success) {
         setMessage(res.data.message || "If an account with that email exists, a password reset link has been sent.");
       } else {

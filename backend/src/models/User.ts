@@ -23,6 +23,7 @@ export interface IUser extends Document {
   googleId?: string;
   facebookId?: string;
   oauthProviders?: string[];
+  locale?: 'hy' | 'en' | 'ru';
   createdAt: Date;
   updatedAt: Date;
   matchPassword(enteredPassword: string): Promise<boolean>;
@@ -100,6 +101,11 @@ const userSchema = new Schema<IUser>({
     sparse: true,
   },
   oauthProviders: [String],
+  locale: {
+    type: String,
+    enum: ['hy', 'en', 'ru'],
+    default: 'hy',
+  },
   createdAt: {
     type: Date,
     default: Date.now,

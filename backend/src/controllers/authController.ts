@@ -5,6 +5,7 @@ import User, { IUser } from '../models/User.js';
 import RefreshToken from '../models/RefreshToken.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { sendEmail } from '../utils/sendEmail.js';
+import { getVerifyEmailTemplate, getResetPasswordTemplate } from '../utils/emailTemplates/index.js';
 
 // ─── Helper: Cookie Options ──────────────────────────────────────────────────
 function getCookieOptions(isRefreshToken = false) {
@@ -161,6 +162,11 @@ export const register = asyncHandler(async (req: Request, res: Response): Promis
     }
   }
 
+  const userLang = (req.body.locale as 'hy' | 'en' | 'ru') || 'hy';
+
+  const rawToken = crypto.randomBytes(32).toString('hex');
+  const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+
   const user = new User({
     name: trimmedName,
     username: trimmedUsername || undefined,
@@ -171,9 +177,23 @@ export const register = asyncHandler(async (req: Request, res: Response): Promis
     accountType: accountType || 'personal',
     role: accountType === 'business' ? 'business_owner' : 'user',
     findyCoins: initialCoins,
+    locale: userLang,
+    emailVerificationToken: hashedToken,
+    emailVerificationExpire: new Date(Date.now() + 24 * 60 * 60 * 1000),
   });
 
   await user.save();
+
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  const verifyUrl = `${frontendUrl}/verify-email?token=${rawToken}`;
+  const template = getVerifyEmailTemplate({ name: user.name, link: verifyUrl, lang: userLang });
+
+  await sendEmail({
+    email: user.email,
+    subject: template.subject,
+    message: template.text,
+    html: template.html,
+  });
 
   await createAndSetTokens(res, user);
 
@@ -412,24 +432,17 @@ export const forgotPassword = asyncHandler(async (req: Request, res: Response): 
   user.resetPasswordExpire = new Date(Date.now() + 60 * 60 * 1000); // 1 hour expiry
   await user.save();
 
+  const userLang = (req.body.locale as 'hy' | 'en' | 'ru') || user.locale || 'hy';
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
   const resetUrl = `${frontendUrl}/reset-password?token=${rawToken}`;
 
-  const message = `You requested a password reset for your ArmBiz account. Click the link below to set a new password:\n\n${resetUrl}\n\nThis link will expire in 1 hour. If you did not request this, please ignore this email.`;
-  const html = `<div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; rounded-lg: 12px;">
-    <h2 style="color: #0f172a; margin-top: 0;">Reset Your Password</h2>
-    <p style="color: #475569; line-height: 1.6;">You requested a password reset for your ArmBiz account. Click the button below to set a new password:</p>
-    <div style="text-align: center; margin: 30px 0;">
-      <a href="${resetUrl}" style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; font-weight: 600; text-decoration: none; border-radius: 8px; display: inline-block;">Reset Password</a>
-    </div>
-    <p style="color: #94a3b8; font-size: 13px;">This link will expire in 1 hour.<br/>If you did not request a password reset, please ignore this email.</p>
-  </div>`;
+  const template = getResetPasswordTemplate({ name: user.name, link: resetUrl, lang: userLang });
 
   await sendEmail({
     email: user.email,
-    subject: 'ArmBiz Password Reset Request',
-    message,
-    html,
+    subject: template.subject,
+    message: template.text,
+    html: template.html,
   });
 
   res.status(200).json(genericResponse);
@@ -499,24 +512,17 @@ export const sendEmailVerification = asyncHandler(async (req: Request & { user?:
   user.emailVerificationExpire = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
   await user.save();
 
+  const userLang = (req.body.locale as 'hy' | 'en' | 'ru') || user.locale || 'hy';
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
   const verifyUrl = `${frontendUrl}/verify-email?token=${rawToken}`;
 
-  const message = `Please verify your email address for ArmBiz by clicking the link below:\n\n${verifyUrl}\n\nThis link will expire in 24 hours.`;
-  const html = `<div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; rounded-lg: 12px;">
-    <h2 style="color: #0f172a; margin-top: 0;">Verify Your Email Address</h2>
-    <p style="color: #475569; line-height: 1.6;">Thank you for registering with ArmBiz! Please click the button below to verify your email address:</p>
-    <div style="text-align: center; margin: 30px 0;">
-      <a href="${verifyUrl}" style="background-color: #10b981; color: #ffffff; padding: 12px 24px; font-weight: 600; text-decoration: none; border-radius: 8px; display: inline-block;">Verify Email</a>
-    </div>
-    <p style="color: #94a3b8; font-size: 13px;">This link will expire in 24 hours.</p>
-  </div>`;
+  const template = getVerifyEmailTemplate({ name: user.name, link: verifyUrl, lang: userLang });
 
   await sendEmail({
     email: user.email,
-    subject: 'Verify Your ArmBiz Email Address',
-    message,
-    html,
+    subject: template.subject,
+    message: template.text,
+    html: template.html,
   });
 
   res.status(200).json({

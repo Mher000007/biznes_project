@@ -89,8 +89,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     phone?: string;
     contactEmail?: string;
     inviteCode?: string;
+    locale?: string;
   }) => {
     try {
+      const activeLocale = input.locale || (typeof window !== "undefined" ? localStorage.getItem("ARMBIZ_LOCALE") : null) || "hy";
       const res = await api.post("/auth/register", {
         name: input.displayName,
         username: input.username,
@@ -100,6 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         phone: input.phone,
         contactEmail: input.contactEmail,
         inviteCode: input.inviteCode,
+        locale: activeLocale,
       });
 
       if (res.data?.success) {
