@@ -16,8 +16,13 @@ export const sendEmail = async (options: SendEmailOptions): Promise<boolean> => 
   const secure = process.env.SMTP_SECURE === 'true' || port === 465;
 
   if (!host || !user || !pass) {
-    console.warn(`[sendEmail] SMTP credentials not configured in env (SMTP_HOST/USER/PASS missing). Email to ${options.email} skipped.`);
-    console.log(`[sendEmail Mock Output] Subject: "${options.subject}" -> Message:\n${options.message}`);
+    console.log(`\n=================== [sendEmail Mock Output] ===================`);
+    console.log(`TO:       ${options.email}`);
+    console.log(`SUBJECT:  ${options.subject}`);
+    console.log(`STATUS:   SMTP missing in .env -> Logged to terminal for testing`);
+    console.log(`------------------- Email Content -------------------`);
+    console.log(options.message);
+    console.log(`===============================================================\n`);
     return false;
   }
 

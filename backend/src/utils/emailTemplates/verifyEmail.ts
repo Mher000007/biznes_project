@@ -5,41 +5,38 @@ export interface EmailTemplateOptions {
 }
 
 export function getVerifyEmailTemplate({ name, link, lang = 'hy' }: EmailTemplateOptions) {
-  const isHy = lang === 'hy';
-  const isRu = lang === 'ru';
-
   const translations = {
     hy: {
-      subject: 'Հաստատեք Ձեր էլ. հասցեն — ArmBiz',
+      subject: 'Հաստատեք Ձեր էլ. հասցեն — Findy',
       heading: 'Հաստատեք Ձեր էլ. հասցեն',
       greeting: `Բարև ${name},`,
-      body: 'Շնորհակալություն ArmBiz-ին միանալու համար: Խնդրում ենք հաստատել Ձեր էլ. հասցեն՝ Ձեր հաշիվն ակտիվացնելու և բոլոր հնարավորություններից օգտվելու համար:',
+      body: 'Շնորհակալություն Findy-ին միանալու համար: Խնդրում ենք հաստատել Ձեր էլ. հասցեն՝ Ձեր հաշիվն ակտիվացնելու և բոլոր հնարավորություններից օգտվելու համար:',
       buttonText: 'Հաստատել Էլ. Հասցեն',
       expiryNote: '⏳ Այս հղումը վավեր է <strong>24 ժամ</strong>:',
       fallbackText: 'Եթե կոճակը չի աշխատում, պատճենեք և տեղադրեք այս հղումը Ձեր կրկնօրինակի (browser) մեջ.',
-      securityNotice: 'Եթե Դուք հաշիվ չեք ստեղծել ArmBiz-ում, կարող եք անտեսել այս էլ. նամակը:',
+      securityNotice: 'Եթե Դուք հաշիվ չեք ստեղծել Findy-ում, կարող եք անտեսել այս էլ. նամակը:',
       rights: 'Բոլոր իրավունքները պաշտպանված են:',
     },
     en: {
-      subject: 'Confirm your email address — ArmBiz',
+      subject: 'Confirm your email address — Findy',
       heading: 'Confirm your email address',
       greeting: `Hello ${name},`,
-      body: 'Thank you for joining ArmBiz. Please confirm your email address to activate your account and access all business features.',
+      body: 'Thank you for joining Findy. Please confirm your email address to activate your account and access all business features.',
       buttonText: 'Verify Email Address',
       expiryNote: '⏳ This verification link will expire in <strong>24 hours</strong>.',
       fallbackText: "If the button above doesn't work, copy and paste this link into your browser:",
-      securityNotice: "If you did not create an account on ArmBiz, no action is required and you can safely ignore this email.",
+      securityNotice: "If you did not create an account on Findy, no action is required and you can safely ignore this email.",
       rights: 'All rights reserved.',
     },
     ru: {
-      subject: 'Подтвердите ваш email — ArmBiz',
+      subject: 'Подтвердите ваш email — Findy',
       heading: 'Подтвердите ваш email',
       greeting: `Здравствуйте, ${name}!`,
-      body: 'Спасибо за регистрацию в ArmBiz. Пожалуйста, подтвердите ваш адрес электронной почты, чтобы активировать аккаунт.',
+      body: 'Спасибо за регистрацию в Findy. Пожалуйста, подтвердите ваш адрес электронной почты, чтобы активировать аккаунт.',
       buttonText: 'Подтвердить Email',
       expiryNote: '⏳ Эта ссылка действительна в течение <strong>24 часов</strong>.',
       fallbackText: 'Если кнопка выше не работает, скопируйте и вставьте эту ссылку в браузер:',
-      securityNotice: 'Если вы не регистрировались в ArmBiz, просто проигнорируйте это письмо.',
+      securityNotice: 'Если вы не регистрировались в Findy, просто проигнорируйте это письмо.',
       rights: 'Все права защищены.',
     },
   };
@@ -64,7 +61,7 @@ export function getVerifyEmailTemplate({ name, link, lang = 'hy' }: EmailTemplat
               <table role="presentation" border="0" cellpadding="0" cellspacing="0">
                 <tr>
                   <td style="font-size: 26px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px;">
-                    Arm<span style="color: #2563eb;">Biz</span>
+                    Fin<span style="color: #2563eb;">dy</span>
                   </td>
                 </tr>
               </table>
@@ -124,7 +121,7 @@ export function getVerifyEmailTemplate({ name, link, lang = 'hy' }: EmailTemplat
           <!-- Footer -->
           <tr>
             <td align="center" style="padding: 20px 32px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8;">
-              © 2026 ArmBiz. ${t.rights} • <a href="https://armbiz.am" style="color: #64748b; text-decoration: underline;">armbiz.am</a>
+              © 2026 Findy. ${t.rights}
             </td>
           </tr>
         </table>

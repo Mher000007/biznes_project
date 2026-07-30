@@ -7,10 +7,10 @@ export interface EmailTemplateOptions {
 export function getResetPasswordTemplate({ name, link, lang = 'hy' }: EmailTemplateOptions) {
   const translations = {
     hy: {
-      subject: 'Վերականգնեք Ձեր գաղտնաբառը — ArmBiz',
+      subject: 'Վերականգնեք Ձեր գաղտնաբառը — Findy',
       heading: 'Վերականգնեք Ձեր գաղտնաբառը',
       greeting: `Բարև ${name},`,
-      body: 'Դուք ուղարկել եք Ձեր ArmBiz հաշվի գաղտնաբառը վերականգնելու հարցում: Սեղմեք ստորև նշված կոճակը՝ նոր գաղտնաբառ սահմանելու համար:',
+      body: 'Դուք ուղարկել եք Ձեր Findy հաշվի գաղտնաբառը վերականգնելու հարցում: Սեղմեք ստորև նշված կոճակը՝ նոր գաղտնաբառ սահմանելու համար:',
       buttonText: 'Վերականգնել Գաղտնաբառը',
       expiryNote: '⏳ Այս հղումը վավեր է <strong>1 ժամ</strong>:',
       fallbackText: 'Եթե կոճակը չի աշխատում, պատճենեք և տեղադրեք այս հղումը Ձեր կրկնօրինակի (browser) մեջ.',
@@ -18,10 +18,10 @@ export function getResetPasswordTemplate({ name, link, lang = 'hy' }: EmailTempl
       rights: 'Բոլոր իրավունքները պաշտպանված են:',
     },
     en: {
-      subject: 'Reset your password — ArmBiz',
+      subject: 'Reset your password — Findy',
       heading: 'Reset your password',
       greeting: `Hello ${name},`,
-      body: 'You requested a password reset for your ArmBiz account. Click the button below to set a new password:',
+      body: 'You requested a password reset for your Findy account. Click the button below to set a new password:',
       buttonText: 'Reset Password',
       expiryNote: '⏳ This password reset link will expire in <strong>1 hour</strong>.',
       fallbackText: "If the button above doesn't work, copy and paste this link into your browser:",
@@ -29,10 +29,10 @@ export function getResetPasswordTemplate({ name, link, lang = 'hy' }: EmailTempl
       rights: 'All rights reserved.',
     },
     ru: {
-      subject: 'Сброс пароля — ArmBiz',
+      subject: 'Сброс пароля — Findy',
       heading: 'Сброс пароля',
       greeting: `Здравствуйте, ${name}!`,
-      body: 'Вы запросили сброс пароля для вашего аккаунта ArmBiz. Нажмите кнопку ниже, чтобы установить новый пароль:',
+      body: 'Вы запросили сброс пароля для вашего аккаунта Findy. Нажмите кнопку ниже, чтобы установить новый пароль:',
       buttonText: 'Сбросить пароль',
       expiryNote: '⏳ Ссылка действительна в течение <strong>1 часа</strong>.',
       fallbackText: 'Если кнопка выше не работает, скопируйте и вставьте эту ссылку в браузер:',
@@ -61,7 +61,7 @@ export function getResetPasswordTemplate({ name, link, lang = 'hy' }: EmailTempl
               <table role="presentation" border="0" cellpadding="0" cellspacing="0">
                 <tr>
                   <td style="font-size: 26px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px;">
-                    Arm<span style="color: #2563eb;">Biz</span>
+                    Fin<span style="color: #2563eb;">dy</span>
                   </td>
                 </tr>
               </table>
@@ -121,7 +121,7 @@ export function getResetPasswordTemplate({ name, link, lang = 'hy' }: EmailTempl
           <!-- Footer -->
           <tr>
             <td align="center" style="padding: 20px 32px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8;">
-              © 2026 ArmBiz. ${t.rights} • <a href="https://armbiz.am" style="color: #64748b; text-decoration: underline;">armbiz.am</a>
+              © 2026 Findy. ${t.rights}
             </td>
           </tr>
         </table>

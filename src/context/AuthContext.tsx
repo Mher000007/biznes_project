@@ -92,7 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     locale?: string;
   }) => {
     try {
-      const activeLocale = input.locale || (typeof window !== "undefined" ? localStorage.getItem("ARMBIZ_LOCALE") : null) || "hy";
+      const activeLocale = input.locale || (typeof window !== "undefined" ? (localStorage.getItem("armbiz-locale") || localStorage.getItem("ARMBIZ_LOCALE")) : null) || "hy";
       const res = await api.post("/auth/register", {
         name: input.displayName,
         username: input.username,
