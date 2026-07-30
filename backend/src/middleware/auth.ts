@@ -34,6 +34,24 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
   }
 };
 
+export const requireVerified = (req: AuthRequest, res: Response, next: NextFunction): void => {
+  if (!req.user) {
+    res.status(401).json({ success: false, message: 'Not authenticated' });
+    return;
+  }
+
+  if (!req.user.verified) {
+    res.status(403).json({
+      success: false,
+      code: 'EMAIL_NOT_VERIFIED',
+      message: 'Please verify your email address to access this feature.',
+    });
+    return;
+  }
+
+  next();
+};
+
 export const authorize = (...roles: string[]) => {
   return (req: AuthRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {

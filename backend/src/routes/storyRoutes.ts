@@ -6,7 +6,7 @@ import {
   viewStory,
   deleteStory
 } from '../controllers/storyController.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, requireVerified } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -15,8 +15,8 @@ router.get('/', getActiveStories);
 router.post('/:id/view', viewStory);
 
 // Protected routes
-router.post('/', authenticate, createStory);
-router.get('/my-business', authenticate, getMyBusinessStories);
-router.delete('/:id', authenticate, deleteStory);
+router.post('/', authenticate, requireVerified, createStory);
+router.get('/my-business', authenticate, requireVerified, getMyBusinessStories);
+router.delete('/:id', authenticate, requireVerified, deleteStory);
 
 export default router;

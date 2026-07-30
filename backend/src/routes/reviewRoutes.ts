@@ -6,7 +6,7 @@ import {
   markHelpful,
   reportReview,
 } from '../controllers/reviewController.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, requireVerified } from '../middleware/auth.js';
 
 const router = Router({ mergeParams: true }); // inherits :businessId from parent
 
@@ -14,9 +14,9 @@ const router = Router({ mergeParams: true }); // inherits :businessId from paren
 router.get('/', getReviews);
 router.post('/:reviewId/helpful', markHelpful);
 
-// Public or protected (manually verified for optional auth in controller)
-router.post('/', createReview);
-router.delete('/:reviewId', authenticate, deleteReview);
-router.post('/:reviewId/report', authenticate, reportReview);
+// Protected routes (strictly require authenticated + email-verified user)
+router.post('/', authenticate, requireVerified, createReview);
+router.delete('/:reviewId', authenticate, requireVerified, deleteReview);
+router.post('/:reviewId/report', authenticate, requireVerified, reportReview);
 
 export default router;

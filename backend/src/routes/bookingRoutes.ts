@@ -4,7 +4,7 @@ import {
   getBookingsByBusiness,
   updateBookingStatus,
 } from '../controllers/bookingController.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, requireVerified } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -12,7 +12,7 @@ const router = Router();
 router.post('/', createBooking);
 
 // Protected routes for business owners
-router.get('/business/:businessId', authenticate, getBookingsByBusiness);
-router.put('/:id/status', authenticate, updateBookingStatus);
+router.get('/business/:businessId', authenticate, requireVerified, getBookingsByBusiness);
+router.put('/:id/status', authenticate, requireVerified, updateBookingStatus);
 
 export default router;

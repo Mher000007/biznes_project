@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticate, authorize } from '../middleware/auth.js';
+import { authenticate, authorize, requireVerified } from '../middleware/auth.js';
 import { getConversations, getMessages, sendMessage } from '../controllers/chatController.js';
 
 const router = express.Router();
@@ -8,11 +8,9 @@ const router = express.Router();
 router.get('/conversations', authenticate, authorize('admin'), getConversations);
 
 // User & Admin: Get messages for a specific conversation
-// For a normal user, the conversationId is ignored and their own ID is used.
-router.get('/:conversationId', authenticate, getMessages);
+router.get('/:conversationId', authenticate, requireVerified, getMessages);
 
 // User & Admin: Send a message
-// Admin must provide conversationId in body, User's conversationId is inferred from their ID.
-router.post('/', authenticate, sendMessage);
+router.post('/', authenticate, requireVerified, sendMessage);
 
 export default router;

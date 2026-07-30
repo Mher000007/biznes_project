@@ -9,14 +9,14 @@ import {
   claimExchangeOffer,
 } from '../controllers/exchangeOfferController.js';
 
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, requireVerified } from '../middleware/auth.js';
 
 const router = express.Router();
 
 router
   .route('/')
   .get(getExchangeOffers)
-  .post(authenticate as any, createExchangeOffer as any);
+  .post(authenticate as any, requireVerified as any, createExchangeOffer as any);
 
 router
   .route('/business/:businessId')
@@ -24,15 +24,15 @@ router
 
 router
   .route('/:id/toggle-save')
-  .post(authenticate as any, toggleSaveExchangeOffer as any);
+  .post(authenticate as any, requireVerified as any, toggleSaveExchangeOffer as any);
 
 router
   .route('/:id/claim')
-  .post(authenticate as any, claimExchangeOffer as any);
+  .post(authenticate as any, requireVerified as any, claimExchangeOffer as any);
 
 router
   .route('/:id')
-  .put(authenticate as any, updateExchangeOffer as any)
-  .delete(authenticate as any, deleteExchangeOffer as any);
+  .put(authenticate as any, requireVerified as any, updateExchangeOffer as any)
+  .delete(authenticate as any, requireVerified as any, deleteExchangeOffer as any);
 
 export default router;

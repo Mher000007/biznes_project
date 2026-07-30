@@ -5,7 +5,7 @@ import {
   updateInquiryStatus,
   getUserInquiries,
 } from '../controllers/inquiryController.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, requireVerified } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -13,8 +13,8 @@ const router = Router();
 router.post('/', createInquiry);
 
 // Protected routes
-router.get('/business/:businessId', authenticate, getBusinessInquiries);
-router.put('/:inquiryId', authenticate, updateInquiryStatus);
-router.get('/user/all', authenticate, getUserInquiries);
+router.get('/business/:businessId', authenticate, requireVerified, getBusinessInquiries);
+router.put('/:inquiryId', authenticate, requireVerified, updateInquiryStatus);
+router.get('/user/all', authenticate, requireVerified, getUserInquiries);
 
 export default router;
