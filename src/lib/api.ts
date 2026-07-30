@@ -32,6 +32,17 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    // Intercept 403 EMAIL_NOT_VERIFIED and redirect to /verify-pending
+    if (
+      error.response?.status === 403 &&
+      error.response?.data?.code === "EMAIL_NOT_VERIFIED"
+    ) {
+      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/verify-pending")) {
+        window.location.href = "/verify-pending";
+      }
+      return Promise.reject(error);
+    }
+
     // Do not attempt refresh on auth endpoints (login, register, refresh)
     const isAuthEndpoint =
       originalRequest.url?.includes("/auth/login") ||
