@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useI18n } from "@/i18n";
 import api from "@/lib/api";
@@ -12,8 +12,17 @@ export default function UnverifiedBanner() {
 
   const [dismissed, setDismissed] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => {
+      setCooldown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
 
   if (!currentUser || currentUser.verified || dismissed) {
     return null;
@@ -47,8 +56,11 @@ export default function UnverifiedBanner() {
   };
 
   const t = translations[locale] || translations.hy;
+  const unit = locale === "hy" ? "վ" : locale === "ru" ? "с" : "s";
 
   const handleResend = async () => {
+    if (cooldown > 0 || loading) return;
+
     setLoading(true);
     setMessage(null);
     setError(null);
@@ -57,11 +69,14 @@ export default function UnverifiedBanner() {
       const res = await api.post("/auth/send-verification", { locale });
       if (res.data?.success) {
         setMessage(res.data.message || t.success);
+        setCooldown(60);
       } else {
         setError(res.data?.message || t.fail);
+        setCooldown(15);
       }
     } catch (err: any) {
       setError(err.response?.data?.message || t.fail);
+      setCooldown(15);
     } finally {
       setLoading(false);
     }
@@ -86,15 +101,19 @@ export default function UnverifiedBanner() {
           ) : (
             <button
               onClick={handleResend}
-              disabled={loading}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium transition-colors disabled:opacity-50"
+              disabled={loading || cooldown > 0}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
               {loading ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
                 <Mail className="h-3.5 w-3.5" />
               )}
-              {loading ? t.sending : t.btn}
+              {loading
+                ? t.sending
+                : cooldown > 0
+                ? `${t.btn} (${cooldown}${unit})`
+                : t.btn}
             </button>
           )}
 

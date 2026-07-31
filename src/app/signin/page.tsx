@@ -142,35 +142,35 @@ export default function SignInPage() {
     <div className="min-h-screen relative flex items-center justify-center p-4 sm:p-6 overflow-hidden">
       <AnimatedBackground />
 
-      <div className="relative z-10 w-full max-w-md rounded-3xl bg-[hsl(var(--card))]/80 backdrop-blur-xl border border-[hsl(var(--border))] shadow-2xl p-6 sm:p-8 transition-all">
+      <div className="relative z-10 w-full max-w-[420px] rounded-3xl bg-[hsl(var(--card))]/80 backdrop-blur-xl border border-[hsl(var(--border))] shadow-2xl p-5 sm:p-7 transition-all">
         {mode === "login" ? (
           <>
-            <div className="text-center mb-8">
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">{t.auth.welcomeBack}</h1>
+            <div className="text-center mb-6">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-1.5">{t.auth.welcomeBack}</h1>
               <p className="text-sm text-[hsl(var(--muted-foreground))]">{(t.auth as any).enterCredentials || "Enter your credentials"}</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-3.5">
               {error && (
-                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                <div className="rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm text-red-700">
                   {error}
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-semibold mb-1.5">{(t.auth as any).userOrEmail || "Username or Email"}</label>
+                <label className="block text-xs font-semibold mb-1">{(t.auth as any).userOrEmail || "Username or Email"}</label>
                 <input
                   value={userOrEmail}
                   onChange={(e) => setUserOrEmail(e.target.value)}
                   type="text"
                   required
-                  className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))]/50 px-4 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))]/50 px-3.5 py-2 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
                 />
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-sm font-semibold">{t.auth.password}</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold">{t.auth.password}</label>
                   <Link href="/forgot-password" className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors">
                     {t.auth.forgotPassword}
                   </Link>
@@ -181,7 +181,7 @@ export default function SignInPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     type={showPassword ? "text" : "password"}
                     required
-                    className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))]/50 px-4 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary pr-10"
+                    className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))]/50 px-3.5 py-2 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary pr-10"
                   />
                   <button
                     type="button"
@@ -201,22 +201,22 @@ export default function SignInPage() {
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="h-4 w-4 rounded border-[hsl(var(--border))] text-primary focus:ring-primary accent-primary cursor-pointer"
                 />
-                <label htmlFor="rememberMe" className="text-sm font-medium text-[hsl(var(--muted-foreground))] cursor-pointer select-none">
+                <label htmlFor="rememberMe" className="text-xs sm:text-sm font-medium text-[hsl(var(--muted-foreground))] cursor-pointer select-none">
                   {t.auth.rememberMe}
                 </label>
               </div>
 
-              <button type="submit" disabled={loading} className="w-full h-11 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90 transition-colors mt-2 shadow-md hover:shadow-lg disabled:opacity-50">
+              <button type="submit" disabled={loading} className="w-full h-10.5 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90 transition-colors mt-1 shadow-md hover:shadow-lg disabled:opacity-50">
                 {loading ? "..." : t.auth.loginBtn}
               </button>
             </form>
 
-            <div className="relative my-5">
+            <div className="relative my-4">
               <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-[hsl(var(--border))]"></span></div>
-              <div className="relative flex justify-center text-xs uppercase"><span className="bg-[hsl(var(--card))] px-2 text-[hsl(var(--muted-foreground))]">Or continue with</span></div>
+              <div className="relative flex justify-center text-[11px] uppercase"><span className="bg-[hsl(var(--card))] px-2.5 text-[hsl(var(--muted-foreground))] font-medium">Or continue with</span></div>
             </div>
 
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2.5">
               <button
                 type="button"
                 onClick={handleGoogleClick}
@@ -232,14 +232,14 @@ export default function SignInPage() {
               </button>
             </div>
 
-            <div className="mt-8 text-center space-y-2">
-              <p className="text-sm text-[hsl(var(--muted-foreground))]">
+            <div className="mt-6 text-center space-y-1.5">
+              <p className="text-xs sm:text-sm text-[hsl(var(--muted-foreground))]">
                 {t.auth.noAccount}{" "}
                 <button onClick={() => toggleMode("signup")} className="font-semibold text-primary hover:text-primary/80 transition-colors bg-transparent border-0 cursor-pointer">
                   {t.auth.signUp}
                 </button>
               </p>
-              <p className="text-sm text-[hsl(var(--muted-foreground))]">
+              <p className="text-xs sm:text-sm text-[hsl(var(--muted-foreground))]">
                 {(t.auth as any).haveBusiness || "Are you a business?"}{" "}
                 <Link href="/register" className="font-semibold text-primary hover:text-primary/80 transition-colors">
                   {(t.auth as any).registerBusiness || "Register Business"}
@@ -249,52 +249,52 @@ export default function SignInPage() {
           </>
         ) : (
           <>
-            <div className="text-center mb-8 break-words">
-              <h1 className="text-2xl font-bold tracking-tight mb-2">{t.auth.createAccount}</h1>
-              <p className="text-sm text-[hsl(var(--muted-foreground))] leading-relaxed">{(t.auth as any).personalSetup || "Enter your details to get started"}</p>
+            <div className="text-center mb-5 break-words">
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight mb-1">{t.auth.createAccount}</h1>
+              <p className="text-xs sm:text-sm text-[hsl(var(--muted-foreground))] leading-relaxed">{(t.auth as any).personalSetup || "Enter your details to get started"}</p>
             </div>
 
-            <form onSubmit={handleSignUpSubmit} className="space-y-3">
+            <form onSubmit={handleSignUpSubmit} className="space-y-2.5">
               {error && (
-                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                <div className="rounded-xl border border-red-200 bg-red-50 px-3.5 py-2 text-xs sm:text-sm text-red-700">
                   {error}
                 </div>
               )}
               <div>
-                <label className="block text-sm font-semibold mb-1.5">{t.auth.username}</label>
+                <label className="block text-xs font-semibold mb-1">{t.auth.username}</label>
                 <input
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   type="text"
                   required
                   placeholder="username"
-                  className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))]/50 px-4 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))]/50 px-3.5 py-2 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold mb-1.5">{t.auth.name}</label>
+                <label className="block text-xs font-semibold mb-1">{t.auth.name}</label>
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   type="text"
                   required
                   placeholder="John Doe"
-                  className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))]/50 px-4 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))]/50 px-3.5 py-2 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold mb-1.5">{t.auth.email}</label>
+                <label className="block text-xs font-semibold mb-1">{t.auth.email}</label>
                 <input
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   type="email"
                   required
                   placeholder="john@example.com"
-                  className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))]/50 px-4 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))]/50 px-3.5 py-2 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold mb-1.5">{t.auth.password}</label>
+                <label className="block text-xs font-semibold mb-1">{t.auth.password}</label>
                 <div className="relative">
                   <input
                     value={regPassword}
@@ -302,7 +302,7 @@ export default function SignInPage() {
                     type={showRegPassword ? "text" : "password"}
                     required
                     minLength={8}
-                    className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))]/50 px-4 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary pr-10"
+                    className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))]/50 px-3.5 py-2 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary pr-10"
                   />
                   <button
                     type="button"
@@ -314,44 +314,44 @@ export default function SignInPage() {
                 </div>
               </div>
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-sm font-semibold">Invite Code (Optional)</label>
-                  <span className="text-xs text-emerald-600 font-medium">+100 Coins Bonus</span>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold">Invite Code (Optional)</label>
+                  <span className="text-[10px] text-emerald-600 font-semibold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">+100 Coins Bonus</span>
                 </div>
                 <input
                   type="text"
                   value={inviteCode}
                   onChange={(e) => setInviteCode(e.target.value)}
                   placeholder="e.g. MHER100 or username"
-                  className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))]/50 px-4 py-2.5 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-mono uppercase"
+                  className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))]/50 px-3.5 py-2 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-mono uppercase"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-11 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90 transition-colors mt-2 shadow-md hover:shadow-lg disabled:opacity-50"
+                className="w-full h-10 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90 transition-colors mt-1 shadow-md hover:shadow-lg disabled:opacity-50"
               >
                 {loading ? "Creating account..." : t.auth.signUp}
               </button>
             </form>
 
-            <div className="relative my-6">
+            <div className="relative my-3.5">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-[hsl(var(--border))]" />
               </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-[hsl(var(--card))] px-3 text-[hsl(var(--muted-foreground))] font-medium">
+              <div className="relative flex justify-center text-[11px] uppercase">
+                <span className="bg-[hsl(var(--card))] px-2.5 text-[hsl(var(--muted-foreground))] font-medium">
                   Or continue with
                 </span>
               </div>
             </div>
 
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2.5">
               <button
                 type="button"
                 onClick={handleGoogleClick}
-                className="flex items-center justify-center gap-2 h-10 rounded-xl border border-[hsl(var(--border))] bg-white dark:bg-slate-800 text-sm font-medium text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm"
+                className="flex items-center justify-center gap-2 h-9.5 rounded-xl border border-[hsl(var(--border))] bg-white dark:bg-slate-800 text-sm font-medium text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm"
               >
                 <svg className="h-4 w-4" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -363,14 +363,14 @@ export default function SignInPage() {
               </button>
             </div>
 
-            <div className="mt-8 text-center space-y-2">
-              <p className="text-sm text-[hsl(var(--muted-foreground))]">
+            <div className="mt-5 text-center space-y-1.5">
+              <p className="text-xs sm:text-sm text-[hsl(var(--muted-foreground))]">
                 {t.auth.haveAccount || "Have an account?"}{" "}
                 <button onClick={() => toggleMode("login")} className="font-semibold text-primary hover:text-primary/80 transition-colors bg-transparent border-0 cursor-pointer">
                   {t.auth.login}
                 </button>
               </p>
-              <p className="text-sm text-[hsl(var(--muted-foreground))]">
+              <p className="text-xs sm:text-sm text-[hsl(var(--muted-foreground))]">
                 {(t.auth as any).haveBusiness || "Are you a business?"}{" "}
                 <Link href="/register" className="font-semibold text-primary hover:text-primary/80 transition-colors">
                   {(t.auth as any).registerBusiness || "Register Business"}

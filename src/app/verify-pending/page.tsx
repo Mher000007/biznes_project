@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useI18n } from "@/i18n";
@@ -13,8 +13,17 @@ export default function VerifyPendingPage() {
   const { locale } = useI18n();
 
   const [loading, setLoading] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => {
+      setCooldown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
 
   const translations = {
     hy: {
@@ -50,8 +59,11 @@ export default function VerifyPendingPage() {
   };
 
   const t = translations[locale] || translations.hy;
+  const unit = locale === "hy" ? "վ" : locale === "ru" ? "с" : "s";
 
   const handleResend = async () => {
+    if (cooldown > 0 || loading) return;
+
     setLoading(true);
     setMessage(null);
     setError(null);
@@ -60,11 +72,14 @@ export default function VerifyPendingPage() {
       const res = await api.post("/auth/send-verification", { locale });
       if (res.data?.success) {
         setMessage(res.data.message || t.success);
+        setCooldown(60);
       } else {
         setError(res.data?.message || t.fail);
+        setCooldown(15);
       }
     } catch (err: any) {
       setError(err.response?.data?.message || t.fail);
+      setCooldown(15);
     } finally {
       setLoading(false);
     }
@@ -79,7 +94,7 @@ export default function VerifyPendingPage() {
     <div className="min-h-screen flex items-center justify-center px-5 py-20 bg-slate-50 dark:bg-slate-950">
       <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 text-center shadow-xl space-y-6">
         <div className="flex flex-col items-center justify-center space-y-3">
-          <div className="h-16 w-16 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mb-1">
+          <div className="h-16 w-16 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mb-1">
             <Mail className="h-8 w-8" />
           </div>
 
@@ -118,15 +133,19 @@ export default function VerifyPendingPage() {
         <div className="space-y-3 pt-2">
           <button
             onClick={handleResend}
-            disabled={loading}
-            className="w-full h-11 inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition-colors disabled:opacity-50 shadow-md"
+            disabled={loading || cooldown > 0}
+            className="w-full h-11 inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm transition-colors disabled:opacity-50 shadow-md cursor-pointer disabled:cursor-not-allowed"
           >
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <Mail className="h-4 w-4" />
             )}
-            {loading ? t.resending : t.resendBtn}
+            {loading
+              ? t.resending
+              : cooldown > 0
+                ? `${t.resendBtn} (${cooldown}${unit})`
+                : t.resendBtn}
           </button>
 
           <button
