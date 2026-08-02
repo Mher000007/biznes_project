@@ -294,16 +294,16 @@ export default function DashboardExchange() {
           <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <Coins className="w-8 h-8 text-emerald-500" />
           </div>
-          <h3 className="text-xl font-bold text-[hsl(var(--foreground))] mb-2">No Offers Yet</h3>
+          <h3 className="text-xl font-bold text-[hsl(var(--foreground))] mb-2">{(t.dashboard.exchangeOffers as any).noOffersYet || "No Offers Yet"}</h3>
           <p className="text-[hsl(var(--muted-foreground))] mb-6 max-w-md mx-auto">
-            Create your first exchange offer to allow users to spend their Findy Coins at your business.
+            {(t.dashboard.exchangeOffers as any).noOffersSubtitle || "Create your first exchange offer to allow users to spend their Findy Coins at your business."}
           </p>
           <button
             onClick={handleOpenAddModal}
             className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors inline-flex items-center gap-2 cursor-pointer"
           >
             <Plus className="w-5 h-5" />
-            Create First Offer
+            {(t.dashboard.exchangeOffers as any).createFirstOffer || "Create First Offer"}
           </button>
         </div>
       ) : (

@@ -111,6 +111,9 @@ export const hy: Translations = {
     backToSignIn: "Վերադառնալ Մուտքի էջ",
     newPasswordLabel: "Նոր գաղտնաբառ",
     confirmNewPasswordLabel: "Հաստատել նոր գաղտնաբառը",
+    enterCredentials: "Մուտքագրեք Ձեր տվյալները",
+    inviteCodeOptional: "Հրավերի Կոդ (Ոչ պարտադիր)",
+    inviteCodePlaceholder: "օր. USER100 կամ օգտանուն",
   },
   dashboard: {
     title: "Վահանակ",
@@ -148,6 +151,7 @@ export const hy: Translations = {
       myLocations: "Իմ հասցեները",
       manageBranches: "Կառավարեք ձեր բիզնեսի մասնաճյուղերը և հասցեները:",
       addBranch: "Ավելացնել մասնաճյուղ",
+      primary: "Գլխավոր",
     },
     inquiriesPage: {
       title: "Հարցումներ",
@@ -180,10 +184,16 @@ export const hy: Translations = {
       quantityPlaceholder: "օր.՝ 100",
       activeVisible: "Ակտիվ (տեսանելի է օգտատերերին)",
       saveChanges: "Պահպանել փոփոխությունները",
+      noOffersYet: "Դեռևս առաջարկներ չկան",
+      noOffersSubtitle: "Ստեղծեք Ձեր առաջին փոխանակման առաջարկը, որպեսզի օգտատերերը կարողանան ծախսել իրենց Findy Coins-երը Ձեր բիզնեսում:",
+      createFirstOffer: "Ստեղծել առաջին առաջարկը",
     },
     supportPage: {
       title: "Ուղիղ աջակցություն",
       subtitle: "Ուղիղ կապ ադմինիստրացիոն թիմի հետ:",
+      noMessagesYet: "Դեռևս հաղորդագրություններ չկան: Ուղարկեք հաղորդագրություն՝ զրույցը սկսելու համար:",
+      typeYourMessage: "Գրեք Ձեր հաղորդագրությունը...",
+      send: "Ուղարկել",
     },
     nav: {
       overview: "Ակնարկ",
@@ -505,6 +515,7 @@ export const hy: Translations = {
     newStory: "Նոր պատմություն",
     noActive: "Այս պահին ակտիվ պատմություններ չկան: Օգտագործեք ձևը՝ հրապարակելու համար:",
     caption: "Նկարագրություն (ըստ ցանկության)",
+    writeCaptionPlaceholder: "Գրեք վերնագիր կամ հատուկ առաջարկի մանրամասները...",
     publish: "Հրապարակել պատմությունը",
     publishing: "Հրապարակվում է...",
     deleteConfirm: "Վստա՞հ եք, որ ցանկանում եք ջնջել այս պատմությունը: Այն կհեռացվի անվերադարձ:",

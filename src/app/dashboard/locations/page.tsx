@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getApiUrl } from "@/lib/utils";
-import axios from "axios";
+import api from "@/lib/api";
 import { MapPin, Plus, Trash2, Edit2, Star, Clock, Phone } from "lucide-react";
 import { LocationSelect } from "@/components/ui/LocationSelect";
 import { useI18n } from "@/i18n";
@@ -45,25 +45,21 @@ export default function DashboardLocations() {
 
   const [businessId, setBusinessId] = useState<string | null>(null);
 
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const fetchLocations = async () => {
     try {
       setLoading(true);
-      const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-      const h = { headers: { Authorization: `Bearer ${token}` } };
-
       let bId = businessId || (currentUser as any)?.businessId || (currentUser as any)?.business?._id;
       if (!bId) {
-        const bizRes = await axios.get(`${getApiUrl()}/businesses/me/all`, h);
+        const bizRes = await api.get("/businesses/me/all");
         bId = bizRes.data?.data?.[0]?._id;
       }
 
       if (bId) {
         setBusinessId(bId);
-        const res = await axios.get(`${getApiUrl()}/businesses/${bId}/locations`);
+        const res = await api.get(`/businesses/${bId}/locations`);
         setLocations(res.data.data || []);
       } else {
         setLoading(false);
@@ -82,7 +78,7 @@ export default function DashboardLocations() {
 
   // Disable body scroll when modal is open
   useEffect(() => {
-    if (isModalOpen) {
+    if (isModalOpen || deleteTargetId) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "unset";
@@ -90,49 +86,49 @@ export default function DashboardLocations() {
     return () => {
       document.body.style.overflow = "unset";
     }
-  }, [isModalOpen]);
+  }, [isModalOpen, deleteTargetId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!businessId) return;
 
     try {
-      const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
       const payload = {
         ...formData,
         phone: formData.phone.trim() ? `+374${formData.phone.trim()}` : ""
       };
 
       if (editingId) {
-        await axios.put(`${getApiUrl()}/businesses/locations/${editingId}`, payload, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await api.put(`/businesses/locations/${editingId}`, payload);
       } else {
-        await axios.post(`${getApiUrl()}/businesses/${businessId}/locations`, payload, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await api.post(`/businesses/${businessId}/locations`, payload);
       }
 
       setIsModalOpen(false);
       setEditingId(null);
       fetchLocations();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to save location", err);
-      alert("Error saving location");
+      alert(err.response?.data?.message || "Error saving location");
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Արդյո՞ք ցանկանում եք ջնջել այս մասնաճյուղը:")) return;
+  const handleDelete = (id: string) => {
+    setDeleteTargetId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTargetId) return;
+    setIsDeleting(true);
     try {
-      const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
-      await axios.delete(`${getApiUrl()}/businesses/locations/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.delete(`/businesses/locations/${deleteTargetId}`);
+      setDeleteTargetId(null);
       fetchLocations();
-    } catch (err) {
-      console.error("Failed to delete", err);
-      alert("Error deleting location");
+    } catch (err: any) {
+      console.error("Failed to delete location", err);
+      alert(err.response?.data?.message || "Error deleting location");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -210,7 +206,7 @@ export default function DashboardLocations() {
               <div key={loc._id} className="border border-[hsl(var(--border))] bg-[hsl(var(--card))] rounded-xl p-5 shadow-sm relative overflow-hidden group">
                 {loc.isPrimary && (
                   <div className="absolute top-0 right-0 bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))] text-xs font-bold px-3 py-1 rounded-bl-xl flex items-center gap-1">
-                    <Star className="w-3 h-3 fill-[hsl(var(--primary))]" /> Primary
+                    <Star className="w-3 h-3 fill-[hsl(var(--primary))]" /> {(t.dashboard.locations as any).primary || "Primary"}
                   </div>
                 )}
                 <h3 className="font-semibold text-lg flex items-center gap-2 pr-20">
@@ -341,6 +337,42 @@ export default function DashboardLocations() {
                 <button type="submit" className="btn-primary px-6 py-2 text-sm font-medium">Save Branch</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteTargetId && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 z-[9999] animate-in fade-in duration-200">
+          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] w-full max-w-sm rounded-2xl p-6 relative shadow-2xl space-y-4 animate-in zoom-in-95 duration-200 text-center">
+            <div className="w-12 h-12 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center mx-auto">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-[hsl(var(--foreground))] mb-1">
+                Ջնջե՞լ մասնաճյուղը
+              </h3>
+              <p className="text-xs text-[hsl(var(--muted-foreground))] leading-relaxed">
+                Արդյո՞ք ցանկանում եք ջնջել այս մասնաճյուղը: Այս գործողությունը հնարավոր չէ հետ շրջել:
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeleteTargetId(null)}
+                className="flex-1 px-3.5 py-2 rounded-xl border border-[hsl(var(--border))] text-xs font-semibold text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))] transition-colors cursor-pointer"
+              >
+                Չեղարկել
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                disabled={isDeleting}
+                className="flex-1 px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-700 active:scale-[0.98] text-white text-xs font-bold transition-all shadow-md disabled:opacity-50 cursor-pointer"
+              >
+                {isDeleting ? "Ջնջվում է..." : "Այո, ջնջել"}
+              </button>
+            </div>
           </div>
         </div>
       )}

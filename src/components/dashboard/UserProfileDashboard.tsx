@@ -2456,11 +2456,11 @@ export default function UserProfileDashboard() {
                     </label>
                     <div className={`bg-[hsl(var(--background))] border rounded-2xl p-2 flex items-center gap-2 transition-all ${copiedInviteCode ? "border-emerald-500 shadow-md shadow-emerald-500/10" : "border-[hsl(var(--border))] focus-within:border-emerald-500"}`}>
                       <div className="flex-1 px-4 font-mono font-black text-base sm:text-lg text-emerald-600 dark:text-emerald-400 tracking-wider">
-                        {currentUser?.username ? currentUser.username.toUpperCase() : "MHER100"}
+                        {currentUser?.username ? currentUser.username.toUpperCase() : "USER100"}
                       </div>
                       <button
                         type="button"
-                        onClick={() => handleCopyInviteCode(currentUser?.username ? currentUser.username.toUpperCase() : "MHER100")}
+                        onClick={() => handleCopyInviteCode(currentUser?.username ? currentUser.username.toUpperCase() : "USER100")}
                         className={`px-5 py-2.5 rounded-xl font-bold text-xs transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer active:scale-95 ${copiedInviteCode
                           ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 scale-105"
                           : "bg-[hsl(var(--foreground))] text-[hsl(var(--background))] hover:scale-105"

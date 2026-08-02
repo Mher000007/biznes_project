@@ -93,7 +93,7 @@ export default function SupportChatPage() {
           ) : messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-[hsl(var(--muted-foreground))] opacity-60">
               <HeadphonesIcon className="h-12 w-12 mb-4" />
-              <p>No messages yet. Send a message to start the conversation.</p>
+              <p>{(t.dashboard.supportPage as any).noMessagesYet || "No messages yet. Send a message to start the conversation."}</p>
             </div>
           ) : (
             messages.map((msg: any) => {
@@ -131,7 +131,7 @@ export default function SupportChatPage() {
           <form onSubmit={handleSendMessage} className="flex items-center gap-3">
             <input
               type="text"
-              placeholder="Type your message..."
+              placeholder={(t.dashboard.supportPage as any).typeYourMessage || "Type your message..."}
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               disabled={isSending}
@@ -143,7 +143,7 @@ export default function SupportChatPage() {
               className="h-12 px-6 bg-[hsl(var(--primary))] text-white rounded-xl font-medium text-sm flex items-center gap-2 hover:opacity-90 disabled:opacity-50 transition-all cursor-pointer"
             >
               {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              Send
+              {(t.dashboard.supportPage as any).send || "Send"}
             </button>
           </form>
         </div>

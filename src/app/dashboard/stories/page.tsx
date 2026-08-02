@@ -369,7 +369,7 @@ export default function DashboardStoriesPage() {
               <textarea
                 value={caption}
                 onChange={(e) => setCaption(e.target.value)}
-                placeholder="Write caption or special offer details..."
+                placeholder={(t.stories as any).writeCaptionPlaceholder || "Write caption or special offer details..."}
                 rows={2}
                 maxLength={150}
                 className="w-full text-xs rounded-xl bg-[hsl(var(--input))] p-3 outline-none focus:bg-[hsl(var(--card))] border-0 text-[hsl(var(--foreground))]"

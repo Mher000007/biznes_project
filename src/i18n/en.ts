@@ -118,6 +118,9 @@ export const en = {
     backToSignIn: "Back to Sign in",
     newPasswordLabel: "New Password",
     confirmNewPasswordLabel: "Confirm New Password",
+    enterCredentials: "Enter your credentials",
+    inviteCodeOptional: "Invite Code (Optional)",
+    inviteCodePlaceholder: "e.g. USER100 or username",
   },
   // Dashboard
   dashboard: {
@@ -156,6 +159,7 @@ export const en = {
       myLocations: "My Locations",
       manageBranches: "Manage your business branches and addresses.",
       addBranch: "Add Branch",
+      primary: "Primary",
     },
     inquiriesPage: {
       title: "Inquiries",
@@ -188,10 +192,16 @@ export const en = {
       quantityPlaceholder: "e.g. 100",
       activeVisible: "Active (visible to users)",
       saveChanges: "Save Changes",
+      noOffersYet: "No Offers Yet",
+      noOffersSubtitle: "Create your first exchange offer to allow users to spend their Findy Coins at your business.",
+      createFirstOffer: "Create First Offer",
     },
     supportPage: {
       title: "Live Support",
-      subtitle: "Direct communication with the administration team.",
+      subtitle: "Direct messaging with administration team.",
+      noMessagesYet: "No messages yet. Send a message to start the conversation.",
+      typeYourMessage: "Type your message...",
+      send: "Send",
     },
     nav: {
       overview: "Overview",
@@ -519,6 +529,7 @@ export const en = {
     newStory: "New Story",
     noActive: "No active stories right now. Use the form to publish one.",
     caption: "Caption (Optional)",
+    writeCaptionPlaceholder: "Write caption or special offer details...",
     publish: "Publish Story",
     publishing: "Publishing...",
     deleteConfirm: "Are you sure you want to delete this story? It will be removed permanently.",

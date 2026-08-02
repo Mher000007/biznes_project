@@ -261,7 +261,7 @@ export default function SignUpPage() {
               value={inviteCode}
               onChange={(e) => setInviteCode(e.target.value)}
               type="text"
-              placeholder="e.g. MHER100 or username"
+              placeholder={t.auth.inviteCodePlaceholder}
               className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-sm outline-none transition-colors focus:border-emerald-500 font-mono uppercase"
             />
           </div>
