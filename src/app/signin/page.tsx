@@ -146,7 +146,7 @@ export default function SignInPage() {
         {mode === "login" ? (
           <>
             <div className="text-center mb-6">
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-1.5">{t.auth.welcomeBack}</h1>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight mb-1.5 break-words max-w-full leading-tight">{t.auth.welcomeBack}</h1>
               <p className="text-sm text-[hsl(var(--muted-foreground))]">{(t.auth as any).enterCredentials}</p>
             </div>
 
@@ -250,7 +250,7 @@ export default function SignInPage() {
         ) : (
           <>
             <div className="text-center mb-5 break-words">
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight mb-1">{t.auth.createAccount}</h1>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight mb-1 break-words max-w-full leading-tight">{t.auth.createAccount}</h1>
               <p className="text-xs sm:text-sm text-[hsl(var(--muted-foreground))] leading-relaxed">{(t.auth as any).personalSetup || "Enter your details to get started"}</p>
             </div>
 
