@@ -144,10 +144,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               <Link
                 href="/signin"
                 onClick={() => hideToast()}
-                className="px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white text-xs font-bold rounded-xl transition-all duration-200 shadow-md shadow-emerald-500/25 hover:shadow-lg hover:shadow-emerald-500/35 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                className="px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 active:scale-95 !text-white text-white text-xs font-bold rounded-xl transition-all duration-200 shadow-md shadow-emerald-500/25 hover:shadow-lg hover:shadow-emerald-500/35 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
               >
-                <LogIn className="w-3.5 h-3.5" />
-                <span>
+                <LogIn className="w-3.5 h-3.5 !text-white text-white shrink-0" />
+                <span className="!text-white text-white">
                   {(t as any).auth?.signInOrRegister || (
                     locale === "hy"
                       ? "Մուտք / Գրանցում"
