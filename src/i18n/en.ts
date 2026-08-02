@@ -106,6 +106,18 @@ export const en = {
     rememberMe: "Remember me",
     authRequired: "To access this feature, please sign in or register an account",
     signInOrRegister: "Sign In / Register",
+    forgotPasswordTitle: "Forgot your password?",
+    forgotPasswordSubtitle: "Enter your email address and we'll send you a link to reset your password.",
+    sendResetLink: "Send reset link",
+    sendingResetLink: "Sending link...",
+    rememberedPassword: "Remembered your password?",
+    setNewPasswordTitle: "Set a new password",
+    setNewPasswordSubtitle: "Enter your new password below to update your account.",
+    resetPasswordBtn: "Reset password",
+    resettingPasswordBtn: "Updating password...",
+    backToSignIn: "Back to Sign in",
+    newPasswordLabel: "New Password",
+    confirmNewPasswordLabel: "Confirm New Password",
   },
   // Dashboard
   dashboard: {

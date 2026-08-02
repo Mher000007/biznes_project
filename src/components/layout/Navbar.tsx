@@ -476,7 +476,7 @@ export default function Navbar() {
 
             {/* Live Search Suggestions Dropdown */}
             {isSuggestionsOpen && (
-              <div className="absolute top-[calc(100%+8px)] left-0 w-[310px] sm:w-[380px] bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl shadow-2xl overflow-hidden z-[999] animate-in fade-in zoom-in-95 duration-150 max-h-[380px] overflow-y-auto custom-scrollbar">
+              <div className="absolute top-[calc(100%+8px)] left-0 w-full min-w-[280px] sm:min-w-[320px] bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl shadow-2xl overflow-hidden z-[999] animate-in fade-in zoom-in-95 duration-150 max-h-[380px] overflow-y-auto custom-scrollbar">
                 {loadingSuggestions ? (
                   <div className="p-4 text-xs text-center text-[hsl(var(--muted-foreground))] flex items-center justify-center gap-2">
                     <span className="h-3.5 w-3.5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
@@ -561,7 +561,7 @@ export default function Navbar() {
               </div>
             )}
           </div>
-          <div className={styles.divider}></div>
+          {/* <div className={styles.divider}></div>
           <div className={styles.inputWrapper}>
             <MapPin className={styles.inputIcon} />
             <LocationSelect
@@ -571,7 +571,7 @@ export default function Navbar() {
               placeholder={t.nav.allLocations}
               disablePlaceholder={false}
             />
-          </div>
+          </div> */}
         </div>
         <button type="submit" className={styles.searchButton}>
           {t.nav?.searchButton || "Search"}

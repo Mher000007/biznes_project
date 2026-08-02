@@ -322,12 +322,13 @@ export default function DashboardLocations() {
                     <LocationPicker
                       lat={formData.coordinates.latitude}
                       lng={formData.coordinates.longitude}
-                      onLocationChange={(lat, lng, addr) => {
-                        setFormData({
-                          ...formData,
+                      onLocationChange={(lat, lng, addr, extractedCity) => {
+                        setFormData((prev) => ({
+                          ...prev,
                           coordinates: { latitude: lat, longitude: lng },
-                          address: formData.address || addr
-                        });
+                          address: addr ? addr.split(',').slice(0, 2).join(',').trim() : prev.address,
+                          ...(extractedCity ? { city: extractedCity } : {})
+                        }));
                       }}
                       height="100%"
                     />

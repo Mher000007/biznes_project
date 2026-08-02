@@ -4,9 +4,12 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import api from "@/lib/api";
 
+import { useI18n } from "@/i18n";
+
 function ResetPasswordForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { t } = useI18n();
   const token = searchParams.get("token") || "";
 
   const [password, setPassword] = useState("");
@@ -14,6 +17,8 @@ function ResetPasswordForm() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const authT = (t as any).auth || {};
 
   useEffect(() => {
     if (!token) {
@@ -62,9 +67,11 @@ function ResetPasswordForm() {
   return (
     <div className="w-full max-w-sm">
       <div className="mb-8">
-        <h1 className="text-xl font-bold tracking-tight mb-1">Set a new password</h1>
+        <h1 className="text-xl font-bold tracking-tight mb-1">
+          {authT.setNewPasswordTitle || "Set a new password"}
+        </h1>
         <p className="text-sm text-[hsl(var(--muted-foreground))]">
-          Enter your new password below to update your account.
+          {authT.setNewPasswordSubtitle || "Enter your new password below to update your account."}
         </p>
       </div>
 
@@ -80,7 +87,9 @@ function ResetPasswordForm() {
           </div>
         )}
         <div>
-          <label className="block text-sm font-medium mb-1">New Password</label>
+          <label className="block text-sm font-medium mb-1">
+            {authT.newPasswordLabel || "New Password"}
+          </label>
           <input
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -92,7 +101,9 @@ function ResetPasswordForm() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Confirm New Password</label>
+          <label className="block text-sm font-medium mb-1">
+            {authT.confirmNewPasswordLabel || "Confirm New Password"}
+          </label>
           <input
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
@@ -108,12 +119,14 @@ function ResetPasswordForm() {
           disabled={loading || !token || success}
           className="w-full h-10 rounded-lg text-sm font-medium btn-primary mt-1 disabled:opacity-50"
         >
-          {loading ? "Updating password..." : "Reset password"}
+          {loading ? (authT.resettingPasswordBtn || "Updating password...") : (authT.resetPasswordBtn || "Reset password")}
         </button>
       </form>
 
       <p className="mt-6 text-center text-sm text-[hsl(var(--muted-foreground))]">
-        Back to <Link href="/signin" className="font-medium text-[hsl(var(--foreground))] hover:underline">Sign in</Link>
+        <Link href="/signin" className="font-medium text-[hsl(var(--foreground))] hover:underline">
+          {authT.backToSignIn || "Back to Sign in"}
+        </Link>
       </p>
     </div>
   );

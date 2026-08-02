@@ -5,11 +5,13 @@ import api from "@/lib/api";
 import { useI18n } from "@/i18n";
 
 export default function ForgotPasswordPage() {
-  const { locale } = useI18n();
+  const { t, locale } = useI18n();
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const authT = (t as any).auth || {};
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,9 +37,11 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen flex items-center justify-center px-5 py-20">
       <div className="w-full max-w-sm">
         <div className="mb-8">
-          <h1 className="text-xl font-bold tracking-tight mb-1">Forgot your password?</h1>
+          <h1 className="text-xl font-bold tracking-tight mb-1">
+            {authT.forgotPasswordTitle || "Forgot your password?"}
+          </h1>
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            Enter your email address and we'll send you a link to reset your password.
+            {authT.forgotPasswordSubtitle || "Enter your email address and we'll send you a link to reset your password."}
           </p>
         </div>
 
@@ -53,7 +57,7 @@ export default function ForgotPasswordPage() {
             </div>
           )}
           <div>
-            <label className="block text-sm font-medium mb-1">Email address</label>
+            <label className="block text-sm font-medium mb-1">{authT.email || "Email address"}</label>
             <input
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -68,12 +72,15 @@ export default function ForgotPasswordPage() {
             disabled={loading}
             className="w-full h-10 rounded-lg text-sm font-medium btn-primary mt-1 disabled:opacity-50"
           >
-            {loading ? "Sending link..." : "Send reset link"}
+            {loading ? (authT.sendingResetLink || "Sending link...") : (authT.sendResetLink || "Send reset link")}
           </button>
         </form>
 
         <p className="mt-6 text-center text-sm text-[hsl(var(--muted-foreground))]">
-          Remembered your password? <Link href="/signin" className="font-medium text-[hsl(var(--foreground))] hover:underline">Log in</Link>
+          {authT.rememberedPassword || "Remembered your password?"}{" "}
+          <Link href="/signin" className="font-medium text-[hsl(var(--foreground))] hover:underline">
+            {authT.login || "Log in"}
+          </Link>
         </p>
       </div>
     </div>

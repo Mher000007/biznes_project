@@ -99,9 +99,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
               setActivePlan(subRes.data.data.plan);
               return;
             }
-          } catch {}
+          } catch { }
         }
-      } catch {}
+      } catch { }
 
       if (typeof window !== "undefined") {
         const profilesStr = window.localStorage.getItem("armbiz-business-profiles");
@@ -112,7 +112,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             if (myProfile && myProfile.plan) {
               setActivePlan(myProfile.plan);
             }
-          } catch (e) {}
+          } catch (e) { }
         }
       }
     }
@@ -192,123 +192,120 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     <div className="pt-16 min-h-screen flex flex-col">
       <UnverifiedBanner />
       <div className="flex flex-1">
-      <style jsx global>{`
+        <style jsx global>{`
         @keyframes planLockShake {
           0%, 100% { transform: translateX(0); }
           20%, 60% { transform: translateX(-4px); }
           40%, 80% { transform: translateX(4px); }
         }
       `}</style>
-      {/* Sidebar */}
-      <aside className="hidden lg:flex fixed top-14 left-0 bottom-0 w-64 flex-col border-r border-[hsl(var(--border))] bg-[hsl(var(--card))] z-40">
-        <div className="flex flex-col flex-1 p-4 gap-1 pt-6">
-          <p className="px-3 mb-3 text-xs font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Dashboard</p>
-          {links.map((link) => {
-            const isLocked = isStarterPlan && link.isPro;
-            const isShaking = shakingHrefs.includes(link.href);
+        {/* Sidebar */}
+        <aside className="hidden lg:flex fixed top-14 left-0 bottom-0 w-64 flex-col border-r border-[hsl(var(--border))] bg-[hsl(var(--card))] z-40">
+          <div className="flex flex-col flex-1 p-4 gap-1 pt-6">
+            <p className="px-3 mb-3 text-xs font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Dashboard</p>
+            {links.map((link) => {
+              const isLocked = isStarterPlan && link.isPro;
+              const isShaking = shakingHrefs.includes(link.href);
 
-            if (link.href === "/dashboard/profile") {
-              const isProfileActive = pathname.startsWith("/dashboard/profile");
+              if (link.href === "/dashboard/profile") {
+                const isProfileActive = pathname.startsWith("/dashboard/profile");
+                return (
+                  <div key={link.href} className="flex flex-col gap-1">
+                    <button
+                      onClick={() => setProfileExpanded(!profileExpanded)}
+                      className={`flex items-center justify-between w-full rounded-lg px-3 py-2.5 text-sm font-medium transition-colors cursor-pointer text-left ${isProfileActive
+                          ? "bg-[hsl(var(--primary))]/5 text-[hsl(var(--primary))]"
+                          : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
+                        }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <link.icon className="h-4 w-4" />
+                        {link.label}
+                      </div>
+                      {profileExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                    </button>
+
+                    {profileExpanded && (
+                      <div className="pl-6 flex flex-col gap-1 border-l border-[hsl(var(--border))]/60 ml-5 mt-1">
+                        {profileSubLinks.map((sub) => {
+                          const active = isSubActive(sub.href);
+                          const isSubLocked = isStarterPlan && sub.isPro;
+                          const isSubShaking = shakingHrefs.includes(sub.href);
+
+                          return (
+                            <Link
+                              key={sub.href}
+                              href={sub.href}
+                              onClick={(e) => isSubLocked && handleLockedClick(e, sub.href)}
+                              style={isSubShaking ? { animation: "planLockShake 0.4s ease-in-out" } : undefined}
+                              title={isSubLocked ? "Pro & Premium feature — Locked on Starter Plan" : undefined}
+                              className={`flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${isSubLocked
+                                  ? "text-[hsl(var(--muted-foreground))]/70 hover:bg-amber-500/10 cursor-pointer"
+                                  : active
+                                    ? "text-[hsl(var(--primary))] font-semibold bg-[hsl(var(--primary))]/5"
+                                    : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]/50 hover:text-[hsl(var(--foreground))]"
+                                }`}
+                            >
+                              <div className="flex items-center gap-2 truncate">
+                                <sub.icon className="h-3 w-3 shrink-0" />
+                                <span className="truncate">{sub.label}</span>
+                              </div>
+                              {isSubLocked && <Lock className="h-3 w-3 text-amber-500 shrink-0" />}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              const isActive = pathname === link.href;
               return (
-                <div key={link.href} className="flex flex-col gap-1">
-                  <button
-                    onClick={() => setProfileExpanded(!profileExpanded)}
-                    className={`flex items-center justify-between w-full rounded-lg px-3 py-2.5 text-sm font-medium transition-colors cursor-pointer text-left ${
-                      isProfileActive
-                        ? "bg-[hsl(var(--primary))]/5 text-[hsl(var(--primary))]"
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={(e) => isLocked && handleLockedClick(e, link.href)}
+                  style={isShaking ? { animation: "planLockShake 0.4s ease-in-out" } : undefined}
+                  title={isLocked ? "Pro & Premium feature — Locked on Starter Plan" : undefined}
+                  className={`flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${isLocked
+                      ? "text-[hsl(var(--muted-foreground))]/70 hover:bg-amber-500/10 cursor-pointer"
+                      : isActive
+                        ? "bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))]"
                         : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
                     }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <link.icon className="h-4 w-4" />
-                      {link.label}
-                    </div>
-                    {profileExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-                  </button>
-
-                  {profileExpanded && (
-                    <div className="pl-6 flex flex-col gap-1 border-l border-[hsl(var(--border))]/60 ml-5 mt-1">
-                      {profileSubLinks.map((sub) => {
-                        const active = isSubActive(sub.href);
-                        const isSubLocked = isStarterPlan && sub.isPro;
-                        const isSubShaking = shakingHrefs.includes(sub.href);
-
-                        return (
-                          <Link
-                            key={sub.href}
-                            href={sub.href}
-                            onClick={(e) => isSubLocked && handleLockedClick(e, sub.href)}
-                            style={isSubShaking ? { animation: "planLockShake 0.4s ease-in-out" } : undefined}
-                            title={isSubLocked ? "Pro & Premium feature — Locked on Starter Plan" : undefined}
-                            className={`flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-                              isSubLocked
-                                ? "text-[hsl(var(--muted-foreground))]/70 hover:bg-amber-500/10 cursor-pointer"
-                                : active
-                                  ? "text-[hsl(var(--primary))] font-semibold bg-[hsl(var(--primary))]/5"
-                                  : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]/50 hover:text-[hsl(var(--foreground))]"
-                            }`}
-                          >
-                            <div className="flex items-center gap-2 truncate">
-                              <sub.icon className="h-3 w-3 shrink-0" />
-                              <span className="truncate">{sub.label}</span>
-                            </div>
-                            {isSubLocked && <Lock className="h-3 w-3 text-amber-500 shrink-0" />}
-                          </Link>
-                        );
-                      })}
-                    </div>
+                >
+                  <div className="flex items-center gap-3">
+                    <link.icon className="h-4 w-4" />
+                    {link.label}
+                  </div>
+                  {isLocked ? (
+                    <Lock className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                  ) : (
+                    link.href === "/dashboard/inquiries" && unreadCount > 0 && (
+                      <div className="flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold shadow-sm">
+                        {unreadCount}
+                      </div>
+                    )
                   )}
-                </div>
+                </Link>
               );
-            }
+            })}
+          </div>
+          <div className="p-4 border-t border-[hsl(var(--border))]">
+            <button
+              onClick={handleSignOut}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[hsl(var(--muted-foreground))] transition-colors hover:bg-[hsl(var(--muted))] hover:text-red-500 cursor-pointer"
+            >
+              <LogOut className="h-4 w-4" /> Sign Out
+            </button>
+          </div>
+        </aside>
 
-            const isActive = pathname === link.href;
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={(e) => isLocked && handleLockedClick(e, link.href)}
-                style={isShaking ? { animation: "planLockShake 0.4s ease-in-out" } : undefined}
-                title={isLocked ? "Pro & Premium feature — Locked on Starter Plan" : undefined}
-                className={`flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                  isLocked
-                    ? "text-[hsl(var(--muted-foreground))]/70 hover:bg-amber-500/10 cursor-pointer"
-                    : isActive
-                      ? "bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))]"
-                      : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <link.icon className="h-4 w-4" />
-                  {link.label}
-                </div>
-                {isLocked ? (
-                  <Lock className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                ) : (
-                  link.href === "/dashboard/inquiries" && unreadCount > 0 && (
-                    <div className="flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold shadow-sm">
-                      {unreadCount}
-                    </div>
-                  )
-                )}
-              </Link>
-            );
-          })}
+        {/* Content */}
+        <div className="flex-1 min-w-0 p-6 lg:p-8 lg:ml-64">
+          {children}
         </div>
-        <div className="p-4 border-t border-[hsl(var(--border))]">
-          <button
-            onClick={handleSignOut}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[hsl(var(--muted-foreground))] transition-colors hover:bg-[hsl(var(--muted))] hover:text-red-500 cursor-pointer"
-          >
-            <LogOut className="h-4 w-4" /> Sign Out
-          </button>
-        </div>
-      </aside>
-
-      {/* Content */}
-      <div className="flex-1 min-w-0 p-6 lg:p-8 lg:ml-64">
-        {children}
-      </div>
       </div>
     </div>
   );

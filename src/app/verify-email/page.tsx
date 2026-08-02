@@ -47,14 +47,14 @@ function VerifyEmailInner() {
   }, [token, router]);
 
   return (
-    <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 text-center shadow-xl space-y-6">
+    <div className="w-full max-w-md bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl p-8 text-center shadow-xl space-y-6 transition-colors duration-200">
       {status === "loading" && (
         <div className="flex flex-col items-center justify-center space-y-3 py-6">
-          <Loader2 className="h-10 w-10 text-blue-500 animate-spin" />
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
+          <Loader2 className="h-10 w-10 text-emerald-600 dark:text-emerald-400 animate-spin" />
+          <h2 className="text-lg font-semibold text-[hsl(var(--foreground))]">
             Verifying your email address...
           </h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <p className="text-sm text-[hsl(var(--muted-foreground))]">
             Please wait a moment while we validate your link.
           </p>
         </div>
@@ -63,16 +63,16 @@ function VerifyEmailInner() {
       {status === "success" && (
         <div className="flex flex-col items-center justify-center space-y-3 py-4">
           <CheckCircle2 className="h-12 w-12 text-emerald-500" />
-          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">
+          <h2 className="text-xl font-bold text-[hsl(var(--foreground))]">
             Email Verified!
           </h2>
-          <p className="text-sm text-slate-600 dark:text-slate-300">
+          <p className="text-sm text-[hsl(var(--muted-foreground))]">
             {message}
           </p>
           <div className="pt-4">
             <Link
               href="/profile"
-              className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm px-5 py-2.5 rounded-xl transition-colors"
+              className="inline-block bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm px-5 py-2.5 rounded-xl transition-colors"
             >
               Go to Profile
             </Link>
@@ -83,7 +83,7 @@ function VerifyEmailInner() {
       {status === "error" && (
         <div className="flex flex-col items-center justify-center space-y-3 py-4">
           <AlertCircle className="h-12 w-12 text-red-500" />
-          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">
+          <h2 className="text-xl font-bold text-[hsl(var(--foreground))]">
             Verification Failed
           </h2>
           <p className="text-sm text-red-600 dark:text-red-400">
@@ -92,7 +92,7 @@ function VerifyEmailInner() {
           <div className="pt-4">
             <Link
               href="/signin"
-              className="inline-block bg-slate-800 hover:bg-slate-700 text-white font-medium text-sm px-5 py-2.5 rounded-xl transition-colors"
+              className="inline-block bg-[hsl(var(--foreground))] text-[hsl(var(--background))] hover:opacity-90 font-medium text-sm px-5 py-2.5 rounded-xl transition-colors"
             >
               Return to Sign In
             </Link>
@@ -105,8 +105,8 @@ function VerifyEmailInner() {
 
 export default function VerifyEmailPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center px-5 py-20 bg-slate-50 dark:bg-slate-950">
-      <Suspense fallback={<div className="text-sm text-slate-500">Loading...</div>}>
+    <div className="min-h-screen flex items-center justify-center px-5 py-20 bg-[hsl(var(--background))] text-[hsl(var(--foreground))] transition-colors duration-200">
+      <Suspense fallback={<div className="text-sm text-[hsl(var(--muted-foreground))]">Loading...</div>}>
         <VerifyEmailInner />
       </Suspense>
     </div>

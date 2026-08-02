@@ -3,10 +3,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { MapPin, Search, Loader2, X } from "lucide-react";
 import LeafletMap from "@/components/map/LeafletMap";
 
+import { ARMENIA_LOCATIONS } from "@/data/locations";
+import { transliterateArmenian } from "@/lib/transliterate";
+
 interface LocationPickerProps {
   lat?: number;
   lng?: number;
-  onLocationChange?: (lat: number, lng: number, address: string) => void;
+  onLocationChange?: (lat: number, lng: number, address: string, city?: string) => void;
   readonly?: boolean;
   height?: string;
 }
@@ -16,6 +19,81 @@ interface NominatimResult {
   display_name: string;
   lat: string;
   lon: string;
+  address?: Record<string, string>;
+}
+
+function matchArmeniaLocation(queryStr: string): string | null {
+  if (!queryStr) return null;
+  const clean = queryStr.trim().toLowerCase();
+  if (clean === "armenia" || clean === "հայաստան") return null;
+
+  for (const reg of ARMENIA_LOCATIONS) {
+    const regArm = reg.name.toLowerCase();
+    const regEn = transliterateArmenian(reg.name, "en").toLowerCase();
+    const regRu = transliterateArmenian(reg.name, "ru").toLowerCase();
+    if (clean === regArm || clean === regEn || clean === regRu) return reg.name;
+
+    for (const comm of reg.communities || []) {
+      const commArm = comm.name.toLowerCase();
+      const commEn = transliterateArmenian(comm.name, "en").toLowerCase();
+      const commRu = transliterateArmenian(comm.name, "ru").toLowerCase();
+      if (clean === commArm || clean === commEn || clean === commRu) return comm.name;
+
+      for (const dist of comm.districts || []) {
+        const distArm = dist.toLowerCase();
+        const distEn = transliterateArmenian(dist, "en").toLowerCase();
+        const distRu = transliterateArmenian(dist, "ru").toLowerCase();
+        if (clean === distArm || clean === distEn || clean === distRu) {
+          return `${dist} (${reg.name})`;
+        }
+      }
+
+      for (const vil of comm.villages || []) {
+        const vilArm = vil.toLowerCase();
+        const vilEn = transliterateArmenian(vil, "en").toLowerCase();
+        const vilRu = transliterateArmenian(vil, "ru").toLowerCase();
+        if (clean === vilArm || clean === vilEn || clean === vilRu) return vil;
+      }
+    }
+  }
+  return null;
+}
+
+function parseCityFromNominatim(data: any): string {
+  if (!data) return "";
+  const addr = data.address || {};
+
+  const candidates = [
+    addr.city,
+    addr.town,
+    addr.village,
+    addr.municipality,
+    addr.suburb,
+    addr.district,
+    addr.county,
+    addr.state,
+  ].filter(Boolean);
+
+  for (const c of candidates) {
+    if (typeof c === "string" && c.trim()) {
+      const matched = matchArmeniaLocation(c);
+      if (matched) return matched;
+    }
+  }
+
+  if (data.display_name && typeof data.display_name === "string") {
+    const parts = data.display_name.split(",").map((p: string) => p.trim());
+    for (const part of parts) {
+      if (part && part.toLowerCase() !== "armenia" && !/^\d+$/.test(part)) {
+        const matched = matchArmeniaLocation(part);
+        if (matched) return matched;
+      }
+    }
+    if (candidates.length > 0) return candidates[0];
+    if (parts.length > 0) return parts[0];
+  }
+
+  return "";
 }
 
 export default function LocationPicker({
@@ -43,8 +121,9 @@ export default function LocationPicker({
       );
       const data = await res.json();
       if (data.display_name) {
+        const extractedCity = parseCityFromNominatim(data);
         setAddress(data.display_name);
-        onLocationChange?.(rlat, rlng, data.display_name);
+        onLocationChange?.(rlat, rlng, data.display_name, extractedCity);
       }
     } catch {
       setAddress(`${rlat.toFixed(5)}, ${rlng.toFixed(5)}`);
@@ -79,7 +158,8 @@ export default function LocationPicker({
     setAddress(result.display_name);
     setSearchQuery("");
     setSuggestions([]);
-    onLocationChange?.(newLat, newLng, result.display_name);
+    const extractedCity = parseCityFromNominatim(result);
+    onLocationChange?.(newLat, newLng, result.display_name, extractedCity);
   };
 
   const handleMapAction = (newLat: number, newLng: number) => {

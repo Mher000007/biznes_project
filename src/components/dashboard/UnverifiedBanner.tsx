@@ -112,8 +112,8 @@ export default function UnverifiedBanner() {
               {loading
                 ? t.sending
                 : cooldown > 0
-                ? `${t.btn} (${cooldown}${unit})`
-                : t.btn}
+                  ? `${t.btn} (${cooldown}${unit})`
+                  : t.btn}
             </button>
           )}
 

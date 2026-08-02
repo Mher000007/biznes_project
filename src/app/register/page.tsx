@@ -452,10 +452,13 @@ export default function RegisterPage() {
               <LocationPicker
                 lat={lat}
                 lng={lng}
-                onLocationChange={(newLat, newLng, addr) => {
+                onLocationChange={(newLat, newLng, addr, extractedCity) => {
                   setLat(newLat);
                   setLng(newLng);
                   setAddress(addr.split(',').slice(0, 2).join(',').trim());
+                  if (extractedCity) {
+                    setCity(extractedCity);
+                  }
                 }}
               />
             </div>
