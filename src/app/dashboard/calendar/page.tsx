@@ -2,8 +2,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, Plus, Loader2, X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { getApiUrl } from "@/lib/utils";
-import axios from "axios";
+import api from "@/lib/api";
 
 interface DailySummary {
   _id?: string;
@@ -48,9 +47,20 @@ export default function CalendarPage() {
   // Load business & summaries
   useEffect(() => {
     async function loadData() {
-      const bId = (currentUser as any)?.businessId || (currentUser as any)?.business?._id;
-      const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
-      if (!bId || !token) {
+      if (!currentUser) {
+        setLoading(false);
+        return;
+      }
+      
+      let bId = (currentUser as any)?.businessId || (currentUser as any)?.business?._id;
+      if (!bId) {
+        try {
+          const bizRes = await api.get("/businesses/me/all");
+          bId = bizRes.data?.data?.[0]?._id;
+        } catch {}
+      }
+
+      if (!bId) {
         setLoading(false);
         return;
       }
@@ -59,24 +69,20 @@ export default function CalendarPage() {
       try {
         setLoading(true);
         // 1. Fetch business to get createdAt
-        const bizRes = await axios.get(`${getApiUrl()}/businesses/${bId}`);
+        const bizRes = await api.get(`/businesses/${bId}`);
         if (bizRes.data?.success) {
           setBusinessCreatedAt(new Date(bizRes.data.data.createdAt));
         }
 
         // 2. Fetch summaries for current month
         const monthStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
-        const sumRes = await axios.get(`${getApiUrl()}/businesses/${bId}/calendar?month=${monthStr}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const sumRes = await api.get(`/businesses/${bId}/calendar?month=${monthStr}`);
         if (sumRes.data?.success) {
           setSummaries(sumRes.data.data || []);
         }
 
         // 3. Fetch inquiries
-        const inqRes = await axios.get(`${getApiUrl()}/inquiries/business/${bId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const inqRes = await api.get(`/inquiries/business/${bId}`);
         if (inqRes.data?.success) {
           setInquiries(inqRes.data.data || []);
         }
@@ -166,12 +172,10 @@ export default function CalendarPage() {
 
     try {
       setSaving(true);
-      const res = await axios.post(`${getApiUrl()}/businesses/${businessId}/calendar/${dStr}`, {
+      const res = await api.post(`/businesses/${businessId}/calendar/${dStr}`, {
         summary: modalSummary,
         isClosed: modalIsClosed,
         stats: parsedStats
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
 
       if (res.data?.success) {

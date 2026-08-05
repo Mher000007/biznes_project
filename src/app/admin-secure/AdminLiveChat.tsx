@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import axios from "axios";
-import { getApiUrl } from "@/lib/utils";
+import api from "@/lib/api";
 import { HeadphonesIcon, Send, Loader2, UserCircle2 } from "lucide-react";
 
 const C = {
@@ -25,10 +24,7 @@ export default function AdminLiveChat() {
 
   const fetchConversations = async () => {
     try {
-      const token = typeof window !== "undefined" ? window.localStorage.getItem("admin-token") : null;
-      const res = await axios.get(`${getApiUrl()}/chat/conversations`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.get("/chat/conversations");
       if (res.data?.success) {
         setConversations(res.data.data);
       }
@@ -41,10 +37,7 @@ export default function AdminLiveChat() {
 
   const fetchMessages = async (convId: string) => {
     try {
-      const token = typeof window !== "undefined" ? window.localStorage.getItem("admin-token") : null;
-      const res = await axios.get(`${getApiUrl()}/chat/${convId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.get(`/chat/${convId}`);
       if (res.data?.success) {
         setMessages(res.data.data);
       }
@@ -77,14 +70,11 @@ export default function AdminLiveChat() {
     e.preventDefault();
     if (!newMessage.trim() || !selectedConv || isSending) return;
 
-    const token = typeof window !== "undefined" ? window.localStorage.getItem("admin-token") : null;
     setIsSending(true);
     try {
-      const res = await axios.post(`${getApiUrl()}/chat`, {
+      const res = await api.post("/chat", {
         message: newMessage,
         conversationId: selectedConv
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
 
       if (res.data?.success) {

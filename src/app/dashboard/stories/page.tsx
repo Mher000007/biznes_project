@@ -1,13 +1,10 @@
 "use client";
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import axios from "axios";
-import { getApiUrl } from "@/lib/utils";
+import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { useI18n } from "@/i18n";
 import Link from "next/link";
 import { Sparkles, Trash2, Eye, Calendar, Upload, Link as LinkIcon, AlertCircle, CheckCircle, Lock, Clock, ChevronDown, Check } from "lucide-react";
-
-const API = getApiUrl();
 
 interface Story {
   _id: string;
@@ -45,19 +42,12 @@ export default function DashboardStoriesPage() {
   const [duration, setDuration] = useState<number>(24);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const authHeader = useCallback(() => {
-    const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  }, []);
-
   const loadData = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const h = { headers: authHeader() };
-      
       // 1. Fetch user's business
-      const bizRes = await axios.get(`${API}/businesses/me/all`, h);
+      const bizRes = await api.get("/businesses/me/all");
       const biz = bizRes.data?.data?.[0]; // Get first business
       
       if (!biz) {
@@ -75,7 +65,7 @@ export default function DashboardStoriesPage() {
 
       // Fetch subscription plan
       try {
-        const subRes = await axios.get(`${API}/subscriptions/business/${biz._id}`, h);
+        const subRes = await api.get(`/subscriptions/business/${biz._id}`);
         if (subRes.data?.data) {
           setActivePlan(subRes.data.data.plan);
         }
@@ -84,7 +74,7 @@ export default function DashboardStoriesPage() {
       }
 
       // 2. Fetch business stories history
-      const storiesRes = await axios.get(`${API}/stories/my-business`, h);
+      const storiesRes = await api.get("/stories/my-business");
       if (storiesRes.data?.success) {
         const allStories: Story[] = storiesRes.data.data;
         const now = new Date();
@@ -102,7 +92,7 @@ export default function DashboardStoriesPage() {
     } finally {
       setLoading(false);
     }
-  }, [authHeader]);
+  }, []);
 
   useEffect(() => {
     loadData();
@@ -144,10 +134,9 @@ export default function DashboardStoriesPage() {
     setSuccess("");
 
     try {
-      const res = await axios.post(
-        `${API}/stories`,
-        { mediaUrl, mediaType, caption, duration },
-        { headers: authHeader() }
+      const res = await api.post(
+        "/stories",
+        { mediaUrl, mediaType, caption, duration }
       );
 
       if (res.data?.success) {
@@ -169,7 +158,7 @@ export default function DashboardStoriesPage() {
     if (!confirm(t.stories.deleteConfirm)) return;
     
     try {
-      await axios.delete(`${API}/stories/${id}`, { headers: authHeader() });
+      await api.delete(`/stories/${id}`);
       setSuccess(t.stories.successDelete);
       loadData();
     } catch (err) {

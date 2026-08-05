@@ -1,12 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
 import { MessageSquare, Star } from "lucide-react";
-import axios from "axios";
-import { getApiUrl } from "@/lib/utils";
+import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { useI18n } from "@/i18n";
-
-const API = getApiUrl();
 
 interface DashboardInquiry {
   id: string | number;
@@ -24,11 +21,6 @@ interface DashboardInquiry {
   createdAt?: string;
   reportedReason?: string;
   adminReply?: string;
-}
-
-function authHeader() {
-  const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
-  return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 export default function InquiriesPage() {
@@ -66,10 +58,9 @@ export default function InquiriesPage() {
     setIsSubmittingReport(true);
     setReportError("");
     try {
-      const res = await axios.post(
-        `${API}/businesses/${businessId}/reviews/${activeReportReviewId}/report`,
-        { reportedReason: reportReason.trim() },
-        { headers: authHeader() }
+      const res = await api.post(
+        `/businesses/${businessId}/reviews/${activeReportReviewId}/report`,
+        { reportedReason: reportReason.trim() }
       );
       if (res.data?.success) {
         setInquiries((prev) =>
@@ -90,7 +81,7 @@ export default function InquiriesPage() {
 
   const handleUpdateStatus = async (bookingId: string | number, newStatus: "confirmed" | "cancelled") => {
     try {
-      await axios.put(`${API}/bookings/${bookingId}/status`, { status: newStatus }, { headers: authHeader() });
+      await api.put(`/bookings/${bookingId}/status`, { status: newStatus });
     } catch (e) {
       console.error("Error updating booking status", e);
     }
@@ -119,7 +110,7 @@ export default function InquiriesPage() {
   const handleDeleteBooking = async (bookingId: string | number) => {
     if (!confirm("Are you sure you want to delete this booking request?")) return;
     try {
-      await axios.delete(`${API}/bookings/${bookingId}`, { headers: authHeader() });
+      await api.delete(`/bookings/${bookingId}`);
     } catch (e) {
       console.error("Error deleting booking", e);
     }
@@ -128,7 +119,7 @@ export default function InquiriesPage() {
 
   const handleMarkAsRead = async (notifId: string) => {
     try {
-      await axios.put(`${API}/notifications/${notifId}/read`, {}, { headers: authHeader() });
+      await api.put(`/notifications/${notifId}/read`, {});
       setInquiries(prev => prev.map(inq =>
         inq.id === notifId && inq.type === "notification"
           ? { ...inq, status: "read" }
@@ -143,7 +134,7 @@ export default function InquiriesPage() {
     async function loadData() {
       if (!currentUser) return;
       try {
-        const bizRes = await axios.get(`${API}/businesses/me/all`, { headers: authHeader() });
+        const bizRes = await api.get("/businesses/me/all");
         const businesses = bizRes.data?.data || [];
 
         if (businesses.length === 0) {
@@ -158,7 +149,7 @@ export default function InquiriesPage() {
 
         // Load bookings
         try {
-          const bookingsRes = await axios.get(`${API}/bookings/business/${biz._id}`, { headers: authHeader() });
+          const bookingsRes = await api.get(`/bookings/business/${biz._id}`);
           if (bookingsRes.data?.success) {
             allItems.push(
               ...(bookingsRes.data.data || []).map((b: any) => {
@@ -184,7 +175,7 @@ export default function InquiriesPage() {
 
         // Load reviews
         try {
-          const reviewsRes = await axios.get(`${API}/businesses/${biz._id}/reviews`, { headers: authHeader() });
+          const reviewsRes = await api.get(`/businesses/${biz._id}/reviews`);
           if (reviewsRes.data?.success) {
             const revs = reviewsRes.data.data || [];
             allItems.push(
@@ -193,7 +184,7 @@ export default function InquiriesPage() {
                 name: r.authorName || r.author?.name || "Anonymous",
                 subject: `Review — "${(r.comment || "").substring(0, 60)}"`,
                 time: new Date(r.createdAt).toLocaleDateString(),
-                status: r.status || "approved",
+                status: r.reported ? "reported" : "approved",
                 notes: r.comment,
                 rating: r.rating,
                 type: "review" as const,
@@ -207,7 +198,7 @@ export default function InquiriesPage() {
 
         // Load notifications
         try {
-          const notifRes = await axios.get(`${API}/notifications`, { headers: authHeader() });
+          const notifRes = await api.get("/notifications");
           if (notifRes.data?.success) {
             const notifs = notifRes.data.data || [];
             allItems.push(...notifs.map((n: any) => ({

@@ -1,8 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { getApiUrl } from "@/lib/utils";
-import axios from "axios";
+import api from "@/lib/api";
 import Link from "next/link";
 import { useI18n } from "@/i18n";
 import { Plus, Trash2, Edit2, Coins, Tag, RefreshCw, Heart, Lock, Image as ImageIcon, Camera, Upload, X } from "lucide-react";
@@ -34,33 +33,18 @@ export default function DashboardExchange() {
   useEffect(() => {
     const loadPlan = async () => {
       try {
-        const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
-        if (token) {
-          const subRes = await axios.get(`${getApiUrl()}/subscriptions/business/me`, { headers: { Authorization: `Bearer ${token}` } });
-          if (subRes.data?.success && subRes.data.data?.plan) {
-            setActivePlan(subRes.data.data.plan);
-            return;
+        if (currentUser) {
+          const bizRes = await api.get("/businesses/me/all");
+          const bizId = bizRes.data?.data?.[0]?._id;
+          if (bizId) {
+            const subRes = await api.get(`/subscriptions/business/${bizId}`);
+            if (subRes.data?.success && subRes.data.data?.plan) {
+              setActivePlan(subRes.data.data.plan);
+              return;
+            }
           }
         }
       } catch {}
-
-      if ((currentUser as any)?.plan || (currentUser as any)?.business?.plan || (currentUser as any)?.subscriptionPlan) {
-        setActivePlan((currentUser as any)?.plan || (currentUser as any)?.business?.plan || (currentUser as any)?.subscriptionPlan);
-        return;
-      }
-
-      if (typeof window !== "undefined") {
-        const profilesStr = window.localStorage.getItem("armbiz-business-profiles");
-        if (profilesStr) {
-          try {
-            const profiles = JSON.parse(profilesStr);
-            const myProfile = profiles.find((p: any) => p.ownerUsername === currentUser?.username);
-            if (myProfile && (myProfile.plan || myProfile.subscriptionPlan)) {
-              setActivePlan(myProfile.plan || myProfile.subscriptionPlan);
-            }
-          } catch (e) {}
-        }
-      }
     };
     loadPlan();
   }, [currentUser]);
@@ -107,23 +91,21 @@ export default function DashboardExchange() {
   const fetchOffers = async () => {
     try {
       setLoading(true);
-      const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
-      if (!token) {
+      if (!currentUser) {
         setLoading(false);
         return;
       }
-      const h = { headers: { Authorization: `Bearer ${token}` } };
 
       let bId = businessId || (currentUser as any)?.businessId || (currentUser as any)?.business?._id;
       if (!bId) {
-        const bizRes = await axios.get(`${getApiUrl()}/businesses/me/all`, h);
+        const bizRes = await api.get("/businesses/me/all");
         bId = bizRes.data?.data?.[0]?._id;
       }
 
       if (bId) {
         setBusinessId(bId);
         // Fetch exchange offers
-        const res = await axios.get(`${getApiUrl()}/exchange-offers/business/${bId}`);
+        const res = await api.get(`/exchange-offers/business/${bId}`);
         setOffers(res.data.data || []);
       }
     } catch (err) {
@@ -149,14 +131,16 @@ export default function DashboardExchange() {
     }
   }, [isModalOpen]);
 
-  const normalizedPlan = (activePlan || "starter").toLowerCase();
-  const isProPlan = normalizedPlan === "pro" || normalizedPlan === "standard";
-  const isPremiumPlan = normalizedPlan === "premium" || normalizedPlan === "enterprise";
+  const isProPlan = activePlan === "pro" || activePlan === "standard";
+  const isPremiumPlan = activePlan === "premium" || activePlan === "vip";
   const isLimitReached = !editingId && isProPlan && offers.length >= 3;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!businessId) return;
+    if (!businessId) {
+      alert("Business context missing.");
+      return;
+    }
 
     if (isLimitReached) {
       alert("Pro փաթեթի դեպքում կարող եք հրապարակել առավելագույնը 3 առաջարկ: Անսահմանափակ առաջարկների համար թարմացրեք փաթեթը Premium-ի:");
@@ -164,7 +148,6 @@ export default function DashboardExchange() {
     }
 
     try {
-      const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
       const payload = { 
         businessId,
         title: formData.title,
@@ -177,12 +160,10 @@ export default function DashboardExchange() {
         image: formData.imageUrl
       };
       
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-
       if (editingId) {
-        await axios.put(`${getApiUrl()}/exchange-offers/${editingId}`, payload, config);
+        await api.put(`/exchange-offers/${editingId}`, payload);
       } else {
-        await axios.post(`${getApiUrl()}/exchange-offers`, payload, config);
+        await api.post("/exchange-offers", payload);
       }
 
       setIsModalOpen(false);
@@ -235,11 +216,9 @@ export default function DashboardExchange() {
 
   const executeDelete = async (id: string) => {
     try {
-      const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
-      await axios.delete(`${getApiUrl()}/exchange-offers/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.delete(`/exchange-offers/${id}`);
       fetchOffers();
+      setDeleteConfirmId(null);
     } catch (error) {
       console.error("Error deleting offer", error);
     }

@@ -1,8 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
-import axios from "axios";
-import { getApiUrl } from "@/lib/utils";
+import api from "@/lib/api";
 import { useI18n } from "@/i18n";
 import { Send, HeadphonesIcon, Loader2 } from "lucide-react";
 
@@ -18,10 +17,7 @@ export default function SupportChatPage() {
   const fetchMessages = async () => {
     if (!currentUser) return;
     try {
-      const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
-      const res = await axios.get(`${getApiUrl()}/chat/${currentUser.id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.get(`/chat/${currentUser.id}`);
       if (res.data?.success) {
         setMessages(res.data.data);
       }
@@ -47,14 +43,11 @@ export default function SupportChatPage() {
     e.preventDefault();
     if (!newMessage.trim() || !currentUser || isSending) return;
 
-    const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
     setIsSending(true);
     try {
-      const res = await axios.post(`${getApiUrl()}/chat`, {
+      const res = await api.post("/chat", {
         message: newMessage,
         conversationId: currentUser.id
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
 
       if (res.data?.success) {
