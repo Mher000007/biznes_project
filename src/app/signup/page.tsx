@@ -18,10 +18,18 @@ export default function SignUpPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
+
+  // Live password validation rules
+  const pwdMinLength = password.length >= 8;
+  const pwdUpper = /[A-Z]/.test(password);
+  const pwdNumber = /\d/.test(password);
+  const pwdSymbol = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/.test(password);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -46,22 +54,38 @@ export default function SignUpPage() {
     const timer = setTimeout(async () => {
       try {
         const res = await axios.get(`${getApiUrl()}/auth/check-availability?username=${encodeURIComponent(username.trim())}`);
-        if (res.data?.available === false) {
-          setUsernameError("Այս Օգտանունը (Username) արդեն զբաղված է:");
+        if (res.data?.usernameTaken || res.data?.available === false) {
+          setUsernameError((t.auth as any).usernameTaken || "⚠️ Այս Օգտանունը արդեն զբաղված է:");
         } else {
           setUsernameError(null);
         }
       } catch (err) {
-        const users = getUsers();
-        if (users.some((u) => u.username?.toLowerCase() === username.trim().toLowerCase())) {
-          setUsernameError("Այս Օգտանունը (Username) արդեն զբաղված է:");
-        } else {
-          setUsernameError(null);
-        }
+        setUsernameError(null);
       }
     }, 400);
     return () => clearTimeout(timer);
   }, [username]);
+
+  // Debounced check for Email availability
+  useEffect(() => {
+    if (!email.trim() || !email.includes("@")) {
+      setEmailError(null);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const res = await axios.get(`${getApiUrl()}/auth/check-availability?email=${encodeURIComponent(email.trim())}`);
+        if (res.data?.emailTaken || res.data?.available === false) {
+          setEmailError((t.auth as any).emailTaken || "⚠️ Այս էլ. հասցեն (email) արդեն գոյություն ունի:");
+        } else {
+          setEmailError(null);
+        }
+      } catch (err) {
+        setEmailError(null);
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [email]);
 
   // Debounced check for Name availability
   useEffect(() => {
@@ -104,8 +128,18 @@ export default function SignUpPage() {
       return;
     }
 
-    if (usernameError || nameError) {
-      setError(usernameError || nameError || "Please fix input errors before submitting.");
+    if (usernameError || emailError || nameError) {
+      setError(usernameError || emailError || nameError || "Please fix input errors before submitting.");
+      return;
+    }
+
+    if (!pwdMinLength || !pwdUpper || !pwdNumber || !pwdSymbol) {
+      setError("Գաղտնաբառը չի համապատասխանում պահանջներին (առնվազն 8 նիշ, 1 մեծատառ, 1 թիվ և 1 սիմվոլ):");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError((t.auth as any).passwordsDoNotMatch || "⚠️ Գաղտնաբառերը չեն համընկնում:");
       return;
     }
 
@@ -244,13 +278,71 @@ export default function SignUpPage() {
           <div>
             <label className="block text-sm font-medium mb-1">{t.auth.password}</label>
             <input
+              id="signup-new-password"
+              name="new-password"
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               type="password"
               required
               minLength={8}
+              pattern="(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':&quot;\\|,.<>\/?~`]).{8,}"
+              title="Գաղտնաբառը պետք է լինի առնվազն 8 նիշ, պարունակի 1 մեծատառ, 1 թիվ և 1 սիմվոլ (!@#$%^&*)"
               className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-sm outline-none transition-colors focus:border-[hsl(var(--foreground))]"
             />
+            {/* Live Password Criteria Checklist */}
+            {password.length > 0 && (
+              <div className="mt-2 text-xs space-y-1 bg-[hsl(var(--card))]/60 p-2.5 rounded-xl border border-[hsl(var(--border))]">
+                <div className={`flex items-center gap-1.5 transition-colors ${pwdMinLength ? "text-emerald-500 font-semibold" : "text-amber-500/80 font-normal"}`}>
+                  <span>{pwdMinLength ? "✓" : "○"}</span>
+                  <span>{(t.auth as any).pwdMinLength || "Առնվազն 8 նիշ"}</span>
+                </div>
+                <div className={`flex items-center gap-1.5 transition-colors ${pwdUpper ? "text-emerald-500 font-semibold" : "text-amber-500/80 font-normal"}`}>
+                  <span>{pwdUpper ? "✓" : "○"}</span>
+                  <span>{(t.auth as any).pwdUpper || "1 մեծատառ (A-Z)"}</span>
+                </div>
+                <div className={`flex items-center gap-1.5 transition-colors ${pwdNumber ? "text-emerald-500 font-semibold" : "text-amber-500/80 font-normal"}`}>
+                  <span>{pwdNumber ? "✓" : "○"}</span>
+                  <span>{(t.auth as any).pwdNumber || "1 թիվ (0-9)"}</span>
+                </div>
+                <div className={`flex items-center gap-1.5 transition-colors ${pwdSymbol ? "text-emerald-500 font-semibold" : "text-amber-500/80 font-normal"}`}>
+                  <span>{pwdSymbol ? "✓" : "○"}</span>
+                  <span>{(t.auth as any).pwdSymbol || "1 սիմվոլ (!@#$%^&*)"}</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Confirm Password Field */}
+          <div>
+            <label className="block text-sm font-medium mb-1">{(t.auth as any).confirmPassword || "Կրկնել գաղտնաբառը"}</label>
+            <input
+              id="signup-confirm-password"
+              name="confirm-password"
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              type="password"
+              required
+              placeholder="••••••••"
+              className={`w-full rounded-lg border ${
+                confirmPassword && confirmPassword !== password
+                  ? "border-red-500 bg-red-500/5 focus:border-red-500"
+                  : confirmPassword && confirmPassword === password
+                  ? "border-emerald-500 bg-emerald-500/5 focus:border-emerald-500"
+                  : "border-[hsl(var(--border))] focus:border-[hsl(var(--foreground))]"
+              } px-3 py-2 text-sm outline-none transition-colors`}
+            />
+            {confirmPassword && confirmPassword !== password && (
+              <p className="mt-1 text-[11px] text-red-500 font-medium">
+                {(t.auth as any).passwordsDoNotMatch || "⚠️ Գաղտնաբառերը չեն համընկնում:"}
+              </p>
+            )}
+            {confirmPassword && confirmPassword === password && (
+              <p className="mt-1 text-[11px] text-emerald-500 font-medium">
+                ✓ Գաղտնաբառերը համընկնում են:
+              </p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium mb-1 flex items-center justify-between">

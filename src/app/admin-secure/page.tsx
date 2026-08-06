@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import axios from "axios";
+import api from "@/lib/api";
 import { getApiUrl } from "@/lib/utils";
 import {
   BarChart3, Building2, CalendarDays, Gem, Flag, Users,
@@ -13,6 +14,44 @@ import {
 const API = getApiUrl();
 const ADMIN_TOKEN_KEY = "admin-token";
 const ADMIN_USER_KEY = "admin-user";
+
+function compressImageFile(file: File, maxWidth = 1920, maxHeight = 1080, quality = 0.85): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const src = e.target?.result as string;
+      if (!src) return resolve("");
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+        if (width > maxWidth || height > maxHeight) {
+          if (width / height > maxWidth / maxHeight) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          } else {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        } else {
+          resolve(src);
+        }
+      };
+      img.onerror = () => resolve(src);
+      img.src = src;
+    };
+    reader.onerror = () => resolve("");
+    reader.readAsDataURL(file);
+  });
+}
 
 /* ── Dark theme color palette ── */
 import AdminLiveChat from "./AdminLiveChat";
@@ -118,7 +157,9 @@ interface PromoCode {
 type TabKey = "overview" | "businesses" | "bookings" | "subscriptions" | "reviews" | "users" | "promocodes" | "messages" | "livechat" | "heroimages";
 
 function getToken() {
-  return typeof window !== "undefined" ? localStorage.getItem(ADMIN_TOKEN_KEY) : null;
+  if (typeof window === "undefined") return null;
+  const t = localStorage.getItem(ADMIN_TOKEN_KEY);
+  return t && t !== "undefined" && t !== "null" ? t : null;
 }
 function authHeaders() {
   const t = getToken();
@@ -506,28 +547,71 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     setHeroLoadingLive(false);
   };
 
+  const handleAdminActionError = (err: any, fallbackMessage: string) => {
+    if (err?.response?.status === 401) {
+      alert("Ձեր ադմինիստրատորի սեսիան ավարտվել է: Խնդրում ենք կրկին մուտք գործել:");
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(ADMIN_TOKEN_KEY);
+        localStorage.removeItem(ADMIN_USER_KEY);
+        window.location.reload();
+      }
+      return;
+    }
+    alert(err?.response?.data?.message || fallbackMessage);
+  };
+
   const approveBiz = async (id: string) => {
-    await axios.put(`${API}/admin/businesses/${id}/approve`, {}, { headers: authHeaders() }); load();
+    try {
+      await axios.put(`${API}/admin/businesses/${id}/approve`, {}, { headers: authHeaders() });
+      load();
+    } catch (err: any) {
+      handleAdminActionError(err, "Failed to approve business");
+    }
   };
   const rejectBiz = async (id: string) => {
     if (!confirm("Suspend this business?")) return;
-    await axios.put(`${API}/admin/businesses/${id}/reject`, {}, { headers: authHeaders() }); load();
+    try {
+      await axios.put(`${API}/admin/businesses/${id}/reject`, {}, { headers: authHeaders() });
+      load();
+    } catch (err: any) {
+      handleAdminActionError(err, "Failed to suspend business");
+    }
   };
   const deleteBiz = async (id: string) => {
     if (!confirm("Permanently delete this business and all its data?")) return;
-    await axios.delete(`${API}/admin/businesses/${id}`, { headers: authHeaders() }); load();
+    try {
+      await axios.delete(`${API}/admin/businesses/${id}`, { headers: authHeaders() });
+      load();
+    } catch (err: any) {
+      handleAdminActionError(err, "Failed to delete business");
+    }
   };
   const deleteBook = async (id: string) => {
     if (!confirm("Delete this booking?")) return;
-    await axios.delete(`${API}/admin/bookings/${id}`, { headers: authHeaders() }); load();
+    try {
+      await axios.delete(`${API}/admin/bookings/${id}`, { headers: authHeaders() });
+      load();
+    } catch (err: any) {
+      handleAdminActionError(err, "Failed to delete booking");
+    }
   };
   const deleteSub = async (id: string) => {
     if (!confirm("Delete this subscription?")) return;
-    await axios.delete(`${API}/admin/subscriptions/${id}`, { headers: authHeaders() }); load();
+    try {
+      await axios.delete(`${API}/admin/subscriptions/${id}`, { headers: authHeaders() });
+      load();
+    } catch (err: any) {
+      handleAdminActionError(err, "Failed to delete subscription");
+    }
   };
   const deleteUserById = async (id: string) => {
     if (!confirm("Permanently delete this user account?")) return;
-    await axios.delete(`${API}/admin/users/${id}`, { headers: authHeaders() }); load();
+    try {
+      await axios.delete(`${API}/admin/users/${id}`, { headers: authHeaders() });
+      load();
+    } catch (err: any) {
+      handleAdminActionError(err, "Failed to delete user account");
+    }
   };
 
   const handleGiftSubscriptionSubmit = async (e: React.FormEvent) => {
@@ -682,9 +766,13 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const submitResolve = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!resolvingId || !resolveAction || adminReply.trim().length < 5) return;
-    await axios.put(`${API}/admin/reports/${resolvingId}/resolve`,
-      { action: resolveAction, adminReply: adminReply.trim() }, { headers: authHeaders() });
-    setResolvingId(null); setAdminReply(""); setResolveAction(null); load();
+    try {
+      await axios.put(`${API}/admin/reports/${resolvingId}/resolve`,
+        { action: resolveAction, adminReply: adminReply.trim() }, { headers: authHeaders() });
+      setResolvingId(null); setAdminReply(""); setResolveAction(null); load();
+    } catch (err: any) {
+      handleAdminActionError(err, "Failed to resolve report");
+    }
   };
 
   const filteredBiz = businesses.filter(b => {
@@ -2013,16 +2101,14 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                         accept="image/*"
                         multiple
                         style={{ display: "none" }}
-                        onChange={e => {
+                        onChange={async e => {
                           const files = Array.from(e.target.files || []);
-                          files.forEach(file => {
-                            const reader = new FileReader();
-                            reader.onload = ev => {
-                              const result = ev.target?.result as string;
-                              if (result) setHeroImages(prev => [...prev, result]);
-                            };
-                            reader.readAsDataURL(file);
-                          });
+                          for (const file of files) {
+                            const compressed = await compressImageFile(file);
+                            if (compressed) {
+                              setHeroImages(prev => [...prev, compressed]);
+                            }
+                          }
                           e.target.value = ""; // reset so same file can be re-picked
                         }}
                       />
@@ -2209,19 +2295,19 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                   setHeroSaving(true);
                   setHeroSaveMsg("");
                   try {
-                    const res = await axios.put(
-                      `${API}/admin/hero-images`,
+                    const res = await api.put(
+                      "/admin/hero-images",
                       { images: heroImages },
                       { headers: authHeaders() }
                     );
                     if (res.data?.success) {
-                      setHeroSaveMsg("Saved! Refresh the homepage to see the new slideshow.");
+                      setHeroSaveMsg("Պահպանված է: Թարմացրեք գլխավոր էջը նոր պատկերները տեսնելու համար: / Saved successfully!");
                       setTimeout(() => setHeroSaveMsg(""), 6000);
-                      // Refresh live slides
                       fetchLiveSlides();
                     }
                   } catch (err: any) {
-                    alert(err.response?.data?.message || "Failed to save hero images");
+                    console.error("Hero save error:", err);
+                    alert(err.response?.data?.message || err.message || "Failed to save hero images");
                   } finally {
                     setHeroSaving(false);
                   }
@@ -2892,7 +2978,7 @@ export default function AdminSecurePage() {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem(ADMIN_TOKEN_KEY);
+    const token = getToken();
     if (!token) { setChecking(false); return; }
     axios
       .get(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })

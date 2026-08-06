@@ -25,15 +25,15 @@ function getCookieOptions(isRefreshToken = false) {
 
 function validatePasswordPolicy(password: string): { valid: boolean; message?: string } {
   if (!password || password.length < 8) {
-    return { valid: false, message: 'Password must be at least 8 characters long' };
+    return { valid: false, message: 'Գաղտնաբառը պետք է լինի առնվազն 8 նիշ: / Password must be at least 8 characters long' };
   }
   const hasUpper = /[A-Z]/.test(password);
-  const hasLower = /[a-z]/.test(password);
   const hasNumber = /\d/.test(password);
-  if (!hasUpper || !hasLower || !hasNumber) {
+  const hasSymbol = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/.test(password);
+  if (!hasUpper || !hasNumber || !hasSymbol) {
     return {
       valid: false,
-      message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number',
+      message: 'Գաղտնաբառը պետք է պարունակի առնվազն 1 մեծատառ, 1 թիվ և 1 սիմվոլ (!@#$%^&*): / Password must contain at least 1 uppercase letter, 1 number, and 1 special symbol.',
     };
   }
   return { valid: true };
@@ -118,16 +118,6 @@ export const register = asyncHandler(async (req: Request, res: Response): Promis
   const trimmedName = name.trim();
   const trimmedEmail = email.toLowerCase().trim();
   const trimmedUsername = username ? username.toLowerCase().trim() : '';
-
-  // Check if Name (Display Name) already exists (case-insensitive)
-  if (trimmedName) {
-    const escapedName = trimmedName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const nameExists = await User.findOne({ name: { $regex: new RegExp(`^${escapedName}$`, 'i') } });
-    if (nameExists) {
-      res.status(409).json({ success: false, message: 'Այս Անունը (Name) արդեն զբաղված է: / That Name is already taken.' });
-      return;
-    }
-  }
 
   // Check if Username already exists
   if (trimmedUsername) {
@@ -233,6 +223,9 @@ export const checkAvailability = asyncHandler(async (req: Request, res: Response
   res.json({
     success: true,
     available: !isTaken,
+    usernameTaken,
+    emailTaken,
+    nameTaken,
   });
 });
 
@@ -258,11 +251,12 @@ export const login = asyncHandler(async (req: Request, res: Response): Promise<v
     return;
   }
 
-  await createAndSetTokens(res, user);
+  const accessToken = await createAndSetTokens(res, user);
 
   res.status(200).json({
     success: true,
     message: 'Login successful',
+    token: accessToken,
     user: userPayload(user),
   });
 });

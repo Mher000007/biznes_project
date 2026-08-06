@@ -8,6 +8,8 @@ import AnimatedBackground from "@/components/auth/AnimatedBackground";
 import { useI18n } from "@/i18n";
 import { getApiUrl } from "@/lib/utils";
 
+import api from "@/lib/api";
+
 export default function SignInPage() {
   const router = useRouter();
   const { login, register } = useAuth();
@@ -29,7 +31,79 @@ export default function SignInPage() {
   const [email, setEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [showRegPassword, setShowRegPassword] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [inviteCode, setInviteCode] = useState("");
+
+  // Live password validation rules
+  const pwdMinLength = regPassword.length >= 8;
+  const pwdUpper = /[A-Z]/.test(regPassword);
+  const pwdNumber = /\d/.test(regPassword);
+  const pwdSymbol = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/.test(regPassword);
+
+  // Signup availability states
+  const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
+  const [emailStatus, setEmailStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
+  const [usernameErrorMsg, setUsernameErrorMsg] = useState<string | null>(null);
+  const [emailErrorMsg, setEmailErrorMsg] = useState<string | null>(null);
+
+  // Live Username Availability Check
+  useEffect(() => {
+    const trimmed = username.trim();
+    if (!trimmed || trimmed.length < 3) {
+      setUsernameStatus("idle");
+      setUsernameErrorMsg(null);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setUsernameStatus("checking");
+      setUsernameErrorMsg(null);
+      try {
+        const res = await api.get(`/auth/check-availability?username=${encodeURIComponent(trimmed)}`);
+        if (res.data?.usernameTaken || res.data?.available === false) {
+          setUsernameStatus("taken");
+          setUsernameErrorMsg((t.auth as any).usernameTaken || "⚠️ Այս Օգտանունը արդեն զբաղված է:");
+        } else {
+          setUsernameStatus("available");
+          setUsernameErrorMsg(null);
+        }
+      } catch (err) {
+        setUsernameStatus("idle");
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [username]);
+
+  // Live Email Availability Check
+  useEffect(() => {
+    const trimmed = email.trim();
+    if (!trimmed || !trimmed.includes("@") || !trimmed.includes(".")) {
+      setEmailStatus("idle");
+      setEmailErrorMsg(null);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setEmailStatus("checking");
+      setEmailErrorMsg(null);
+      try {
+        const res = await api.get(`/auth/check-availability?email=${encodeURIComponent(trimmed)}`);
+        if (res.data?.emailTaken || res.data?.available === false) {
+          setEmailStatus("taken");
+          setEmailErrorMsg((t.auth as any).emailTaken || "⚠️ Այս էլ. հասցեն (email) արդեն գոյություն ունի:");
+        } else {
+          setEmailStatus("available");
+          setEmailErrorMsg(null);
+        }
+      } catch (err) {
+        setEmailStatus("idle");
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [email]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -110,8 +184,28 @@ export default function SignInPage() {
     e.preventDefault();
     setError(null);
 
-    if (!username.trim() || !name.trim() || !email.trim() || !regPassword) {
-      setError("Please fill in all fields.");
+    if (!username.trim() || !email.trim() || !regPassword) {
+      setError("Խնդրում ենք լրացնել բոլոր պարտադիր դաշտերը:");
+      return;
+    }
+
+    if (usernameStatus === "taken" || usernameErrorMsg) {
+      setError(usernameErrorMsg || (t.auth as any).usernameTaken || "Այս Օգտանունը արդեն զբաղված է:");
+      return;
+    }
+
+    if (emailStatus === "taken" || emailErrorMsg) {
+      setError(emailErrorMsg || (t.auth as any).emailTaken || "Այս էլ. հասցեն արդեն գոյություն ունի:");
+      return;
+    }
+
+    if (!pwdMinLength || !pwdUpper || !pwdNumber || !pwdSymbol) {
+      setError("Գաղտնաբառը չի համապատասխանում պահանջներին (առնվազն 8 նիշ, 1 մեծատառ, 1 թիվ և 1 սիմվոլ):");
+      return;
+    }
+
+    if (regPassword !== confirmPassword) {
+      setError((t.auth as any).passwordsDoNotMatch || "⚠️ Գաղտնաբառերը չեն համընկնում:");
       return;
     }
 
@@ -120,7 +214,7 @@ export default function SignInPage() {
     try {
       const result = await register({
         username: username.trim(),
-        displayName: name.trim(),
+        displayName: name.trim() || username.trim(),
         email: email.trim().toLowerCase(),
         password: regPassword,
         accountType: "personal",
@@ -133,6 +227,8 @@ export default function SignInPage() {
       }
 
       router.push("/verify-pending");
+    } catch (err: any) {
+      setError(err.response?.data?.message || err.message || "Failed to create account.");
     } finally {
       setLoading(false);
     }
@@ -262,46 +358,86 @@ export default function SignInPage() {
               )}
               <div>
                 <label className="block text-xs font-semibold mb-1">{t.auth.username}</label>
-                <input
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  type="text"
-                  required
-                  placeholder="username"
-                  className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))]/50 px-3.5 py-2 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1">{t.auth.name}</label>
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  type="text"
-                  required
-                  placeholder="John Doe"
-                  className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))]/50 px-3.5 py-2 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
-                />
+                <div className="relative">
+                  <input
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    type="text"
+                    required
+                    placeholder="username"
+                    className={`w-full rounded-xl border ${
+                      usernameStatus === "taken"
+                        ? "border-red-500 bg-red-500/5 focus:border-red-500 focus:ring-red-500"
+                        : usernameStatus === "available"
+                        ? "border-emerald-500 bg-emerald-500/5 focus:border-emerald-500 focus:ring-emerald-500"
+                        : "border-[hsl(var(--border))] bg-[hsl(var(--background))]/50 focus:border-primary focus:ring-primary"
+                    } px-3.5 py-2 text-sm outline-none transition-all pr-9`}
+                  />
+                  {usernameStatus === "checking" && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[hsl(var(--muted-foreground))]">
+                      <span className="animate-spin inline-block text-primary">↻</span>
+                    </div>
+                  )}
+                  {usernameStatus === "available" && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500 font-bold text-xs">
+                      ✓
+                    </div>
+                  )}
+                  {usernameStatus === "taken" && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-red-500 font-bold text-xs">
+                      ✕
+                    </div>
+                  )}
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-semibold mb-1">{t.auth.email}</label>
-                <input
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  type="email"
-                  required
-                  placeholder="john@example.com"
-                  className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))]/50 px-3.5 py-2 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
-                />
+                <div className="relative">
+                  <input
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    type="email"
+                    required
+                    placeholder="john@example.com"
+                    className={`w-full rounded-xl border ${
+                      emailStatus === "taken"
+                        ? "border-red-500 bg-red-500/5 focus:border-red-500 focus:ring-red-500"
+                        : emailStatus === "available"
+                        ? "border-emerald-500 bg-emerald-500/5 focus:border-emerald-500 focus:ring-emerald-500"
+                        : "border-[hsl(var(--border))] bg-[hsl(var(--background))]/50 focus:border-primary focus:ring-primary"
+                    } px-3.5 py-2 text-sm outline-none transition-all pr-9`}
+                  />
+                  {emailStatus === "checking" && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[hsl(var(--muted-foreground))]">
+                      <span className="animate-spin inline-block text-primary">↻</span>
+                    </div>
+                  )}
+                  {emailStatus === "available" && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500 font-bold text-xs">
+                      ✓
+                    </div>
+                  )}
+                  {emailStatus === "taken" && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-red-500 font-bold text-xs">
+                      ✕
+                    </div>
+                  )}
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-semibold mb-1">{t.auth.password}</label>
                 <div className="relative">
                   <input
+                    id="new-password"
+                    name="new-password"
+                    autoComplete="new-password"
                     value={regPassword}
                     onChange={(e) => setRegPassword(e.target.value)}
                     type={showRegPassword ? "text" : "password"}
                     required
                     minLength={8}
+                    pattern="(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':&quot;\\|,.<>\/?~`]).{8,}"
+                    title="Գաղտնաբառը պետք է լինի առնվազն 8 նիշ, պարունակի 1 մեծատառ, 1 թիվ և 1 սիմվոլ (!@#$%^&*)"
                     className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))]/50 px-3.5 py-2 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary pr-10"
                   />
                   <button
@@ -312,6 +448,69 @@ export default function SignInPage() {
                     {showRegPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
+
+                {/* Live Password Criteria Checklist */}
+                {regPassword.length > 0 && (
+                  <div className="mt-2 text-xs space-y-1 bg-[hsl(var(--card))]/60 p-2.5 rounded-xl border border-[hsl(var(--border))]">
+                    <div className={`flex items-center gap-1.5 transition-colors ${pwdMinLength ? "text-emerald-500 font-semibold" : "text-amber-500/80 font-normal"}`}>
+                      <span>{pwdMinLength ? "✓" : "○"}</span>
+                      <span>{(t.auth as any).pwdMinLength || "Առնվազն 8 նիշ"}</span>
+                    </div>
+                    <div className={`flex items-center gap-1.5 transition-colors ${pwdUpper ? "text-emerald-500 font-semibold" : "text-amber-500/80 font-normal"}`}>
+                      <span>{pwdUpper ? "✓" : "○"}</span>
+                      <span>{(t.auth as any).pwdUpper || "1 մեծատառ (A-Z)"}</span>
+                    </div>
+                    <div className={`flex items-center gap-1.5 transition-colors ${pwdNumber ? "text-emerald-500 font-semibold" : "text-amber-500/80 font-normal"}`}>
+                      <span>{pwdNumber ? "✓" : "○"}</span>
+                      <span>{(t.auth as any).pwdNumber || "1 թիվ (0-9)"}</span>
+                    </div>
+                    <div className={`flex items-center gap-1.5 transition-colors ${pwdSymbol ? "text-emerald-500 font-semibold" : "text-amber-500/80 font-normal"}`}>
+                      <span>{pwdSymbol ? "✓" : "○"}</span>
+                      <span>{(t.auth as any).pwdSymbol || "1 սիմվոլ (!@#$%^&*)"}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Confirm Password Field */}
+              <div>
+                <label className="block text-xs font-semibold mb-1">{(t.auth as any).confirmPassword || "Կրկնել գաղտնաբառը"}</label>
+                <div className="relative">
+                  <input
+                    id="confirm-password"
+                    name="confirm-password"
+                    autoComplete="new-password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    type={showConfirmPassword ? "text" : "password"}
+                    required
+                    placeholder="••••••••"
+                    className={`w-full rounded-xl border ${
+                      confirmPassword && confirmPassword !== regPassword
+                        ? "border-red-500 bg-red-500/5 focus:border-red-500 focus:ring-red-500"
+                        : confirmPassword && confirmPassword === regPassword
+                        ? "border-emerald-500 bg-emerald-500/5 focus:border-emerald-500 focus:ring-emerald-500"
+                        : "border-[hsl(var(--border))] bg-[hsl(var(--background))]/50 focus:border-primary focus:ring-primary"
+                    } px-3.5 py-2 text-sm outline-none transition-all pr-10`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors"
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                {confirmPassword && confirmPassword !== regPassword && (
+                  <p className="mt-1 text-[11px] text-red-500 font-medium">
+                    {(t.auth as any).passwordsDoNotMatch || "⚠️ Գաղտնաբառերը չեն համընկնում:"}
+                  </p>
+                )}
+                {confirmPassword && confirmPassword === regPassword && (
+                  <p className="mt-1 text-[11px] text-emerald-500 font-medium">
+                    ✓ Գաղտնաբառերը համընկնում են:
+                  </p>
+                )}
               </div>
               <div>
                 <div className="flex items-center justify-between mb-1">
