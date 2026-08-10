@@ -191,7 +191,7 @@ export default function DashboardPublish() {
       <button
         onClick={handlePublish}
         disabled={status === "publishing"}
-        className="flex h-9 items-center gap-1.5 rounded-xl px-4 text-xs font-semibold text-white gradient-primary transition-all hover:opacity-90 hover:shadow-lg hover:shadow-[hsl(var(--primary))]/20 disabled:opacity-60"
+        className="flex h-9 items-center gap-1.5 rounded-xl px-4 text-xs font-semibold text-[hsl(var(--primary-foreground))] bg-[hsl(var(--primary))] transition-all hover:opacity-90 hover:shadow-lg hover:shadow-[hsl(var(--primary))]/20 disabled:opacity-60"
       >
         {status === "publishing" ? (
           <><Loader2 className="h-3.5 w-3.5 animate-spin" /> {t.dashboard.publishing}</>

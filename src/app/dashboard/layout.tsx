@@ -23,6 +23,9 @@ import {
   Utensils,
   ArrowRightLeft,
   QrCode,
+  CreditCard,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import UnverifiedBanner from "@/components/dashboard/UnverifiedBanner";
 
@@ -37,6 +40,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [activePlan, setActivePlan] = useState<string>("starter");
   const [shakingHrefs, setShakingHrefs] = useState<string[]>([]);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   // 1. Unverified route guard effect
   useEffect(() => {
@@ -175,6 +179,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     { href: "/dashboard/exchange", label: navT.exchange || "Exchange", icon: ArrowRightLeft, isPro: true },
     { href: "/dashboard/qr-scanner", label: navT.qrScanner || "QR Scanner", icon: QrCode, isPro: true },
     { href: "/dashboard/support", label: navT.supportChat || "Support Chat", icon: HeadphonesIcon },
+    { href: "/dashboard/billing", label: navT.billing || "Billing & Plans", icon: CreditCard },
     { href: "/dashboard/settings", label: navT.settings || "Settings", icon: Settings },
   ];
 
@@ -212,9 +217,22 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         }
       `}</style>
         {/* Sidebar */}
-        <aside className="hidden lg:flex fixed top-14 left-0 bottom-0 w-64 flex-col border-r border-[hsl(var(--border))] bg-[hsl(var(--card))] z-40">
+        <aside className={`hidden lg:flex fixed top-14 left-0 bottom-0 flex-col border-r border-[hsl(var(--border))] bg-[hsl(var(--card))] z-40 transition-all duration-300 ${isSidebarCollapsed ? "w-16" : "w-64"}`}>
           <div className="flex flex-col flex-1 p-4 gap-1 pt-6">
-            <p className="px-3 mb-3 text-xs font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Dashboard</p>
+            <div className={`flex items-center mb-3 transition-all duration-300 ${isSidebarCollapsed ? "px-1" : "px-3"}`}>
+              <div className={`overflow-hidden transition-all duration-300 ${isSidebarCollapsed ? "max-w-0 opacity-0" : "max-w-[120px] flex-1 opacity-100"}`}>
+                <p className="text-xs font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider whitespace-nowrap">
+                  Dashboard
+                </p>
+              </div>
+              <button 
+                onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                className="p-1 rounded-md hover:bg-emerald-500/10 text-emerald-500 transition-colors"
+                title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+              >
+                {isSidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+              </button>
+            </div>
             {links.map((link) => {
               const isLocked = isStarterPlan && link.isPro;
               const isShaking = shakingHrefs.includes(link.href);
@@ -224,20 +242,53 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                 return (
                   <div key={link.href} className="flex flex-col gap-1">
                     <button
-                      onClick={() => setProfileExpanded(!profileExpanded)}
-                      className={`flex items-center justify-between w-full rounded-lg px-3 py-2.5 text-sm font-medium transition-colors cursor-pointer text-left ${isProfileActive
+                      onClick={() => !isSidebarCollapsed && setProfileExpanded(!profileExpanded)}
+                      className={`group relative flex items-center w-full rounded-lg py-2.5 text-sm font-medium transition-all duration-300 cursor-pointer text-left ${isSidebarCollapsed ? "px-2" : "px-3"} ${isProfileActive
                           ? "bg-[hsl(var(--primary))]/5 text-[hsl(var(--primary))]"
                           : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
                         }`}
                     >
-                      <div className="flex items-center gap-3">
-                        <link.icon className="h-4 w-4" />
-                        {link.label}
+                      <link.icon className="h-4 w-4 shrink-0" />
+                      <div className={`flex items-center justify-between overflow-hidden transition-all duration-300 ${isSidebarCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100 ml-3 flex-1"}`}>
+                        <span className="truncate">{link.label}</span>
+                        {profileExpanded ? <ChevronDown className="h-3.5 w-3.5 shrink-0" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0" />}
                       </div>
-                      {profileExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                      {isSidebarCollapsed && (
+                        <div className="absolute left-full top-0 pl-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl shadow-xl flex flex-col overflow-hidden w-48 text-[hsl(var(--foreground))]">
+                            <div className="px-3 py-2 font-semibold text-xs border-b border-[hsl(var(--border))] bg-[hsl(var(--muted))]/30">
+                              {link.label}
+                            </div>
+                            <div className="flex flex-col p-1.5 gap-0.5">
+                              {profileSubLinks.map((sub) => {
+                                const active = isSubActive(sub.href);
+                                const isSubLocked = isStarterPlan && sub.isPro;
+                                return (
+                                  <Link
+                                    key={sub.href}
+                                    href={sub.href}
+                                    onClick={(e) => isSubLocked && handleLockedClick(e, sub.href)}
+                                    className={`flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium transition-colors ${
+                                      isSubLocked
+                                        ? "text-[hsl(var(--muted-foreground))]/70 hover:bg-amber-500/10 cursor-pointer"
+                                        : active
+                                          ? "text-[hsl(var(--primary))] font-semibold bg-[hsl(var(--primary))]/10"
+                                          : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
+                                    }`}
+                                  >
+                                    <sub.icon className="h-3.5 w-3.5 shrink-0" />
+                                    <span className="truncate">{sub.label}</span>
+                                    {isSubLocked && <Lock className="h-3 w-3 text-amber-500 shrink-0 ml-auto" />}
+                                  </Link>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </button>
 
-                    {profileExpanded && (
+                    {!isSidebarCollapsed && profileExpanded && (
                       <div className="pl-6 flex flex-col gap-1 border-l border-[hsl(var(--border))]/60 ml-5 mt-1">
                         {profileSubLinks.map((sub) => {
                           const active = isSubActive(sub.href);
@@ -279,26 +330,31 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                   href={link.href}
                   onClick={(e) => isLocked && handleLockedClick(e, link.href)}
                   style={isShaking ? { animation: "planLockShake 0.4s ease-in-out" } : undefined}
-                  title={isLocked ? "Pro & Premium feature — Locked on Starter Plan" : undefined}
-                  className={`flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${isLocked
+                  className={`group relative flex items-center rounded-lg py-2.5 text-sm font-medium transition-all duration-300 ${isSidebarCollapsed ? "px-2" : "px-3"} ${isLocked
                       ? "text-[hsl(var(--muted-foreground))]/70 hover:bg-amber-500/10 cursor-pointer"
                       : isActive
                         ? "bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))]"
                         : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
                     }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <link.icon className="h-4 w-4" />
-                    {link.label}
+                  <link.icon className="h-4 w-4 shrink-0" />
+                  <div className={`flex items-center justify-between overflow-hidden transition-all duration-300 ${isSidebarCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100 ml-3 flex-1"}`}>
+                    <span className="truncate">{link.label}</span>
+                    {isLocked ? (
+                      <Lock className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                    ) : (
+                      link.href === "/dashboard/inquiries" && unreadCount > 0 && (
+                        <div className="flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold shadow-sm">
+                          {unreadCount}
+                        </div>
+                      )
+                    )}
                   </div>
-                  {isLocked ? (
-                    <Lock className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                  ) : (
-                    link.href === "/dashboard/inquiries" && unreadCount > 0 && (
-                      <div className="flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold shadow-sm">
-                        {unreadCount}
-                      </div>
-                    )
+                  {isSidebarCollapsed && (
+                    <div className="absolute left-full top-1/2 -translate-y-1/2 ml-4 px-2.5 py-1.5 bg-[hsl(var(--foreground))] text-[hsl(var(--background))] text-xs font-semibold rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50 shadow-md">
+                      {link.label}
+                      {isLocked && <span className="ml-1 text-amber-500">(Locked)</span>}
+                    </div>
                   )}
                 </Link>
               );
@@ -307,15 +363,23 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           <div className="p-4 border-t border-[hsl(var(--border))]">
             <button
               onClick={handleSignOut}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[hsl(var(--muted-foreground))] transition-colors hover:bg-[hsl(var(--muted))] hover:text-red-500 cursor-pointer"
+              className={`group relative flex w-full items-center rounded-lg py-2.5 text-sm font-medium text-[hsl(var(--muted-foreground))] transition-all duration-300 hover:bg-[hsl(var(--muted))] hover:text-red-500 cursor-pointer ${isSidebarCollapsed ? "px-2" : "px-3"}`}
             >
-              <LogOut className="h-4 w-4" /> Sign Out
+              <LogOut className="h-4 w-4 shrink-0" />
+              <div className={`overflow-hidden transition-all duration-300 whitespace-nowrap ${isSidebarCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100 ml-3 text-left"}`}>
+                Sign Out
+              </div>
+              {isSidebarCollapsed && (
+                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-4 px-2.5 py-1.5 bg-[hsl(var(--foreground))] text-[hsl(var(--background))] text-xs font-semibold rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50 shadow-md">
+                  Sign Out
+                </div>
+              )}
             </button>
           </div>
         </aside>
 
         {/* Content */}
-        <div className="flex-1 min-w-0 p-6 lg:p-8 lg:ml-64">
+        <div className={`flex-1 min-w-0 p-6 lg:p-8 transition-all duration-300 ${isSidebarCollapsed ? "lg:ml-16" : "lg:ml-64"}`}>
           {children}
         </div>
       </div>
