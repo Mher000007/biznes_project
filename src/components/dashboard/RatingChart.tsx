@@ -26,7 +26,10 @@ export default function RatingChart({ businessId }: RatingChartProps) {
 
   useEffect(() => {
     async function fetchRatings() {
-      if (!businessId) return;
+      if (!businessId) {
+        setLoading(false);
+        return;
+      }
       try {
         const res = await api.get(`/businesses/${businessId}/reviews`);
         if (res.data?.success && res.data.distribution) {

@@ -638,6 +638,67 @@ export const en = {
     heroDesc: "Convert your accumulated Findy Coins into real-world benefits. Trade with other users or redeem for special offers.",
     startExchanging: "Start Exchanging",
   },
+  billing: {
+    title: "Billing & Plans",
+    subtitle: "Manage your subscription, upgrade your plan to unlock premium features, or apply promo codes for exclusive discounts.",
+    currentActivePlan: "Current Active Plan",
+    startFreemium: "Start (Freemium)",
+    pro: "Pro",
+    plan: "Plan",
+    status: "Status:",
+    expires: "Expires:",
+    gifted: "🎁 Gifted:",
+    freeTierDesc: "You are currently on the free tier. No active billing cycle.",
+    havePromoCode: "Have a Promo Code?",
+    redeemBelow: "Redeem it below for special discounts.",
+    enterCode: "ENTER CODE",
+    applying: "Applying...",
+    redeem: "Redeem",
+    promoSuccess: "Promo code applied successfully!",
+    promoError: "Failed to apply promo code",
+    upgradeBusiness: "Upgrade Your Business",
+    upgradeDesc: "Select the plan that best fits your goals and scale. Unlock powerful tools to grow your customer base.",
+    mostPopular: "Most Popular",
+    currentPlanBtn: "Current Plan",
+    upgradeToBtn: "Upgrade to",
+    plans: {
+      starter: {
+        title: "Start",
+        price: "Free",
+        period: "Forever",
+        desc: "Perfect for new businesses just getting started.",
+        features: [
+          "Standard rank listing",
+          "Basic business profile",
+          "Community support",
+        ]
+      },
+      standard: {
+        title: "Pro",
+        period: "/month",
+        desc: "Unlock powerful tools to grow your customer base.",
+        features: [
+          "Featured rank listing",
+          "Advanced analytics dashboard",
+          "Menus & Offers feature",
+          "Stories & Highlights",
+          "Priority support",
+        ]
+      },
+      premium: {
+        title: "Premium",
+        period: "/month",
+        desc: "Maximum visibility and elite concierge service.",
+        features: [
+          "Top priority rank listing",
+          "Direct concierge support",
+          "Exclusive promotional spots",
+          "Verified badge priority",
+          "All Pro features included",
+        ]
+      }
+    }
+  },
 };
 
 export type Translations = typeof en;

@@ -30,6 +30,7 @@ const DEFAULT_STATS: StatItem[] = [
   { label: "Inquiries", value: "0", change: "+0%", icon: MessageSquare, iconColor: "text-blue-500 fill-blue-500", iconBg: "bg-blue-500/10", iconAnimate: "animate-message-pop" },
   { label: "Avg. Rating", value: "0.0", change: "", icon: Star, iconColor: "text-amber-400 fill-amber-400", iconBg: "bg-amber-400/10", iconAnimate: "animate-gold-twinkle" },
   { label: "Profile Rank", value: "#–", change: "", icon: TrendingUp },
+  { label: "Saves", value: "0", change: "+0", icon: Bookmark, iconColor: "text-purple-500 fill-purple-500", iconBg: "bg-purple-500/10", iconAnimate: "animate-pulse" },
 ];
 
 interface DashboardInquiry {
@@ -345,7 +346,7 @@ export default function DashboardPage() {
               <TotalViewsChart totalViews={totalViews} businessId={businessId || ""} />
             </div>
             <div className="lg:col-span-1">
-              {businessId && <RatingChart businessId={businessId} />}
+              <RatingChart businessId={businessId || ""} />
             </div>
           </div>
         )}

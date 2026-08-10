@@ -121,13 +121,13 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       }
     }
     loadPlan();
-    
+
     // Listen for custom plan update event from the dashboard
     const handlePlanUpdate = () => {
       const demoPlan = window.localStorage.getItem("demo_active_plan");
       if (demoPlan) setActivePlan(demoPlan);
     };
-    
+
     // Also check demo_active_plan on initial mount
     handlePlanUpdate();
 
@@ -225,7 +225,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                   Dashboard
                 </p>
               </div>
-              <button 
+              <button
                 onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
                 className="p-1 rounded-md hover:bg-emerald-500/10 text-emerald-500 transition-colors"
                 title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
@@ -244,8 +244,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                     <button
                       onClick={() => !isSidebarCollapsed && setProfileExpanded(!profileExpanded)}
                       className={`group relative flex items-center w-full rounded-lg py-2.5 text-sm font-medium transition-all duration-300 cursor-pointer text-left ${isSidebarCollapsed ? "px-2" : "px-3"} ${isProfileActive
-                          ? "bg-[hsl(var(--primary))]/5 text-[hsl(var(--primary))]"
-                          : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
+                        ? "bg-[hsl(var(--primary))]/5 text-[hsl(var(--primary))]"
+                        : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
                         }`}
                     >
                       <link.icon className="h-4 w-4 shrink-0" />
@@ -268,13 +268,12 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                                     key={sub.href}
                                     href={sub.href}
                                     onClick={(e) => isSubLocked && handleLockedClick(e, sub.href)}
-                                    className={`flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium transition-colors ${
-                                      isSubLocked
+                                    className={`flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium transition-colors ${isSubLocked
                                         ? "text-[hsl(var(--muted-foreground))]/70 hover:bg-amber-500/10 cursor-pointer"
                                         : active
                                           ? "text-[hsl(var(--primary))] font-semibold bg-[hsl(var(--primary))]/10"
                                           : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
-                                    }`}
+                                      }`}
                                   >
                                     <sub.icon className="h-3.5 w-3.5 shrink-0" />
                                     <span className="truncate">{sub.label}</span>
@@ -303,10 +302,10 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                               style={isSubShaking ? { animation: "planLockShake 0.4s ease-in-out" } : undefined}
                               title={isSubLocked ? "Pro & Premium feature — Locked on Starter Plan" : undefined}
                               className={`flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${isSubLocked
-                                  ? "text-[hsl(var(--muted-foreground))]/70 hover:bg-amber-500/10 cursor-pointer"
-                                  : active
-                                    ? "text-[hsl(var(--primary))] font-semibold bg-[hsl(var(--primary))]/5"
-                                    : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]/50 hover:text-[hsl(var(--foreground))]"
+                                ? "text-[hsl(var(--muted-foreground))]/70 hover:bg-amber-500/10 cursor-pointer"
+                                : active
+                                  ? "text-[hsl(var(--primary))] font-semibold bg-[hsl(var(--primary))]/5"
+                                  : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]/50 hover:text-[hsl(var(--foreground))]"
                                 }`}
                             >
                               <div className="flex items-center gap-2 truncate">
@@ -331,10 +330,10 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                   onClick={(e) => isLocked && handleLockedClick(e, link.href)}
                   style={isShaking ? { animation: "planLockShake 0.4s ease-in-out" } : undefined}
                   className={`group relative flex items-center rounded-lg py-2.5 text-sm font-medium transition-all duration-300 ${isSidebarCollapsed ? "px-2" : "px-3"} ${isLocked
-                      ? "text-[hsl(var(--muted-foreground))]/70 hover:bg-amber-500/10 cursor-pointer"
-                      : isActive
-                        ? "bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))]"
-                        : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
+                    ? "text-[hsl(var(--muted-foreground))]/70 hover:bg-amber-500/10 cursor-pointer"
+                    : isActive
+                      ? "bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))]"
+                      : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
                     }`}
                 >
                   <link.icon className="h-4 w-4 shrink-0" />

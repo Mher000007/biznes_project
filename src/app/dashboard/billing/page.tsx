@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import { useI18n } from "@/i18n";
 import {
   Award,
   Sparkles,
@@ -13,9 +14,11 @@ import {
   ShieldCheck,
   CreditCard
 } from "lucide-react";
+import PaymentModal from "@/components/ui/PaymentModal";
 
 export default function DashboardBillingPage() {
   const { currentUser } = useAuth();
+  const { t } = useI18n();
 
   const [loading, setLoading] = useState(true);
   const [businessId, setBusinessId] = useState<string | null>(null);
@@ -27,6 +30,18 @@ export default function DashboardBillingPage() {
   const [promoMessage, setPromoMessage] = useState("");
   const [promoMessageType, setPromoMessageType] = useState<"success" | "error" | "">("");
   const [applyingPromo, setApplyingPromo] = useState(false);
+
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [selectedPlanToPay, setSelectedPlanToPay] = useState<"starter" | "standard" | "premium" | null>(null);
+
+  const handlePlanClick = (plan: "starter" | "standard" | "premium") => {
+    if (plan === "starter") {
+      handlePlanUpgrade(plan);
+    } else {
+      setSelectedPlanToPay(plan);
+      setIsPaymentModalOpen(true);
+    }
+  };
 
   // Listen for plan updates
   useEffect(() => {
@@ -79,7 +94,7 @@ export default function DashboardBillingPage() {
       );
       if (res.data?.success) {
         setPromoMessageType("success");
-        setPromoMessage(res.data.message || "Promo code applied successfully!");
+        setPromoMessage(res.data.message || t.billing.promoSuccess);
         setPromoCodeInput("");
         // Reload subscription details
         const subRes = await api.get(`/subscriptions/business/${businessId}`);
@@ -94,7 +109,7 @@ export default function DashboardBillingPage() {
       }
     } catch (err: any) {
       setPromoMessageType("error");
-      setPromoMessage(err.response?.data?.message || "Failed to apply promo code");
+      setPromoMessage(err.response?.data?.message || t.billing.promoError);
     } finally {
       setApplyingPromo(false);
     }
@@ -142,55 +157,39 @@ export default function DashboardBillingPage() {
   const plans = [
     {
       key: "starter",
-      title: "Start",
-      price: "Free",
-      period: "Forever",
-      desc: "Perfect for new businesses just getting started.",
+      title: t.billing.plans.starter.title,
+      price: t.billing.plans.starter.price,
+      period: t.billing.plans.starter.period,
+      desc: t.billing.plans.starter.desc,
       icon: Zap,
       color: "text-zinc-500",
       bgHover: "hover:border-zinc-500/50",
-      features: [
-        "Standard rank listing",
-        "Basic business profile",
-        "Community support",
-      ]
+      features: t.billing.plans.starter.features
     },
     {
       key: "standard",
-      title: "Pro",
+      title: t.billing.plans.standard.title,
       price: "20,000",
       currency: "AMD",
-      period: "/month",
-      desc: "Unlock powerful tools to grow your customer base.",
+      period: t.billing.plans.standard.period,
+      desc: t.billing.plans.standard.desc,
       icon: Sparkles,
       color: "text-[hsl(var(--primary))]",
       bgHover: "hover:border-[hsl(var(--primary))]/50",
       popular: true,
-      features: [
-        "Featured rank listing",
-        "Advanced analytics dashboard",
-        "Menus & Offers feature",
-        "Stories & Highlights",
-        "Priority support",
-      ]
+      features: t.billing.plans.standard.features
     },
     {
       key: "premium",
-      title: "Premium",
+      title: t.billing.plans.premium.title,
       price: "50,000",
       currency: "AMD",
-      period: "/month",
-      desc: "Maximum visibility and elite concierge service.",
+      period: t.billing.plans.premium.period,
+      desc: t.billing.plans.premium.desc,
       icon: Crown,
       color: "text-amber-500",
       bgHover: "hover:border-amber-500/50",
-      features: [
-        "Top priority rank listing",
-        "Direct concierge support",
-        "Exclusive promotional spots",
-        "Verified badge priority",
-        "All Pro features included",
-      ]
+      features: t.billing.plans.premium.features
     }
   ];
 
@@ -201,10 +200,10 @@ export default function DashboardBillingPage() {
         {/* Page Header */}
         <div className="mb-10 text-center max-w-2xl mx-auto pt-6">
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[hsl(var(--foreground))] mb-3">
-            Billing & <span className="text-transparent bg-clip-text bg-gradient-to-r from-[hsl(var(--primary))] to-purple-500">Plans</span>
+            {t.billing.title.split(" ").slice(0, -1).join(" ")} <span className="text-transparent bg-clip-text bg-gradient-to-r from-[hsl(var(--primary))] to-purple-500">{t.billing.title.split(" ").slice(-1)}</span>
           </h1>
           <p className="text-[hsl(var(--muted-foreground))] text-sm sm:text-base leading-relaxed">
-            Manage your subscription, upgrade your plan to unlock premium features, or apply promo codes for exclusive discounts.
+            {t.billing.subtitle}
           </p>
         </div>
 
@@ -226,11 +225,11 @@ export default function DashboardBillingPage() {
 
                 <div className="relative z-10 flex flex-col items-center justify-center">
                   <span className="inline-block px-3 py-1 bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))] text-[10px] font-black uppercase tracking-widest rounded-full mb-3">
-                    Current Active Plan
+                    {t.billing.currentActivePlan}
                   </span>
                   <div className="flex items-center justify-center gap-3 mb-2">
                     <h2 className="text-2xl sm:text-3xl font-black text-[hsl(var(--foreground))] capitalize">
-                      {activePlan === "starter" ? "Start (Freemium)" : activePlan === "standard" ? "Pro" : activePlan} Plan
+                      {activePlan === "starter" ? t.billing.startFreemium : activePlan === "standard" ? t.billing.pro : activePlan} {t.billing.plan}
                     </h2>
                     {activePlan !== "starter" && (
                       <span className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-500">
@@ -242,23 +241,23 @@ export default function DashboardBillingPage() {
                   {activeSubscription ? (
                     <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-medium text-[hsl(var(--muted-foreground))] mt-4">
                       <div className="flex items-center gap-1.5 bg-[hsl(var(--background))] px-3 py-1.5 rounded-lg border border-[hsl(var(--border))]">
-                        <span>Status:</span>
+                        <span>{t.billing.status}</span>
                         <span className="text-emerald-500 font-bold uppercase">{activeSubscription.status}</span>
                       </div>
                       <div className="flex items-center gap-1.5 bg-[hsl(var(--background))] px-3 py-1.5 rounded-lg border border-[hsl(var(--border))]">
-                        <span>Expires:</span>
+                        <span>{t.billing.expires}</span>
                         <span className="text-[hsl(var(--foreground))]">{new Date(activeSubscription.endDate).toLocaleDateString()}</span>
                       </div>
 
                       {activeSubscription.isGifted && (
                         <div className="flex items-center gap-1.5 bg-purple-500/10 text-purple-500 px-3 py-1.5 rounded-lg border border-purple-500/20">
-                          <span>🎁 Gifted: {activeSubscription.giftReason}</span>
+                          <span>{t.billing.gifted} {activeSubscription.giftReason}</span>
                         </div>
                       )}
                     </div>
                   ) : (
                     <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1">
-                      You are currently on the free tier. No active billing cycle.
+                      {t.billing.freeTierDesc}
                     </p>
                   )}
                 </div>
@@ -276,8 +275,8 @@ export default function DashboardBillingPage() {
                       <Ticket className="w-6 h-6" />
                     </div>
                     <div>
-                      <h4 className="text-lg font-bold text-[hsl(var(--foreground))]">Have a Promo Code?</h4>
-                      <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1">Redeem it below for special discounts.</p>
+                      <h4 className="text-lg font-bold text-[hsl(var(--foreground))]">{t.billing.havePromoCode}</h4>
+                      <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1">{t.billing.redeemBelow}</p>
                     </div>
                   </div>
 
@@ -287,7 +286,7 @@ export default function DashboardBillingPage() {
                         type="text"
                         value={promoCodeInput}
                         onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
-                        placeholder="ENTER CODE"
+                        placeholder={t.billing.enterCode}
                         className="w-full pl-4 pr-4 py-3.5 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] text-sm font-bold tracking-widest outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]/50 transition-all placeholder:text-[hsl(var(--muted-foreground))]/50 placeholder:font-normal uppercase"
                       />
                     </div>
@@ -296,7 +295,7 @@ export default function DashboardBillingPage() {
                       disabled={applyingPromo || !promoCodeInput.trim()}
                       className="sm:w-auto w-full px-8 py-3.5 rounded-xl bg-[hsl(var(--foreground))] text-[hsl(var(--background))] hover:bg-[hsl(var(--foreground))]/90 text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shrink-0"
                     >
-                      {applyingPromo ? "Applying..." : "Redeem"}
+                      {applyingPromo ? t.billing.applying : t.billing.redeem}
                     </button>
                   </form>
 
@@ -317,8 +316,8 @@ export default function DashboardBillingPage() {
             {/* BOTTOM SECTION: Pricing Grid */}
             <div className="mt-12 sm:mt-16">
               <div className="text-center mb-10">
-                <h3 className="text-2xl md:text-3xl font-extrabold text-[hsl(var(--foreground))]">Upgrade Your Business</h3>
-                <p className="text-sm md:text-base text-[hsl(var(--muted-foreground))] mt-3 max-w-xl mx-auto">Select the plan that best fits your goals and scale. Unlock powerful tools to grow your customer base.</p>
+                <h3 className="text-2xl md:text-3xl font-extrabold text-[hsl(var(--foreground))]">{t.billing.upgradeBusiness}</h3>
+                <p className="text-sm md:text-base text-[hsl(var(--muted-foreground))] mt-3 max-w-xl mx-auto">{t.billing.upgradeDesc}</p>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 xl:gap-10 items-stretch max-w-6xl mx-auto">
@@ -329,7 +328,7 @@ export default function DashboardBillingPage() {
                   return (
                     <div
                       key={p.key}
-                      onClick={() => handlePlanUpgrade(p.key as any)}
+                      onClick={() => handlePlanClick(p.key as any)}
                       className={`relative flex flex-col rounded-3xl p-6 lg:p-8 cursor-pointer transition-all duration-300 ease-in-out
                         ${isActive
                           ? "ring-2 ring-[hsl(var(--primary))] bg-[hsl(var(--primary))]/[0.02] scale-[1.02] shadow-xl shadow-[hsl(var(--primary))]/10"
@@ -340,7 +339,7 @@ export default function DashboardBillingPage() {
                       {isPro && !isActive && (
                         <div className="absolute -top-4 left-0 right-0 flex justify-center">
                           <span className="bg-gradient-to-r from-[hsl(var(--primary))] to-emerald-500 text-white text-[10px] font-black uppercase tracking-widest py-1.5 px-4 rounded-full shadow-md">
-                            Most Popular
+                            {t.billing.mostPopular}
                           </span>
                         </div>
                       )}
@@ -384,18 +383,20 @@ export default function DashboardBillingPage() {
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handlePlanUpgrade(p.key as any);
+                          handlePlanClick(p.key as any);
                         }}
                         className={`w-full py-3.5 rounded-xl text-sm font-bold transition-all duration-200
                           ${isActive
-                            ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] shadow-md hover:bg-[hsl(var(--primary))]/90"
-                            : isPro
-                              ? "bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))] hover:bg-[hsl(var(--primary))]/20"
-                              : "bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] hover:bg-[hsl(var(--border))]"
+                            ? "bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] cursor-default border border-[hsl(var(--border))]"
+                            : p.key === "premium"
+                              ? "bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                              : p.key === "standard"
+                                ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                                : "bg-[hsl(var(--secondary))] text-[hsl(var(--secondary-foreground))] shadow-sm hover:bg-[hsl(var(--secondary))]/80"
                           }
                         `}
                       >
-                        {isActive ? "Current Plan" : `Upgrade to ${p.title}`}
+                        {isActive ? t.billing.currentPlanBtn : `${t.billing.upgradeToBtn} ${p.title}`}
                       </button>
                     </div>
                   );
@@ -405,6 +406,15 @@ export default function DashboardBillingPage() {
           </div>
         )}
       </div>
+
+      {selectedPlanToPay && (
+        <PaymentModal
+          isOpen={isPaymentModalOpen}
+          onClose={() => setIsPaymentModalOpen(false)}
+          plan={selectedPlanToPay}
+          onSuccess={(plan) => handlePlanUpgrade(plan)}
+        />
+      )}
     </ProtectedRoute>
   );
 }
