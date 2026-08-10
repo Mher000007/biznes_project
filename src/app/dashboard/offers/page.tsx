@@ -241,8 +241,26 @@ export default function DashboardOffers() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Listen for plan updates
+  useEffect(() => {
+    const handlePlanUpdate = () => {
+      const demoPlan = window.localStorage.getItem("demo_active_plan");
+      if (demoPlan) setActivePlan(demoPlan);
+    };
+    handlePlanUpdate();
+    window.addEventListener("plan_updated", handlePlanUpdate);
+    return () => window.removeEventListener("plan_updated", handlePlanUpdate);
+  }, []);
+
   useEffect(() => {
     const loadPlan = async () => {
+      if (typeof window !== "undefined") {
+        const demoPlan = window.localStorage.getItem("demo_active_plan");
+        if (demoPlan) {
+          setActivePlan(demoPlan);
+          return;
+        }
+      }
       try {
         const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
         if (token) {

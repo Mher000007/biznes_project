@@ -76,6 +76,10 @@ export default function DashboardPage() {
 
   const handlePlanUpgrade = async (plan: "starter" | "standard" | "premium") => {
     setActivePlan(plan);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("demo_active_plan", plan);
+      window.dispatchEvent(new Event("plan_updated"));
+    }
     try {
       if (businessId) {
         await api.post("/subscriptions/subscribe", {
@@ -128,6 +132,12 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
+    // Client-side initialization of activePlan from localStorage
+    const savedPlan = localStorage.getItem("demo_active_plan");
+    if (savedPlan && ["starter", "standard", "premium"].includes(savedPlan)) {
+      setActivePlan(savedPlan as any);
+    }
+    
     async function loadDashboardData() {
       if (!currentUser) return;
       try {
@@ -172,14 +182,14 @@ export default function DashboardPage() {
           if (bookingsRes.data?.success) {
             const allBookings = bookingsRes.data.data || [];
             bookingCount = allBookings.length;
-            
+
             // Group by locationId
             const countsMap = allBookings.reduce((acc: any, b: any) => {
               const locId = b.locationId || "unspecified";
               acc[locId] = (acc[locId] || 0) + 1;
               return acc;
             }, {});
-            
+
             // Map locationIds to addresses
             if (biz.locations && biz.locations.length > 0) {
               breakdown = Object.keys(countsMap).map(locId => {
@@ -251,17 +261,6 @@ export default function DashboardPage() {
 
   return (
     <ProtectedRoute>
-      {!loading && businessId && !isVerified ? (
-        <div className="flex min-h-[60vh] flex-col items-center justify-center text-center p-6 animate-fade-in">
-          <div className="mb-6 rounded-full bg-amber-100 p-6 dark:bg-amber-900/30">
-            <Lock className="h-12 w-12 text-amber-600 dark:text-amber-400" />
-          </div>
-          <h2 className="text-2xl font-bold mb-3">Pending Admin Approval</h2>
-          <p className="max-w-md text-[hsl(var(--muted-foreground))]">
-            Your business account is currently under review by our administration team. You will be notified and gain full access to your vendor dashboard once your account is verified and approved.
-          </p>
-        </div>
-      ) : (
         <div>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <div>
@@ -302,8 +301,8 @@ export default function DashboardPage() {
                 return stat.label !== "Saves";
               })
               .map((stat) => (
-                <div 
-                  key={stat.label} 
+                <div
+                  key={stat.label}
                   className={`rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-5 relative ${stat.label === "Inquiries" ? "cursor-pointer hover:border-[hsl(var(--primary))] transition-colors" : ""}`}
                   onClick={() => { if (stat.label === "Inquiries") setShowInquiriesPopover(!showInquiriesPopover); }}
                 >
@@ -386,30 +385,9 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* Verification Pending Banner or Subscription Management */}
+          {/* Subscription & Billing Section */}
           {!loading && (
-            !isVerified ? (
-              /* Verification Pending Banner */
-              <div className="rounded-2xl border border-amber-200 dark:border-amber-900/50 bg-amber-500/5 p-6 mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-scale-in">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-amber-500/10 rounded-xl text-amber-500 shrink-0 animate-pulse">
-                    <ShieldAlert className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-[hsl(var(--foreground))] mb-1">Բիզնեսի հաստատումը ընթացքի մեջ է</h3>
-                    <p className="text-xs text-[hsl(var(--muted-foreground))] leading-relaxed max-w-2xl">
-                      Ձեր բիզնեսի էջը ներկայումս գտնվում է ստուգման փուլում ադմինիստրատորների կողմից: Պլանների ընտրությունը, պրեմիում ֆունկցիաների ակտիվացումը և պրոմո կոդերի կիրառումը հասանելի կդառնան հաստատումից հետո:
-                    </p>
-                  </div>
-                </div>
-                <div className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 text-amber-600 font-semibold text-xs border border-amber-200/30 uppercase tracking-wide">
-                  <span className="h-2 w-2 rounded-full bg-amber-500 animate-ping" />
-                  Pending Verification
-                </div>
-              </div>
-            ) : (
-              /* Subscription & Billing Section */
-              <div id="subscription-plans-section" className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mb-8 animate-scale-in">
+            <div id="subscription-plans-section" className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mb-8 animate-scale-in">
                 {/* Active subscription card (left) */}
                 <div className="lg:col-span-4 rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-6 shadow-sm flex flex-col justify-between min-h-[300px]">
                   <div>
@@ -483,7 +461,14 @@ export default function DashboardPage() {
                             <p className="text-[10px] text-[hsl(var(--muted-foreground))] mt-1.5 leading-relaxed">{p.desc}</p>
                           </div>
                           {!isActive && (
-                            <button type="button" className="mt-4 w-full py-1.5 rounded-lg bg-[hsl(var(--primary))]/10 hover:bg-[hsl(var(--primary))]/20 text-[hsl(var(--primary))] text-xs font-bold transition-colors cursor-pointer">
+                            <button 
+                              type="button" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handlePlanUpgrade(p.key as any);
+                              }}
+                              className="mt-4 w-full py-1.5 rounded-lg bg-[hsl(var(--primary))]/10 hover:bg-[hsl(var(--primary))]/20 text-[hsl(var(--primary))] text-xs font-bold transition-colors cursor-pointer"
+                            >
                               Select
                             </button>
                           )}
@@ -554,11 +539,11 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
-            )
           )}
 
         </div>
-      )}
     </ProtectedRoute>
   );
 }
+
+// Force cache invalidation

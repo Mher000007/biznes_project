@@ -274,6 +274,17 @@ export default function DashboardProfilePage() {
   const [promoMessageType, setPromoMessageType] = useState<"success" | "error" | "">("");
   const [applyingPromo, setApplyingPromo] = useState(false);
 
+  // Listen for plan updates
+  useEffect(() => {
+    const handlePlanUpdate = () => {
+      const demoPlan = window.localStorage.getItem("demo_active_plan");
+      if (demoPlan) setActivePlan(demoPlan);
+    };
+    handlePlanUpdate();
+    window.addEventListener("plan_updated", handlePlanUpdate);
+    return () => window.removeEventListener("plan_updated", handlePlanUpdate);
+  }, []);
+
   // Load business info from backend/local mock on init
   useEffect(() => {
     async function fetchBusinessData() {
@@ -348,11 +359,21 @@ export default function DashboardProfilePage() {
           setBusinessId(biz._id);
 
           // Fetch active subscription
+          if (typeof window !== "undefined") {
+            const demoPlan = window.localStorage.getItem("demo_active_plan");
+            if (demoPlan) {
+              setActivePlan(demoPlan);
+              // Still fetch to get full subscription details if needed, but activePlan is set
+            }
+          }
+          
           const subRes = await axios.get(`${apiURL}/subscriptions/business/${biz._id}`, {
             headers: token ? { Authorization: `Bearer ${token}` } : {}
           });
           if (subRes.data?.success && subRes.data.data) {
-            setActivePlan(subRes.data.data.plan);
+            if (typeof window === "undefined" || !window.localStorage.getItem("demo_active_plan")) {
+              setActivePlan(subRes.data.data.plan);
+            }
             setActiveSubscription(subRes.data.data);
           }
           return;

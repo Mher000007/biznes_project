@@ -90,13 +90,7 @@ export default function TotalViewsChart({ totalViews, businessId }: TotalViewsCh
     fetchAnalytics();
   }, [businessId, period]);
 
-  if (totalViews === 0 && chartData.length === 0 && !loading) {
-    return (
-      <div className="flex h-[300px] w-full items-center justify-center rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))]">
-        <p className="text-sm text-[hsl(var(--muted-foreground))]">Դիտումների տվյալներ դեռ չկան (No views data yet)</p>
-      </div>
-    );
-  }
+
 
   const interval = period === '3m' || period === '6m' ? 'preserveStartEnd' : 0;
   const minTickGap = period === '3m' || period === '6m' ? 30 : 5;

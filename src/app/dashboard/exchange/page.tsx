@@ -30,8 +30,26 @@ export default function DashboardExchange() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
 
+  // Listen for plan updates
+  useEffect(() => {
+    const handlePlanUpdate = () => {
+      const demoPlan = window.localStorage.getItem("demo_active_plan");
+      if (demoPlan) setActivePlan(demoPlan);
+    };
+    handlePlanUpdate();
+    window.addEventListener("plan_updated", handlePlanUpdate);
+    return () => window.removeEventListener("plan_updated", handlePlanUpdate);
+  }, []);
+
   useEffect(() => {
     const loadPlan = async () => {
+      if (typeof window !== "undefined") {
+        const demoPlan = window.localStorage.getItem("demo_active_plan");
+        if (demoPlan) {
+          setActivePlan(demoPlan);
+          return;
+        }
+      }
       try {
         if (currentUser) {
           const bizRes = await api.get("/businesses/me/all");

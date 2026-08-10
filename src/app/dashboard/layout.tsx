@@ -117,6 +117,18 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       }
     }
     loadPlan();
+    
+    // Listen for custom plan update event from the dashboard
+    const handlePlanUpdate = () => {
+      const demoPlan = window.localStorage.getItem("demo_active_plan");
+      if (demoPlan) setActivePlan(demoPlan);
+    };
+    
+    // Also check demo_active_plan on initial mount
+    handlePlanUpdate();
+
+    window.addEventListener("plan_updated", handlePlanUpdate);
+    return () => window.removeEventListener("plan_updated", handlePlanUpdate);
   }, [currentUser]);
 
   // ── CONDITIONAL EARLY RETURNS (ALL HOOKS HAVE BEEN CALLED ABOVE) ──────────

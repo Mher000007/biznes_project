@@ -65,9 +65,21 @@ export default function DashboardStoriesPage() {
 
       // Fetch subscription plan
       try {
-        const subRes = await api.get(`/subscriptions/business/${biz._id}`);
-        if (subRes.data?.data) {
-          setActivePlan(subRes.data.data.plan);
+        if (typeof window !== "undefined") {
+          const demoPlan = window.localStorage.getItem("demo_active_plan");
+          if (demoPlan) {
+            setActivePlan(demoPlan);
+          } else {
+            const subRes = await api.get(`/subscriptions/business/${biz._id}`);
+            if (subRes.data?.data) {
+              setActivePlan(subRes.data.data.plan);
+            }
+          }
+        } else {
+          const subRes = await api.get(`/subscriptions/business/${biz._id}`);
+          if (subRes.data?.data) {
+            setActivePlan(subRes.data.data.plan);
+          }
         }
       } catch (err) {
         // ignore
@@ -92,6 +104,17 @@ export default function DashboardStoriesPage() {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  // Listen for plan updates
+  useEffect(() => {
+    const handlePlanUpdate = () => {
+      const demoPlan = window.localStorage.getItem("demo_active_plan");
+      if (demoPlan) setActivePlan(demoPlan);
+    };
+    handlePlanUpdate();
+    window.addEventListener("plan_updated", handlePlanUpdate);
+    return () => window.removeEventListener("plan_updated", handlePlanUpdate);
   }, []);
 
   useEffect(() => {
