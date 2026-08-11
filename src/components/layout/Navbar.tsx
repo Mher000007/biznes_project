@@ -390,6 +390,17 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
   if (pathname.startsWith("/admin-secure")) {
     return null;
   }
@@ -427,7 +438,7 @@ export default function Navbar() {
     }
   };
 
-  const isTransparent = pathname === "/" && !scrolled;
+  const isTransparent = pathname === "/" && !scrolled && !isOpen;
   const isBusinessUser = currentUser?.role === "business_owner" || currentUser?.accountType === "business";
 
   return (
@@ -600,6 +611,12 @@ export default function Navbar() {
         >
           {t.nav.about}
         </Link>
+        <Link
+          href="/about#faq"
+          className={styles.navLink}
+        >
+          FAQ
+        </Link>
         <div className="relative group/exchange flex items-center h-full">
           <Link
             href="/exchange"
@@ -759,6 +776,17 @@ export default function Navbar() {
       {/* Mobile menu overlay */}
       {isOpen && (
         <div className={styles.mobileMenu}>
+          {/* Mobile Menu Header */}
+          <div className="flex items-center justify-end w-full mb-2">
+            <button
+              onClick={() => setIsOpen(false)}
+              className="text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/50 p-2 rounded-md transition-colors"
+              aria-label="Close Menu"
+            >
+              <X className="h-6 w-6" />
+            </button>
+          </div>
+
           <Link
             href="/"
             onClick={() => setIsOpen(false)}
@@ -782,6 +810,13 @@ export default function Navbar() {
             {t.nav.about}
           </Link>
           <Link
+            href="/about#faq"
+            onClick={() => setIsOpen(false)}
+            className={styles.navLink}
+          >
+            FAQ
+          </Link>
+          <Link
             href="/exchange"
             onClick={() => setIsOpen(false)}
             className={styles.navLink}
@@ -791,7 +826,7 @@ export default function Navbar() {
 
           <div className="py-2.5 my-2 border-y border-[hsl(var(--border))] flex items-center justify-between">
             <span className="text-[11px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
-              Settings
+              {locale === "hy" ? "Կարգավորումներ" : locale === "ru" ? "Настройки" : "Settings"}
             </span>
             <div className="flex gap-2">
               <LanguageSwitcher />

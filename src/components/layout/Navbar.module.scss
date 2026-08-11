@@ -41,6 +41,18 @@
   }
 }
 
+.mobileLogoImage {
+  height: 2.5rem;
+  width: auto;
+  object-fit: contain;
+  filter: invert(56%) sepia(87%) saturate(2462%) hue-rotate(119deg) brightness(98%) contrast(105%) !important;
+  transition: filter 0.3s ease;
+
+  :global(.dark) & {
+    filter: brightness(0) invert(1) !important;
+  }
+}
+
 .searchForm {
   display: flex;
   align-items: center;
@@ -324,15 +336,15 @@
   @include mq-down("lg") {
     display: flex;
     flex-direction: column;
-    position: absolute;
-    top: 64px;
+    position: fixed;
+    top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    height: calc(100vh - 64px);
+    height: 100dvh;
     background-color: $bg-primary;
-    padding: 24px;
-    z-index: 80;
+    padding: 16px 24px;
+    z-index: 110;
     gap: 20px;
     animation: slideDown 0.25s ease-out forwards;
   }

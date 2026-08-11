@@ -49,8 +49,11 @@ export default function Footer() {
             <h4 className="text-xs font-medium mb-3">{t.footer.product}</h4>
             <ul className="space-y-2">
               {[
+                [t.nav.home, "/"],
                 [t.nav.discover, "/discover"],
-                [t.nav.about, "/about"]
+                [t.nav.about, "/about"],
+                ["FAQ", "/about#faq"],
+                [t.nav.exchange || "Exchange", "/exchange"]
               ].map(([label, href]) => (
                 <li key={href as string}>
                   <Link href={href as string} className="text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors">{label}</Link>
@@ -69,7 +72,7 @@ export default function Footer() {
         </div>
 
         <div className="flex items-center justify-between border-t border-[hsl(var(--border))] py-5">
-          <p className="text-[11px] text-[hsl(var(--muted-foreground))]">© 2026 FAINDY</p>
+          <p className="text-[11px] text-[hsl(var(--muted-foreground))]">© 2026 FINDY</p>
         </div>
       </div>
     </footer>

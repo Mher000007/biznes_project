@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import Navbar from "@/components/layout/Navbar";
 import { ExchangeIllustration } from "@/components/ui/ExchangeIllustration";
 import { ArrowDown, ArrowUp, ArrowUpDown, Coins, ShieldCheck, Zap, X, UserPlus, Gift, Send, Heart, CheckCircle2, Sparkles } from "lucide-react";
@@ -68,6 +68,19 @@ export default function ExchangePage() {
     cost: number;
     couponCode: string;
   } | null>(null);
+
+  const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
+  const sortDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (sortDropdownRef.current && !sortDropdownRef.current.contains(event.target as Node)) {
+        setIsSortDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const isBusinessUser = currentUser?.role === "business_owner" || currentUser?.accountType === "business";
 
@@ -427,11 +440,18 @@ export default function ExchangePage() {
               {/* Categories Bar */}
               <div className="flex justify-start items-center gap-3 md:gap-6 mb-8 flex-wrap sm:flex-nowrap overflow-visible relative z-30">
                 {/* Primary Filters */}
-                <div className="inline-flex items-center p-1.5 bg-[hsl(var(--muted))]/30 border border-[hsl(var(--border))]/50 rounded-full shadow-inner backdrop-blur-md shrink-0">
-                  {/* All Button with Price Sort Hover Dropdown */}
-                  <div className={`relative inline-block ${offerCategory === 'All' ? 'group/all' : ''}`}>
+                <div className="inline-flex items-center p-1.5 bg-[hsl(var(--muted))]/30 border border-[hsl(var(--border))]/50 rounded-full shadow-inner backdrop-blur-md shrink-0 relative z-40">
+                  {/* All Button with Price Sort Click Dropdown */}
+                  <div className="relative inline-block" ref={sortDropdownRef}>
                     <button
-                      onClick={() => setOfferCategory('All')}
+                      onClick={() => {
+                        if (offerCategory === 'All') {
+                          setIsSortDropdownOpen(!isSortDropdownOpen);
+                        } else {
+                          setOfferCategory('All');
+                          setIsSortDropdownOpen(true);
+                        }
+                      }}
                       className={`relative px-6 py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-all duration-300 flex items-center gap-1.5 cursor-pointer ${offerCategory === 'All'
                           ? 'bg-emerald-500 !text-white text-white shadow-lg shadow-emerald-500/30'
                           : 'bg-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/80'
@@ -442,12 +462,15 @@ export default function ExchangePage() {
                       {sortOrder === 'lowToHigh' && <ArrowUp className="w-3.5 h-3.5 !text-white text-white" />}
                     </button>
 
-                    {/* Hover Dropdown Popup for Price Sorting */}
+                    {/* Click Dropdown Popup for Price Sorting */}
                     {offerCategory === 'All' && (
-                      <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover/all:opacity-100 group-hover/all:visible group-hover/all:translate-y-0 translate-y-2 transition-all duration-300 z-[100] pointer-events-none group-hover/all:pointer-events-auto">
+                      <div className={`absolute top-full left-0 pt-2 transition-all duration-300 z-[100] ${isSortDropdownOpen ? 'opacity-100 visible translate-y-0 pointer-events-auto' : 'opacity-0 invisible translate-y-2 pointer-events-none'}`}>
                         <div className="inline-flex items-center p-1 bg-[hsl(var(--card))]/95 border border-[hsl(var(--border))] rounded-2xl shadow-2xl backdrop-blur-xl ring-1 ring-[hsl(var(--border))]/50 whitespace-nowrap">
                           <button
-                            onClick={() => setSortOrder(prev => prev === 'highToLow' ? 'default' : 'highToLow')}
+                            onClick={() => {
+                              setSortOrder(prev => prev === 'highToLow' ? 'default' : 'highToLow');
+                              setIsSortDropdownOpen(false);
+                            }}
                             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 flex items-center gap-1.5 cursor-pointer ${sortOrder === 'highToLow'
                                 ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/25'
                                 : 'bg-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/60'
@@ -457,7 +480,10 @@ export default function ExchangePage() {
                             <ArrowDown className="w-3.5 h-3.5" />
                           </button>
                           <button
-                            onClick={() => setSortOrder(prev => prev === 'lowToHigh' ? 'default' : 'lowToHigh')}
+                            onClick={() => {
+                              setSortOrder(prev => prev === 'lowToHigh' ? 'default' : 'lowToHigh');
+                              setIsSortDropdownOpen(false);
+                            }}
                             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 flex items-center gap-1.5 cursor-pointer ${sortOrder === 'lowToHigh'
                                 ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/25'
                                 : 'bg-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/60'

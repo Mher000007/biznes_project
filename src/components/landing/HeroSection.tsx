@@ -90,7 +90,7 @@ export default function HeroSection() {
   }, [slides.length, current, isPlaying]);
 
   return (
-    <section className="hero-section pt-24 pb-16 sm:pt-32 sm:pb-24 relative overflow-hidden min-h-[500px] sm:min-h-[580px] flex items-center">
+    <section className="hero-section pt-16 pb-12 sm:pt-32 sm:pb-24 relative overflow-hidden h-[350px] sm:min-h-[500px] lg:min-h-[580px] flex items-center">
       {/* Background Slideshow */}
       <div className="absolute inset-0 z-0">
         {slides.map((slide, i) => (
@@ -102,7 +102,7 @@ export default function HeroSection() {
             <img
               src={slide.src}
               alt={slide.alt}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover object-center"
             />
           </div>
         ))}

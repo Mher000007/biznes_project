@@ -369,63 +369,83 @@
   margin: 0;
 }
 
-/* ─── Business benefits ──────────────────────────────────────────────────────── */
-.benefitsWrap {
+/* ─── FAQ ────────────────────────────────────────────────────────────────── */
+.faqWrap {
   background: hsl(var(--card));
   border: 1px solid hsl(var(--border));
-  border-radius: 2rem;
+  border-radius: 1.5rem;
   overflow: hidden;
-}
+  box-shadow: 0 12px 32px rgba(0,0,0,0.05);
 
-.benefitsGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-
-  @media (max-width: 680px) { grid-template-columns: 1fr; }
-}
-
-.benefitItem {
-  padding: 2rem;
-  border-right: 1px solid hsl(var(--border));
-  border-bottom: 1px solid hsl(var(--border));
-  display: flex;
-  gap: 1rem;
-  align-items: flex-start;
-
-  &:nth-child(even) { border-right: none; }
-  &:nth-last-child(-n+2) { border-bottom: none; }
-
-  @media (max-width: 680px) {
-    border-right: none;
-    &:last-child { border-bottom: none; }
+  :global(.dark) & {
+    box-shadow: 0 12px 32px rgba(0,0,0,0.25);
   }
 }
 
-.benefitNum {
-  font-size: 1.25rem;
-  font-weight: 900;
-  background: linear-gradient(135deg, hsl(145, 85%, 45%), hsl(165, 75%, 45%));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  flex-shrink: 0;
-  line-height: 1;
-  margin-top: 0.1rem;
+.faqList {
+  display: flex;
+  flex-direction: column;
 }
 
-.benefitContent {}
+.faqItem {
+  border-bottom: 1px solid hsl(var(--border));
+  &:last-child {
+    border-bottom: none;
+  }
+}
 
-.benefitTitle {
-  font-size: 0.9375rem;
+.faqQuestion {
+  width: 100%;
+  text-align: left;
+  padding: 1.5rem;
+  background: transparent;
+  border: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.05rem;
   font-weight: 700;
   color: hsl(var(--foreground));
-  margin: 0 0 0.35rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: hsla(220, 10%, 50%, 0.05);
+  }
 }
 
-.benefitDesc {
-  font-size: 0.875rem;
+.faqIcon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  color: hsl(145, 75%, 45%);
+  transition: transform 0.3s ease;
+
+  &.open {
+    transform: rotate(180deg);
+  }
+}
+
+.faqAnswerWrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s ease;
+  padding: 0 1.5rem;
+  
+  &.open {
+    grid-template-rows: 1fr;
+    padding-bottom: 1.5rem;
+  }
+}
+
+.faqAnswerInner {
+  overflow: hidden;
+}
+
+.faqAnswer {
+  font-size: 0.95rem;
   color: hsl(var(--muted-foreground));
-  line-height: 1.6;
+  line-height: 1.7;
   margin: 0;
 }
 
