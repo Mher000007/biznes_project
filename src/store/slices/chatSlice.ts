@@ -30,6 +30,7 @@ export interface BusinessSuggestion {
 
 interface ChatState {
   isOpen: boolean;
+  isWidgetVisible: boolean;
   messages: ChatMessage[];
   isLoading: boolean;
   sessionId: string | null;
@@ -37,6 +38,7 @@ interface ChatState {
 
 const initialState: ChatState = {
   isOpen: false,
+  isWidgetVisible: true,
   messages: [],
   isLoading: false,
   sessionId: null,
@@ -47,6 +49,7 @@ const chatSlice = createSlice({
   initialState,
   reducers: {
     toggleChat: (state) => { state.isOpen = !state.isOpen; },
+    toggleWidgetVisibility: (state) => { state.isWidgetVisible = !state.isWidgetVisible; },
     setOpen: (state, action: PayloadAction<boolean>) => { state.isOpen = action.payload; },
     addMessage: (state, action: PayloadAction<ChatMessage>) => { state.messages.push(action.payload); },
     setLoading: (state, action: PayloadAction<boolean>) => { state.isLoading = action.payload; },
@@ -55,5 +58,5 @@ const chatSlice = createSlice({
   },
 });
 
-export const { toggleChat, setOpen, addMessage, setLoading, setSessionId, clearChat } = chatSlice.actions;
+export const { toggleChat, toggleWidgetVisibility, setOpen, addMessage, setLoading, setSessionId, clearChat } = chatSlice.actions;
 export default chatSlice.reducer;

@@ -31,13 +31,13 @@ export default function LanguageSwitcher() {
         className="language-switcher-btn flex items-center justify-between min-w-[50px] h-9 px-3 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] text-base transition-colors hover:bg-[hsl(var(--muted))]/50"
       >
         <span>{FLAGS[locale]}</span>
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`ml-1.5 text-white transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}>
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`ml-1.5 text-gray-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}>
           <path d="m6 9 6 6 6-6"/>
         </svg>
       </button>
 
       {isOpen && (
-        <div className="absolute top-full right-0 mt-1.5 min-w-[50px] rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-lg overflow-hidden z-50 flex flex-col">
+        <div className="absolute top-full right-0 mt-1.5 min-w-[50px] max-h-[130px] rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-lg overflow-y-auto z-50 flex flex-col">
           {locales.map((l) => (
             <button
               key={l}

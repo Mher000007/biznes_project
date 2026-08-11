@@ -276,11 +276,85 @@ function QuickReplyButton({ text }: { text: string }) {
 export default function ChatWidget() {
   const pathname = usePathname();
   const dispatch = useDispatch();
-  const { isOpen, messages, isLoading, sessionId } = useSelector((s: RootState) => s.chat);
+  const { isOpen, isWidgetVisible, messages, isLoading, sessionId } = useSelector((s: RootState) => s.chat);
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { t } = useI18n();
+
+  // Drag state
+  const dragStartPos = useRef({ x: 0, y: 0 });
+  const dragInitClient = useRef({ x: 0, y: 0 });
+  const isPointerDown = useRef(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    isPointerDown.current = true;
+    dragStartPos.current = { x: position.x, y: position.y };
+    dragInitClient.current = { x: e.clientX, y: e.clientY };
+    setIsDragging(false);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isPointerDown.current) return;
+    const dx = e.clientX - dragInitClient.current.x;
+    const dy = e.clientY - dragInitClient.current.y;
+    
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+      setIsDragging(true);
+    }
+    
+    let newX = dragStartPos.current.x + dx;
+    let newY = dragStartPos.current.y + dy;
+
+    // Prevent dragging outside the screen or above the header/stories/hero
+    if (typeof window !== "undefined") {
+      const btnSize = 56;
+      const margin = 24; // approximate bottom/right tailwind margin
+      
+      let topBoundary = 80; // fallback
+      const storiesEl = document.querySelector('.stories-section-container');
+      const headerEl = document.querySelector('header');
+      const heroEl = document.querySelector('.hero-section');
+      
+      if (heroEl) {
+        topBoundary = Math.max(topBoundary, heroEl.getBoundingClientRect().bottom);
+      }
+      if (storiesEl) {
+        topBoundary = Math.max(topBoundary, storiesEl.getBoundingClientRect().bottom);
+      }
+      if (headerEl) {
+        topBoundary = Math.max(topBoundary, headerEl.getBoundingClientRect().bottom);
+      }
+
+      const maxMoveLeft = -(window.innerWidth - btnSize - margin);
+      const maxMoveRight = margin;
+      const maxMoveUp = -(window.innerHeight - btnSize - margin - topBoundary);
+      const maxMoveDown = margin;
+
+      newX = Math.max(maxMoveLeft, Math.min(newX, maxMoveRight));
+      newY = Math.max(maxMoveUp, Math.min(newY, maxMoveDown));
+    }
+
+    setPosition({ x: newX, y: newY });
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    isPointerDown.current = false;
+    (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+  };
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (isDragging) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    dispatch(toggleChat());
+  };
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -348,6 +422,10 @@ export default function ChatWidget() {
   };
 
   if (pathname.startsWith("/admin-secure")) {
+    return null;
+  }
+
+  if (!isWidgetVisible) {
     return null;
   }
 
@@ -434,16 +512,24 @@ export default function ChatWidget() {
       )}
 
       {/* FAB Button */}
-      <button
-        onClick={() => dispatch(toggleChat())}
-        className={`fixed bottom-4 right-4 sm:right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-green-500/10 backdrop-blur-md border border-green-500/30 text-green-600 shadow-lg shadow-green-500/10 transition-all hover:scale-110 hover:bg-green-500/20 ${isOpen ? "scale-0 opacity-0" : "scale-100 opacity-100"
-          }`}
-        aria-label="Open AI chat"
+      <div 
+        className={`fixed bottom-4 right-4 sm:right-6 z-50 ${isOpen ? "pointer-events-none" : ""}`}
+        style={{ transform: `translate(${position.x}px, ${position.y}px)`, touchAction: 'none' }}
       >
-        <Search className="h-7 w-7" strokeWidth={2} />
-        {/* Pulse ring */}
-        <span className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-20 pointer-events-none" />
-      </button>
+        <button
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onClick={handleClick}
+          className={`flex h-14 w-14 items-center justify-center rounded-full bg-green-500/10 backdrop-blur-md border border-green-500/30 text-green-600 shadow-lg shadow-green-500/10 transition-all duration-300 hover:bg-green-500/20 ${isOpen ? "scale-0 opacity-0" : "scale-100 opacity-100 hover:scale-110 cursor-grab active:cursor-grabbing"
+            }`}
+          aria-label="Open AI chat"
+        >
+          <Search className="h-7 w-7 pointer-events-none" strokeWidth={2} />
+          {/* Pulse ring */}
+          <span className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-20 pointer-events-none" />
+        </button>
+      </div>
     </>
   );
 }

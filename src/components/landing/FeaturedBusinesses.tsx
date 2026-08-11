@@ -23,6 +23,14 @@ interface RankedBusiness {
   logoUrl: string;
 }
 
+const SwipeIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" {...props}>
+    <path d="M19,12h-2v-1c0-0.6-0.4-1-1-1h-2v-1c0-0.6-0.4-1-1-1h-2V5c0-1.1-0.9-2-2-2S7,3.9,7,5v8.5l-2.1-1c-0.6-0.3-1.4-0.1-1.8,0.4 c-0.4,0.5-0.3,1.3,0.2,1.7l5.4,4.5C9.3,19.6,10.1,20,11,20h7c1.7,0,3-1.3,3-3v-4C21,12.4,20.1,12,19,12z" />
+    <path d="M13,3h6c0.6,0,1,0.4,1,1s-0.4,1-1,1h-6C12.4,5,12,4.6,12,4S12.4,3,13,3z" />
+    <path d="M15,7h4c0.6,0,1,0.4,1,1s-0.4,1-1,1h-4C14.4,9,14,8.6,14,8S14.4,7,15,7z" />
+  </svg>
+);
+
 function normalizeBusiness(b: any): Business {
   const cat = b.category || {};
   return {
@@ -239,11 +247,17 @@ export default function FeaturedBusinesses() {
                   <Link href="/discover?verified=true" className={styles.viewAll}>
                     {t.featured.viewAll}
                   </Link>
+                  <div className={styles.swipeIndicator}>
+                    <span className={styles.swipeText}>Թերթել</span>
+                    <SwipeIcon className={styles.swipeIcon} />
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory custom-scrollbar">
                   {premiumBusinesses.map((biz) => (
-                    <BusinessCard key={biz.id} business={biz} viewMode="grid" />
+                    <div key={biz.id} className="w-[85vw] sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] shrink-0 snap-start">
+                      <BusinessCard business={biz} viewMode="grid" />
+                    </div>
                   ))}
                 </div>
               </div>

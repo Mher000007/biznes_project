@@ -428,7 +428,10 @@ export default function ExchangePage() {
 
           <div className="flex flex-col mb-8 space-y-6">
             <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-[hsl(var(--foreground))]">
-              Exclusive <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">Offers</span>
+              {locale === "hy" ? "Բացառիկ " : locale === "ru" ? "Эксклюзивные " : "Exclusive "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">
+                {locale === "hy" ? "Առաջարկներ" : locale === "ru" ? "Предложения" : "Offers"}
+              </span>
             </h2>
           </div>
 
@@ -457,7 +460,9 @@ export default function ExchangePage() {
                           : 'bg-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/80'
                         }`}
                     >
-                      <span className={offerCategory === 'All' ? '!text-white text-white' : ''}>All</span>
+                      <span className={offerCategory === 'All' ? '!text-white text-white' : ''}>
+                        {locale === "hy" ? "Բոլորը" : locale === "ru" ? "Все" : "All"}
+                      </span>
                       {sortOrder === 'highToLow' && <ArrowDown className="w-3.5 h-3.5 !text-white text-white" />}
                       {sortOrder === 'lowToHigh' && <ArrowUp className="w-3.5 h-3.5 !text-white text-white" />}
                     </button>
@@ -504,7 +509,7 @@ export default function ExchangePage() {
                         : 'bg-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/80'
                       }`}
                   >
-                    Saved
+                    {locale === "hy" ? "Պահպանված" : locale === "ru" ? "Сохраненные" : "Saved"}
                   </button>
                 </div>
 
@@ -523,7 +528,7 @@ export default function ExchangePage() {
                             : 'bg-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/80'
                           }`}
                       >
-                        {cat}
+                        {locale === "hy" ? (cat === "Food" ? "Սնունդ" : cat === "Drink" ? "Խմիչք" : "Նարգիլե") : locale === "ru" ? (cat === "Food" ? "Еда" : cat === "Drink" ? "Напитки" : "Кальян") : cat}
                       </button>
                     );
                   })}
@@ -563,8 +568,8 @@ export default function ExchangePage() {
                     {/* Progress Bar */}
                     <div className="mb-5 mt-auto">
                       <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))] mb-2">
-                        <span>{offer.totalQuantity - offer.claimedQuantity} Left</span>
-                        <span>{Math.round((offer.claimedQuantity / offer.totalQuantity) * 100)}% Claimed</span>
+                        <span>{offer.totalQuantity - offer.claimedQuantity} {locale === "hy" ? "Մնացել է" : locale === "ru" ? "Осталось" : "Left"}</span>
+                        <span>{Math.round((offer.claimedQuantity / offer.totalQuantity) * 100)}% {locale === "hy" ? "Ստացված է" : locale === "ru" ? "Получено" : "Claimed"}</span>
                       </div>
                       <div className="w-full bg-[hsl(var(--border))] rounded-full h-1.5 overflow-hidden">
                         <div
@@ -580,7 +585,7 @@ export default function ExchangePage() {
                         <span className="font-black text-lg text-[hsl(var(--foreground))]">{offer.cost}</span>
                       </div>
                       <button className="px-5 py-2 bg-[hsl(var(--foreground))] text-[hsl(var(--background))] rounded-xl text-sm font-bold shadow-md hover:scale-105 active:scale-95 transition-transform pointer-events-none">
-                        View Details
+                        {locale === "hy" ? "Դիտել" : locale === "ru" ? "Подробнее" : "View Details"}
                       </button>
                     </div>
                   </div>
@@ -588,7 +593,9 @@ export default function ExchangePage() {
 
                 {sortedOffers.length === 0 && (
                   <div className="col-span-full py-12 text-center text-[hsl(var(--muted-foreground))]">
-                    {offerCategory === 'Saved' ? "You haven't saved any offers yet." : "No offers found in this category."}
+                    {offerCategory === 'Saved' 
+                      ? (locale === "hy" ? "Դուք դեռ չունեք պահպանված առաջարկներ:" : locale === "ru" ? "У вас пока нет сохраненных предложений." : "You haven't saved any offers yet.")
+                      : (locale === "hy" ? "Այս կատեգորիայում առաջարկներ չեն գտնվել:" : locale === "ru" ? "В этой категории предложений не найдено." : "No offers found in this category.")}
                   </div>
                 )}
               </div>
@@ -609,53 +616,59 @@ export default function ExchangePage() {
           <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-3xl w-full max-w-lg relative z-10 shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
 
             {/* Modal Header */}
-            <div className={`p-8 pb-6 ${selectedOffer.bgClass} relative`}>
+            <div className={`p-5 sm:p-8 pb-4 sm:pb-6 ${selectedOffer.bgClass} relative`}>
               <button
                 onClick={() => setSelectedOffer(null)}
-                className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-black/10 hover:bg-black/20 text-black/60 transition-colors"
+                className="absolute top-3 right-3 sm:top-4 sm:right-4 w-8 h-8 flex items-center justify-center rounded-full bg-black/10 hover:bg-black/20 text-black/60 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
 
-              <div className="flex items-center gap-4 mb-4">
-                <div className={`w-14 h-14 rounded-2xl bg-[hsl(var(--card))] shadow-sm ${selectedOffer.textClass} flex items-center justify-center overflow-hidden shrink-0`}>
+              <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
+                <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[hsl(var(--card))] shadow-sm ${selectedOffer.textClass} flex items-center justify-center overflow-hidden shrink-0`}>
                   {selectedOffer.businessLogo ? (
                     <img src={selectedOffer.businessLogo.startsWith('data:') || selectedOffer.businessLogo.startsWith('http') ? selectedOffer.businessLogo : getApiUrl().replace('/api', '') + selectedOffer.businessLogo} alt={selectedOffer.business} className="w-full h-full object-cover" />
                   ) : (
-                    <selectedOffer.icon className="w-7 h-7" />
+                    <selectedOffer.icon className="w-6 h-6 sm:w-7 sm:h-7" />
                   )}
                 </div>
-                <span className="font-bold text-lg text-[hsl(var(--foreground))]">{selectedOffer.business}</span>
+                <span className="font-bold text-base sm:text-lg text-[hsl(var(--foreground))]">{selectedOffer.business}</span>
               </div>
-              <h2 className="text-3xl font-black text-[hsl(var(--foreground))] leading-tight">{selectedOffer.title}</h2>
+              <h2 className="text-2xl sm:text-3xl font-black text-[hsl(var(--foreground))] leading-tight">{selectedOffer.title}</h2>
             </div>
 
             {/* Modal Body */}
-            <div className="p-8 pt-6">
-              <h4 className="font-bold text-[hsl(var(--foreground))] mb-2 uppercase text-xs tracking-wider opacity-60">About this offer</h4>
-              <p className="text-[hsl(var(--muted-foreground))] leading-relaxed mb-8">
+            <div className="p-5 sm:p-8 pt-4 sm:pt-6">
+              <h4 className="font-bold text-[hsl(var(--foreground))] mb-2 uppercase text-xs tracking-wider opacity-60">
+                {locale === "hy" ? "Առաջարկի մասին" : locale === "ru" ? "Об этом предложении" : "About this offer"}
+              </h4>
+              <p className="text-[hsl(var(--muted-foreground))] text-sm sm:text-base leading-relaxed mb-6 sm:mb-8">
                 {selectedOffer.description}
               </p>
 
-              <div className="flex items-center justify-between pt-6 border-t border-[hsl(var(--border))]/50">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))] mb-1">Cost</p>
-                  <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0 pt-5 sm:pt-6 border-t border-[hsl(var(--border))]/50">
+                <div className="flex sm:flex-col items-center sm:items-start justify-between w-full sm:w-auto">
+                  <p className="text-xs font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))] sm:mb-1">
+                    {locale === "hy" ? "Արժեք" : locale === "ru" ? "Стоимость" : "Cost"}
+                  </p>
+                  <div className="flex items-center gap-1.5 sm:gap-2">
                     <Coins className="w-5 h-5 text-emerald-500" />
-                    <span className="font-black text-2xl text-[hsl(var(--foreground))]">{selectedOffer.cost}</span>
+                    <span className="font-black text-xl sm:text-2xl text-[hsl(var(--foreground))]">{selectedOffer.cost}</span>
                   </div>
                 </div>
                 {!isBusinessUser ? (
                   <button
                     onClick={handleConfirmExchange}
                     disabled={submittingExchange}
-                    className="px-8 py-3.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-bold shadow-md shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center gap-2"
+                    className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-3.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed !text-white text-white rounded-xl font-bold shadow-md shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2"
                   >
-                    {submittingExchange ? "Processing..." : "Confirm Exchange"}
+                    {submittingExchange 
+                      ? (locale === "hy" ? "Ընթացքի մեջ է..." : locale === "ru" ? "Обработка..." : "Processing...") 
+                      : (locale === "hy" ? "Հաստատել Փոխանակումը" : locale === "ru" ? "Подтвердить Обмен" : "Confirm Exchange")}
                   </button>
                 ) : (
-                  <button disabled className="px-8 py-3.5 bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] rounded-xl font-bold cursor-not-allowed">
-                    Not available for business
+                  <button disabled className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-3.5 bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] rounded-xl font-bold cursor-not-allowed text-center">
+                    {locale === "hy" ? "Հասանելի չէ բիզնեսի համար" : locale === "ru" ? "Недоступно для бизнеса" : "Not available for business"}
                   </button>
                 )}
               </div>
@@ -725,10 +738,10 @@ export default function ExchangePage() {
             <div className="pt-2">
               <button
                 onClick={() => setSuccessModal(null)}
-                className="w-full py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white text-xs font-extrabold shadow-lg shadow-emerald-500/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 active:scale-95 !text-white text-white text-xs font-extrabold shadow-lg shadow-emerald-500/20 transition-all cursor-pointer flex items-center justify-center gap-2"
               >
-                <Sparkles className="w-4 h-4 text-white fill-white/20" />
-                <span className="text-white font-extrabold">{locale === "hy" ? "Լավ, հասկացա" : locale === "ru" ? "Отлично, понятно!" : "Great, Got It!"}</span>
+                <Sparkles className="w-4 h-4 !text-white text-white fill-white/20" />
+                <span className="!text-white text-white font-extrabold">{locale === "hy" ? "Լավ, հասկացա" : locale === "ru" ? "Отлично, понятно!" : "Great, Got It!"}</span>
               </button>
             </div>
           </div>

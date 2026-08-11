@@ -7,6 +7,9 @@ import { useAuth } from "@/context/AuthContext";
 import { useI18n } from "@/i18n";
 import { getApiUrl } from "@/lib/utils";
 import api from "@/lib/api";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "@/store/store";
+import { toggleWidgetVisibility } from "@/store/slices/chatSlice";
 import {
   User,
   Mail,
@@ -43,7 +46,9 @@ import {
   QrCode,
   X,
   Check,
-  Copy
+  Copy,
+  Bot,
+  BotOff
 } from "lucide-react";
 import { MOCK_BUSINESSES } from "@/data/mock-businesses";
 
@@ -64,24 +69,24 @@ function formatRelativeTime(iso?: string, locale: string = "hy"): string {
     return locale === "hy"
       ? `${mins} ր առաջ`
       : locale === "ru"
-      ? `${mins} мин. назад`
-      : `${mins}m ago`;
+        ? `${mins} мин. назад`
+        : `${mins}m ago`;
   }
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) {
     return locale === "hy"
       ? `${hrs} ժ առաջ`
       : locale === "ru"
-      ? `${hrs} ч. назад`
-      : `${hrs}h ago`;
+        ? `${hrs} ч. назад`
+        : `${hrs}h ago`;
   }
   const days = Math.floor(hrs / 24);
   if (days < 30) {
     return locale === "hy"
       ? `${days} օր առաջ`
       : locale === "ru"
-      ? `${days} дն. назад`
-      : `${days}d ago`;
+        ? `${days} дն. назад`
+        : `${days}d ago`;
   }
   const dateStr = dateObj.toLocaleDateString(locale === "hy" ? "hy-AM" : locale === "ru" ? "ru-RU" : "en-US", {
     day: "numeric",
@@ -96,6 +101,8 @@ export default function UserProfileDashboard() {
   const { currentUser, logout, refreshUser } = useAuth();
   const { t, locale } = useI18n();
   const searchParams = useSearchParams();
+  const dispatch = useDispatch();
+  const isWidgetVisible = useSelector((state: RootState) => state.chat.isWidgetVisible);
 
   const [activeTab, setActiveTab] = useState<"profile" | "favorites" | "bookings" | "reviews" | "security" | "transfer" | "invite" | "offers" | "business">("profile");
 
@@ -1230,14 +1237,16 @@ export default function UserProfileDashboard() {
               </p>
             </div>
 
-            <div className="flex items-center gap-3 shrink-0">
-              <Link
-                href="/discover"
-                className="h-10 px-4 rounded-xl text-xs font-bold bg-primary text-white hover:bg-primary/90 transition-all flex items-center gap-2 shadow-sm"
+            <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 w-full sm:w-auto shrink-0">
+              <button
+                onClick={() => dispatch(toggleWidgetVisibility())}
+                className={`h-10 px-4 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm ${isWidgetVisible ? 'bg-primary text-white hover:bg-primary/90' : 'bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]'}`}
               >
-                <Search className="w-3.5 h-3.5" />
-                {locale === "hy" ? "Որոնել Ռեստորաններ" : "Explore Places"}
-              </Link>
+                {isWidgetVisible ? <Bot className="w-3.5 h-3.5" /> : <BotOff className="w-3.5 h-3.5" />}
+                {isWidgetVisible
+                  ? (locale === "hy" ? "Անջատել AI Չատը" : "Disable AI Chat")
+                  : (locale === "hy" ? "Միացնել AI Չատը" : "Enable AI Chat")}
+              </button>
               <button
                 onClick={() => setActiveTab("security")}
                 className={`h-10 px-4 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${activeTab === "security"
@@ -1754,7 +1763,7 @@ export default function UserProfileDashboard() {
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div>
                 <h2 className="text-lg font-bold tracking-tight text-[hsl(var(--foreground))]">
-                  {locale === "hy" ? "Իմ Մեկնաբանությունները" : locale === "ru" ? "Мои отзывы" : "My Reviews"}
+                  {locale === "hy" ? "Իմը" : locale === "ru" ? "Мои отзывы" : "My Reviews"}
                 </h2>
                 <p className="text-xs text-[hsl(var(--muted-foreground))]">
                   {locale === "hy"
@@ -2351,7 +2360,7 @@ export default function UserProfileDashboard() {
                     type="button"
                     disabled={cooldownRemainingSec > 0}
                     onClick={handleTransferCoins}
-                    className={`w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md shadow-blue-500/20 transition-all hover:scale-[1.01] active:scale-95 mt-2 cursor-pointer flex items-center justify-center gap-2 ${cooldownRemainingSec > 0 ? "opacity-50 cursor-not-allowed hover:scale-100 hover:bg-blue-600" : ""}`}
+                    className={`w-full py-4 bg-blue-600 hover:bg-blue-700 !text-white rounded-xl font-bold shadow-md shadow-blue-500/20 transition-all hover:scale-[1.01] active:scale-95 mt-2 cursor-pointer flex items-center justify-center gap-2 ${cooldownRemainingSec > 0 ? "opacity-50 cursor-not-allowed hover:scale-100 hover:bg-blue-600" : ""}`}
                   >
                     <Send className="w-4 h-4" />
                     <span>{locale === "hy" ? "Հաստատել" : "Confirm Transfer"}</span>
@@ -2454,16 +2463,16 @@ export default function UserProfileDashboard() {
                     <label className="text-xs font-bold text-[hsl(var(--muted-foreground))] uppercase tracking-wider block mb-1.5">
                       {locale === "hy" ? "Ձեր Հրավերի Կոդը (Invite Code)" : locale === "ru" ? "Ваш инвайт-код (Invite Code)" : "Your Invite Code"}
                     </label>
-                    <div className={`bg-[hsl(var(--background))] border rounded-2xl p-2 flex items-center gap-2 transition-all ${copiedInviteCode ? "border-emerald-500 shadow-md shadow-emerald-500/10" : "border-[hsl(var(--border))] focus-within:border-emerald-500"}`}>
-                      <div className="flex-1 px-4 font-mono font-black text-base sm:text-lg text-emerald-600 dark:text-emerald-400 tracking-wider">
+                    <div className={`bg-[hsl(var(--background))] border rounded-2xl p-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 transition-all ${copiedInviteCode ? "border-emerald-500 shadow-md shadow-emerald-500/10" : "border-[hsl(var(--border))] focus-within:border-emerald-500"}`}>
+                      <div className="flex-1 w-full px-2 sm:px-4 text-center sm:text-left font-mono font-black text-sm sm:text-lg text-emerald-600 dark:text-emerald-400 tracking-wider truncate">
                         {currentUser?.username ? currentUser.username.toUpperCase() : "USER100"}
                       </div>
                       <button
                         type="button"
                         onClick={() => handleCopyInviteCode(currentUser?.username ? currentUser.username.toUpperCase() : "USER100")}
-                        className={`px-5 py-2.5 rounded-xl font-bold text-xs transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer active:scale-95 ${copiedInviteCode
-                          ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 scale-105"
-                          : "bg-[hsl(var(--foreground))] text-[hsl(var(--background))] hover:scale-105"
+                        className={`w-full sm:w-auto px-5 py-2.5 rounded-xl font-bold text-xs transition-all flex justify-center items-center gap-2 cursor-pointer active:scale-95 ${copiedInviteCode
+                          ? "bg-emerald-500 !text-white shadow-lg shadow-emerald-500/30 scale-105"
+                          : "bg-[hsl(var(--foreground))] !text-[hsl(var(--background))] hover:scale-105"
                           }`}
                       >
                         {copiedInviteCode ? (
@@ -2487,22 +2496,22 @@ export default function UserProfileDashboard() {
                       {locale === "hy" ? "Մուտքագրել Հրավերի Կոդ (100 Coin)" : locale === "ru" ? "Ввести инвайт-код (100 Coin)" : "Enter Invite Code (100 Coins)"}
                     </label>
                     {appliedInviteCode ? (
-                      <div className="bg-[hsl(var(--background))] border border-emerald-500/40 rounded-2xl p-2 flex items-center gap-2 shadow-sm bg-emerald-500/5">
+                      <div className="bg-[hsl(var(--background))] border border-emerald-500/40 rounded-2xl p-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shadow-sm bg-emerald-500/5">
                         <input
                           type="text"
                           readOnly
                           disabled
                           value={appliedInviteCode}
-                          className="flex-1 bg-transparent px-4 font-mono font-bold text-xs text-[hsl(var(--foreground))] outline-none opacity-80 cursor-not-allowed"
+                          className="flex-1 w-full text-center sm:text-left bg-transparent px-2 sm:px-4 font-mono font-bold text-xs text-[hsl(var(--foreground))] outline-none opacity-80 cursor-not-allowed truncate"
                         />
-                        <span className="px-4 py-2.5 rounded-xl font-bold text-xs bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 whitespace-nowrap shrink-0">
+                        <span className="w-full sm:w-auto justify-center px-4 py-2.5 rounded-xl font-bold text-xs bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 shrink-0">
                           <Check className="w-3.5 h-3.5 text-emerald-500" />
                           <span>{locale === "hy" ? "Ակտիվացված է (+100 Coin)" : "Activated (+100 Coins)"}</span>
                         </span>
                       </div>
                     ) : (
                       <div className="space-y-2">
-                        <div className="bg-[hsl(var(--background))] border border-[hsl(var(--border))] focus-within:border-emerald-500 rounded-2xl p-2 flex items-center gap-2 transition-all">
+                        <div className="bg-[hsl(var(--background))] border border-[hsl(var(--border))] focus-within:border-emerald-500 rounded-2xl p-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 transition-all">
                           <input
                             type="text"
                             value={inputInviteCode}
@@ -2511,12 +2520,12 @@ export default function UserProfileDashboard() {
                               setInviteCodeMsg(null);
                             }}
                             placeholder={locale === "hy" ? "Մուտքագրեք ուրիշի հրավերի կոդը (օր. edmon008)" : "Enter someone's invite code (e.g. edmon008)"}
-                            className="flex-1 bg-transparent px-4 font-mono font-medium text-xs text-[hsl(var(--foreground))] outline-none placeholder:text-[hsl(var(--muted-foreground))]/60"
+                            className="flex-1 w-full text-center sm:text-left bg-transparent px-2 sm:px-4 py-2 sm:py-0 font-mono font-medium text-xs text-[hsl(var(--foreground))] outline-none placeholder:text-[hsl(var(--muted-foreground))]/60"
                           />
                           <button
                             type="button"
                             onClick={handleApplyInviteCode}
-                            className="px-5 py-2.5 rounded-xl font-bold text-xs bg-emerald-500 text-white hover:bg-emerald-600 transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer shadow-md shadow-emerald-500/20 active:scale-95 shrink-0"
+                            className="w-full sm:w-auto justify-center px-5 py-2.5 rounded-xl font-bold text-xs bg-emerald-500 hover:bg-emerald-600 !text-white transition-all flex items-center gap-1.5 cursor-pointer shadow-md shadow-emerald-500/20 active:scale-95 shrink-0"
                           >
                             <Sparkles className="w-3.5 h-3.5" />
                             <span>{locale === "hy" ? "Ստանալ 100 Coin" : "Get 100 Coins"}</span>

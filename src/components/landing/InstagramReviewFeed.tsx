@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import axios from "axios";
 import { Heart, Loader2, ChevronLeft, ChevronRight, Volume2, VolumeX, Quote, ArrowLeft } from "lucide-react";
@@ -111,6 +111,23 @@ export default function InstagramReviewFeed() {
   const { t, locale } = useI18n();
   const [showAll, setShowAll] = useState(false);
   const [filterRating, setFilterRating] = useState<number | null>(null);
+  const lastTapRef = useRef<Record<string, number>>({});
+
+  const handleDoubleTapAction = (reviewId: string, businessId: string) => {
+    if (!currentUser) {
+      showToast();
+      return;
+    }
+    setHeartPopMap((prev) => ({ ...prev, [reviewId]: true }));
+    setTimeout(() => {
+      setHeartPopMap((prev) => ({ ...prev, [reviewId]: false }));
+    }, 800);
+
+    const isLiked = likedMap[reviewId]?.liked;
+    if (!isLiked) {
+      handleLike(reviewId, businessId);
+    }
+  };
 
   useEffect(() => {
     async function loadReviews() {
@@ -413,20 +430,16 @@ export default function InstagramReviewFeed() {
                   {/* Main 1:1 Photo / Carousel */}
                   <div
                     className="relative w-full aspect-square bg-[hsl(var(--muted))] overflow-hidden border-y border-[hsl(var(--border))] cursor-pointer group"
-                    onDoubleClick={() => {
-                      if (!currentUser) {
-                        showToast();
-                        return;
+                    style={{ touchAction: 'manipulation' }}
+                    onDoubleClick={() => handleDoubleTapAction(review.id, review.businessId)}
+                    onTouchEnd={(e) => {
+                      const now = Date.now();
+                      const lastTap = lastTapRef.current[review.id] || 0;
+                      if (now - lastTap < 300) {
+                        e.preventDefault();
+                        handleDoubleTapAction(review.id, review.businessId);
                       }
-                      setHeartPopMap((prev) => ({ ...prev, [review.id]: true }));
-                      setTimeout(() => {
-                        setHeartPopMap((prev) => ({ ...prev, [review.id]: false }));
-                      }, 800);
-
-                      const isLiked = likedMap[review.id]?.liked;
-                      if (!isLiked) {
-                        handleLike(review.id, review.businessId);
-                      }
+                      lastTapRef.current[review.id] = now;
                     }}
                   >
                     {review.media.length > 0 ? (
