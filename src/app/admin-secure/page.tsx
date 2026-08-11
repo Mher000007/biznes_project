@@ -822,15 +822,22 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         <div key={t.key} style={{ display: "inline-block" }}>
           <button
             onClick={() => setTab(t.key)}
-            onMouseEnter={handleUsersMouseEnter}
-            onMouseLeave={handleUsersMouseLeave}
             style={{
+              position: "relative",
               display: "flex", alignItems: "center", gap: 6,
-              padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer",
-              fontSize: 12, fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0,
-              background: active ? C.violetDim : "rgba(255,255,255,0.05)",
-              color: active ? C.violet : C.text,
-              transition: "all 0.15s"
+              padding: "10px 16px", borderRadius: 10, border: "none", cursor: "pointer",
+              fontSize: 13, fontWeight: active ? 800 : 600, whiteSpace: "nowrap", flexShrink: 0,
+              background: active ? "rgba(139, 92, 246, 0.15)" : "transparent",
+              color: active ? C.violet : C.muted,
+              transition: "all 0.2s ease"
+            }}
+            onMouseEnter={(e) => {
+              handleUsersMouseEnter(e);
+              if (!active) e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+            }}
+            onMouseLeave={(e) => {
+              handleUsersMouseLeave();
+              if (!active) e.currentTarget.style.background = "transparent";
             }}
           >
             <t.Icon size={14} />
@@ -846,10 +853,17 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             )}
             {allUsers.length > 0 ? (
               <span style={{
-                background: "#7c3aed", color: "#fff", fontSize: 9, fontWeight: 800,
+                background: active ? C.violet : "rgba(255,255,255,0.1)", color: "#fff", fontSize: 9, fontWeight: 800,
                 padding: "2px 6px", borderRadius: 99
               }}>{allUsers.length}</span>
             ) : null}
+            {active && (
+              <span style={{
+                position: "absolute", bottom: -9, left: "10%", right: "10%", height: 3,
+                background: C.violet, borderRadius: "3px 3px 0 0",
+                boxShadow: `0 -2px 10px ${C.violetDim}`
+              }} />
+            )}
           </button>
 
           {usersHoverOpen && (
@@ -931,12 +945,19 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     return (
       <button key={t.key} onClick={() => setTab(t.key)}
         style={{
+          position: "relative",
           display: "flex", alignItems: "center", gap: 6,
-          padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer",
-          fontSize: 12, fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0,
-          background: active ? C.violetDim : "rgba(255,255,255,0.05)",
-          color: active ? C.violet : C.text,
-          transition: "all 0.15s"
+          padding: "10px 16px", borderRadius: 10, border: "none", cursor: "pointer",
+          fontSize: 13, fontWeight: active ? 800 : 600, whiteSpace: "nowrap", flexShrink: 0,
+          background: active ? "rgba(139, 92, 246, 0.15)" : "transparent",
+          color: active ? C.violet : C.muted,
+          transition: "all 0.2s ease"
+        }}
+        onMouseEnter={(e) => {
+          if (!active) e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+        }}
+        onMouseLeave={(e) => {
+          if (!active) e.currentTarget.style.background = "transparent";
         }}>
         <t.Icon size={14} />
         {t.label}
@@ -952,6 +973,13 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             padding: "2px 6px", borderRadius: 99
           }}>{stats.flaggedReviews}</span>
         ) : null}
+        {active && (
+          <span style={{
+            position: "absolute", bottom: -9, left: "10%", right: "10%", height: 3,
+            background: C.violet, borderRadius: "3px 3px 0 0",
+            boxShadow: `0 -2px 10px ${C.violetDim}`
+          }} />
+        )}
       </button>
     );
   };

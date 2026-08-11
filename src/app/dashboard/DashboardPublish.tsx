@@ -63,16 +63,16 @@ export default function DashboardPublish() {
           const selectedCategoryObject = CATEGORIES.find(c => c.slug === localProfile.category);
           
           const payload = {
-            name: localProfile.businessName,
-            description: localProfile.shortDesc,
-            category: selectedCategoryObject?.slug || localProfile.category,
-            email: localProfile.email,
-            phone: localProfile.phone,
+            name: localProfile.businessName || currentUser.name || "My Business",
+            description: localProfile.shortDesc || "Այս բիզնեսը դեռ չունի նկարագրություն",
+            category: selectedCategoryObject?.slug || localProfile.category || "horeca",
+            email: localProfile.email || currentUser.email || "contact@armbiz.am",
+            phone: localProfile.phone || currentUser.phone || "+374 00 000000",
             address: localProfile.address || "Yerevan, Armenia",
-            city: localProfile.city,
+            city: localProfile.city || "Yerevan",
             country: "Armenia",
             website: localProfile.website,
-            services: localProfile.services ? localProfile.services.map((s: any) => ({ name: s.name, price: Number(s.price) || 0, duration: s.duration })) : [],
+            services: localProfile.services ? localProfile.services.filter((s: any) => s && s.name && s.name.trim() !== "").map((s: any) => ({ name: s.name, price: Number(s.price) || 0, duration: s.duration })) : [],
             menu: [],
             coordinates: {
               latitude: Number(localProfile.latitude) || 40.1872,

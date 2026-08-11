@@ -15,7 +15,7 @@ import { isValidCity } from '../utils/locationValidator.js';
 export const getBusinesses = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { category, city, search, featured, maxPrice, premiumOnly, sort, page = 1, limit = 10 } = req.query;
 
-  const filter: any = { active: true }; // Allow unverified for now during dev, or verified: true. Let's keep active: true for easy developer testing of onboarded businesses!
+  const filter: any = { active: true, verified: true };
 
   if (premiumOnly === 'true') {
     const premiumSubs = await Subscription.find({ plan: 'premium', status: 'active' }).select('business');
@@ -276,16 +276,38 @@ export const createBusiness = asyncHandler(
       // Look up by slug directly
       let foundCategory = await Category.findOne({ slug: category });
       if (!foundCategory) {
-        // Try parsing slug from static format like "cat-tech" -> "technology"
         let cleanSlug = category.replace(/^cat-/, '').toLowerCase();
         const staticSlugMap: Record<string, string> = {
           'tech': 'technology',
           'agri': 'agriculture',
+          'building-material': 'construction',
+          'building_material': 'construction',
+          'buildingmaterial': 'construction',
+          'health': 'healthcare',
+          'auto': 'automotive',
+          'law': 'legal',
+          'hotel': 'horeca',
+          'restaurant': 'horeca',
+          'food': 'horeca',
+          'delivery': 'logistics',
+          'transport': 'logistics',
+          'spa': 'beauty',
+          'school': 'education',
+          'university': 'education',
+          'bank': 'finance',
+          'insurance': 'finance',
         };
         if (staticSlugMap[cleanSlug]) {
           cleanSlug = staticSlugMap[cleanSlug];
         }
         foundCategory = await Category.findOne({ slug: cleanSlug });
+
+        // Last resort: try a case-insensitive partial name match
+        if (!foundCategory) {
+          foundCategory = await Category.findOne({
+            name: { $regex: new RegExp(cleanSlug.replace(/-/g, '.*'), 'i') }
+          });
+        }
       }
 
       if (foundCategory) {
@@ -475,6 +497,7 @@ export const getMyBusinesses = asyncHandler(
       // Current Rank across all active businesses
       const higherViewsCount = await Business.countDocuments({
         active: true,
+        verified: true,
         views: { $gt: currentViews }
       });
       bizObj.rank = higherViewsCount + 1;
@@ -487,7 +510,7 @@ export const getMyBusinesses = asyncHandler(
       const myRecentVisits = await PageVisit.countDocuments({ business: biz._id, timestamp: { $gte: oneDayAgo } });
       const myViews1DayAgo = currentViews - myRecentVisits;
 
-      const activeBusinesses = await Business.find({ active: true }, '_id views');
+      const activeBusinesses = await Business.find({ active: true, verified: true }, '_id views');
       let higherViews1DayAgoCount = 0;
 
       const recentVisitsCount = await PageVisit.aggregate([
