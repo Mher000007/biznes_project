@@ -33,24 +33,18 @@
   height: 7rem;
   width: auto;
   object-fit: contain;
-  filter: invert(56%) sepia(87%) saturate(2462%) hue-rotate(119deg) brightness(98%) contrast(105%) !important;
+  /* Green filter matching exactly #00C853 */
+  filter: brightness(0) saturate(100%) invert(55%) sepia(70%) saturate(1473%) hue-rotate(101deg) brightness(93%) contrast(101%) !important;
   transition: filter 0.3s ease;
-
-  :global(.dark) & {
-    filter: brightness(0) invert(1) !important;
-  }
 }
 
 .mobileLogoImage {
   height: 2.5rem;
   width: auto;
   object-fit: contain;
-  filter: invert(56%) sepia(87%) saturate(2462%) hue-rotate(119deg) brightness(98%) contrast(105%) !important;
+  /* Green filter matching exactly #00C853 */
+  filter: brightness(0) saturate(100%) invert(55%) sepia(70%) saturate(1473%) hue-rotate(101deg) brightness(93%) contrast(101%) !important;
   transition: filter 0.3s ease;
-
-  :global(.dark) & {
-    filter: brightness(0) invert(1) !important;
-  }
 }
 
 .searchForm {
