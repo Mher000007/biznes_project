@@ -571,4 +571,18 @@ export const ru: Translations = {
       }
     }
   },
+  seo: {
+    homeTitle: "Findy — Бизнес-каталог Армении",
+    homeDesc: "Открывайте, связывайтесь и развивайтесь с армянскими предпринимателями. Найдите B2B-партнеров и услуги во всех отраслях Армении.",
+    businessTitle: "{{name}} — {{category}} в {{city}} | Findy",
+    businessDesc: "{{description}}",
+    categoryTitle: "{{category}} в Армении | Findy",
+    cityTitle: "Бизнесы в {{city}} | Findy",
+    searchTitle: "Поиск: {{query}} | Findy",
+    aboutTitle: "О нас | Findy — Бизнес-платформа Армении",
+    aboutDesc: "Findy — ведущая платформа Армении, объединяющая все бизнесы в одном месте.",
+    discoverTitle: "Откройте для себя бизнесы | Findy",
+    discoverDesc: "Ищите и находите компании на Findy.",
+    categoryCityTitle: "{{category}} в {{city}} | Findy"
+  }
 };

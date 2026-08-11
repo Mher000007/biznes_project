@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { Montserrat, JetBrains_Mono } from "next/font/google";
 import "../styles/leaflet.css";
 import "./globals.scss";
@@ -22,18 +23,41 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ArmBiz — Armenia's Business Directory",
+  metadataBase: new URL("https://findy.am"),
+  title: {
+    template: "%s | Findy",
+    default: "Findy — Armenia's Business Directory",
+  },
   description: "Discover, connect, and grow with Armenian entrepreneurs. Find B2B partners and services across every industry in Armenia.",
-  keywords: ["Armenia", "business directory", "Armenian businesses", "B2B", "Yerevan"],
+  keywords: ["Armenia", "business directory", "Armenian businesses", "B2B", "Yerevan", "Findy"],
+  authors: [{ name: "Findy Team" }],
+  robots: "index, follow",
+  openGraph: {
+    type: "website",
+    siteName: "Findy",
+    title: "Findy — Armenia's Business Directory",
+    description: "Discover, connect, and grow with Armenian entrepreneurs. Find B2B partners and services across every industry in Armenia.",
+    images: ["/og-default.jpg"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Findy — Armenia's Business Directory",
+    description: "Discover, connect, and grow with Armenian entrepreneurs. Find B2B partners and services across every industry in Armenia.",
+    images: ["/og-default.jpg"],
+  },
+  manifest: "/site.webmanifest",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const locale = cookieStore.get("NEXT_LOCALE")?.value || "en";
+
   return (
-    <html lang="en" className={`${montserrat.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning data-scroll-behavior="smooth">
+    <html lang={locale} className={`${montserrat.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning data-scroll-behavior="smooth">
       <body className="min-h-screen flex flex-col font-[family-name:var(--font-montserrat)] antialiased">
         <StoreProvider>
           <AuthProvider>

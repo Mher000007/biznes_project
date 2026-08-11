@@ -684,4 +684,18 @@ export const hy: Translations = {
       }
     }
   },
+  seo: {
+    homeTitle: "Findy — Հայաստանի Բիզնես Ուղեցույցը",
+    homeDesc: "Բացահայտեք, կապվեք և աճեք հայ ձեռնարկատերերի հետ: Գտեք B2B գործընկերներ և ծառայություններ Հայաստանի բոլոր ոլորտներում:",
+    businessTitle: "{{name}} — {{category}} {{city}}-ում | Findy",
+    businessDesc: "{{description}}",
+    categoryTitle: "{{category}} Հայաստանում | Findy",
+    cityTitle: "Բիզնեսներ {{city}}-ում | Findy",
+    searchTitle: "Որոնում: {{query}} | Findy",
+    aboutTitle: "Մեր Մասին | Findy — Հայաստանի Բիզնես Հարթակ",
+    aboutDesc: "Findy-ն Հայաստանի առաջատար հարթակն է, որը միավորում է բոլոր բիզնեսները մեկ վայրում:",
+    discoverTitle: "Բացահայտեք Բիզնեսներ | Findy",
+    discoverDesc: "Որոնեք և բացահայտեք բիզնեսներ Findy-ում:",
+    categoryCityTitle: "{{category}} {{city}}-ում | Findy"
+  }
 };

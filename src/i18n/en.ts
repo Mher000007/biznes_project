@@ -699,6 +699,20 @@ export const en = {
       }
     }
   },
+  seo: {
+    homeTitle: "Findy — Armenia's Business Directory",
+    homeDesc: "Discover, connect, and grow with Armenian entrepreneurs. Find B2B partners and services across every industry in Armenia.",
+    businessTitle: "{{name}} — {{category}} in {{city}} | Findy",
+    businessDesc: "{{description}}",
+    categoryTitle: "{{category}} in Armenia | Findy",
+    cityTitle: "Businesses in {{city}} | Findy",
+    searchTitle: "Search: {{query}} | Findy",
+    aboutTitle: "About Findy — Armenia's Business Platform",
+    aboutDesc: "Findy is Armenia's leading platform that unites all businesses in one place.",
+    discoverTitle: "Discover Businesses | Findy",
+    discoverDesc: "Search and discover businesses on Findy.",
+    categoryCityTitle: "{{category}} in {{city}} | Findy"
+  }
 };
 
 export type Translations = typeof en;
