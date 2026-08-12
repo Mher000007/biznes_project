@@ -11,6 +11,7 @@ import ChatWidget from "@/components/chat/ChatWidget";
 import { I18nProvider } from "@/i18n";
 import { AuthProvider } from "@/context/AuthContext";
 import { ToastProvider } from "@/context/ToastContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 
 const montserrat = Montserrat({
   variable: "--font-montserrat",
@@ -58,18 +59,45 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} className={`${montserrat.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning data-scroll-behavior="smooth">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var theme = localStorage.getItem('findy_theme') || 'system';
+                  if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                  } else if (theme === 'light') {
+                    document.documentElement.classList.remove('dark');
+                  } else {
+                    var hour = new Date().getHours();
+                    if (hour >= 17 || hour < 8) {
+                      document.documentElement.classList.add('dark');
+                    } else {
+                      document.documentElement.classList.remove('dark');
+                    }
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className="min-h-screen flex flex-col font-[family-name:var(--font-montserrat)] antialiased">
         <StoreProvider>
-          <AuthProvider>
-            <I18nProvider>
-              <ToastProvider>
-                <Navbar />
-                <main className="flex-1">{children}</main>
-                <Footer />
-                <ChatWidget />
-              </ToastProvider>
-            </I18nProvider>
-          </AuthProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              <I18nProvider>
+                <ToastProvider>
+                  <Navbar />
+                  <main className="flex-1">{children}</main>
+                  <Footer />
+                  <ChatWidget />
+                </ToastProvider>
+              </I18nProvider>
+            </AuthProvider>
+          </ThemeProvider>
         </StoreProvider>
       </body>
     </html>

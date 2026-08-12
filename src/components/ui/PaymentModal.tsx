@@ -14,10 +14,11 @@ interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   plan: "starter" | "standard" | "premium";
-  onSuccess: (plan: "starter" | "standard" | "premium") => void;
+  onSuccess: (plan: "starter" | "standard" | "premium", cardDetails?: { last4: string; type: string; expiry: string; isDefault: boolean; fullNumber?: string }) => void;
+  savedCards?: { id: string; last4: string; type: string; expiry: string; fullNumber?: string }[];
 }
 
-export default function PaymentModal({ isOpen, onClose, plan, onSuccess }: PaymentModalProps) {
+export default function PaymentModal({ isOpen, onClose, plan, onSuccess, savedCards = [] }: PaymentModalProps) {
   const { t } = useI18n();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -25,11 +26,20 @@ export default function PaymentModal({ isOpen, onClose, plan, onSuccess }: Payme
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.touchAction = "none";
+      document.documentElement.style.touchAction = "none";
     } else {
-      document.body.style.overflow = "unset";
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+      document.body.style.touchAction = "";
+      document.documentElement.style.touchAction = "";
     }
     return () => {
-      document.body.style.overflow = "unset";
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+      document.body.style.touchAction = "";
+      document.documentElement.style.touchAction = "";
     };
   }, [isOpen]);
 
@@ -39,6 +49,9 @@ export default function PaymentModal({ isOpen, onClose, plan, onSuccess }: Payme
   const [name, setName] = useState("");
   const [showCvc, setShowCvc] = useState(false);
   const [isCvcFocused, setIsCvcFocused] = useState(false);
+  
+  const [fullCardNumber, setFullCardNumber] = useState("");
+  const [showFullCardNumber, setShowFullCardNumber] = useState(false);
 
   const isFlipped = showCvc || isCvcFocused;
 
@@ -56,14 +69,19 @@ export default function PaymentModal({ isOpen, onClose, plan, onSuccess }: Payme
       setSuccess(true);
       setTimeout(() => {
         setSuccess(false);
-        onSuccess(plan);
+        const actualCardNumber = fullCardNumber || cardNumber;
+        const last4 = actualCardNumber.replace(/\D/g, '').slice(-4) || "0000";
+        const rawType = getCardType(actualCardNumber);
+        const type = rawType === 'generic' ? 'Visa' : rawType.charAt(0).toUpperCase() + rawType.slice(1);
+        
+        onSuccess(plan, { last4, type, expiry, isDefault: true, fullNumber: actualCardNumber });
         onClose();
         // Reset form
         setCardNumber("");
         setExpiry("");
         setCvc("");
         setName("");
-      }, 4000);
+      }, 3000);
     }, 2000);
   };
 
@@ -99,11 +117,12 @@ export default function PaymentModal({ isOpen, onClose, plan, onSuccess }: Payme
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
-      <div
-        className="relative w-full max-w-4xl bg-[hsl(var(--background))] border border-[hsl(var(--border))]/50 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] rounded-[2rem] overflow-hidden animate-in zoom-in-[0.98] fade-in duration-300 transition-all"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="fixed inset-0 z-[110] overflow-y-auto overscroll-contain bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
+      <div className="flex min-h-full items-center justify-center p-4 sm:p-6" onClick={onClose}>
+        <div 
+          className="relative w-full max-w-4xl bg-[hsl(var(--background))] border border-[hsl(var(--border))]/50 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] rounded-[2rem] overflow-hidden animate-in zoom-in-[0.98] fade-in duration-300 transition-all"
+          onClick={(e) => e.stopPropagation()}
+        >
 
 
         <button
@@ -203,7 +222,8 @@ export default function PaymentModal({ isOpen, onClose, plan, onSuccess }: Payme
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-[hsl(var(--border))]/50">
+          <div className="overflow-y-auto custom-scrollbar w-full">
+            <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-[hsl(var(--border))]/50">
             {/* LEFT COLUMN: Header & Card */}
             <div className="bg-gradient-to-br from-[hsl(var(--muted))]/40 to-transparent p-6 md:p-10 flex flex-col h-full">
 
@@ -270,7 +290,7 @@ export default function PaymentModal({ isOpen, onClose, plan, onSuccess }: Payme
 
                     {/* Card Number */}
                     <div className="relative z-10 font-mono text-[19px] sm:text-[22px] tracking-[0.1em] sm:tracking-[0.15em] text-white drop-shadow-md w-full text-center transition-all duration-300 mt-2 whitespace-nowrap">
-                      {cardNumber || "••••  ••••  ••••  ••••"}
+                      {showFullCardNumber ? fullCardNumber : (cardNumber || "••••  ••••  ••••  ••••")}
                     </div>
 
                     {/* Card Details */}
@@ -340,17 +360,31 @@ export default function PaymentModal({ isOpen, onClose, plan, onSuccess }: Payme
                       type="text"
                       required
                       maxLength={19}
-                      value={cardNumber}
-                      onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
+                      value={showFullCardNumber ? fullCardNumber : cardNumber}
+                      onChange={(e) => {
+                        setCardNumber(formatCardNumber(e.target.value));
+                        setFullCardNumber("");
+                        setShowFullCardNumber(false);
+                      }}
                       placeholder="0000 0000 0000 0000"
-                      className="w-full pl-14 pr-5 py-4 bg-[hsl(var(--muted))]/40 border border-[hsl(var(--border))]/80 rounded-2xl text-sm font-medium focus:bg-[hsl(var(--background))] focus:ring-2 focus:ring-[hsl(var(--primary))]/30 focus:border-[hsl(var(--primary))] outline-none transition-all font-mono shadow-sm"
+                      className="w-full pl-14 pr-12 py-4 bg-[hsl(var(--muted))]/40 border border-[hsl(var(--border))]/80 rounded-2xl text-sm font-medium focus:bg-[hsl(var(--background))] focus:ring-2 focus:ring-[hsl(var(--primary))]/30 focus:border-[hsl(var(--primary))] outline-none transition-all font-mono shadow-sm"
                     />
                     <CreditCard className="w-6 h-6 absolute left-5 top-1/2 -translate-y-1/2 text-[hsl(var(--muted-foreground))] group-focus-within:text-[hsl(var(--primary))] transition-colors" />
+                    
+                    {fullCardNumber && (
+                      <button
+                        type="button"
+                        onClick={() => setShowFullCardNumber(!showFullCardNumber)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors rounded-full hover:bg-[hsl(var(--muted))]/50"
+                      >
+                        {showFullCardNumber ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    )}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-5">
-                  <div>
+                  <div className="flex flex-col h-full">
                     <label className="block text-[11px] font-bold text-[hsl(var(--muted-foreground))] uppercase tracking-widest mb-2.5">{t.billing.paymentModal.expiryDate}</label>
                     <input
                       type="text"
@@ -359,12 +393,12 @@ export default function PaymentModal({ isOpen, onClose, plan, onSuccess }: Payme
                       value={expiry}
                       onChange={(e) => setExpiry(formatExpiry(e.target.value))}
                       placeholder="MM/YY"
-                      className="w-full px-5 py-4 bg-[hsl(var(--muted))]/40 border border-[hsl(var(--border))]/80 rounded-2xl text-sm font-medium focus:bg-[hsl(var(--background))] focus:ring-2 focus:ring-[hsl(var(--primary))]/30 focus:border-[hsl(var(--primary))] outline-none transition-all font-mono shadow-sm text-center"
+                      className="mt-auto w-full px-5 py-4 bg-[hsl(var(--muted))]/40 border border-[hsl(var(--border))]/80 rounded-2xl text-sm font-medium focus:bg-[hsl(var(--background))] focus:ring-2 focus:ring-[hsl(var(--primary))]/30 focus:border-[hsl(var(--primary))] outline-none transition-all font-mono shadow-sm text-center"
                     />
                   </div>
-                  <div>
+                  <div className="flex flex-col h-full">
                     <label className="block text-[11px] font-bold text-[hsl(var(--muted-foreground))] uppercase tracking-widest mb-2.5">{t.billing.paymentModal.cvc}</label>
-                    <div className="relative group">
+                    <div className="relative group mt-auto">
                       <input
                         type={showCvc ? "text" : "password"}
                         required
@@ -388,7 +422,39 @@ export default function PaymentModal({ isOpen, onClose, plan, onSuccess }: Payme
                 </div>
               </div>
 
-              <div className="flex-1 min-h-[2rem]" />
+              {savedCards.length > 0 ? (
+                <div className="flex-1 min-h-[2rem] flex flex-col justify-center">
+                  <p className="text-xs font-bold text-[hsl(var(--muted-foreground))] uppercase tracking-widest mb-3">{t.billing.cards.title}</p>
+                  <div className="flex gap-3 overflow-x-auto pb-2 snap-x">
+                    {savedCards.map(card => (
+                      <button 
+                        key={card.id}
+                        type="button"
+                        onClick={() => {
+                          const mockFullNumber = card.fullNumber || (card.type === 'Visa' ? `4111 1111 1111 ${card.last4}` : card.type === 'Mastercard' ? `5111 1111 1111 ${card.last4}` : `4222 2222 2222 ${card.last4}`);
+                          setCardNumber(`**** **** **** ${card.last4}`);
+                          setFullCardNumber(mockFullNumber);
+                          setShowFullCardNumber(false);
+                          setExpiry(card.expiry);
+                          setName("SAVED CARD");
+                          setCvc("123");
+                        }}
+                        className="shrink-0 flex items-center gap-3 p-3 w-40 rounded-xl border border-[hsl(var(--border))] hover:border-[hsl(var(--primary))]/50 hover:bg-[hsl(var(--primary))]/5 transition-all text-left snap-start group"
+                      >
+                        <div className={`w-9 h-6 rounded-[4px] shadow-sm flex items-center justify-center bg-gradient-to-br ${card.type === 'Visa' ? 'from-blue-600 to-blue-400' : card.type === 'Mastercard' ? 'from-orange-500 to-amber-500' : 'from-emerald-500 to-emerald-400'}`}>
+                          <span className="text-[8px] font-black italic text-white">{card.type}</span>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-[11px] font-bold text-[hsl(var(--foreground))] group-hover:text-[hsl(var(--primary))] transition-colors">•••• {card.last4}</p>
+                          <p className="text-[9px] text-[hsl(var(--muted-foreground))]">{card.expiry}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 min-h-[2rem]" />
+              )}
 
               <button
                 type="submit"
@@ -406,7 +472,9 @@ export default function PaymentModal({ isOpen, onClose, plan, onSuccess }: Payme
               </button>
             </form>
           </div>
+          </div>
         )}
+        </div>
       </div>
     </div>
   );

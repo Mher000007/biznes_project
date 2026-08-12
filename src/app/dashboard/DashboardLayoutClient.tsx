@@ -242,8 +242,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
         {/* Sidebar */}
         <aside className={`fixed top-14 left-0 bottom-0 flex-col border-r border-[hsl(var(--border))] bg-[hsl(var(--card))] z-[60] lg:z-[60] transition-all duration-300 flex ${isMobileOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 ${isSidebarCollapsed ? "w-64 lg:w-16" : "w-64"}`}>
-          <div className={`flex flex-col flex-1 p-4 gap-1 pt-6 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-[hsl(var(--border))] [&::-webkit-scrollbar-thumb]:rounded-full ${isSidebarCollapsed ? "overflow-visible" : "overflow-y-auto"}`}>
-            <div className={`flex items-center mb-3 transition-all duration-300 ${isSidebarCollapsed ? "px-3 lg:px-1" : "px-3"}`}>
+          {/* Fixed Header */}
+          <div className="px-4 pt-6 pb-3 shrink-0">
+            <div className={`flex items-center transition-all duration-300 ${isSidebarCollapsed ? "px-3 lg:px-1" : "px-3"}`}>
               <div className={`overflow-hidden transition-all duration-300 ${isSidebarCollapsed ? "max-w-[120px] opacity-100 lg:max-w-0 lg:opacity-0" : "max-w-[120px] flex-1 opacity-100"}`}>
                 <p className="text-xs font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider whitespace-nowrap">
                   Dashboard
@@ -265,6 +266,10 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                 </button>
               </div>
             </div>
+          </div>
+          
+          {/* Scrollable Content */}
+          <div className={`flex flex-col flex-1 px-4 pb-4 gap-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-[hsl(var(--border))] [&::-webkit-scrollbar-thumb]:rounded-full ${isSidebarCollapsed ? "overflow-visible" : "overflow-y-auto"}`}>
             {links.map((link) => {
               const isLocked = isStarterPlan && link.isPro;
               const isShaking = shakingHrefs.includes(link.href);

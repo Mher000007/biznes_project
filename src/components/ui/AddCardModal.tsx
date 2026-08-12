@@ -5,7 +5,7 @@ import { useI18n } from "@/i18n";
 interface AddCardModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddCard: (card: { type: string; last4: string; expiry: string; isDefault: boolean }) => void;
+  onAddCard: (card: { type: string; last4: string; expiry: string; isDefault: boolean; fullNumber?: string }) => void;
 }
 
 const getCardType = (number: string) => {
@@ -24,11 +24,20 @@ export default function AddCardModal({ isOpen, onClose, onAddCard }: AddCardModa
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.touchAction = "none";
+      document.documentElement.style.touchAction = "none";
     } else {
-      document.body.style.overflow = "unset";
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+      document.body.style.touchAction = "";
+      document.documentElement.style.touchAction = "";
     }
     return () => {
-      document.body.style.overflow = "unset";
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+      document.body.style.touchAction = "";
+      document.documentElement.style.touchAction = "";
     };
   }, [isOpen]);
 
@@ -58,7 +67,8 @@ export default function AddCardModal({ isOpen, onClose, onAddCard }: AddCardModa
           type: cardType === "visa" ? "Visa" : cardType === "mastercard" ? "Mastercard" : cardType === "amex" ? "Amex" : "Card",
           last4,
           expiry,
-          isDefault: false
+          isDefault: false,
+          fullNumber: cardNumber
         });
         onClose();
         // Reset form
@@ -96,11 +106,12 @@ export default function AddCardModal({ isOpen, onClose, onAddCard }: AddCardModa
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
-      <div
-        className="relative w-full max-w-4xl bg-[hsl(var(--background))] border border-[hsl(var(--border))]/50 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] rounded-[2rem] overflow-hidden animate-in zoom-in-[0.98] fade-in duration-300 transition-all"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="fixed inset-0 z-[110] overflow-y-auto overscroll-contain bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
+      <div className="flex min-h-full items-center justify-center p-4 sm:p-6" onClick={onClose}>
+        <div 
+          className="relative w-full max-w-4xl bg-[hsl(var(--background))] border border-[hsl(var(--border))]/50 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] rounded-[2rem] overflow-hidden animate-in zoom-in-[0.98] fade-in duration-300"
+          onClick={(e) => e.stopPropagation()}
+        >
         <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[hsl(var(--primary))] to-blue-500 shadow-[0_0_10px_rgba(var(--primary),0.5)] z-20" />
 
         <button
@@ -287,6 +298,7 @@ export default function AddCardModal({ isOpen, onClose, onAddCard }: AddCardModa
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

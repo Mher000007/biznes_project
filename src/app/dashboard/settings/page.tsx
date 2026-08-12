@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
 const axiosInstance = axios;
@@ -70,7 +71,7 @@ export default function SettingsPage() {
   // Localization States
   const [language, setLanguage] = useState("en");
   const [timezone, setTimezone] = useState("Asia/Yerevan");
-  const [selectedTheme, setSelectedTheme] = useState<"light" | "dark" | "system">("dark");
+  const { theme: selectedTheme, setTheme: setSelectedTheme } = useTheme();
 
   // Danger Zone Deletion States
   const [showModal, setShowModal] = useState(false);
@@ -600,7 +601,7 @@ export default function SettingsPage() {
                       return (
                         <div
                           key={th.key}
-                          onClick={() => setSelectedTheme(th.key as any)}
+                          onClick={() => setSelectedTheme(th.key as "light" | "dark" | "system")}
                           className={`rounded-xl border p-4 cursor-pointer flex flex-col items-center justify-center gap-2 text-center transition-all ${active
                               ? "border-[hsl(var(--primary))] bg-[hsl(var(--primary))]/5 text-[hsl(var(--foreground))]"
                               : "border-[hsl(var(--border))] hover:border-[hsl(var(--primary))]/50 text-[hsl(var(--muted-foreground))]"

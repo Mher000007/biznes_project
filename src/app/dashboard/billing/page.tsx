@@ -25,6 +25,8 @@ import {
 } from "lucide-react";
 import PaymentModal from "@/components/ui/PaymentModal";
 import AddCardModal from "@/components/ui/AddCardModal";
+import ConfirmPlanChangeModal from "@/components/ui/ConfirmPlanChangeModal";
+import ConfirmDeleteModal from "@/components/ui/ConfirmDeleteModal";
 
 export default function DashboardBillingPage() {
   return (
@@ -56,40 +58,19 @@ function DashboardBillingPageInner() {
   const [applyingPromo, setApplyingPromo] = useState(false);
 
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [deleteModalConfig, setDeleteModalConfig] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+  }>({ isOpen: false, message: "", onConfirm: () => {} });
   const [selectedPlanToPay, setSelectedPlanToPay] = useState<"starter" | "standard" | "premium" | null>(null);
 
   const [isAddCardModalOpen, setIsAddCardModalOpen] = useState(false);
-  const [savedCards, setSavedCards] = useState([
-    { id: "1", type: "Visa", last4: "4083", expiry: "11/28", isDefault: true }
-  ]);
+  const [savedCards, setSavedCards] = useState<any[]>([]);
 
   const [isWalletOpen, setIsWalletOpen] = useState(false);
-  const [receipts, setReceipts] = useState([
-    {
-      id: "TRX-829481",
-      plan: "PREMIUM",
-      amount: "50,000 AMD",
-      date: "12 Aug 2026",
-      method: "4083",
-      status: "approved"
-    },
-    {
-      id: "TRX-719302",
-      plan: "STANDARD",
-      amount: "20,000 AMD",
-      date: "15 Jul 2026",
-      method: "4083",
-      status: "unconfirmed"
-    },
-    {
-      id: "TRX-618401",
-      plan: "STARTER",
-      amount: "0 AMD",
-      date: "10 Jun 2026",
-      method: "4083",
-      status: "approved"
-    }
-  ]);
+  const [receipts, setReceipts] = useState<any[]>([]);
   const [receiptSortOrder, setReceiptSortOrder] = useState<"newest" | "oldest">("newest");
   const [selectedReceipts, setSelectedReceipts] = useState<Set<string>>(new Set());
 
@@ -117,31 +98,61 @@ function DashboardBillingPageInner() {
   };
 
   const deleteSelectedReceipts = () => {
-    setReceipts(prev => prev.filter(r => !selectedReceipts.has(r.id)));
-    setSelectedReceipts(new Set());
+    setDeleteModalConfig({
+      isOpen: true,
+      message: t.billing.receipts.confirmDeleteSelected,
+      onConfirm: () => {
+        setReceipts(prev => {
+          const next = prev.filter(r => !selectedReceipts.has(r.id));
+          if (businessId) localStorage.setItem(`billing_receipts_${businessId}`, JSON.stringify(next));
+          return next;
+        });
+        setSelectedReceipts(new Set());
+        setDeleteModalConfig(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   const deleteAllReceipts = () => {
-    if (window.confirm(t.billing.receipts.confirmDeleteAll)) {
-      setReceipts([]);
-      setSelectedReceipts(new Set());
-    }
+    setDeleteModalConfig({
+      isOpen: true,
+      message: t.billing.receipts.confirmDeleteAll,
+      onConfirm: () => {
+        setReceipts([]);
+        if (businessId) localStorage.removeItem(`billing_receipts_${businessId}`);
+        setSelectedReceipts(new Set());
+        setDeleteModalConfig(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   const deleteReceipt = (id: string) => {
-    setReceipts(prev => prev.filter(r => r.id !== id));
-    setSelectedReceipts(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(id);
-      return newSet;
+    setDeleteModalConfig({
+      isOpen: true,
+      message: t.billing.receipts.confirmDeleteSingle,
+      onConfirm: () => {
+        setReceipts(prev => {
+          const next = prev.filter(r => r.id !== id);
+          if (businessId) localStorage.setItem(`billing_receipts_${businessId}`, JSON.stringify(next));
+          return next;
+        });
+        setSelectedReceipts(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(id);
+          return newSet;
+        });
+        setDeleteModalConfig(prev => ({ ...prev, isOpen: false }));
+      }
     });
   };
 
   const handlePlanClick = (plan: "starter" | "standard" | "premium") => {
-    if (plan === "starter") {
-      handlePlanUpgrade(plan);
+    if (activePlan === plan) return;
+    setSelectedPlanToPay(plan);
+    
+    if (activePlan !== "starter") {
+      setIsConfirmModalOpen(true);
     } else {
-      setSelectedPlanToPay(plan);
       setIsPaymentModalOpen(true);
     }
   };
@@ -252,6 +263,28 @@ function DashboardBillingPageInner() {
     }
     loadData();
   }, [currentUser]);
+
+  useEffect(() => {
+    if (businessId) {
+      const storedCards = localStorage.getItem(`billing_cards_${businessId}`);
+      if (storedCards) {
+        try {
+          setSavedCards(JSON.parse(storedCards));
+        } catch (e) {}
+      } else {
+        setSavedCards([]);
+      }
+
+      const storedReceipts = localStorage.getItem(`billing_receipts_${businessId}`);
+      if (storedReceipts) {
+        try {
+          setReceipts(JSON.parse(storedReceipts));
+        } catch (e) {}
+      } else {
+        setReceipts([]);
+      }
+    }
+  }, [businessId]);
 
   if (currentUser && (currentUser.accountType === "personal" || currentUser.role === "user")) {
     return null;
@@ -569,10 +602,26 @@ function DashboardBillingPageInner() {
 
                             <div className="flex justify-between items-start relative z-20">
                               <div className="w-10 h-7 rounded-[4px] bg-gradient-to-br from-yellow-200 to-yellow-500 shadow-sm opacity-90" />
-                              <span className="text-white font-black italic drop-shadow-md text-xl tracking-tighter">
+                              <span className="text-white font-black italic drop-shadow-md text-xl tracking-tighter mr-8">
                                 {card.type.toUpperCase()}
                               </span>
                             </div>
+
+                            {/* Delete Button Overlay */}
+                            <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSavedCards(cards => {
+                                    const next = cards.filter(c => c.id !== card.id);
+                                    if (businessId) localStorage.setItem(`billing_cards_${businessId}`, JSON.stringify(next));
+                                    return next;
+                                  });
+                                }}
+                                className="absolute top-4 right-4 z-30 w-7 h-7 rounded-full bg-red-500/80 text-white hover:bg-red-500 flex items-center justify-center backdrop-blur-md transition-all shadow-lg opacity-0 group-hover:opacity-100"
+                                title={t.billing.receipts.delete}
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
 
                             <div className="relative z-20 mt-auto">
                               <p className="text-white/90 font-mono text-xl tracking-[0.15em] mb-4 text-shadow-sm">
@@ -589,17 +638,6 @@ function DashboardBillingPageInner() {
                                       {t.billing.cards.default}
                                     </span>
                                   )}
-                                  {/* Delete Button Overlay */}
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setSavedCards(cards => cards.filter(c => c.id !== card.id));
-                                    }}
-                                    className="w-7 h-7 rounded-full bg-red-500/80 text-white hover:bg-red-500 flex items-center justify-center backdrop-blur-md transition-all shadow-lg opacity-0 hover:opacity-100 group-hover:opacity-100"
-                                    title="Remove Card"
-                                  >
-                                    <X className="w-3.5 h-3.5" />
-                                  </button>
                                 </div>
                               </div>
                             </div>
@@ -681,9 +719,10 @@ function DashboardBillingPageInner() {
 
                         <button
                           type="button"
+                          disabled={isActive}
                           onClick={(e) => {
                             e.stopPropagation();
-                            handlePlanClick(p.key as any);
+                            if (!isActive) handlePlanClick(p.key as any);
                           }}
                           className={`w-full py-3.5 rounded-xl text-sm font-bold transition-all duration-200
                           ${isActive
@@ -698,6 +737,13 @@ function DashboardBillingPageInner() {
                         >
                           {isActive ? t.billing.currentPlanBtn : `${t.billing.upgradeToBtn} ${p.title}`}
                         </button>
+                        {isActive && (
+                          <div className="mt-3 py-2 px-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-center animate-in fade-in slide-in-from-top-2">
+                            <p className="text-xs text-emerald-600 font-medium">
+                              {t.billing.alreadySubscribed}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -860,16 +906,34 @@ function DashboardBillingPageInner() {
           isOpen={isPaymentModalOpen}
           onClose={() => setIsPaymentModalOpen(false)}
           plan={selectedPlanToPay}
-          onSuccess={(plan) => {
+          savedCards={savedCards}
+          onSuccess={(plan, cardDetails) => {
             handlePlanUpgrade(plan);
             const amount = plan === "premium" ? "50,000 AMD" : plan === "standard" ? "20,000 AMD" : "0 AMD";
-            setReceipts(prev => [{
-              id: `TRX-${Math.floor(100000 + Math.random() * 900000)}`,
-              plan: plan.toUpperCase(),
-              amount,
-              date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
-              method: savedCards.find(c => c.isDefault)?.last4 || "4083"
-            }, ...prev]);
+            const method = cardDetails?.last4 || "4083";
+            setReceipts(prev => {
+              const newReceipt = {
+                id: `TRX-${Math.floor(100000 + Math.random() * 900000)}`,
+                plan: plan.toUpperCase(),
+                amount,
+                date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+                method,
+                status: "APPROVED"
+              };
+              const next = [newReceipt, ...prev];
+              if (businessId) localStorage.setItem(`billing_receipts_${businessId}`, JSON.stringify(next));
+              return next;
+            });
+
+            if (cardDetails) {
+              setSavedCards(prev => {
+                const cardExists = prev.some(c => c.last4 === cardDetails.last4 && c.expiry === cardDetails.expiry);
+                if (cardExists) return prev;
+                const next = [...prev, { ...cardDetails, id: Date.now().toString() }];
+                if (businessId) localStorage.setItem(`billing_cards_${businessId}`, JSON.stringify(next));
+                return next;
+              });
+            }
           }}
         />
       )}
@@ -877,8 +941,26 @@ function DashboardBillingPageInner() {
         isOpen={isAddCardModalOpen}
         onClose={() => setIsAddCardModalOpen(false)}
         onAddCard={(newCard) => {
-          setSavedCards(prev => [...prev, { ...newCard, id: Date.now().toString() }]);
+          setSavedCards(prev => {
+            const next = [...prev, { ...newCard, id: Date.now().toString() }];
+            if (businessId) localStorage.setItem(`billing_cards_${businessId}`, JSON.stringify(next));
+            return next;
+          });
         }}
+      />
+      <ConfirmPlanChangeModal 
+        isOpen={isConfirmModalOpen}
+        onClose={() => setIsConfirmModalOpen(false)}
+        onConfirm={() => {
+          setIsConfirmModalOpen(false);
+          setIsPaymentModalOpen(true);
+        }}
+      />
+      <ConfirmDeleteModal
+        isOpen={deleteModalConfig.isOpen}
+        onClose={() => setDeleteModalConfig(prev => ({ ...prev, isOpen: false }))}
+        message={deleteModalConfig.message}
+        onConfirm={deleteModalConfig.onConfirm}
       />
     </ProtectedRoute>
   );
