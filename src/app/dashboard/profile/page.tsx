@@ -366,7 +366,7 @@ export default function DashboardProfilePage() {
               // Still fetch to get full subscription details if needed, but activePlan is set
             }
           }
-          
+
           const subRes = await axios.get(`${apiURL}/subscriptions/business/${biz._id}`, {
             headers: token ? { Authorization: `Bearer ${token}` } : {}
           });
@@ -1086,12 +1086,12 @@ export default function DashboardProfilePage() {
                       const effectiveArchive = (storyArchive && storyArchive.length > 0)
                         ? storyArchive
                         : stories.map((s: any, idx: number) => ({
-                            _id: s._id || s.id || `local-story-${idx}`,
-                            mediaUrl: s.imageUrl || s.mediaUrl || s.url || "",
-                            mediaType: s.mediaType || "image",
-                            caption: s.title || `Story #${idx + 1}`,
-                            expiresAt: s.expiresAt || new Date().toISOString()
-                          }));
+                          _id: s._id || s.id || `local-story-${idx}`,
+                          mediaUrl: s.imageUrl || s.mediaUrl || s.url || "",
+                          mediaType: s.mediaType || "image",
+                          caption: s.title || `Story #${idx + 1}`,
+                          expiresAt: s.expiresAt || new Date().toISOString()
+                        }));
 
                       return (
                         <div className="space-y-6">
@@ -1232,7 +1232,7 @@ export default function DashboardProfilePage() {
                                       setHighlightCoverUrl("");
                                     }}
                                     disabled={!newHighlightTitle.trim()}
-                                    className="px-5 py-2 bg-[hsl(var(--primary))] text-white font-semibold rounded-xl text-xs hover:opacity-90 disabled:opacity-50 transition-all shadow-md shrink-0 flex items-center gap-1.5 cursor-pointer"
+                                    className="w-full sm:w-auto px-5 py-2 bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] font-semibold rounded-xl text-xs hover:opacity-90 disabled:opacity-50 transition-all shadow-md flex justify-center items-center gap-1.5 cursor-pointer shrink-0"
                                   >
                                     <Sparkles className="h-3.5 w-3.5" />
                                     {editingHighlightId ? "Update Highlight" : t.builder.stories.add || "Publish Highlight"}
@@ -1241,30 +1241,30 @@ export default function DashboardProfilePage() {
                               </div>
                             </div>
 
-                              {/* Story Cover Selector */}
-                              {selectedArchiveStories.length > 0 && (
-                                <div className="flex items-center gap-2 pt-2 border-t border-[hsl(var(--border))]/50">
-                                  <span className="text-[10px] text-[hsl(var(--muted-foreground))] font-medium whitespace-nowrap">Pick Cover from selected:</span>
-                                  <div className="flex items-center gap-1.5 overflow-x-auto py-1 custom-scrollbar">
-                                    {selectedArchiveStories.map((storyId, idx) => {
-                                      const st = effectiveArchive.find((s: any) => s._id === storyId);
-                                      const isCurrentCover = (highlightCoverUrl || (effectiveArchive.find((s: any) => s._id === selectedArchiveStories[0])?.mediaUrl)) === st?.mediaUrl;
-                                      return (
-                                        <button
-                                          key={storyId}
-                                          type="button"
-                                          onClick={() => setHighlightCoverUrl(st?.mediaUrl || "")}
-                                          className={`relative h-8 w-8 rounded-full overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${isCurrentCover ? 'border-[hsl(var(--primary))] ring-2 ring-[hsl(var(--primary))]/30 scale-105' : 'border-transparent opacity-60 hover:opacity-100'}`}
-                                          title={`Use story #${idx + 1} as cover image`}
-                                        >
-                                          <img src={st?.mediaUrl} className="h-full w-full object-cover" alt="" />
-                                        </button>
-                                      );
-                                    })}
-                                  </div>
+                            {/* Story Cover Selector */}
+                            {selectedArchiveStories.length > 0 && (
+                              <div className="flex items-center gap-2 pt-2 border-t border-[hsl(var(--border))]/50">
+                                <span className="text-[10px] text-[hsl(var(--muted-foreground))] font-medium whitespace-nowrap">Pick Cover from selected:</span>
+                                <div className="flex items-center gap-1.5 overflow-x-auto py-1 custom-scrollbar">
+                                  {selectedArchiveStories.map((storyId, idx) => {
+                                    const st = effectiveArchive.find((s: any) => s._id === storyId);
+                                    const isCurrentCover = (highlightCoverUrl || (effectiveArchive.find((s: any) => s._id === selectedArchiveStories[0])?.mediaUrl)) === st?.mediaUrl;
+                                    return (
+                                      <button
+                                        key={storyId}
+                                        type="button"
+                                        onClick={() => setHighlightCoverUrl(st?.mediaUrl || "")}
+                                        className={`relative h-8 w-8 rounded-full overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${isCurrentCover ? 'border-[hsl(var(--primary))] ring-2 ring-[hsl(var(--primary))]/30 scale-105' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                                        title={`Use story #${idx + 1} as cover image`}
+                                      >
+                                        <img src={st?.mediaUrl} className="h-full w-full object-cover" alt="" />
+                                      </button>
+                                    );
+                                  })}
                                 </div>
-                              )}
-                            </div>
+                              </div>
+                            )}
+                          </div>
 
                           {/* Published Highlights List */}
                           <div>
@@ -1381,75 +1381,75 @@ export default function DashboardProfilePage() {
                           <div key={d.day} className="flex items-center justify-between border-b border-[hsl(var(--border))]/40 pb-2 last:border-0 last:pb-0">
                             <span className="text-xs font-semibold text-[hsl(var(--foreground))] w-24">{dayLabel}</span>
 
-                          <div className="flex items-center gap-4">
-                            <label className="flex items-center gap-2 text-xs cursor-pointer select-none">
-                              <input
-                                type="checkbox"
-                                checked={!d.closed}
-                                onChange={() => toggleDayClosed(index)}
-                                className="rounded border-[hsl(var(--border))] text-[hsl(var(--primary))] focus:ring-[hsl(var(--primary))]"
-                              />
-                              <span>{t.builder.hours.open}</span>
-                            </label>
-
-                            {!d.closed && (
-                              <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-bold transition-colors hover:bg-amber-500/20">
+                            <div className="flex items-center gap-4">
+                              <label className="flex items-center gap-2 text-xs cursor-pointer select-none">
                                 <input
                                   type="checkbox"
-                                  checked={Boolean((d as any).is24h || (d.open === "00:00" && (d.close === "24:00" || d.close === "00:00")))}
-                                  onChange={() => toggleDay24h(index)}
-                                  className="rounded border-amber-500 text-amber-500 focus:ring-amber-500 h-3.5 w-3.5"
+                                  checked={!d.closed}
+                                  onChange={() => toggleDayClosed(index)}
+                                  className="rounded border-[hsl(var(--border))] text-[hsl(var(--primary))] focus:ring-[hsl(var(--primary))]"
                                 />
-                                <span>24/7 (Շուրջօրյա)</span>
+                                <span>{t.builder.hours.open}</span>
                               </label>
-                            )}
 
-                            {!d.closed && (
-                              <div className="flex items-center gap-2">
-                                <input
-                                  type="text"
-                                  value={d.open}
-                                  maxLength={5}
-                                  disabled={Boolean((d as any).is24h || (d.open === "00:00" && (d.close === "24:00" || d.close === "00:00")))}
-                                  onKeyDown={(e) => {
-                                    if (
-                                      !/[0-9:]/.test(e.key) &&
-                                      !["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab", "Enter"].includes(e.key) &&
-                                      !e.ctrlKey && !e.metaKey
-                                    ) {
-                                      e.preventDefault();
-                                    }
-                                  }}
-                                  onChange={e => updateDayHours(index, "open", e.target.value)}
-                                  className="w-16 rounded border border-[hsl(var(--border))] px-2 py-1 text-center text-xs outline-none bg-transparent text-[hsl(var(--foreground))] disabled:opacity-50 disabled:bg-[hsl(var(--muted))/30]"
-                                />
-                                <span className="text-xs text-[hsl(var(--muted-foreground))]">-</span>
-                                <input
-                                  type="text"
-                                  value={d.close}
-                                  maxLength={5}
-                                  disabled={Boolean((d as any).is24h || (d.open === "00:00" && (d.close === "24:00" || d.close === "00:00")))}
-                                  onKeyDown={(e) => {
-                                    if (
-                                      !/[0-9:]/.test(e.key) &&
-                                      !["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab", "Enter"].includes(e.key) &&
-                                      !e.ctrlKey && !e.metaKey
-                                    ) {
-                                      e.preventDefault();
-                                    }
-                                  }}
-                                  onChange={e => updateDayHours(index, "close", e.target.value)}
-                                  className="w-16 rounded border border-[hsl(var(--border))] px-2 py-1 text-center text-xs outline-none bg-transparent text-[hsl(var(--foreground))] disabled:opacity-50 disabled:bg-[hsl(var(--muted))/30]"
-                                />
-                              </div>
-                            )}
-                            {d.closed && (
-                              <span className="text-xs font-semibold text-red-500 w-[140px] text-center">{t.builder.hours.closed}</span>
-                            )}
+                              {!d.closed && (
+                                <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-bold transition-colors hover:bg-amber-500/20">
+                                  <input
+                                    type="checkbox"
+                                    checked={Boolean((d as any).is24h || (d.open === "00:00" && (d.close === "24:00" || d.close === "00:00")))}
+                                    onChange={() => toggleDay24h(index)}
+                                    className="rounded border-amber-500 text-amber-500 focus:ring-amber-500 h-3.5 w-3.5"
+                                  />
+                                  <span>24/7 (Շուրջօրյա)</span>
+                                </label>
+                              )}
+
+                              {!d.closed && (
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="text"
+                                    value={d.open}
+                                    maxLength={5}
+                                    disabled={Boolean((d as any).is24h || (d.open === "00:00" && (d.close === "24:00" || d.close === "00:00")))}
+                                    onKeyDown={(e) => {
+                                      if (
+                                        !/[0-9:]/.test(e.key) &&
+                                        !["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab", "Enter"].includes(e.key) &&
+                                        !e.ctrlKey && !e.metaKey
+                                      ) {
+                                        e.preventDefault();
+                                      }
+                                    }}
+                                    onChange={e => updateDayHours(index, "open", e.target.value)}
+                                    className="w-16 rounded border border-[hsl(var(--border))] px-2 py-1 text-center text-xs outline-none bg-transparent text-[hsl(var(--foreground))] disabled:opacity-50 disabled:bg-[hsl(var(--muted))/30]"
+                                  />
+                                  <span className="text-xs text-[hsl(var(--muted-foreground))]">-</span>
+                                  <input
+                                    type="text"
+                                    value={d.close}
+                                    maxLength={5}
+                                    disabled={Boolean((d as any).is24h || (d.open === "00:00" && (d.close === "24:00" || d.close === "00:00")))}
+                                    onKeyDown={(e) => {
+                                      if (
+                                        !/[0-9:]/.test(e.key) &&
+                                        !["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab", "Enter"].includes(e.key) &&
+                                        !e.ctrlKey && !e.metaKey
+                                      ) {
+                                        e.preventDefault();
+                                      }
+                                    }}
+                                    onChange={e => updateDayHours(index, "close", e.target.value)}
+                                    className="w-16 rounded border border-[hsl(var(--border))] px-2 py-1 text-center text-xs outline-none bg-transparent text-[hsl(var(--foreground))] disabled:opacity-50 disabled:bg-[hsl(var(--muted))/30]"
+                                  />
+                                </div>
+                              )}
+                              {d.closed && (
+                                <span className="text-xs font-semibold text-red-500 w-[140px] text-center">{t.builder.hours.closed}</span>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
@@ -1688,12 +1688,12 @@ export default function DashboardProfilePage() {
               const effectiveArchive = (storyArchive && storyArchive.length > 0)
                 ? storyArchive
                 : stories.map((s: any, idx: number) => ({
-                    _id: s._id || s.id || `local-story-${idx}`,
-                    mediaUrl: s.imageUrl || s.mediaUrl || s.url || "",
-                    mediaType: s.mediaType || "image",
-                    caption: s.title || `Story #${idx + 1}`,
-                    expiresAt: s.expiresAt || new Date().toISOString()
-                  }));
+                  _id: s._id || s.id || `local-story-${idx}`,
+                  mediaUrl: s.imageUrl || s.mediaUrl || s.url || "",
+                  mediaType: s.mediaType || "image",
+                  caption: s.title || `Story #${idx + 1}`,
+                  expiresAt: s.expiresAt || new Date().toISOString()
+                }));
 
               return (
                 <>
@@ -1822,7 +1822,7 @@ export default function DashboardProfilePage() {
           groups={[previewingHighlightGroup]}
           initialGroupIndex={0}
           onClose={() => setPreviewingHighlightGroup(null)}
-          onStoriesViewedUpdate={() => {}}
+          onStoriesViewedUpdate={() => { }}
         />
       )}
 

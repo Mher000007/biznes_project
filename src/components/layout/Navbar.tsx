@@ -32,6 +32,7 @@ export default function Navbar() {
   // Favorites state for dropdown
   const [favorites, setFavorites] = useState<any[]>([]);
   const [isFavOpen, setIsFavOpen] = useState(false);
+  const [isStoryViewerOpen, setIsStoryViewerOpen] = useState(false);
 
   const resolveBusinessLogo = (item: any): string => {
     if (!item) return "";
@@ -387,7 +388,17 @@ export default function Navbar() {
       setScrolled(window.scrollY > 20);
     };
     window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+
+    const handleStoryViewerOpened = () => setIsStoryViewerOpen(true);
+    const handleStoryViewerClosed = () => setIsStoryViewerOpen(false);
+    window.addEventListener("story-viewer-opened", handleStoryViewerOpened);
+    window.addEventListener("story-viewer-closed", handleStoryViewerClosed);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("story-viewer-opened", handleStoryViewerOpened);
+      window.removeEventListener("story-viewer-closed", handleStoryViewerClosed);
+    };
   }, []);
 
   useEffect(() => {
@@ -442,7 +453,10 @@ export default function Navbar() {
   const isBusinessUser = currentUser?.role === "business_owner" || currentUser?.accountType === "business";
 
   return (
-    <header className={`${styles.header} ${isTransparent ? styles.transparentHeader : ""}`}>
+    <header 
+      className={`${styles.header} ${isTransparent ? styles.transparentHeader : ""}`}
+      style={{ display: isStoryViewerOpen ? "none" : undefined }}
+    >
       {/* Logo */}
       <Link
         href="/"

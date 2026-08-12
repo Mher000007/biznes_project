@@ -99,12 +99,11 @@ export default function SupportChatPage() {
                         <span className="text-white text-xs font-bold">A</span>
                       </div>
                     )}
-                    <div 
-                      className={`px-4 py-3 rounded-2xl ${
-                        !isAdmin 
-                          ? "bg-[hsl(var(--primary))] text-white rounded-br-sm" 
+                    <div
+                      className={`px-4 py-3 rounded-2xl ${!isAdmin
+                          ? "bg-[hsl(var(--primary))] text-white rounded-br-sm"
                           : "bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-bl-sm"
-                      }`}
+                        }`}
                     >
                       <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
                     </div>

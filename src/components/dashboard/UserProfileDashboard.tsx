@@ -1240,7 +1240,7 @@ export default function UserProfileDashboard() {
             <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 w-full sm:w-auto shrink-0">
               <button
                 onClick={() => dispatch(toggleWidgetVisibility())}
-                className={`h-10 px-4 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm ${isWidgetVisible ? 'bg-primary text-white hover:bg-primary/90' : 'bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]'}`}
+                className={`h-10 px-4 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm ${isWidgetVisible ? 'bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200 shadow-md' : 'bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]'}`}
               >
                 {isWidgetVisible ? <Bot className="w-3.5 h-3.5" /> : <BotOff className="w-3.5 h-3.5" />}
                 {isWidgetVisible

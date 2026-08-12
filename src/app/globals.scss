@@ -126,6 +126,8 @@
   --accent: 147 100% 36%; // deep green for legibility on light background
   --accent-2: 45 100% 45%; // rich premium gold
   --accent-foreground: 0 0% 100%;
+  --primary: 147 100% 36%;
+  --primary-foreground: 0 0% 100%;
   --shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
   --radius: 16px; // Yelp rounded 16px cards
   --radius-soft: 16px;
@@ -167,6 +169,8 @@
   --accent: 147 100% 45%; // booking green
   --accent-2: 45 100% 50%; // premium gold
   --accent-foreground: 240 6% 7%;
+  --primary: 147 100% 45%;
+  --primary-foreground: 240 6% 7%;
   --shadow: 5px 5px 15px #0a0a0b, -5px -5px 15px #161619;
 
   // Custom variables mapping to SCSS globals

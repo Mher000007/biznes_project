@@ -28,6 +28,8 @@ import {
   PanelLeftOpen,
   Menu,
   X,
+  Receipt,
+  Wallet,
 } from "lucide-react";
 import UnverifiedBanner from "@/components/dashboard/UnverifiedBanner";
 
@@ -39,6 +41,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const { t } = useI18n();
 
   const [profileExpanded, setProfileExpanded] = useState(true);
+  const [billingExpanded, setBillingExpanded] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [activePlan, setActivePlan] = useState<string>("starter");
   const [shakingHrefs, setShakingHrefs] = useState<string[]>([]);
@@ -52,10 +55,13 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     }
   }, [currentUser, isLoading, router]);
 
-  // 2. Profile tab expansion effect
+  // 2. Profile and Billing tab expansion effect
   useEffect(() => {
     if (pathname.startsWith("/dashboard/profile")) {
       setProfileExpanded(true);
+    }
+    if (pathname.startsWith("/dashboard/billing")) {
+      setBillingExpanded(true);
     }
   }, [pathname]);
 
@@ -193,6 +199,12 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     { href: "/dashboard/profile?tab=hours", label: navT.operatingHours || "Operating Hours", icon: Clock },
   ];
 
+  const billingSubLinks = [
+    { href: "/dashboard/billing?tab=plans", label: navT.plans || "Plans & Subscriptions", icon: CreditCard },
+    { href: "/dashboard/billing?tab=cards", label: navT.cards || "Saved Cards", icon: Wallet },
+    { href: "/dashboard/billing?tab=receipts", label: navT.receipts || "Receipts & Invoices", icon: Receipt },
+  ];
+
   const isSubActive = (href: string) => {
     const url = new URL(href, "http://localhost");
     const tabParam = url.searchParams.get("tab");
@@ -230,7 +242,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
         {/* Sidebar */}
         <aside className={`fixed top-14 left-0 bottom-0 flex-col border-r border-[hsl(var(--border))] bg-[hsl(var(--card))] z-50 lg:z-40 transition-all duration-300 flex ${isMobileOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 ${isSidebarCollapsed ? "w-64 lg:w-16" : "w-64"}`}>
-          <div className="flex flex-col flex-1 p-4 gap-1 pt-6">
+          <div className="flex flex-col flex-1 p-4 gap-1 pt-6 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-[hsl(var(--border))] [&::-webkit-scrollbar-thumb]:rounded-full">
             <div className={`flex items-center mb-3 transition-all duration-300 ${isSidebarCollapsed ? "px-3 lg:px-1" : "px-3"}`}>
               <div className={`overflow-hidden transition-all duration-300 ${isSidebarCollapsed ? "max-w-[120px] opacity-100 lg:max-w-0 lg:opacity-0" : "max-w-[120px] flex-1 opacity-100"}`}>
                 <p className="text-xs font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider whitespace-nowrap">
@@ -261,7 +273,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                 const isProfileActive = pathname.startsWith("/dashboard/profile");
                 return (
                   <div key={link.href} className="flex flex-col gap-1">
-                    <button
+                    <div
+                      role="button"
+                      tabIndex={0}
                       onClick={() => !isSidebarCollapsed && setProfileExpanded(!profileExpanded)}
                       className={`group relative flex items-center w-full rounded-lg py-2.5 text-sm font-medium transition-all duration-300 cursor-pointer text-left ${isSidebarCollapsed ? "px-3 lg:px-2" : "px-3"} ${isProfileActive
                         ? "bg-[hsl(var(--primary))]/5 text-[hsl(var(--primary))]"
@@ -308,7 +322,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                           </div>
                         </div>
                       )}
-                    </button>
+                    </div>
 
                     {!isSidebarCollapsed && profileExpanded && (
                       <div className="pl-6 flex flex-col gap-1 border-l border-[hsl(var(--border))]/60 ml-5 mt-1">
@@ -339,6 +353,82 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                                 <span className="truncate">{sub.label}</span>
                               </div>
                               {isSubLocked && <Lock className="h-3 w-3 text-amber-500 shrink-0" />}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              if (link.href === "/dashboard/billing") {
+                const isBillingActive = pathname.startsWith("/dashboard/billing");
+                return (
+                  <div key={link.href} className="flex flex-col gap-1">
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => !isSidebarCollapsed && setBillingExpanded(!billingExpanded)}
+                      className={`group relative flex items-center w-full rounded-lg py-2.5 text-sm font-medium transition-all duration-300 cursor-pointer text-left ${isSidebarCollapsed ? "px-3 lg:px-2" : "px-3"} ${isBillingActive
+                        ? "bg-[hsl(var(--primary))]/5 text-[hsl(var(--primary))]"
+                        : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
+                        }`}
+                    >
+                      <link.icon className="h-4 w-4 shrink-0" />
+                      <div className={`flex items-center justify-between overflow-hidden transition-all duration-300 ${isSidebarCollapsed ? "max-w-[200px] opacity-100 lg:max-w-0 lg:opacity-0 ml-3" : "max-w-[200px] opacity-100 ml-3"} flex-1`}>
+                        <span className="truncate">{link.label}</span>
+                        {billingExpanded ? <ChevronDown className="h-3.5 w-3.5 shrink-0" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0" />}
+                      </div>
+                      {isSidebarCollapsed && (
+                        <div className="hidden lg:block absolute left-full top-0 pl-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl shadow-xl flex flex-col overflow-hidden w-48 text-[hsl(var(--foreground))]">
+                            <div className="px-3 py-2 font-semibold text-xs border-b border-[hsl(var(--border))] bg-[hsl(var(--muted))]/30">
+                              {link.label}
+                            </div>
+                            <div className="flex flex-col p-1.5 gap-0.5">
+                              {billingSubLinks.map((sub) => {
+                                const active = isSubActive(sub.href);
+                                return (
+                                  <Link
+                                    key={sub.href}
+                                    href={sub.href}
+                                    onClick={() => setIsMobileOpen(false)}
+                                    className={`flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium transition-colors ${active
+                                        ? "text-[hsl(var(--primary))] font-semibold bg-[hsl(var(--primary))]/10"
+                                        : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
+                                      }`}
+                                  >
+                                    <sub.icon className="h-3.5 w-3.5 shrink-0" />
+                                    <span className="truncate">{sub.label}</span>
+                                  </Link>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {!isSidebarCollapsed && billingExpanded && (
+                      <div className="pl-6 flex flex-col gap-1 border-l border-[hsl(var(--border))]/60 ml-5 mt-1">
+                        {billingSubLinks.map((sub) => {
+                          const active = isSubActive(sub.href);
+
+                          return (
+                            <Link
+                              key={sub.href}
+                              href={sub.href}
+                              onClick={() => setIsMobileOpen(false)}
+                              className={`flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${active
+                                  ? "text-[hsl(var(--primary))] font-semibold bg-[hsl(var(--primary))]/5"
+                                  : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]/50 hover:text-[hsl(var(--foreground))]"
+                                }`}
+                            >
+                              <div className="flex items-center gap-2 truncate">
+                                <sub.icon className="h-3 w-3 shrink-0" />
+                                <span className="truncate">{sub.label}</span>
+                              </div>
                             </Link>
                           );
                         })}

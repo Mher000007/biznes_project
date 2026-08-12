@@ -123,7 +123,12 @@ export default function StoriesSection() {
             return (
               <button
                 key={group.business._id}
-                onClick={() => setActiveGroupIdx(idx)}
+                onClick={() => {
+                  setActiveGroupIdx(idx);
+                  if (typeof window !== "undefined") {
+                    window.dispatchEvent(new Event("story-viewer-opened"));
+                  }
+                }}
                 className="flex flex-col items-center gap-1.5 cursor-pointer shrink-0 focus:outline-none group"
               >
                 {/* Outer ring */}
@@ -169,7 +174,12 @@ export default function StoriesSection() {
         <StoryViewer
           groups={groups}
           initialGroupIndex={activeGroupIdx}
-          onClose={() => setActiveGroupIdx(null)}
+          onClose={() => {
+            setActiveGroupIdx(null);
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new Event("story-viewer-closed"));
+            }
+          }}
           onStoriesViewedUpdate={handleUpdateViewed}
         />
       )}
