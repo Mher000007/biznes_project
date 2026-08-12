@@ -20,7 +20,8 @@ import {
   Trash2,
   CheckSquare,
   Square,
-  ArrowDownUp
+  ArrowDownUp,
+  Clock
 } from "lucide-react";
 import PaymentModal from "@/components/ui/PaymentModal";
 import AddCardModal from "@/components/ui/AddCardModal";
@@ -65,25 +66,28 @@ function DashboardBillingPageInner() {
   const [isWalletOpen, setIsWalletOpen] = useState(false);
   const [receipts, setReceipts] = useState([
     {
-      id: "TRX-829104",
+      id: "TRX-829481",
       plan: "PREMIUM",
       amount: "50,000 AMD",
       date: "12 Aug 2026",
-      method: "4083"
+      method: "4083",
+      status: "approved"
     },
     {
       id: "TRX-719302",
       plan: "STANDARD",
       amount: "20,000 AMD",
       date: "15 Jul 2026",
-      method: "4083"
+      method: "4083",
+      status: "unconfirmed"
     },
     {
       id: "TRX-618401",
       plan: "STARTER",
       amount: "0 AMD",
       date: "10 Jun 2026",
-      method: "4083"
+      method: "4083",
+      status: "approved"
     }
   ]);
   const [receiptSortOrder, setReceiptSortOrder] = useState<"newest" | "oldest">("newest");
@@ -118,7 +122,7 @@ function DashboardBillingPageInner() {
   };
 
   const deleteAllReceipts = () => {
-    if (window.confirm("Are you sure you want to delete all transaction history?")) {
+    if (window.confirm(t.billing.receipts.confirmDeleteAll)) {
       setReceipts([]);
       setSelectedReceipts(new Set());
     }
@@ -298,27 +302,29 @@ function DashboardBillingPageInner() {
 
         {/* Page Header */}
         <div className="mb-10 text-center max-w-2xl mx-auto pt-6">
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[hsl(var(--foreground))] mb-3">
-            {t.billing.title.split(" ").slice(0, -1).join(" ")} <span className="text-transparent bg-clip-text bg-gradient-to-r from-[hsl(var(--primary))] to-purple-500">{t.billing.title.split(" ").slice(-1)}</span>
-          </h1>
+          {tab === "plans" && (
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[hsl(var(--foreground))] mb-3">
+              {t.billing.title.split(" ").slice(0, -1).join(" ")} <span className="text-transparent bg-clip-text bg-gradient-to-r from-[hsl(var(--primary))] to-purple-500">{t.billing.title.split(" ").slice(-1)}</span>
+            </h1>
+          )}
           {tab === "cards" ? (
             <div className="flex flex-col items-center justify-center mt-2">
               <h3 className="text-xl font-bold text-[hsl(var(--foreground))] flex items-center justify-center gap-2">
                 <CreditCard className="w-5 h-5 text-[hsl(var(--primary))]" />
-                Saved Payment Methods
+                {t.billing.cards.title}
               </h3>
               <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1">
-                Manage your digital wallet and preferred payment options.
+                {t.billing.cards.subtitle}
               </p>
             </div>
           ) : tab === "receipts" ? (
             <div className="flex flex-col items-center justify-center mt-2">
               <h3 className="text-xl font-bold text-[hsl(var(--foreground))] flex items-center justify-center gap-2">
                 <Receipt className="w-5 h-5 text-[hsl(var(--primary))]" />
-                Transaction History
+                {t.billing.receipts.title}
               </h3>
               <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1">
-                View and manage your past payment receipts.
+                {t.billing.receipts.subtitle}
               </p>
             </div>
           ) : (
@@ -449,13 +455,13 @@ function DashboardBillingPageInner() {
                   >
                     {/* Wallet Back Face */}
                     <div className="absolute inset-0 bg-gradient-to-br from-neutral-800 to-neutral-900 rounded-[2rem] shadow-[inset_0_10px_30px_rgba(0,0,0,0.8)] border border-white/5 z-0 flex items-center justify-center">
-                      <span className="text-white/5 font-black text-4xl tracking-widest uppercase rotate-[-10deg]">Wallet</span>
+                      <span className="text-white/5 font-black text-4xl tracking-widest uppercase rotate-[-10deg]">{t.billing.cards.wallet}</span>
                     </div>
 
                     {/* Cards Container */}
                     {savedCards.length === 0 && (
                       <div className="absolute inset-0 flex items-center justify-center z-20">
-                        <p className="text-white/40 font-medium text-sm tracking-wider">Empty</p>
+                        <p className="text-white/40 font-medium text-sm tracking-wider">{t.billing.cards.empty}</p>
                       </div>
                     )}
 
@@ -499,13 +505,13 @@ function DashboardBillingPageInner() {
                               </p>
                               <div className="flex justify-between items-end">
                                 <div>
-                                  <p className="text-[9px] text-white/50 uppercase tracking-widest font-bold mb-1">Expires</p>
+                                  <p className="text-[9px] text-white/50 uppercase tracking-widest font-bold mb-1">{t.billing.cards.expires}</p>
                                   <p className="text-white font-medium tracking-widest font-mono text-sm">{card.expiry}</p>
                                 </div>
                                 <div className="flex flex-col items-end gap-2">
                                   {card.isDefault && (
                                     <span className="bg-white/10 text-white border border-white/20 text-[9px] font-bold px-2 py-0.5 rounded backdrop-blur-md uppercase tracking-wider shadow-sm">
-                                      Default
+                                      {t.billing.cards.default}
                                     </span>
                                   )}
                                 </div>
@@ -527,7 +533,7 @@ function DashboardBillingPageInner() {
                       <div className="absolute top-4 right-6 bottom-3 w-[1px] border-r border-dashed border-white/20" />
 
                       <div className="w-16 h-1 bg-black/50 rounded-full shadow-[inset_0_1px_1px_rgba(0,0,0,0.5)] mb-3 relative z-10" />
-                      <div className="text-[10px] uppercase tracking-[0.4em] text-white/30 font-black relative z-10 drop-shadow-md">Click to Open</div>
+                      <div className="text-[10px] uppercase tracking-[0.4em] text-white/30 font-black relative z-10 drop-shadow-md">{t.billing.cards.clickToOpen}</div>
                     </div>
                   </div>
                 ) : (
@@ -537,13 +543,13 @@ function DashboardBillingPageInner() {
                         onClick={() => setIsWalletOpen(false)}
                         className="px-4 py-2 rounded-lg bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/80 transition-all font-medium text-sm flex items-center gap-2"
                       >
-                        Close Wallet
+                        {t.billing.cards.closeWallet}
                       </button>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 relative perspective-1000">
                       {savedCards.length === 0 && (
                         <div className="col-span-full py-12 text-center border-2 border-dashed border-[hsl(var(--border))] rounded-2xl w-full">
-                          <p className="text-[hsl(var(--muted-foreground))] font-medium">Your digital wallet is empty.</p>
+                          <p className="text-[hsl(var(--muted-foreground))] font-medium">{t.billing.cards.walletEmptyDesc}</p>
                         </div>
                       )}
                       {savedCards.map((card, index) => (
@@ -574,13 +580,13 @@ function DashboardBillingPageInner() {
                               </p>
                               <div className="flex justify-between items-end">
                                 <div>
-                                  <p className="text-[9px] text-white/50 uppercase tracking-widest font-bold mb-1">Expires</p>
+                                  <p className="text-[9px] text-white/50 uppercase tracking-widest font-bold mb-1">{t.billing.cards.expires}</p>
                                   <p className="text-white font-medium tracking-widest font-mono text-sm">{card.expiry}</p>
                                 </div>
                                 <div className="flex flex-col items-end gap-2">
                                   {card.isDefault && (
                                     <span className="bg-white/10 text-white border border-white/20 text-[9px] font-bold px-2 py-0.5 rounded backdrop-blur-md uppercase tracking-wider shadow-sm">
-                                      Default
+                                      {t.billing.cards.default}
                                     </span>
                                   )}
                                   {/* Delete Button Overlay */}
@@ -714,7 +720,7 @@ function DashboardBillingPageInner() {
                         ) : (
                           <Square className="w-4 h-4" />
                         )}
-                        Select All
+                        {t.billing.receipts.selectAll}
                       </button>
                       
                       <div className="h-4 w-[1px] bg-[hsl(var(--border))]" />
@@ -724,7 +730,7 @@ function DashboardBillingPageInner() {
                         className="flex items-center gap-2 text-sm font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors"
                       >
                         <ArrowDownUp className="w-4 h-4" />
-                        Sort: {receiptSortOrder === "newest" ? "Newest First" : "Oldest First"}
+                        {receiptSortOrder === "newest" ? t.billing.receipts.sortNewest : t.billing.receipts.sortOldest}
                       </button>
                     </div>
 
@@ -735,7 +741,7 @@ function DashboardBillingPageInner() {
                           className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
-                          Delete ({selectedReceipts.size})
+                          {t.billing.receipts.delete} ({selectedReceipts.size})
                         </button>
                       )}
                       <button
@@ -743,7 +749,7 @@ function DashboardBillingPageInner() {
                         className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
-                        Delete All
+                        {t.billing.receipts.deleteAll}
                       </button>
                     </div>
                   </div>
@@ -752,7 +758,7 @@ function DashboardBillingPageInner() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 pb-4">
                   {receipts.length === 0 && (
                     <div className="col-span-full text-center py-12 text-[hsl(var(--muted-foreground))]">
-                      No transaction history yet.
+                      {t.billing.receipts.noHistory}
                     </div>
                   )}
                   {sortedReceipts.map((receipt) => {
@@ -787,7 +793,7 @@ function DashboardBillingPageInner() {
                             deleteReceipt(receipt.id);
                           }}
                           className="absolute top-4 right-4 z-20 w-8 h-8 rounded-full bg-red-50 hover:bg-red-100 text-red-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
-                          title="Delete Receipt"
+                          title={t.billing.receipts.deleteReceipt}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -797,41 +803,38 @@ function DashboardBillingPageInner() {
 
                         {/* Content */}
                         <div className="px-5 text-slate-800 text-center flex-1 relative z-10">
-                          <div className="w-10 h-10 bg-emerald-500 rounded-full mx-auto flex items-center justify-center mb-3 shadow-sm border-2 border-emerald-100">
-                            <CheckCircle2 className="w-5 h-5 text-white" />
+                          <div className={`w-10 h-10 rounded-full mx-auto flex items-center justify-center mb-3 shadow-sm border-2 ${receipt.status === 'approved' ? 'bg-emerald-500 border-emerald-100' : 'bg-amber-500 border-amber-100'}`}>
+                            {receipt.status === 'approved' ? <CheckCircle2 className="w-5 h-5 text-white" /> : <Clock className="w-5 h-5 text-white" />}
                           </div>
 
-                          <h3 className="font-black text-lg mb-1 tracking-tight uppercase text-slate-900" style={{ fontFamily: 'monospace' }}>FQ BUSINESS</h3>
-                          <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mb-4 font-mono">Receipt #{receipt.id}</p>
+                          <h3 className={`font-black text-lg mb-1 tracking-tight uppercase ${receipt.status === 'approved' ? 'text-emerald-600' : 'text-amber-600'}`} style={{ fontFamily: 'monospace' }}>
+                            {receipt.status === 'approved' ? 'APPROVED' : 'UNCONFIRMED'}
+                          </h3>
+                          <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mb-4 font-mono">{t.billing.receipts.receiptId} #{receipt.id}</p>
 
                           <div className="border-t-[1.5px] border-dashed border-slate-400 w-full my-3 opacity-50" />
 
                           <div className="flex justify-between items-center text-xs mb-2.5 font-mono">
-                            <span className="font-bold text-slate-500">PLAN</span>
+                            <span className="font-bold text-slate-500">{t.billing.receipts.plan}</span>
                             <span className="font-bold text-slate-900">{receipt.plan}</span>
                           </div>
                           <div className="flex justify-between items-center text-xs mb-2.5 font-mono">
-                            <span className="font-bold text-slate-500">AMOUNT</span>
+                            <span className="font-bold text-slate-500">{t.billing.receipts.amount}</span>
                             <span className="font-black text-slate-900 text-sm">{receipt.amount}</span>
                           </div>
                           <div className="flex justify-between items-center text-xs mb-2.5 font-mono">
-                            <span className="font-bold text-slate-500">DATE</span>
+                            <span className="font-bold text-slate-500">{t.billing.receipts.date}</span>
                             <span className="font-bold text-slate-800">{receipt.date}</span>
                           </div>
                           <div className="flex justify-between items-center text-xs mb-2.5 font-mono">
-                            <span className="font-bold text-slate-500">METHOD</span>
+                            <span className="font-bold text-slate-500">{t.billing.receipts.method}</span>
                             <span className="font-bold text-slate-800">•••• {receipt.method}</span>
                           </div>
 
                           <div className="border-t-[1.5px] border-dashed border-slate-400 w-full my-3 opacity-50" />
 
-                          {/* Fake Barcode */}
-                          <div className="flex justify-center items-center gap-[2px] h-8 mt-3 opacity-70 px-2 w-full mix-blend-multiply group-hover:opacity-100 transition-opacity">
-                            {[2, 1, 4, 1, 2, 3, 1, 1, 4, 2, 1, 3, 2, 1, 4, 1, 2, 3, 1, 1, 4, 2, 1, 3, 1, 2, 4, 1, 2].map((w, i) => (
-                              <div key={`bc-${receipt.id}-${i}`} className="bg-slate-900 h-full" style={{ width: `${w}px` }} />
-                            ))}
-                          </div>
-                          <p className="text-[7px] font-mono mt-1.5 tracking-[0.3em] opacity-50 font-bold">THANK YOU</p>
+
+                          <p className="text-[7px] font-mono mt-1.5 tracking-[0.3em] opacity-50 font-bold">{t.billing.receipts.thankYou}</p>
                         </div>
 
                         {/* Jagged Bottom Edge */}

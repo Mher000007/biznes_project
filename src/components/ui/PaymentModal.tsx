@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, CreditCard, Lock, ShieldCheck, CheckCircle2, Loader2, Sparkles, Eye, EyeOff } from "lucide-react";
 import { useI18n } from "@/i18n";
 
@@ -21,6 +21,17 @@ export default function PaymentModal({ isOpen, onClose, plan, onSuccess }: Payme
   const { t } = useI18n();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
 
   const [cardNumber, setCardNumber] = useState("");
   const [expiry, setExpiry] = useState("");
@@ -88,13 +99,12 @@ export default function PaymentModal({ isOpen, onClose, plan, onSuccess }: Payme
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
       <div
         className="relative w-full max-w-4xl bg-[hsl(var(--background))] border border-[hsl(var(--border))]/50 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] rounded-[2rem] overflow-hidden animate-in zoom-in-[0.98] fade-in duration-300 transition-all"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top Accent Gradient Border */}
-        <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 shadow-[0_0_10px_rgba(245,158,11,0.5)] z-20" />
+
 
         <button
           onClick={onClose}
@@ -135,25 +145,25 @@ export default function PaymentModal({ isOpen, onClose, plan, onSuccess }: Payme
                        <CheckCircle2 className="w-6 h-6 text-white" />
                      </div>
                      
-                     <h3 className="font-black text-xl mb-1 tracking-tight uppercase text-slate-900" style={{ fontFamily: 'monospace' }}>FQ BUSINESS</h3>
-                     <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-4 font-mono">Receipt #TRX-{Math.floor(100000 + Math.random() * 900000)}</p>
+                     <h3 className="font-black text-xl mb-1 tracking-tight uppercase text-emerald-600" style={{ fontFamily: 'monospace' }}>APPROVED</h3>
+                     <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-4 font-mono">{t.billing.receipts.receiptId} #TRX-{Math.floor(100000 + Math.random() * 900000)}</p>
                      
                      <div className="border-t-[1.5px] border-dashed border-slate-400 w-full my-4 opacity-50" />
                      
                      <div className="flex justify-between items-center text-xs mb-3 font-mono">
-                       <span className="font-bold text-slate-500">PLAN</span>
+                       <span className="font-bold text-slate-500">{t.billing.receipts.plan}</span>
                        <span className="font-bold text-slate-900">{planTitle}</span>
                      </div>
                      <div className="flex justify-between items-center text-xs mb-3 font-mono">
-                       <span className="font-bold text-slate-500">AMOUNT</span>
+                       <span className="font-bold text-slate-500">{t.billing.receipts.amount}</span>
                        <span className="font-black text-slate-900 text-sm">{planPrice}</span>
                      </div>
                      <div className="flex justify-between items-center text-xs mb-3 font-mono">
-                       <span className="font-bold text-slate-500">DATE</span>
+                       <span className="font-bold text-slate-500">{t.billing.receipts.date}</span>
                        <span className="font-bold text-slate-800">{new Date().toLocaleDateString()}</span>
                      </div>
                      <div className="flex justify-between items-center text-xs mb-3 font-mono">
-                       <span className="font-bold text-slate-500">METHOD</span>
+                       <span className="font-bold text-slate-500">{t.billing.receipts.method}</span>
                        <span className="font-bold text-slate-800">•••• {cardNumber.slice(-4) || "4083"}</span>
                      </div>
 
@@ -164,7 +174,7 @@ export default function PaymentModal({ isOpen, onClose, plan, onSuccess }: Payme
                           <div key={i} className="bg-slate-900 h-full" style={{ width: `${w}px` }} />
                         ))}
                      </div>
-                     <p className="text-[8px] font-mono mt-1.5 tracking-[0.3em] opacity-50 font-bold">THANK YOU</p>
+                     <p className="text-[8px] font-mono mt-1.5 tracking-[0.3em] opacity-50 font-bold">{t.billing.receipts.thankYou}</p>
                   </div>
 
                   {/* Jagged Bottom Edge via SVG mask to match texture */}
@@ -199,11 +209,11 @@ export default function PaymentModal({ isOpen, onClose, plan, onSuccess }: Payme
 
               <div className="mb-10">
                 <h2 className="text-3xl md:text-4xl font-black text-[hsl(var(--foreground))] tracking-tight flex items-center gap-3">
-                  Upgrade Plan <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-amber-500 animate-[pulse_2s_ease-in-out_infinite]" />
+                  {t.billing.paymentModal.upgradePlan}
                 </h2>
-                <p className="text-base text-[hsl(var(--muted-foreground))] mt-2 font-medium">Complete your payment to unlock {planTitle}</p>
+                <p className="text-base text-[hsl(var(--muted-foreground))] mt-2 font-medium">{t.billing.paymentModal.completePayment} {planTitle}</p>
                 <div className="mt-6 inline-block bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-xl px-4 py-2 shadow-sm">
-                  <p className="text-[10px] text-[hsl(var(--muted-foreground))] font-bold uppercase tracking-[0.2em] mb-0.5">Total Due</p>
+                  <p className="text-[10px] text-[hsl(var(--muted-foreground))] font-bold uppercase tracking-[0.2em] mb-0.5">{t.billing.paymentModal.totalDue}</p>
                   <p className="text-2xl font-black text-[hsl(var(--foreground))] text-amber-500">{planPrice}</p>
                 </div>
               </div>
@@ -266,13 +276,13 @@ export default function PaymentModal({ isOpen, onClose, plan, onSuccess }: Payme
                     {/* Card Details */}
                     <div className="flex justify-between items-end relative z-10">
                       <div className="flex-1 overflow-hidden pr-4">
-                        <p className="text-[10px] text-white uppercase tracking-widest mb-1">Card Holder</p>
+                        <p className="text-[10px] text-white uppercase tracking-widest mb-1">{t.billing.paymentModal.cardHolder}</p>
                         <p className="font-medium text-white uppercase tracking-wider truncate w-full text-xs sm:text-sm drop-shadow-sm">
-                          {name || "YOUR NAME"}
+                          {name || t.billing.paymentModal.nameSurname}
                         </p>
                       </div>
                       <div className="text-right whitespace-nowrap">
-                        <p className="text-[10px] text-white uppercase tracking-widest mb-1">Expires</p>
+                        <p className="text-[10px] text-white uppercase tracking-widest mb-1">{t.billing.paymentModal.expires}</p>
                         <p className="font-mono text-xs sm:text-sm text-white tracking-widest drop-shadow-sm">{expiry || "MM/YY"}</p>
                       </div>
                     </div>
@@ -292,7 +302,7 @@ export default function PaymentModal({ isOpen, onClose, plan, onSuccess }: Payme
 
                     {/* CVC Strip */}
                     <div className="flex-1 flex flex-col justify-center px-6 relative z-10">
-                      <p className="text-[10px] text-white/60 uppercase tracking-widest text-right mb-1 mr-2">CVC</p>
+                      <p className="text-[10px] text-white/60 uppercase tracking-widest text-right mb-1 mr-2">{t.billing.paymentModal.cvc}</p>
                       <div className="w-full bg-slate-200 h-10 rounded flex items-center justify-end px-4 overflow-hidden relative shadow-inner">
                         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 2px, #000 2px, #000 4px)' }}></div>
                         <span className="relative z-10 font-mono text-slate-800 font-bold tracking-widest text-lg">{cvc ? (showCvc ? cvc : '•'.repeat(cvc.length)) : '•••'}</span>
@@ -301,7 +311,7 @@ export default function PaymentModal({ isOpen, onClose, plan, onSuccess }: Payme
 
                     {/* Bottom Text */}
                     <div className="px-6 pb-6 text-right relative z-10">
-                      <p className="text-[8px] text-white/40 uppercase tracking-widest">Authorized Signature Not Required</p>
+                      <p className="text-[8px] text-white/40 uppercase tracking-widest">{t.billing.paymentModal.authorizedSignature}</p>
                     </div>
                   </div>
                 </div>
@@ -309,22 +319,22 @@ export default function PaymentModal({ isOpen, onClose, plan, onSuccess }: Payme
             </div>
 
             {/* RIGHT COLUMN: Form */}
-            <form onSubmit={handlePay} className="p-6 md:p-10 flex flex-col justify-center h-full">
+            <form onSubmit={handlePay} className="p-6 md:p-10 flex flex-col h-full">
               <div className="space-y-6">
                 <div>
-                  <label className="block text-[11px] font-bold text-[hsl(var(--muted-foreground))] uppercase tracking-widest mb-2.5">Cardholder Name</label>
+                  <label className="block text-[11px] font-bold text-[hsl(var(--muted-foreground))] uppercase tracking-widest mb-2.5">{t.billing.paymentModal.cardHolder}</label>
                   <input
                     type="text"
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value.replace(/[^\p{L}\s]/gu, "").toUpperCase())}
-                    placeholder="NAME SURNAME"
+                    placeholder={t.billing.paymentModal.nameSurname}
                     className="w-full px-5 py-4 bg-[hsl(var(--muted))]/40 border border-[hsl(var(--border))]/80 rounded-2xl text-sm font-medium focus:bg-[hsl(var(--background))] focus:ring-2 focus:ring-[hsl(var(--primary))]/30 focus:border-[hsl(var(--primary))] outline-none transition-all shadow-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-[hsl(var(--muted-foreground))] uppercase tracking-widest mb-2.5">Card Number</label>
+                  <label className="block text-[11px] font-bold text-[hsl(var(--muted-foreground))] uppercase tracking-widest mb-2.5">{t.billing.paymentModal.cardNumber}</label>
                   <div className="relative group">
                     <input
                       type="text"
@@ -341,7 +351,7 @@ export default function PaymentModal({ isOpen, onClose, plan, onSuccess }: Payme
 
                 <div className="grid grid-cols-2 gap-5">
                   <div>
-                    <label className="block text-[11px] font-bold text-[hsl(var(--muted-foreground))] uppercase tracking-widest mb-2.5">Expiry Date</label>
+                    <label className="block text-[11px] font-bold text-[hsl(var(--muted-foreground))] uppercase tracking-widest mb-2.5">{t.billing.paymentModal.expiryDate}</label>
                     <input
                       type="text"
                       required
@@ -353,7 +363,7 @@ export default function PaymentModal({ isOpen, onClose, plan, onSuccess }: Payme
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold text-[hsl(var(--muted-foreground))] uppercase tracking-widest mb-2.5">CVC</label>
+                    <label className="block text-[11px] font-bold text-[hsl(var(--muted-foreground))] uppercase tracking-widest mb-2.5">{t.billing.paymentModal.cvc}</label>
                     <div className="relative group">
                       <input
                         type={showCvc ? "text" : "password"}
@@ -378,10 +388,7 @@ export default function PaymentModal({ isOpen, onClose, plan, onSuccess }: Payme
                 </div>
               </div>
 
-              <div className="mt-8 mb-6 flex items-center justify-center gap-2 text-xs font-medium text-[hsl(var(--muted-foreground))] bg-[hsl(var(--muted))]/30 py-3 rounded-xl border border-[hsl(var(--border))]/40 shadow-sm">
-                <ShieldCheck className="w-5 h-5 text-emerald-500" />
-                <span>Payments are 100% secure and encrypted.</span>
-              </div>
+              <div className="flex-1 min-h-[2rem]" />
 
               <button
                 type="submit"
@@ -391,9 +398,9 @@ export default function PaymentModal({ isOpen, onClose, plan, onSuccess }: Payme
                 <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
                 <span className="relative z-10 flex items-center gap-2.5">
                   {loading ? (
-                    <><Loader2 className="w-5 h-5 animate-spin" /> Processing...</>
+                    <><Loader2 className="w-5 h-5 animate-spin" /> {t.billing.paymentModal.processing}</>
                   ) : (
-                    <><Lock className="w-5 h-5" /> Pay {planPrice}</>
+                    <><Lock className="w-5 h-5" /> {t.billing.paymentModal.pay} {planPrice}</>
                   )}
                 </span>
               </button>

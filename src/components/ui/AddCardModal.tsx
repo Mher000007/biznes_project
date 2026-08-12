@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, CreditCard, Lock, ShieldCheck, Loader2, CheckCircle2 } from "lucide-react";
+import { useI18n } from "@/i18n";
 
 interface AddCardModalProps {
   isOpen: boolean;
@@ -16,8 +17,20 @@ const getCardType = (number: string) => {
 };
 
 export default function AddCardModal({ isOpen, onClose, onAddCard }: AddCardModalProps) {
+  const { t } = useI18n();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
 
   const [cardNumber, setCardNumber] = useState("");
   const [expiry, setExpiry] = useState("");
@@ -83,7 +96,7 @@ export default function AddCardModal({ isOpen, onClose, onAddCard }: AddCardModa
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
       <div
         className="relative w-full max-w-4xl bg-[hsl(var(--background))] border border-[hsl(var(--border))]/50 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] rounded-[2rem] overflow-hidden animate-in zoom-in-[0.98] fade-in duration-300 transition-all"
         onClick={(e) => e.stopPropagation()}
@@ -105,8 +118,8 @@ export default function AddCardModal({ isOpen, onClose, onAddCard }: AddCardModa
                 <CheckCircle2 className="w-14 h-14" />
               </div>
             </div>
-            <h2 className="text-3xl md:text-4xl font-black text-[hsl(var(--foreground))] mb-3 tracking-tight">Card Added!</h2>
-            <p className="text-[hsl(var(--muted-foreground))] text-lg md:text-xl">Your new payment method has been securely saved.</p>
+            <h2 className="text-3xl md:text-4xl font-black text-[hsl(var(--foreground))] mb-3 tracking-tight">{t.billing.addCardModal.cardAdded}</h2>
+            <p className="text-[hsl(var(--muted-foreground))] text-lg md:text-xl">{t.billing.addCardModal.cardAddedDesc}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-[hsl(var(--border))]/50">
@@ -114,9 +127,9 @@ export default function AddCardModal({ isOpen, onClose, onAddCard }: AddCardModa
             <div className="bg-gradient-to-br from-[hsl(var(--muted))]/40 to-transparent p-6 md:p-10 flex flex-col h-full justify-center">
               <div className="mb-10 text-center md:text-left">
                 <h2 className="text-3xl md:text-4xl font-black text-[hsl(var(--foreground))] tracking-tight mb-2">
-                  Add Payment Method
+                  {t.billing.addCardModal.title}
                 </h2>
-                <p className="text-base text-[hsl(var(--muted-foreground))] font-medium">Add a new credit or debit card for future payments.</p>
+                <p className="text-base text-[hsl(var(--muted-foreground))] font-medium">{t.billing.addCardModal.subtitle}</p>
               </div>
 
               {/* 3D Credit Card Wrapper */}
@@ -145,13 +158,13 @@ export default function AddCardModal({ isOpen, onClose, onAddCard }: AddCardModa
                       </p>
                       <div className="flex justify-between items-end">
                         <div>
-                          <p className="text-[10px] text-white/50 uppercase tracking-widest font-bold mb-1">Cardholder</p>
+                          <p className="text-[10px] text-white/50 uppercase tracking-widest font-bold mb-1">{t.billing.paymentModal.cardHolder}</p>
                           <p className="text-white font-medium tracking-wide truncate max-w-[150px] uppercase text-sm drop-shadow-md">
-                            {name || "YOUR NAME"}
+                            {name || t.billing.paymentModal.nameSurname}
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="text-[10px] text-white/50 uppercase tracking-widest font-bold mb-1">Expires</p>
+                          <p className="text-[10px] text-white/50 uppercase tracking-widest font-bold mb-1">{t.billing.paymentModal.expires}</p>
                           <p className="text-white font-medium tracking-widest font-mono text-sm drop-shadow-md">
                             {expiry || "MM/YY"}
                           </p>
@@ -170,7 +183,7 @@ export default function AddCardModal({ isOpen, onClose, onAddCard }: AddCardModa
                       <div className="w-full bg-white/10 rounded-md h-10 flex items-center justify-end px-4 backdrop-blur-sm">
                         <span className="text-white font-mono tracking-widest">{cvc || "•••"}</span>
                       </div>
-                      <p className="text-[10px] text-white/40 mt-2 text-right">Security Code</p>
+                      <p className="text-[10px] text-white/40 mt-2 text-right">{t.billing.addCardModal.securityCode}</p>
                     </div>
                   </div>
                 </div>
@@ -178,7 +191,7 @@ export default function AddCardModal({ isOpen, onClose, onAddCard }: AddCardModa
 
               <div className="mt-8 flex items-center justify-center gap-2 text-[hsl(var(--muted-foreground))] text-xs font-medium">
                 <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                256-bit encrypted & secure
+                {t.billing.addCardModal.encrypted}
               </div>
             </div>
 
@@ -187,7 +200,7 @@ export default function AddCardModal({ isOpen, onClose, onAddCard }: AddCardModa
               <form onSubmit={handleSave} className="h-full flex flex-col justify-center">
                 <div className="space-y-5">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-[hsl(var(--foreground))] uppercase tracking-wider">Card Number</label>
+                    <label className="text-xs font-bold text-[hsl(var(--foreground))] uppercase tracking-wider">{t.billing.paymentModal.cardNumber}</label>
                     <div className="relative group">
                       <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[hsl(var(--muted-foreground))] group-focus-within:text-[hsl(var(--primary))] transition-colors" />
                       <input
@@ -204,7 +217,7 @@ export default function AddCardModal({ isOpen, onClose, onAddCard }: AddCardModa
 
                   <div className="grid grid-cols-2 gap-5">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-[hsl(var(--foreground))] uppercase tracking-wider">Expiry Date</label>
+                      <label className="text-xs font-bold text-[hsl(var(--foreground))] uppercase tracking-wider">{t.billing.paymentModal.expiryDate}</label>
                       <input
                         type="text"
                         required
@@ -238,7 +251,7 @@ export default function AddCardModal({ isOpen, onClose, onAddCard }: AddCardModa
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-[hsl(var(--foreground))] uppercase tracking-wider">Name on Card</label>
+                    <label className="text-xs font-bold text-[hsl(var(--foreground))] uppercase tracking-wider">{t.billing.addCardModal.nameOnCard}</label>
                     <input
                       type="text"
                       required
@@ -260,11 +273,11 @@ export default function AddCardModal({ isOpen, onClose, onAddCard }: AddCardModa
                     <span className="relative z-10 flex items-center gap-2">
                       {loading ? (
                         <>
-                          <Loader2 className="w-5 h-5 animate-spin" /> Saving...
+                          <Loader2 className="w-5 h-5 animate-spin" /> {t.billing.addCardModal.saving}
                         </>
                       ) : (
                         <>
-                          Save Card
+                          {t.billing.addCardModal.saveCard}
                         </>
                       )}
                     </span>

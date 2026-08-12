@@ -233,16 +233,16 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       `}</style>
         {/* Mobile Overlay */}
         {isMobileOpen && (
-          <div 
+          <div
             className="fixed inset-0 bg-black/50 z-40 lg:hidden"
             style={{ top: '3.5rem' }}
-            onClick={() => setIsMobileOpen(false)} 
+            onClick={() => setIsMobileOpen(false)}
           />
         )}
 
         {/* Sidebar */}
-        <aside className={`fixed top-14 left-0 bottom-0 flex-col border-r border-[hsl(var(--border))] bg-[hsl(var(--card))] z-50 lg:z-40 transition-all duration-300 flex ${isMobileOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 ${isSidebarCollapsed ? "w-64 lg:w-16" : "w-64"}`}>
-          <div className="flex flex-col flex-1 p-4 gap-1 pt-6 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-[hsl(var(--border))] [&::-webkit-scrollbar-thumb]:rounded-full">
+        <aside className={`fixed top-14 left-0 bottom-0 flex-col border-r border-[hsl(var(--border))] bg-[hsl(var(--card))] z-[60] lg:z-[60] transition-all duration-300 flex ${isMobileOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 ${isSidebarCollapsed ? "w-64 lg:w-16" : "w-64"}`}>
+          <div className={`flex flex-col flex-1 p-4 gap-1 pt-6 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-[hsl(var(--border))] [&::-webkit-scrollbar-thumb]:rounded-full ${isSidebarCollapsed ? "overflow-visible" : "overflow-y-auto"}`}>
             <div className={`flex items-center mb-3 transition-all duration-300 ${isSidebarCollapsed ? "px-3 lg:px-1" : "px-3"}`}>
               <div className={`overflow-hidden transition-all duration-300 ${isSidebarCollapsed ? "max-w-[120px] opacity-100 lg:max-w-0 lg:opacity-0" : "max-w-[120px] flex-1 opacity-100"}`}>
                 <p className="text-xs font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider whitespace-nowrap">
@@ -306,10 +306,10 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                                       else setIsMobileOpen(false);
                                     }}
                                     className={`flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium transition-colors ${isSubLocked
-                                        ? "text-[hsl(var(--muted-foreground))]/70 hover:bg-amber-500/10 cursor-pointer"
-                                        : active
-                                          ? "text-[hsl(var(--primary))] font-semibold bg-[hsl(var(--primary))]/10"
-                                          : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
+                                      ? "text-[hsl(var(--muted-foreground))]/70 hover:bg-amber-500/10 cursor-pointer"
+                                      : active
+                                        ? "text-[hsl(var(--primary))] font-semibold bg-[hsl(var(--primary))]/10"
+                                        : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
                                       }`}
                                   >
                                     <sub.icon className="h-3.5 w-3.5 shrink-0" />
@@ -395,8 +395,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                                     href={sub.href}
                                     onClick={() => setIsMobileOpen(false)}
                                     className={`flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium transition-colors ${active
-                                        ? "text-[hsl(var(--primary))] font-semibold bg-[hsl(var(--primary))]/10"
-                                        : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
+                                      ? "text-[hsl(var(--primary))] font-semibold bg-[hsl(var(--primary))]/10"
+                                      : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
                                       }`}
                                   >
                                     <sub.icon className="h-3.5 w-3.5 shrink-0" />
@@ -421,8 +421,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                               href={sub.href}
                               onClick={() => setIsMobileOpen(false)}
                               className={`flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${active
-                                  ? "text-[hsl(var(--primary))] font-semibold bg-[hsl(var(--primary))]/5"
-                                  : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]/50 hover:text-[hsl(var(--foreground))]"
+                                ? "text-[hsl(var(--primary))] font-semibold bg-[hsl(var(--primary))]/5"
+                                : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]/50 hover:text-[hsl(var(--foreground))]"
                                 }`}
                             >
                               <div className="flex items-center gap-2 truncate">
