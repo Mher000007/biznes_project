@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useAlert } from "@/context/AlertContext";
 import { getApiUrl } from "@/lib/utils";
 import api from "@/lib/api";
 import { MapPin, Plus, Trash2, Edit2, Star, Clock, Phone } from "lucide-react";
@@ -28,6 +29,7 @@ interface Location {
 export default function DashboardLocations() {
   const { t } = useI18n();
   const { currentUser } = useAuth();
+  const { showAlert } = useAlert();
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -109,7 +111,7 @@ export default function DashboardLocations() {
       fetchLocations();
     } catch (err: any) {
       console.error("Failed to save location", err);
-      alert(err.response?.data?.message || "Error saving location");
+      showAlert({ message: err.response?.data?.message || "Error saving location", type: "error" });
     }
   };
 

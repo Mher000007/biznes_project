@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
 import Link from "next/link";
 import { useI18n } from "@/i18n";
+import { useAlert } from "@/context/AlertContext";
 import { Plus, Trash2, Edit2, Coins, Tag, RefreshCw, Heart, Lock, Image as ImageIcon, Camera, Upload, X } from "lucide-react";
 
 interface ExchangeOffer {
@@ -24,6 +25,7 @@ interface ExchangeOffer {
 export default function DashboardExchange() {
   const { t, locale } = useI18n();
   const { currentUser } = useAuth();
+  const { showAlert } = useAlert();
   const [activePlan, setActivePlan] = useState<string>("starter");
   const [offers, setOffers] = useState<ExchangeOffer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -95,7 +97,7 @@ export default function DashboardExchange() {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 3 * 1024 * 1024) {
-        alert("File size exceeds 3MB limit");
+        showAlert({ message: "File size exceeds 3MB limit", type: "error" });
         return;
       }
       convertFileToBase64(file)
@@ -156,12 +158,12 @@ export default function DashboardExchange() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!businessId) {
-      alert("Business context missing.");
+      showAlert({ message: "Business context missing.", type: "error" });
       return;
     }
 
     if (isLimitReached) {
-      alert("Pro փաթեթի դեպքում կարող եք հրապարակել առավելագույնը 3 առաջարկ: Անսահմանափակ առաջարկների համար թարմացրեք փաթեթը Premium-ի:");
+      showAlert({ message: "Pro փաթեթի դեպքում կարող եք հրապարակել առավելագույնը 3 առաջարկ: Անսահմանափակ առաջարկների համար թարմացրեք փաթեթը Premium-ի:", type: "warning" });
       return;
     }
 
@@ -190,7 +192,7 @@ export default function DashboardExchange() {
       fetchOffers();
     } catch (error: any) {
       console.error("Error saving offer", error);
-      alert(error.response?.data?.error || "Error saving offer");
+      showAlert({ message: error.response?.data?.error || "Error saving offer", type: "error" });
     }
   };
 
@@ -224,7 +226,7 @@ export default function DashboardExchange() {
 
   const handleOpenAddModal = () => {
     if (isProPlan && offers.length >= 3) {
-      alert("Pro փաթեթի դեպքում կարող եք հրապարակել առավելագույնը 3 առաջարկ: Անսահմանափակ առաջարկներ հրապարակելու համար թարմացրեք փաթեթը Premium-ի:");
+      showAlert({ message: "Pro փաթեթի դեպքում կարող եք հրապարակել առավելագույնը 3 առաջարկ: Անսահմանափակ առաջարկներ հրապարակելու համար թարմացրեք փաթեթը Premium-ի:", type: "warning" });
       return;
     }
     resetForm();

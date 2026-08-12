@@ -12,6 +12,7 @@ import StoryViewer from "@/components/landing/StoryViewer";
 import { useI18n } from "@/i18n";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
+import { useAlert } from "@/context/AlertContext";
 import dynamic from "next/dynamic";
 import { getOpenStatus } from "@/components/discover/BusinessCard";
 import CustomServiceSelect from "@/components/ui/CustomServiceSelect";
@@ -89,9 +90,10 @@ const formatAddress = (address: string, city: string) => {
 
 export default function BusinessProfilePage() {
   const { slug } = useParams() as { slug: string };
-  const router = useRouter();
-  const { locale, t } = useI18n();
+  const { t, locale } = useI18n();
+  const { currentUser } = useAuth();
   const { showToast } = useToast();
+  const { showAlert } = useAlert();
   const [business, setBusiness] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeImgIdx, setActiveImgIdx] = useState(0);
@@ -187,7 +189,6 @@ export default function BusinessProfilePage() {
     return clean.match(/.{1,2}/g)?.join(" ") || "";
   };
 
-  const { currentUser } = useAuth();
   const isBusinessUser = currentUser?.role === "business_owner" || currentUser?.accountType === "business";
   // Booking Modal State
   const [isBookingOpen, setIsBookingOpen] = useState(false);
@@ -671,13 +672,13 @@ export default function BusinessProfilePage() {
     setBookingLoading(true);
 
     if (isCustomDateClosed || todayOperatingHours?.closed) {
-      alert("This business is closed for bookings on the selected date.");
+      showAlert({ message: "This business is closed for bookings on the selected date.", type: "error" });
       setBookingLoading(false);
       return;
     }
 
     if (business.locations && business.locations.length > 0 && !bookingLocation) {
-      alert("Please select a branch/location before booking.");
+      showAlert({ message: "Please select a branch/location before booking.", type: "error" });
       setBookingLoading(false);
       return;
     }
@@ -686,7 +687,7 @@ export default function BusinessProfilePage() {
     const fullCustomerPhone = cleanPhoneDigits ? `+374${cleanPhoneDigits}` : "";
 
     if (!customerName.trim() || !fullCustomerPhone || !bookingDate || !bookingTime) {
-      alert("Please fill in all required fields (Name, Phone, Date, and Time).");
+      showAlert({ message: "Please fill in all required fields (Name, Phone, Date, and Time).", type: "error" });
       setBookingLoading(false);
       return;
     }
@@ -783,7 +784,7 @@ export default function BusinessProfilePage() {
       setBookingSuccess(true);
     } catch (err: any) {
       console.error("Backend booking API request failed", err);
-      alert(err.response?.data?.message || "Failed to submit booking. Please try again.");
+      showAlert({ message: err.response?.data?.message || "Failed to submit booking. Please try again.", type: "error" });
     } finally {
       setBookingLoading(false);
     }

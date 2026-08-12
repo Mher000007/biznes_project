@@ -14,6 +14,7 @@ import profileStyles from "@/components/business/BusinessProfile.module.scss";
 import { useI18n } from "@/i18n";
 import { getApiUrl } from "@/lib/utils";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useAlert } from "@/context/AlertContext";
 import StoryViewer from "@/components/landing/StoryViewer";
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -65,9 +66,11 @@ const isDefaultHighlight = (h: any) => {
   );
 };
 
-export default function DashboardProfilePage() {
-  const { currentUser, deleteAccount } = useAuth();
-  const { t } = useI18n();
+export default function ProfilePage() {
+  const { currentUser, updateProfile, isBusinessUser, deleteAccount } = useAuth();
+  const { t, locale } = useI18n();
+  const { showAlert } = useAlert();
+  const router = useRouter();
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -125,7 +128,7 @@ export default function DashboardProfilePage() {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 3 * 1024 * 1024) {
-        alert("File size exceeds 3MB limit");
+        showAlert({ message: "File size exceeds 3MB limit", type: "error" });
         return;
       }
       convertFileToBase64(file).then(setLogoUrl).catch(console.error);
@@ -136,7 +139,7 @@ export default function DashboardProfilePage() {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 3 * 1024 * 1024) {
-        alert("File size exceeds 3MB limit");
+        showAlert({ message: "File size exceeds 3MB limit", type: "error" });
         return;
       }
       convertFileToBase64(file).then(base64 => {
@@ -149,7 +152,7 @@ export default function DashboardProfilePage() {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 3 * 1024 * 1024) {
-        alert("File size exceeds 3MB limit");
+        showAlert({ message: "File size exceeds 3MB limit", type: "error" });
         return;
       }
       convertFileToBase64(file).then(setHighlightCoverUrl).catch(console.error);
@@ -160,7 +163,7 @@ export default function DashboardProfilePage() {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 3 * 1024 * 1024) {
-        alert("File size exceeds 3MB limit");
+        showAlert({ message: "File size exceeds 3MB limit", type: "error" });
         return;
       }
       convertFileToBase64(file).then(setNewStoryImg).catch(console.error);
@@ -171,7 +174,7 @@ export default function DashboardProfilePage() {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 3 * 1024 * 1024) {
-        alert("File size exceeds 3MB limit");
+        showAlert({ message: "File size exceeds 3MB limit", type: "error" });
         return;
       }
       convertFileToBase64(file).then(setNewHighlightImg).catch(console.error);
@@ -185,7 +188,7 @@ export default function DashboardProfilePage() {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         if (file.size > 3 * 1024 * 1024) {
-          alert(`File ${file.name} exceeds 3MB limit and was skipped`);
+          showAlert({ message: `File ${file.name} exceeds 3MB limit and was skipped`, type: "error" });
           continue;
         }
         try {
@@ -2183,8 +2186,9 @@ export default function DashboardProfilePage() {
                   setDeleteLoading(false);
                   if (res.success) {
                     setShowDeleteModal(false);
-                    alert("Your account and all associated data have been permanently deleted.");
-                    router.push("/");
+                    showAlert({ message: "Your account and all associated data have been permanently deleted.", type: "success" }).then(() => {
+                      router.push("/");
+                    });
                   } else {
                     setDeleteError(res.error || "Failed to delete account");
                   }

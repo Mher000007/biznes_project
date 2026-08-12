@@ -5,6 +5,7 @@ import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { useI18n } from "@/i18n";
 import ConfirmDeleteModal from "@/components/ui/ConfirmDeleteModal";
+import { useAlert } from "@/context/AlertContext";
 
 interface DashboardInquiry {
   id: string | number;
@@ -27,6 +28,7 @@ interface DashboardInquiry {
 export default function InquiriesPage() {
   const { currentUser } = useAuth();
   const { t, locale } = useI18n();
+  const { showAlert } = useAlert();
   const [inquiries, setInquiries] = useState<DashboardInquiry[]>([]);
   const [activeTab, setActiveTab] = useState<"all" | "bookings" | "reviews" | "notifications">("all");
   const [loading, setLoading] = useState(true);
@@ -99,7 +101,7 @@ export default function InquiriesPage() {
       setInquiries((prev) => prev.filter((inq) => inq.id !== bookingId));
     } catch (e: any) {
       console.error("Error deleting booking", e);
-      alert("Failed to delete booking: " + (e.response?.data?.message || e.message));
+      showAlert({ message: "Failed to delete booking: " + (e.response?.data?.message || e.message), type: "error" });
     }
     setDeleteModal({ isOpen: false, id: null });
   };

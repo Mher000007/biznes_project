@@ -7,6 +7,7 @@ import { ArrowDown, ArrowUp, ArrowUpDown, Coins, ShieldCheck, Zap, X, UserPlus, 
 import { useI18n } from "@/i18n";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
+import { useAlert } from "@/context/AlertContext";
 import api from "@/lib/api";
 import { getApiUrl } from "@/lib/utils";
 
@@ -56,6 +57,7 @@ export default function ExchangePage() {
   const { locale, t } = useI18n();
   const { currentUser, refreshUser } = useAuth();
   const { showToast } = useToast();
+  const { showAlert } = useAlert();
   const [selectedOffer, setSelectedOffer] = useState<any | null>(null);
   const [offerCategory, setOfferCategory] = useState<string>('All');
   const [sortOrder, setSortOrder] = useState<'default' | 'highToLow' | 'lowToHigh'>('default');
@@ -111,12 +113,12 @@ export default function ExchangePage() {
 
     const userCoins = (currentUser as any)?.findyCoins || 0;
     if (userCoins < selectedOffer.cost) {
-      alert(`Դուք չունեք բավարար Findy Coins (${selectedOffer.cost} Coins) այս առաջարկը ստանալու համար: Ձեր մնացորդը: ${userCoins} Coins:`);
+      showAlert({ message: `Դուք չունեք բավարար Findy Coins (${selectedOffer.cost} Coins) այս առաջարկը ստանալու համար: Ձեր մնացորդը: ${userCoins} Coins:`, type: "warning" });
       return;
     }
 
     if (selectedOffer.claimedQuantity >= selectedOffer.totalQuantity) {
-      alert("Այս առաջարկի բոլոր օրինակները արդեն սպառվել են:");
+      showAlert({ message: "Այս առաջարկի բոլոր օրինակները արդեն սպառվել են:", type: "warning" });
       return;
     }
 
@@ -179,7 +181,7 @@ export default function ExchangePage() {
       });
     } catch (err: any) {
       console.error("Failed to confirm exchange", err);
-      alert(err.response?.data?.error || "Փոխանակման ընթացքում տեղի ունեցավ սխալ:");
+      showAlert({ message: err.response?.data?.error || "Փոխանակման ընթացքում տեղի ունեցավ սխալ:", type: "error" });
     } finally {
       setSubmittingExchange(false);
     }

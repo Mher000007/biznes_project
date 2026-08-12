@@ -7,6 +7,7 @@ import { getApiUrl } from "@/lib/utils";
 import axios from "axios";
 import { getBusinessProfile, saveBusinessProfile } from "@/lib/auth";
 import { CATEGORIES } from "@/lib/constants";
+import { useAlert } from "@/context/AlertContext";
 
 const API = getApiUrl();
 
@@ -18,6 +19,7 @@ function authHeader() {
 export default function DashboardPublish() {
   const { currentUser } = useAuth();
   const { t } = useI18n();
+  const { showAlert } = useAlert();
   const [status, setStatus] = useState<"loading" | "draft" | "publishing" | "published">("loading");
   const [businessId, setBusinessId] = useState<string | null>(null);
 
@@ -134,7 +136,7 @@ export default function DashboardPublish() {
     } catch (err: any) {
       console.error("Publishing failed:", err);
       const msg = err.response?.data?.message || err.message || "Failed to publish business profile.";
-      alert(msg);
+      showAlert({ message: msg, type: "error" });
       setStatus("draft");
     }
   };
@@ -159,7 +161,7 @@ export default function DashboardPublish() {
     } catch (err: any) {
       console.error("Unpublishing failed:", err);
       const msg = err.response?.data?.message || err.message || "Failed to unpublish business profile.";
-      alert(msg);
+      showAlert({ message: msg, type: "error" });
     }
   };
 

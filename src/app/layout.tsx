@@ -11,6 +11,7 @@ import ChatWidget from "@/components/chat/ChatWidget";
 import { I18nProvider } from "@/i18n";
 import { AuthProvider } from "@/context/AuthContext";
 import { ToastProvider } from "@/context/ToastContext";
+import { AlertProvider } from "@/context/AlertContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 
 const montserrat = Montserrat({
@@ -90,10 +91,12 @@ export default async function RootLayout({
             <AuthProvider>
               <I18nProvider>
                 <ToastProvider>
-                  <Navbar />
-                  <main className="flex-1">{children}</main>
-                  <Footer />
-                  <ChatWidget />
+                  <AlertProvider>
+                    <Navbar />
+                    <main className="flex-1">{children}</main>
+                    <Footer />
+                    <ChatWidget />
+                  </AlertProvider>
                 </ToastProvider>
               </I18nProvider>
             </AuthProvider>

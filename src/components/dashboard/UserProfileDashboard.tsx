@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useI18n } from "@/i18n";
 import { getApiUrl } from "@/lib/utils";
 import api from "@/lib/api";
+import { useAlert } from "@/context/AlertContext";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import { toggleWidgetVisibility } from "@/store/slices/chatSlice";
@@ -101,6 +102,8 @@ function formatRelativeTime(iso?: string, locale: string = "hy"): string {
 
 export default function UserProfileDashboard() {
   const { currentUser, logout, refreshUser } = useAuth();
+  const router = useRouter();
+  const { showAlert } = useAlert();
   const { t, locale } = useI18n();
   const searchParams = useSearchParams();
   const dispatch = useDispatch();
@@ -565,7 +568,7 @@ export default function UserProfileDashboard() {
         window.dispatchEvent(new Event("claimedOffersUpdated"));
       }
       setSelectedCoupon(null);
-      alert(locale === "hy" ? `✓ Կուպոնը (${couponCode}) հաջողությամբ ստուգվեց և հանվեց ցանկից:` : `✓ Coupon (${couponCode}) successfully scanned and redeemed!`);
+      showAlert({ message: locale === "hy" ? `✓ Կուպոնը (${couponCode}) հաջողությամբ ստուգվեց և հանվեց ցանկից:` : `✓ Coupon (${couponCode}) successfully scanned and redeemed!`, type: "success" });
     } catch (e) {
       console.error("Error redeeming coupon:", e);
     }

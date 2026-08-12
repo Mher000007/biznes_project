@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import axios from "axios";
 import api from "@/lib/api";
 import { getApiUrl } from "@/lib/utils";
+import { useAlert } from "@/context/AlertContext";
 import {
   BarChart3, Building2, CalendarDays, Gem, Flag, Users,
   Mail, Phone, Trash2, CheckCircle2,
@@ -366,6 +367,8 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [userRoleFilter, setUserRoleFilter] = useState<"all" | "user" | "business_owner" | "admin">("all");
   const [userSearchQuery, setUserSearchQuery] = useState("");
 
+  const { showAlert } = useAlert();
+
   const handleUsersMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     const rect = e.currentTarget.getBoundingClientRect();
@@ -460,7 +463,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         }, 1200);
       }
     } catch (err: any) {
-      alert(err.response?.data?.message || "Failed to update coins");
+      showAlert({ message: err.response?.data?.message || "Failed to update coins", type: "error" });
     } finally {
       setCoinSubmitting(false);
     }
@@ -549,15 +552,11 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
   const handleAdminActionError = (err: any, fallbackMessage: string) => {
     if (err?.response?.status === 401) {
-      alert("Ձեր ադմինիստրատորի սեսիան ավարտվել է: Խնդրում ենք կրկին մուտք գործել:");
-      if (typeof window !== "undefined") {
-        localStorage.removeItem(ADMIN_TOKEN_KEY);
-        localStorage.removeItem(ADMIN_USER_KEY);
-        window.location.reload();
-      }
+      showAlert({ message: "Ձեր ադմինիստրատորի սեսիան ավարտվել է: Խնդրում ենք կրկին մուտք գործել:", type: "error" });
+      onLogout();
       return;
     }
-    alert(err?.response?.data?.message || fallbackMessage);
+    showAlert({ message: err?.response?.data?.message || fallbackMessage, type: "error" });
   };
 
   const approveBiz = async (id: string) => {
@@ -699,7 +698,8 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       await axios.put(`${API}/admin/promos/${id}/toggle`, {}, { headers: authHeaders() });
       load();
     } catch (err: any) {
-      alert(err.response?.data?.message || "Failed to toggle promo code status");
+      console.error("Error toggling promo code status", err);
+      showAlert({ message: err.response?.data?.message || "Failed to toggle promo code status", type: "error" });
     }
   };
 
@@ -709,7 +709,8 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       await axios.delete(`${API}/admin/promos/${id}`, { headers: authHeaders() });
       load();
     } catch (err: any) {
-      alert(err.response?.data?.message || "Failed to delete promo code");
+      console.error("Error deleting promo code", err);
+      showAlert({ message: err.response?.data?.message || "Failed to delete promo code", type: "error" });
     }
   };
 
