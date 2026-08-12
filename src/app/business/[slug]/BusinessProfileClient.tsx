@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { MOCK_BUSINESSES } from "@/data/mock-businesses";
-import { Star, MapPin, BadgeCheck, Globe, Phone, Mail, Clock, Users, Calendar, ArrowLeft, Send, X, Compass, ChevronLeft, ChevronRight, CheckCircle, Maximize2, ChevronDown, Heart, Bookmark, Sparkles, Coins } from "lucide-react";
+import { Star, MapPin, BadgeCheck, Globe, Phone, Mail, Clock, Users, Calendar, ArrowLeft, Send, X, Compass, ChevronLeft, ChevronRight, CheckCircle, Maximize2, ChevronDown, Heart, Bookmark, Sparkles, Coins, Info } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
 import { getApiUrl } from "@/lib/utils";
@@ -1288,9 +1288,9 @@ export default function BusinessProfilePage() {
               </div>
             ) : (
               <form onSubmit={handleBookingSubmit} className="space-y-4">
-                <h2>{t.business?.bookAppointment || "Book Appointment"}</h2>
+                <h2 className="text-lg font-bold text-center">{t.business?.bookAppointment || "Book Appointment"}</h2>
                 {/* Selected Package / Service & Menus & Offers Dropdown */}
-                <div className="p-3 bg-[hsl(var(--muted))]/50 rounded-xl mb-4 text-xs border border-[hsl(var(--border))]/60 space-y-2">
+                <div className="p-3 bg-[hsl(var(--muted))]/50 rounded-xl text-xs border border-[hsl(var(--border))]/60 space-y-2">
                   <div className="flex items-center justify-between font-semibold">
                     <span className="text-[hsl(var(--muted-foreground))]">
                       {locale === 'hy' ? "Ընտրված է:" : locale === 'ru' ? "Выбрано:" : "Selected:"}
@@ -1304,7 +1304,7 @@ export default function BusinessProfilePage() {
                   {(businessOffers.length > 0 || (business.services && business.services.length > 0)) && (
                     <div className="pt-2 border-t border-[hsl(var(--border))]/40">
                       <label className="block text-[11px] font-semibold text-[hsl(var(--muted-foreground))] mb-1">
-                        {locale === 'hy' ? "Ընտրեք «Menus & Offers» առաջարկ կամ ծառայություն:" : locale === 'ru' ? "Выберите предложение «Menus & Offers» или услугу:" : "Choose Package from Menus & Offers or Services:"}
+                        {locale === 'hy' ? "Ընտրեք «Menus & Offers» առաջարկ կամ ծառայություն (ոչ պարտադիր):" : locale === 'ru' ? "Выберите предложение «Menus & Offers» или услугу (необязательно):" : "Choose Package from Menus & Offers or Services (Optional):"}
                       </label>
                       <CustomServiceSelect
                         value={selectedService?._id || selectedService?.id || selectedService?.packageName || selectedService?.name || "General Appointment"}
@@ -1542,10 +1542,17 @@ export default function BusinessProfilePage() {
                   />
                 </div>
 
+                <div className="p-3 bg-[hsl(var(--primary))]/5 border border-[hsl(var(--primary))]/20 rounded-xl flex items-center justify-center gap-2.5">
+                  <Info className="text-[hsl(var(--primary))] shrink-0 w-4 h-4" />
+                  <p className="text-xs text-[hsl(var(--muted-foreground))] font-medium text-center">
+                    {locale === 'hy' ? "Գումարը վճարելու եք տեղում՝ ռեստորանում կամ սրահում։" : locale === 'ru' ? "Оплата производится на месте, в ресторане или салоне." : "Payment will be made on-site at the restaurant or venue."}
+                  </p>
+                </div>
+
                 <button
                   type="submit"
                   disabled={bookingLoading}
-                  className="btn-primary w-full py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 mt-6"
+                  className="btn-primary w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow-lg"
                 >
                   {bookingLoading ? (locale === 'hy' ? "Մշակվում է..." : locale === 'ru' ? "Обработка..." : "Processing Request...") : <>{locale === 'hy' ? "Ուղարկել Ամրագրման Հարցում" : locale === 'ru' ? "Отправить Запрос на Бронирование" : "Request Booking Confirmation"} <Send className="h-4 w-4" /></>}
                 </button>
