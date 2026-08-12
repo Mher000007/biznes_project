@@ -10,6 +10,8 @@ import api from "@/lib/api";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import { toggleWidgetVisibility } from "@/store/slices/chatSlice";
+import { QRCodeSVG } from "qrcode.react";
+import axios from "axios";
 import {
   User,
   Mail,
@@ -142,12 +144,24 @@ export default function UserProfileDashboard() {
   // Favorites, Bookings, Reviews & Claimed Offers States
   const [savedBusinesses, setSavedBusinesses] = useState<any[]>([]);
   const [userBookings, setUserBookings] = useState<any[]>([]);
+  const [selectedBookingQR, setSelectedBookingQR] = useState<{ id: string, qrToken: string } | null>(null);
   const [userReviewsCount, setUserReviewsCount] = useState<number>(0);
   const [userReviewsList, setUserReviewsList] = useState<any[]>([]);
   const [claimedOffers, setClaimedOffers] = useState<any[]>([]);
   const [selectedCoupon, setSelectedCoupon] = useState<any>(null);
   const [copiedCouponCode, setCopiedCouponCode] = useState<string | null>(null);
   const [copiedInviteCode, setCopiedInviteCode] = useState(false);
+
+  useEffect(() => {
+    if (selectedBookingQR || selectedCoupon) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [selectedBookingQR, selectedCoupon]);
 
   const handleCopyInviteCode = (code: string) => {
     if (!code) return;
@@ -724,11 +738,46 @@ export default function UserProfileDashboard() {
     }
   };
 
-  const loadUserBookings = () => {
+  const loadUserBookings = async () => {
     if (typeof window === "undefined" || !currentUser) {
       setUserBookings([]);
       return;
     }
+    try {
+      const token = localStorage.getItem("token");
+      let apiBookings: any[] = [];
+      if (token) {
+        const res = await axios.get(`${getApiUrl()}/bookings/user`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.data?.success) {
+          apiBookings = res.data.data.map((b: any) => ({
+            id: b._id,
+            businessName: b.business?.name || "Business",
+            businessSlug: b.business?.slug || "",
+            service: b.serviceName,
+            date: new Date(b.date).toLocaleDateString(),
+            time: b.timeSlot,
+            status: b.status,
+            notes: b.notes || "",
+            totalPrice: b.totalPrice,
+            qrToken: b.qrToken
+          }));
+        }
+      }
+      
+      const hiddenBookingsStr = localStorage.getItem("armbiz_hidden_bookings");
+      const hiddenBookings: string[] = hiddenBookingsStr ? JSON.parse(hiddenBookingsStr) : [];
+      
+      if (apiBookings.length > 0) {
+        setUserBookings(apiBookings.filter((b) => !hiddenBookings.includes(b.id) && b.status !== "completed"));
+        return;
+      }
+    } catch (err) {
+      console.error("Error loading user bookings from API:", err);
+    }
+    
+    // Fallback to local storage
     try {
       const localBookingsStr = localStorage.getItem("armbiz-local-bookings");
       const userBookingsStr = localStorage.getItem("armbiz_user_bookings");
@@ -762,7 +811,10 @@ export default function UserProfileDashboard() {
         return false;
       });
 
-      const mapped = filtered.map((b: any) => ({
+      const hiddenBookingsStr = localStorage.getItem("armbiz_hidden_bookings");
+      const hiddenBookings: string[] = hiddenBookingsStr ? JSON.parse(hiddenBookingsStr) : [];
+
+      const mapped = filtered.filter((b) => !hiddenBookings.includes(b.id) && b.status !== "completed").map((b: any) => ({
         id: b.id,
         businessName: b.businessName || "Business Listing",
         businessSlug: b.businessSlug || "",
@@ -771,7 +823,8 @@ export default function UserProfileDashboard() {
         time: b.time || b.timeSlot || b.bookingTime || "N/A",
         status: b.status || "pending",
         notes: b.notes || b.bookingNotes || "",
-        totalPrice: b.totalPrice || b.price || 0
+        totalPrice: b.totalPrice || b.price || 0,
+        qrToken: b.qrToken || b.id
       }));
 
       setUserBookings(mapped);
@@ -1087,9 +1140,27 @@ export default function UserProfileDashboard() {
     } catch (e) { }
   };
 
-  const removeBooking = (id: string) => {
+  const removeBooking = async (id: string) => {
     if (typeof window === "undefined") return;
     try {
+      // API Deletion/Hiding
+      const token = localStorage.getItem("token");
+      if (token && id.length === 24) { // Basic check for MongoDB ObjectId length
+        try {
+          // If the backend had a delete endpoint we would call it here:
+          // await axios.delete(`${getApiUrl()}/bookings/user/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+        } catch (e) {}
+      }
+
+      // Hide from UI persistently using localStorage
+      const hiddenBookingsStr = localStorage.getItem("armbiz_hidden_bookings");
+      let hiddenBookings: string[] = hiddenBookingsStr ? JSON.parse(hiddenBookingsStr) : [];
+      if (!hiddenBookings.includes(id)) {
+        hiddenBookings.push(id);
+        localStorage.setItem("armbiz_hidden_bookings", JSON.stringify(hiddenBookings));
+      }
+
+      // Remove from legacy local storage
       const localBookingsStr = localStorage.getItem("armbiz-local-bookings");
       const userBookingsStr = localStorage.getItem("armbiz_user_bookings");
 
@@ -1725,6 +1796,16 @@ export default function UserProfileDashboard() {
                     </div>
 
                     <div className="flex items-center gap-2 w-full sm:w-auto">
+                      {(b.status === 'pending' || b.status === 'confirmed') && b.qrToken && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedBookingQR({ id: b.id, qrToken: b.qrToken })}
+                          className="h-9 px-4 rounded-xl border border-blue-500/20 bg-blue-500/10 text-blue-600 hover:bg-blue-500 hover:text-white transition-all text-xs font-semibold flex items-center gap-1.5 cursor-pointer shrink-0"
+                        >
+                          <QrCode className="w-4 h-4" />
+                          <span>{locale === "hy" ? "QR Կոդ" : "QR Code"}</span>
+                        </button>
+                      )}
                       {b.businessSlug ? (
                         <Link
                           href={`/business/${b.businessSlug}`}
@@ -2618,7 +2699,49 @@ export default function UserProfileDashboard() {
         )}
 
       </div>
+
+      {/* Booking QR Modal */}
+      {selectedBookingQR && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-sm bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-[2rem] p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center">
+            <button
+              onClick={() => setSelectedBookingQR(null)}
+              className="absolute top-4 right-4 p-2 rounded-full bg-[hsl(var(--muted))]/50 hover:bg-[hsl(var(--muted))] transition-colors"
+            >
+              <X className="w-5 h-5 text-[hsl(var(--muted-foreground))]" />
+            </button>
+            <h3 className="text-lg font-bold mt-2 mb-1">{locale === "hy" ? "Ամրագրման QR կոդ" : "Booking QR Code"}</h3>
+            <p className="text-xs text-[hsl(var(--muted-foreground))] text-center mb-6 px-4">
+              {locale === "hy" 
+                ? "Ներկայացրեք այս QR կոդը բիզնեսին՝ ամրագրումը հաստատելու համար:" 
+                : "Present this QR code to the business to verify your booking."}
+            </p>
+            
+            <div className="p-4 bg-white rounded-2xl shadow-sm border border-slate-200">
+              <QRCodeSVG value={selectedBookingQR.qrToken} size={180} />
+            </div>
+            
+            <div className="mt-6 w-full p-3 bg-[hsl(var(--muted))]/30 rounded-xl border border-[hsl(var(--border))]/50 flex items-center justify-between">
+              <div className="font-mono text-sm tracking-widest font-bold">
+                {selectedBookingQR.qrToken}
+              </div>
+              <button 
+                onClick={() => {
+                  handleCopyCouponCode(selectedBookingQR.qrToken);
+                }}
+                className="p-1.5 rounded-md hover:bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] transition-colors"
+                title={locale === "hy" ? "Պատճենել" : "Copy"}
+              >
+                {copiedCouponCode === selectedBookingQR.qrToken ? (
+                  <Check className="w-4 h-4 text-emerald-500" />
+                ) : (
+                  <Copy className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-

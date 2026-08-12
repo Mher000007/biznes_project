@@ -26,7 +26,9 @@ export default function QrScannerPage() {
   const [scanResult, setScanResult] = useState<{ status: "idle" | "success" | "error"; message?: string; details?: RedeemedCoupon }>({ status: "idle" });
   const [isScanning, setIsScanning] = useState(false);
   const [redeemedList, setRedeemedList] = useState<RedeemedCoupon[]>([]);
+  const [verifiedBookings, setVerifiedBookings] = useState<any[]>([]);
   const [searchFilter, setSearchFilter] = useState("");
+  const [bookingsSearchFilter, setBookingsSearchFilter] = useState("");
   const [activePlan, setActivePlan] = useState<string | null>(null);
 
   const [deleteModal, setDeleteModal] = useState<{
@@ -111,10 +113,85 @@ export default function QrScannerPage() {
     return () => window.removeEventListener("redeemedCouponsUpdated", handleUpdate);
   }, []);
 
-  const handleVerifyCode = (inputCode: string) => {
+  const loadVerifiedBookings = async () => {
+    try {
+      const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
+      if (!token) return;
+      const bizRes = await axios.get(`${getApiUrl()}/businesses/me/all`, { headers: { Authorization: `Bearer ${token}` } });
+      if (bizRes.data?.success && bizRes.data.data?.length > 0) {
+        const bizId = bizRes.data.data[0]._id;
+        const bRes = await axios.get(`${getApiUrl()}/bookings/business/${bizId}`, { headers: { Authorization: `Bearer ${token}` } });
+        if (bRes.data?.success) {
+           const hiddenStr = localStorage.getItem("armbiz_hidden_biz_bookings");
+           const hidden = hiddenStr ? JSON.parse(hiddenStr) : [];
+           const completedBookings = bRes.data.data.filter((b: any) => b.status === "completed" && !hidden.includes(b._id));
+           setVerifiedBookings(completedBookings);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load verified bookings", e);
+    }
+  };
+
+  useEffect(() => {
+    if (currentUser) {
+      loadVerifiedBookings();
+    }
+  }, [currentUser]);
+
+  const handleVerifyCode = async (inputCode: string) => {
     const cleanCode = inputCode.trim().toUpperCase();
     if (!cleanCode) return;
     setIsScanning(true);
+
+    try {
+      const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
+      if (token) {
+        const res = await axios.post(`${getApiUrl()}/bookings/verify-qr`, { qrToken: cleanCode }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.data?.success) {
+          setIsScanning(false);
+          setScanResult({
+            status: "success",
+            message: locale === "hy" 
+              ? "Ամրագրումը հաջողությամբ վավերացված և հաստատված է:" 
+              : locale === "ru" ? "Бронирование успешно проверено и подтверждено!" : "Booking Successfully Verified and Completed!",
+            details: {
+               id: res.data.data._id,
+               couponCode: cleanCode,
+               offerTitle: res.data.data.serviceName,
+               businessName: res.data.data.business?.name || "Booking",
+               cost: res.data.data.totalPrice,
+               customerName: res.data.data.customerName,
+               customerEmail: res.data.data.customerPhone,
+               redeemedAt: new Date().toISOString()
+            } as any
+          });
+          setManualCode("");
+          loadVerifiedBookings();
+          return;
+        }
+      }
+    } catch (err: any) {
+      if (err.response?.status === 400 && err.response?.data?.message?.includes("already been completed")) {
+        setIsScanning(false);
+        setScanResult({
+          status: "error",
+          message: locale === "hy" ? "Այս ամրագրումը արդեն հաստատված և օգտագործված է:" : "This booking has already been completed."
+        });
+        return;
+      }
+      if (err.response?.status === 403) {
+        setIsScanning(false);
+        setScanResult({
+          status: "error",
+          message: locale === "hy" ? "Դուք իրավունք չունեք վավերացնել այս ամրագրումը:" : "Not authorized to verify this booking."
+        });
+        return;
+      }
+      // If 404, it means it's not a booking QR, fallback to local coupons
+    }
 
     setTimeout(() => {
       setIsScanning(false);
@@ -268,6 +345,16 @@ export default function QrScannerPage() {
       item.couponCode.toLowerCase().includes(q) ||
       item.customerName.toLowerCase().includes(q) ||
       item.offerTitle.toLowerCase().includes(q)
+    );
+  });
+
+  const filteredBookings = verifiedBookings.filter((b: any) => {
+    if (!bookingsSearchFilter) return true;
+    const q = bookingsSearchFilter.toLowerCase();
+    return (
+      b.qrToken?.toLowerCase().includes(q) ||
+      b.customerName?.toLowerCase().includes(q) ||
+      b.serviceName?.toLowerCase().includes(q)
     );
   });
 
@@ -530,6 +617,122 @@ export default function QrScannerPage() {
           </div>
         )}
       </div>
+
+      {/* Verified Bookings History Section */}
+      <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-3xl p-6 shadow-xl space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[hsl(var(--border))]/60 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center">
+              <History className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-[hsl(var(--foreground))]">
+                {locale === "hy" ? "Վավերացված Ամրագրումների Պատմություն" : "Verified Bookings History"}
+              </h2>
+              <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                {locale === "hy" ? `Ընդհանուր՝ ${verifiedBookings.length} վավերացված ամրագրում` : `Total: ${verifiedBookings.length} verified bookings`}
+              </p>
+            </div>
+          </div>
+
+          {verifiedBookings.length > 0 && (
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[hsl(var(--muted-foreground))]" />
+                <input
+                  type="text"
+                  value={bookingsSearchFilter}
+                  onChange={(e) => setBookingsSearchFilter(e.target.value)}
+                  placeholder={locale === "hy" ? "Որոնել..." : "Search..."}
+                  className="pl-9 pr-3 py-1.5 bg-[hsl(var(--muted))]/30 border border-[hsl(var(--border))] rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {filteredBookings.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-[hsl(var(--border))]/60 text-[hsl(var(--muted-foreground))] font-semibold uppercase tracking-wider">
+                  <th className="pb-3 px-3">{locale === "hy" ? "Հաճախորդ" : "Customer"}</th>
+                  <th className="pb-3 px-3">{locale === "hy" ? "QR Կոդ" : "QR Code"}</th>
+                  <th className="pb-3 px-3">{locale === "hy" ? "Առաջարկ" : "Offer"}</th>
+                  <th className="pb-3 px-3">{locale === "hy" ? "Ամսաթիվ" : "Date"}</th>
+                  <th className="pb-3 px-3 text-right">{locale === "hy" ? "Կարգավիճակ" : "Status"}</th>
+                  <th className="pb-3 px-3 text-right">{locale === "hy" ? "Թաքցնել" : "Hide"}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[hsl(var(--border))]/40">
+                {filteredBookings.map((item: any) => (
+                  <tr key={item._id} className="hover:bg-[hsl(var(--muted))]/20 transition-colors">
+                    <td className="py-3 px-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center font-bold text-xs">
+                          <UserCheck className="w-3.5 h-3.5" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-[hsl(var(--foreground))]">{item.customerName}</p>
+                          {item.customerPhone && <p className="text-[10px] text-[hsl(var(--muted-foreground))]">{item.customerPhone}</p>}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3 px-3">
+                      <span className="bg-[hsl(var(--muted))] px-2.5 py-1 rounded-lg border border-[hsl(var(--border))] font-mono font-bold text-[11px] text-[hsl(var(--foreground))]">
+                        {item.qrToken || "N/A"}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3">
+                      <p className="font-bold text-[hsl(var(--foreground))] line-clamp-1">{item.serviceName}</p>
+                      <p className="text-[10px] text-blue-500 font-semibold">{item.totalPrice} AMD</p>
+                    </td>
+                    <td className="py-3 px-3 text-[hsl(var(--muted-foreground))]">
+                      {new Date(item.updatedAt).toLocaleString()}
+                    </td>
+                    <td className="py-3 px-3 text-right">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-500 font-extrabold text-[10px]">
+                        <CheckCircle2 className="w-3 h-3" />
+                        {locale === "hy" ? "Վավերացված" : "Verified"}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 text-right">
+                      <button
+                        onClick={() => {
+                          const hiddenStr = localStorage.getItem("armbiz_hidden_biz_bookings");
+                          const hidden = hiddenStr ? JSON.parse(hiddenStr) : [];
+                          if (!hidden.includes(item._id)) {
+                            hidden.push(item._id);
+                            localStorage.setItem("armbiz_hidden_biz_bookings", JSON.stringify(hidden));
+                          }
+                          setVerifiedBookings((prev) => prev.filter((b) => b._id !== item._id));
+                        }}
+                        className="p-1.5 text-[hsl(var(--muted-foreground))] hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
+                        title={locale === "hy" ? "Թաքցնել այս պատմությունը" : "Hide record"}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="py-12 text-center text-[hsl(var(--muted-foreground))] space-y-2">
+            <ShieldCheck className="w-8 h-8 mx-auto opacity-40 mb-2" />
+            <p className="text-sm font-semibold">
+              {locale === "hy" ? "Վավերացված ամրագրումներ դեռ չկան" : "No verified bookings yet"}
+            </p>
+            <p className="text-xs opacity-70">
+              {locale === "hy"
+                ? "Սկանավորեք ամրագրման QR կոդը՝ առաջին վավերացումը կատարելու համար:"
+                : "Scan a booking QR code to complete the first verification."}
+            </p>
+          </div>
+        )}
+      </div>
+
 
       {/* Delete Confirmation Modal */}
       {deleteModal.isOpen && (

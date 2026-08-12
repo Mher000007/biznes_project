@@ -4,6 +4,7 @@ import { MessageSquare, Star } from "lucide-react";
 import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { useI18n } from "@/i18n";
+import ConfirmDeleteModal from "@/components/ui/ConfirmDeleteModal";
 
 interface DashboardInquiry {
   id: string | number;
@@ -38,6 +39,7 @@ export default function InquiriesPage() {
   const [reportReason, setReportReason] = useState("");
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
   const [reportError, setReportError] = useState("");
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; id: string | number | null }>({ isOpen: false, id: null });
 
   const handleOpenReportModal = (reviewId: string | number) => {
     setActiveReportReviewId(reviewId);
@@ -86,35 +88,20 @@ export default function InquiriesPage() {
       console.error("Error updating booking status", e);
     }
 
-    if (newStatus === "confirmed") {
-      const targetInquiry = inquiries.find(inq => inq.id === bookingId);
-      if (targetInquiry && targetInquiry.price && targetInquiry.price > 0) {
-        const earnedCoins = Math.floor(targetInquiry.price * 0.01);
-        if (earnedCoins > 0 && typeof window !== "undefined") {
-          try {
-            const userStr = localStorage.getItem("user");
-            if (userStr) {
-              const uObj = JSON.parse(userStr);
-              uObj.findyCoins = (uObj.findyCoins || 0) + earnedCoins;
-              localStorage.setItem("user", JSON.stringify(uObj));
-              window.dispatchEvent(new Event("userBalanceUpdated"));
-            }
-          } catch (e) {}
-        }
-      }
-    }
-
     setInquiries((prev) => prev.map((inq) => (inq.id === bookingId ? { ...inq, status: newStatus } : inq)));
   };
 
-  const handleDeleteBooking = async (bookingId: string | number) => {
-    if (!confirm("Are you sure you want to delete this booking request?")) return;
+  const handleConfirmDelete = async () => {
+    const bookingId = deleteModal.id;
+    if (!bookingId) return;
     try {
       await api.delete(`/bookings/${bookingId}`);
-    } catch (e) {
+      setInquiries((prev) => prev.filter((inq) => inq.id !== bookingId));
+    } catch (e: any) {
       console.error("Error deleting booking", e);
+      alert("Failed to delete booking: " + (e.response?.data?.message || e.message));
     }
-    setInquiries((prev) => prev.filter((inq) => inq.id !== bookingId));
+    setDeleteModal({ isOpen: false, id: null });
   };
 
   const handleMarkAsRead = async (notifId: string) => {
@@ -400,13 +387,13 @@ export default function InquiriesPage() {
                   <span className="text-xs text-[hsl(var(--muted-foreground))] font-medium">{inq.time}</span>
                   {inq.type === "booking" && (
                     <div className="flex gap-1.5 mt-1">
-                      {inq.status !== "confirmed" && inq.status !== "replied" && (
+                      {inq.status !== "confirmed" && inq.status !== "replied" && inq.status !== "cancelled" && (
                         <button onClick={() => handleUpdateStatus(inq.id, "confirmed")} className="px-2.5 py-1 text-[10px] font-semibold bg-green-500 hover:bg-green-600 text-white rounded-lg transition-all shadow-sm cursor-pointer">{t.dashboard.inquiriesPage.confirm}</button>
                       )}
                       {inq.status !== "cancelled" && (
                         <button onClick={() => handleUpdateStatus(inq.id, "cancelled")} className="px-2.5 py-1 text-[10px] font-semibold bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-all shadow-sm cursor-pointer">{t.dashboard.inquiriesPage.cancel}</button>
                       )}
-                      <button onClick={() => handleDeleteBooking(inq.id)} className="px-2.5 py-1 text-[10px] font-semibold bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all shadow-sm cursor-pointer">{t.dashboard.inquiriesPage.delete}</button>
+                      <button onClick={() => setDeleteModal({ isOpen: true, id: inq.id })} className="px-2.5 py-1 text-[10px] font-semibold bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all shadow-sm cursor-pointer">{t.dashboard.inquiriesPage.delete}</button>
                     </div>
                   )}
                   {inq.type === "review" && (
@@ -474,6 +461,13 @@ export default function InquiriesPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDeleteModal 
+        isOpen={deleteModal.isOpen} 
+        onClose={() => setDeleteModal({ isOpen: false, id: null })} 
+        onConfirm={handleConfirmDelete} 
+        message={locale === "hy" ? "Արդյո՞ք համոզված եք, որ ցանկանում եք ջնջել այս հարցումը:" : "Are you sure you want to delete this inquiry?"} 
+      />
     </div>
   );
 }

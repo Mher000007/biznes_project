@@ -14,6 +14,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 import dynamic from "next/dynamic";
 import { getOpenStatus } from "@/components/discover/BusinessCard";
+import CustomServiceSelect from "@/components/ui/CustomServiceSelect";
 
 const BusinessMap = dynamic(() => import("@/components/map/BusinessMap"), {
   ssr: false,
@@ -737,15 +738,20 @@ export default function BusinessProfilePage() {
 
     try {
       const apiURL = getApiUrl();
-      await axios.post(`${apiURL}/bookings`, bookingPayload);
+      const res = await axios.post(`${apiURL}/bookings`, bookingPayload);
+      const backendBooking = res.data?.data;
       
       // Save booking request to local storage so it is persisted offline/locally
       if (typeof window !== "undefined") {
         try {
           const localBookings = JSON.parse(window.localStorage.getItem("armbiz-local-bookings") || "[]");
           const userBookings = JSON.parse(window.localStorage.getItem("armbiz_user_bookings") || "[]");
+          
+          const bookingId = backendBooking?._id || backendBooking?.id || `booking-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          const qrToken = backendBooking?.qrToken || Math.random().toString(36).substr(2, 10).toUpperCase();
+
           const newBooking = {
-            id: `booking-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            id: bookingId,
             businessId: business.id || business._id,
             businessName: business.name || "Business Listing",
             businessSlug: business.slug || slug || "",
@@ -761,6 +767,7 @@ export default function BusinessProfilePage() {
             totalPrice: selectedService?.price || 0,
             notes: bookingNotes,
             status: "pending",
+            qrToken: qrToken,
             createdAt: new Date().toISOString()
           };
           localBookings.push(newBooking);
@@ -1263,12 +1270,20 @@ export default function BusinessProfilePage() {
                 <div className="flex justify-center mb-4">
                   <CheckCircle className="h-12 w-12 text-green-500" />
                 </div>
-                <h3 className="text-lg font-bold">Appointment Requested!</h3>
+                <h3 className="text-lg font-bold">
+                  {locale === 'hy' ? "Ամրագրման հարցումն ուղարկված է!" : locale === 'ru' ? "Запрос на бронирование отправлен!" : "Appointment Requested!"}
+                </h3>
                 <p className="text-sm text-[hsl(var(--muted-foreground))] mt-2 mb-6">
-                  Thank you, your booking for <strong>{selectedService?.name}</strong> has been registered. Staff will contact you shortly to confirm.
+                  {locale === 'hy' ? (
+                    <>Շնորհակալություն, ձեր ամրագրումը <strong>{selectedService?.name || selectedService?.packageName}</strong>-ի համար գրանցված է: Աշխատակիցները շուտով կկապվեն ձեզ հետ հաստատելու համար:</>
+                  ) : locale === 'ru' ? (
+                    <>Спасибо, ваше бронирование на <strong>{selectedService?.name || selectedService?.packageName}</strong> зарегистрировано. Сотрудники свяжутся с вами в ближайшее время для подтверждения.</>
+                  ) : (
+                    <>Thank you, your booking for <strong>{selectedService?.name || selectedService?.packageName}</strong> has been registered. Staff will contact you shortly to confirm.</>
+                  )}
                 </p>
                 <button onClick={() => setIsBookingOpen(false)} className="btn-primary w-full py-2.5 rounded-xl text-sm font-semibold">
-                  Close Window
+                  {locale === 'hy' ? "Փակել պատուհանը" : locale === 'ru' ? "Закрыть окно" : "Close Window"}
                 </button>
               </div>
             ) : (
@@ -1291,11 +1306,10 @@ export default function BusinessProfilePage() {
                       <label className="block text-[11px] font-semibold text-[hsl(var(--muted-foreground))] mb-1">
                         {locale === 'hy' ? "Ընտրեք «Menus & Offers» առաջարկ կամ ծառայություն:" : locale === 'ru' ? "Выберите предложение «Menus & Offers» или услугу:" : "Choose Package from Menus & Offers or Services:"}
                       </label>
-                      <select
-                        value={selectedService?._id || selectedService?.id || selectedService?.packageName || selectedService?.name}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          const offerMatch = businessOffers.find(o => (o._id || o.packageName) === val);
+                      <CustomServiceSelect
+                        value={selectedService?._id || selectedService?.id || selectedService?.packageName || selectedService?.name || "General Appointment"}
+                        onChange={(val) => {
+                          const offerMatch = businessOffers.find((o: any) => (o._id || o.packageName) === val);
                           if (offerMatch) {
                             setSelectedService({
                               _id: offerMatch._id,
@@ -1316,32 +1330,10 @@ export default function BusinessProfilePage() {
                             }
                           }
                         }}
-                        className="w-full bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-lg px-2.5 py-1.5 text-xs text-[hsl(var(--foreground))] outline-none focus:border-[hsl(var(--primary))] font-medium cursor-pointer"
-                      >
-                        <option value="General Appointment">
-                          {locale === 'hy' ? "Ընդհանուր այցելություն (General Appointment)" : locale === 'ru' ? "Обычная запись (General Appointment)" : "General Appointment"}
-                        </option>
-
-                        {businessOffers.length > 0 && (
-                          <optgroup label={locale === 'hy' ? "🍽️ Menus & Offers Առաջարկներ" : locale === 'ru' ? "🍽️ Предложения Menus & Offers" : "🍽️ Menus & Offers Packages"}>
-                            {businessOffers.map((off: any) => (
-                              <option key={off._id || off.packageName} value={off._id || off.packageName}>
-                                {off.packageName} — {off.price ? `${Number(off.price).toLocaleString()} AMD` : ""} ({off.pax || 1} {locale === 'hy' ? "անձ" : locale === 'ru' ? "чел." : "pax"})
-                              </option>
-                            ))}
-                          </optgroup>
-                        )}
-
-                        {business.services && business.services.length > 0 && (
-                          <optgroup label={locale === 'hy' ? "💼 Ծառայություններ" : locale === 'ru' ? "💼 Услуги" : "💼 Services"}>
-                            {business.services.map((srv: any, idx: number) => (
-                              <option key={srv._id || srv.id || idx} value={srv._id || srv.id || srv.name}>
-                                {srv.name} {srv.price ? `— ${Number(srv.price).toLocaleString()} AMD` : ""}
-                              </option>
-                            ))}
-                          </optgroup>
-                        )}
-                      </select>
+                        businessOffers={businessOffers}
+                        businessServices={business.services}
+                        locale={locale}
+                      />
                     </div>
                   )}
 
@@ -1392,10 +1384,10 @@ export default function BusinessProfilePage() {
 
                 <div>
                   <label className="block text-xs font-semibold mb-1">
-                    Your Full Name *
+                    {locale === 'hy' ? "Ձեր Անուն Ազգանունը *" : locale === 'ru' ? "Ваше Имя Фамилия *" : "Your Full Name *"}
                     {currentUser && (
                       <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-normal ml-2">
-                        (Logged in as {currentUser.name || currentUser.username})
+                        {locale === 'hy' ? "(Մուտք գործված է որպես " : locale === 'ru' ? "(Вошли как " : "(Logged in as "}{currentUser.name || currentUser.username})
                       </span>
                     )}
                   </label>
@@ -1404,7 +1396,7 @@ export default function BusinessProfilePage() {
                     type="text"
                     value={customerName}
                     onChange={e => setCustomerName(e.target.value)}
-                    placeholder="Enter your name"
+                    placeholder={locale === 'hy' ? "Մուտքագրեք ձեր անունը" : locale === 'ru' ? "Введите ваше имя" : "Enter your name"}
                     disabled={Boolean(currentUser)}
                     readOnly={Boolean(currentUser)}
                     className={`w-full border border-[hsl(var(--border))] rounded-lg px-3 py-2 text-sm bg-transparent outline-none focus:border-[hsl(var(--primary))] ${currentUser ? "opacity-80 cursor-not-allowed bg-[hsl(var(--muted))]/50" : ""
@@ -1414,10 +1406,10 @@ export default function BusinessProfilePage() {
 
                 <div>
                   <label className="block text-xs font-semibold mb-1">
-                    Phone Number *
+                    {locale === 'hy' ? "Հեռախոսահամար *" : locale === 'ru' ? "Номер Телефона *" : "Phone Number *"}
                     {currentUser && (
                       <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-normal ml-2">
-                        (Logged in account)
+                        {locale === 'hy' ? "(Մուտք գործված հաշիվ)" : locale === 'ru' ? "(Аккаунт в системе)" : "(Logged in account)"}
                       </span>
                     )}
                   </label>
@@ -1448,7 +1440,7 @@ export default function BusinessProfilePage() {
 
                 {business.locations && business.locations.length > 0 && (
                   <div className="relative">
-                    <label className="block text-xs font-semibold mb-1">Branch / Location *</label>
+                    <label className="block text-xs font-semibold mb-1">{locale === 'hy' ? "Մասնաճյուղ / Հասցե *" : locale === 'ru' ? "Филиал / Локация *" : "Branch / Location *"}</label>
                     <button
                       type="button"
                       onClick={() => setIsLocDropdownOpen(!isLocDropdownOpen)}
@@ -1458,8 +1450,8 @@ export default function BusinessProfilePage() {
                         <MapPin className="h-4 w-4 shrink-0 text-[hsl(var(--primary))]" />
                         <span className={`truncate ${bookingLocation ? "text-[hsl(var(--foreground))] font-medium" : "text-[hsl(var(--muted-foreground))]"}`}>
                           {bookingLocation
-                            ? business.locations.find((l: any) => (l._id || l.id || l.address) === bookingLocation)?.address || "Branch Selected"
-                            : "Select a branch"}
+                            ? business.locations.find((l: any) => (l._id || l.id || l.address) === bookingLocation)?.address || (locale === 'hy' ? "Մասնաճյուղ ընտրված է" : locale === 'ru' ? "Филиал выбран" : "Branch Selected")
+                            : (locale === 'hy' ? "Ընտրեք մասնաճյուղ" : locale === 'ru' ? "Выберите филиал" : "Select a branch")}
                         </span>
                       </div>
                       <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${isLocDropdownOpen ? "rotate-180 text-[hsl(var(--primary))]" : "text-[hsl(var(--muted-foreground))]"}`} />
@@ -1490,7 +1482,7 @@ export default function BusinessProfilePage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold mb-1">Date *</label>
+                    <label className="block text-xs font-semibold mb-1">{locale === 'hy' ? "Ամսաթիվ *" : locale === 'ru' ? "Дата *" : "Date *"}</label>
                     <input
                       required
                       type="date"
@@ -1505,7 +1497,7 @@ export default function BusinessProfilePage() {
                   </div>
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <label className="block text-xs font-semibold">Preferred Time *</label>
+                      <label className="block text-xs font-semibold">{locale === 'hy' ? "Նախընտրելի Ժամ *" : locale === 'ru' ? "Предпочтительное Время *" : "Preferred Time *"}</label>
                       {todayOperatingHours && !todayOperatingHours.closed && todayOperatingHours.open && (
                         <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))]">
                           {todayOperatingHours.open} - {todayOperatingHours.close}
@@ -1515,12 +1507,12 @@ export default function BusinessProfilePage() {
                     {!bookingDate ? (
                       <div className="w-full flex items-center gap-2 border border-dashed border-[hsl(var(--border))] rounded-lg px-3 py-2.5 text-[13px] bg-[hsl(var(--muted))]/10 text-[hsl(var(--muted-foreground))] opacity-80 cursor-not-allowed">
                         <Clock className="h-4 w-4 shrink-0" />
-                        <span>Please select a date first</span>
+                        <span>{locale === 'hy' ? "Խնդրում ենք նախ ընտրել ամսաթիվ" : locale === 'ru' ? "Пожалуйста, сначала выберите дату" : "Please select a date first"}</span>
                       </div>
                     ) : (isCustomDateClosed || todayOperatingHours?.closed || !todayOperatingHours?.open || !todayOperatingHours?.close) ? (
                       <div className="w-full flex items-center gap-2 border border-red-500/20 rounded-lg px-3 py-2.5 text-[13px] bg-red-500/5 text-red-500 font-medium cursor-not-allowed">
                         <X className="h-4 w-4 shrink-0" />
-                        <span>Business is closed on this date</span>
+                        <span>{locale === 'hy' ? "Այս ամսաթվին բիզնեսը փակ է" : locale === 'ru' ? "В эту дату заведение закрыто" : "Business is closed on this date"}</span>
                       </div>
                     ) : (
                       <div className="relative flex items-center w-full">
@@ -1540,12 +1532,12 @@ export default function BusinessProfilePage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold mb-1">Special Notes / Requests</label>
+                  <label className="block text-xs font-semibold mb-1">{locale === 'hy' ? "Հատուկ Նշումներ / Հարցումներ" : locale === 'ru' ? "Особые Отметки / Запросы" : "Special Notes / Requests"}</label>
                   <textarea
                     rows={2}
                     value={bookingNotes}
                     onChange={e => setBookingNotes(e.target.value)}
-                    placeholder="e.g. Dietary preferences or vehicle details..."
+                    placeholder={locale === 'hy' ? "օրինակ՝ Սննդակարգի նախասիրություններ կամ մեքենայի տվյալներ..." : locale === 'ru' ? "напр. Диетические предпочтения или детали автомобиля..." : "e.g. Dietary preferences or vehicle details..."}
                     className="w-full border border-[hsl(var(--border))] rounded-lg px-3 py-2 text-sm bg-transparent outline-none resize-none focus:border-[hsl(var(--primary))]"
                   />
                 </div>
@@ -1555,7 +1547,7 @@ export default function BusinessProfilePage() {
                   disabled={bookingLoading}
                   className="btn-primary w-full py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 mt-6"
                 >
-                  {bookingLoading ? "Processing Request..." : <>Request Booking Confirmation <Send className="h-4 w-4" /></>}
+                  {bookingLoading ? (locale === 'hy' ? "Մշակվում է..." : locale === 'ru' ? "Обработка..." : "Processing Request...") : <>{locale === 'hy' ? "Ուղարկել Ամրագրման Հարցում" : locale === 'ru' ? "Отправить Запрос на Бронирование" : "Request Booking Confirmation"} <Send className="h-4 w-4" /></>}
                 </button>
               </form>
             )}

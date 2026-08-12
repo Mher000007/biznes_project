@@ -9,7 +9,8 @@ export interface IBooking extends Document {
   serviceName: string;
   totalPrice: number;
   locationId?: mongoose.Types.ObjectId;
-  status: 'pending' | 'confirmed' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  qrToken?: string;
   webhookTriggered: boolean;
   notes?: string;
   createdAt: Date;
@@ -54,8 +55,13 @@ const bookingSchema = new Schema<IBooking>({
   },
   status: {
     type: String,
-    enum: ['pending', 'confirmed', 'cancelled'],
+    enum: ['pending', 'confirmed', 'cancelled', 'completed'],
     default: 'pending',
+  },
+  qrToken: {
+    type: String,
+    unique: true,
+    sparse: true,
   },
   webhookTriggered: {
     type: Boolean,
