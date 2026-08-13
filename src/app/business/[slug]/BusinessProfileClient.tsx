@@ -213,6 +213,7 @@ export default function BusinessProfilePage() {
   const [bookingNotes, setBookingNotes] = useState("");
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
+  const [bookingSubmitAttempted, setBookingSubmitAttempted] = useState(false);
   const [businessOffers, setBusinessOffers] = useState<any[]>([]);
 
   useEffect(() => {
@@ -669,6 +670,7 @@ export default function BusinessProfilePage() {
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isBusinessUser) return;
+    setBookingSubmitAttempted(true);
     setBookingLoading(true);
 
     if (isCustomDateClosed || todayOperatingHours?.closed) {
@@ -678,7 +680,6 @@ export default function BusinessProfilePage() {
     }
 
     if (business.locations && business.locations.length > 0 && !bookingLocation) {
-      showAlert({ message: "Please select a branch/location before booking.", type: "error" });
       setBookingLoading(false);
       return;
     }
@@ -687,7 +688,6 @@ export default function BusinessProfilePage() {
     const fullCustomerPhone = cleanPhoneDigits ? `+374${cleanPhoneDigits}` : "";
 
     if (!customerName.trim() || !fullCustomerPhone || !bookingDate || !bookingTime) {
-      showAlert({ message: "Please fill in all required fields (Name, Phone, Date, and Time).", type: "error" });
       setBookingLoading(false);
       return;
     }
@@ -741,13 +741,13 @@ export default function BusinessProfilePage() {
       const apiURL = getApiUrl();
       const res = await axios.post(`${apiURL}/bookings`, bookingPayload);
       const backendBooking = res.data?.data;
-      
+
       // Save booking request to local storage so it is persisted offline/locally
       if (typeof window !== "undefined") {
         try {
           const localBookings = JSON.parse(window.localStorage.getItem("armbiz-local-bookings") || "[]");
           const userBookings = JSON.parse(window.localStorage.getItem("armbiz_user_bookings") || "[]");
-          
+
           const bookingId = backendBooking?._id || backendBooking?.id || `booking-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
           const qrToken = backendBooking?.qrToken || Math.random().toString(36).substr(2, 10).toUpperCase();
 
@@ -780,7 +780,7 @@ export default function BusinessProfilePage() {
           console.error("Error saving local booking to localStorage", e);
         }
       }
-      
+
       setBookingSuccess(true);
     } catch (err: any) {
       console.error("Backend booking API request failed", err);
@@ -853,8 +853,8 @@ export default function BusinessProfilePage() {
               }
             }}
             className={`w-20 h-20 rounded-full shrink-0 flex items-center justify-center overflow-hidden transition-all cursor-pointer ${matchingGroupIdx !== null && !isLogoStoryViewed
-                ? "p-[3px] bg-emerald-500 hover:scale-105 shadow-md ring-2 ring-emerald-500/20"
-                : "border border-[hsl(var(--border))]/60 p-[2px]"
+              ? "p-[3px] bg-emerald-500 hover:scale-105 shadow-md ring-2 ring-emerald-500/20"
+              : "border border-[hsl(var(--border))]/60 p-[2px]"
               }`}
             title={matchingGroupIdx !== null ? (isLogoStoryViewed ? "Stories viewed" : "Click to view active stories") : undefined}
           >
@@ -1262,7 +1262,7 @@ export default function BusinessProfilePage() {
       {isBookingOpen && (
         <div className={styles.modalOverlay}>
           <div className={styles.modalContent}>
-            <button onClick={() => setIsBookingOpen(false)} className={styles.btnClose}>
+            <button onClick={() => { setIsBookingOpen(false); setBookingSubmitAttempted(false); }} className={styles.btnClose}>
               <X className="h-4 w-4" />
             </button>
 
@@ -1283,7 +1283,7 @@ export default function BusinessProfilePage() {
                     <>Thank you, your booking for <strong>{selectedService?.name || selectedService?.packageName}</strong> has been registered. Staff will contact you shortly to confirm.</>
                   )}
                 </p>
-                <button onClick={() => setIsBookingOpen(false)} className="btn-primary w-full py-2.5 rounded-xl text-sm font-semibold">
+                <button onClick={() => { setIsBookingOpen(false); setBookingSubmitAttempted(false); }} className="btn-primary w-full py-2.5 rounded-xl text-sm font-semibold">
                   {locale === 'hy' ? "Փակել պատուհանը" : locale === 'ru' ? "Закрыть окно" : "Close Window"}
                 </button>
               </div>
@@ -1400,9 +1400,15 @@ export default function BusinessProfilePage() {
                     placeholder={locale === 'hy' ? "Մուտքագրեք ձեր անունը" : locale === 'ru' ? "Введите ваше имя" : "Enter your name"}
                     disabled={Boolean(currentUser)}
                     readOnly={Boolean(currentUser)}
-                    className={`w-full border border-[hsl(var(--border))] rounded-lg px-3 py-2 text-sm bg-transparent outline-none focus:border-[hsl(var(--primary))] ${currentUser ? "opacity-80 cursor-not-allowed bg-[hsl(var(--muted))]/50" : ""
-                      }`}
+                    className={`w-full border rounded-lg px-3 py-2 text-sm bg-transparent outline-none focus:border-[hsl(var(--primary))] ${
+                      bookingSubmitAttempted && !customerName.trim()
+                        ? "border-red-500 bg-red-500/5"
+                        : "border-[hsl(var(--border))]"
+                    } ${currentUser ? "opacity-80 cursor-not-allowed bg-[hsl(var(--muted))]/50" : ""}`}
                   />
+                  {bookingSubmitAttempted && !customerName.trim() && (
+                    <p className="text-red-500 text-[10px] mt-1 font-medium">{locale === 'hy' ? "Այս դաշտը պարտադիր է" : locale === 'ru' ? "Это поле обязательно" : "This field is required"}</p>
+                  )}
                 </div>
 
                 <div>
@@ -1414,7 +1420,11 @@ export default function BusinessProfilePage() {
                       </span>
                     )}
                   </label>
-                  <div className={`flex w-full border border-[hsl(var(--border))] rounded-lg overflow-hidden transition-all ${currentUser ? "opacity-80 cursor-not-allowed bg-[hsl(var(--muted))]/50" : "bg-transparent focus-within:border-[hsl(var(--primary))] focus-within:ring-1 focus-within:ring-[hsl(var(--primary))]"
+                  <div className={`flex w-full border rounded-lg overflow-hidden transition-all ${
+                    bookingSubmitAttempted && !customerPhone.trim()
+                      ? "border-red-500 bg-red-500/5"
+                      : "border-[hsl(var(--border))]"
+                  } ${currentUser ? "opacity-80 cursor-not-allowed bg-[hsl(var(--muted))]/50" : "bg-transparent focus-within:border-[hsl(var(--primary))] focus-within:ring-1 focus-within:ring-[hsl(var(--primary))]"
                     }`}>
                     <div className="px-3 py-2 bg-[hsl(var(--muted))]/50 text-sm font-medium border-r border-[hsl(var(--border))] flex items-center justify-center text-[hsl(var(--foreground))] select-none shrink-0">
                       +374
@@ -1437,6 +1447,9 @@ export default function BusinessProfilePage() {
                         }`}
                     />
                   </div>
+                  {bookingSubmitAttempted && !customerPhone.trim() && (
+                    <p className="text-red-500 text-[10px] mt-1 font-medium">{locale === 'hy' ? "Այս դաշտը պարտադիր է" : locale === 'ru' ? "Это поле обязательно" : "This field is required"}</p>
+                  )}
                 </div>
 
                 {business.locations && business.locations.length > 0 && (
@@ -1445,7 +1458,11 @@ export default function BusinessProfilePage() {
                     <button
                       type="button"
                       onClick={() => setIsLocDropdownOpen(!isLocDropdownOpen)}
-                      className="w-full flex items-center justify-between border border-[hsl(var(--border))] rounded-lg px-3 py-2.5 text-sm bg-[hsl(var(--muted))]/20 hover:bg-[hsl(var(--muted))]/40 transition-all focus:border-[hsl(var(--primary))] outline-none"
+                      className={`w-full flex items-center justify-between border rounded-lg px-3 py-2.5 text-sm bg-[hsl(var(--muted))]/20 hover:bg-[hsl(var(--muted))]/40 transition-all focus:border-[hsl(var(--primary))] outline-none ${
+                        bookingSubmitAttempted && !bookingLocation
+                          ? "border-red-500 bg-red-500/5"
+                          : "border-[hsl(var(--border))]"
+                      }`}
                     >
                       <div className="flex items-center gap-2 overflow-hidden">
                         <MapPin className="h-4 w-4 shrink-0 text-[hsl(var(--primary))]" />
@@ -1457,6 +1474,9 @@ export default function BusinessProfilePage() {
                       </div>
                       <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${isLocDropdownOpen ? "rotate-180 text-[hsl(var(--primary))]" : "text-[hsl(var(--muted-foreground))]"}`} />
                     </button>
+                    {bookingSubmitAttempted && !bookingLocation && (
+                      <p className="text-red-500 text-[10px] mt-1 font-medium">{locale === 'hy' ? "Այս դաշտը պարտադիր է" : locale === 'ru' ? "Это поле обязательно" : "This field is required"}</p>
+                    )}
                     {isLocDropdownOpen && (
                       <div className="absolute top-[65px] left-0 w-full bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl shadow-lg z-50 overflow-hidden py-1 max-h-52 overflow-y-auto animate-in fade-in slide-in-from-top-1">
                         {business.locations.map((loc: any) => (
@@ -1493,8 +1513,15 @@ export default function BusinessProfilePage() {
                         setBookingTime(""); // Reset time if date changes
                       }}
                       min={new Date().toISOString().split('T')[0]}
-                      className="w-full border border-[hsl(var(--border))] rounded-lg px-3 py-2 text-sm bg-transparent outline-none focus:border-[hsl(var(--primary))]"
+                      className={`w-full border rounded-lg px-3 py-2 text-sm bg-transparent outline-none focus:border-[hsl(var(--primary))] ${
+                        bookingSubmitAttempted && !bookingDate
+                          ? "border-red-500 bg-red-500/5"
+                          : "border-[hsl(var(--border))]"
+                      }`}
                     />
+                    {bookingSubmitAttempted && !bookingDate && (
+                      <p className="text-red-500 text-[10px] mt-1 font-medium">{locale === 'hy' ? "Այս դաշտը պարտադիր է" : locale === 'ru' ? "Это поле обязательно" : "This field is required"}</p>
+                    )}
                   </div>
                   <div>
                     <div className="flex items-center justify-between mb-1">
@@ -1506,7 +1533,11 @@ export default function BusinessProfilePage() {
                       )}
                     </div>
                     {!bookingDate ? (
-                      <div className="w-full flex items-center gap-2 border border-dashed border-[hsl(var(--border))] rounded-lg px-3 py-2.5 text-[13px] bg-[hsl(var(--muted))]/10 text-[hsl(var(--muted-foreground))] opacity-80 cursor-not-allowed">
+                      <div className={`w-full flex items-center gap-2 border rounded-lg px-3 py-2.5 text-[13px] bg-[hsl(var(--muted))]/10 opacity-80 cursor-not-allowed ${
+                        bookingSubmitAttempted
+                          ? "border-red-500 text-red-500 bg-red-500/5"
+                          : "border-dashed border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))]"
+                      }`}>
                         <Clock className="h-4 w-4 shrink-0" />
                         <span>{locale === 'hy' ? "Խնդրում ենք նախ ընտրել ամսաթիվ" : locale === 'ru' ? "Пожалуйста, сначала выберите дату" : "Please select a date first"}</span>
                       </div>
@@ -1516,18 +1547,27 @@ export default function BusinessProfilePage() {
                         <span>{locale === 'hy' ? "Այս ամսաթվին բիզնեսը փակ է" : locale === 'ru' ? "В эту дату заведение закрыто" : "Business is closed on this date"}</span>
                       </div>
                     ) : (
-                      <div className="relative flex items-center w-full">
-                        <Clock className="absolute left-3 h-4 w-4 text-[hsl(var(--muted-foreground))]" />
-                        <input
-                          required
-                          type="time"
-                          min={todayOperatingHours.open}
-                          max={todayOperatingHours.close}
-                          value={bookingTime}
-                          onChange={e => setBookingTime(e.target.value)}
-                          className="w-full border border-[hsl(var(--border))] rounded-lg pl-9 pr-3 py-2.5 text-[13px] bg-transparent outline-none focus:border-[hsl(var(--primary))] focus:ring-1 focus:ring-[hsl(var(--primary))]/30 transition-all"
-                        />
-                      </div>
+                      <>
+                        <div className="relative flex items-center w-full">
+                          <Clock className="absolute left-3 h-4 w-4 text-[hsl(var(--muted-foreground))]" />
+                          <input
+                            required
+                            type="time"
+                            min={todayOperatingHours.open}
+                            max={todayOperatingHours.close}
+                            value={bookingTime}
+                            onChange={e => setBookingTime(e.target.value)}
+                            className={`w-full border rounded-lg pl-9 pr-3 py-2.5 text-[13px] bg-transparent outline-none focus:border-[hsl(var(--primary))] focus:ring-1 focus:ring-[hsl(var(--primary))]/30 transition-all ${
+                              bookingSubmitAttempted && !bookingTime
+                                ? "border-red-500 bg-red-500/5"
+                                : "border-[hsl(var(--border))]"
+                            }`}
+                          />
+                        </div>
+                        {bookingSubmitAttempted && bookingDate && !bookingTime && (
+                          <p className="text-red-500 text-[10px] mt-1 font-medium">{locale === 'hy' ? "Այս դաշտը պարտադիր է" : locale === 'ru' ? "Это поле обязательно" : "This field is required"}</p>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
