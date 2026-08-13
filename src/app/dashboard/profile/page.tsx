@@ -67,7 +67,7 @@ const isDefaultHighlight = (h: any) => {
 };
 
 export default function ProfilePage() {
-  const { currentUser, updateProfile, isBusinessUser, deleteAccount } = useAuth();
+  const { currentUser, deleteAccount } = useAuth();
   const { t, locale } = useI18n();
   const { showAlert } = useAlert();
   const router = useRouter();
@@ -86,7 +86,6 @@ export default function ProfilePage() {
 
   // Layout Tab State (from search query param)
   const searchParams = useSearchParams();
-  const router = useRouter();
   const rawTab = searchParams.get("tab") || "branding";
   const activeFormTab = rawTab === "branding" ? "identity" : rawTab === "credentials" ? "info" : rawTab === "stories" ? "stories" : rawTab === "hours" ? "hours" : "identity";
 
