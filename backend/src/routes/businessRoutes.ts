@@ -27,7 +27,7 @@ const router = Router({ mergeParams: true });
 
 // ── Static paths FIRST (must come before /:id) ─────────────────────────────
 router.get('/me/all', authenticate, requireVerified, getMyBusinesses);
-router.post('/onboard', authenticate, requireVerified, createBusiness);
+router.post('/onboard', authenticate, createBusiness);
 
 // ── Public routes ────────────────────────────────────────────────────────────
 router.get('/', getBusinesses);
@@ -35,7 +35,7 @@ router.get('/slug/:slug', getBusinessBySlug);
 router.get('/:id/calendar/check-date', checkBusinessDateStatus);
 
 // ── Protected CRUD ───────────────────────────────────────────────────────────
-router.post('/', authenticate, requireVerified, createBusiness);
+router.post('/', authenticate, createBusiness);
 router.get('/:id', getBusinessById);
 router.put('/:id', authenticate, requireVerified, updateBusiness);
 router.delete('/:id', authenticate, requireVerified, deleteBusiness);

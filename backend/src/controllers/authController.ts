@@ -551,6 +551,8 @@ export const verifyEmail = asyncHandler(async (req: Request, res: Response): Pro
   user.emailVerificationExpire = undefined;
   await user.save();
 
+  await createAndSetTokens(res, user);
+
   res.status(200).json({
     success: true,
     message: 'Email verified successfully',

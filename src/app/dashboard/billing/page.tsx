@@ -5,7 +5,8 @@ import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useI18n } from "@/i18n";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useAlert } from "@/context/AlertContext";
 import {
   Award,
   Sparkles,
@@ -44,6 +45,8 @@ function DashboardBillingPageInner() {
   const { currentUser } = useAuth();
   const { t } = useI18n();
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const { showAlert } = useAlert();
   const tab = searchParams.get("tab") || "plans";
 
   const [loading, setLoading] = useState(true);
@@ -56,6 +59,7 @@ function DashboardBillingPageInner() {
   const [promoMessage, setPromoMessage] = useState("");
   const [promoMessageType, setPromoMessageType] = useState<"success" | "error" | "">("");
   const [applyingPromo, setApplyingPromo] = useState(false);
+  const [isPendingApproval, setIsPendingApproval] = useState(false);
 
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
@@ -63,7 +67,7 @@ function DashboardBillingPageInner() {
     isOpen: boolean;
     message: string;
     onConfirm: () => void;
-  }>({ isOpen: false, message: "", onConfirm: () => {} });
+  }>({ isOpen: false, message: "", onConfirm: () => { } });
   const [selectedPlanToPay, setSelectedPlanToPay] = useState<"starter" | "standard" | "premium" | null>(null);
 
   const [isAddCardModalOpen, setIsAddCardModalOpen] = useState(false);
@@ -147,10 +151,20 @@ function DashboardBillingPageInner() {
   };
 
   const handlePlanClick = (plan: "starter" | "standard" | "premium") => {
-    if (activePlan === plan) return;
+    if (activePlan === plan && !isPendingApproval) return;
+
+    if (plan === "starter") {
+      handlePlanUpgrade("starter");
+      showAlert({ message: "Ձեր հայտը հաջողությամբ ուղարկվել է ադմինիստրատորին հաստատման համար:", type: "success" });
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 500);
+      return;
+    }
+
     setSelectedPlanToPay(plan);
-    
-    if (activePlan !== "starter") {
+
+    if (activePlan !== "starter" && !isPendingApproval) {
       setIsConfirmModalOpen(true);
     } else {
       setIsPaymentModalOpen(true);
@@ -243,6 +257,7 @@ function DashboardBillingPageInner() {
 
         const biz = businesses[0];
         setBusinessId(biz._id);
+        setIsPendingApproval(!biz.verified && !biz.active);
 
         try {
           const subRes = await api.get(`/subscriptions/business/${biz._id}`);
@@ -270,7 +285,7 @@ function DashboardBillingPageInner() {
       if (storedCards) {
         try {
           setSavedCards(JSON.parse(storedCards));
-        } catch (e) {}
+        } catch (e) { }
       } else {
         setSavedCards([]);
       }
@@ -279,7 +294,7 @@ function DashboardBillingPageInner() {
       if (storedReceipts) {
         try {
           setReceipts(JSON.parse(storedReceipts));
-        } catch (e) {}
+        } catch (e) { }
       } else {
         setReceipts([]);
       }
@@ -377,53 +392,55 @@ function DashboardBillingPageInner() {
             {/* TOP SECTION: Active Plan & Promo Code */}
             {tab === "plans" && (
               <>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-stretch">
+                <div className={`grid grid-cols-1 ${!isPendingApproval ? 'lg:grid-cols-2' : 'max-w-2xl mx-auto'} gap-8 lg:gap-12 items-stretch`}>
 
                   {/* Active Subscription Banner */}
-                  <div className="relative overflow-hidden rounded-3xl border border-[hsl(var(--border))] bg-gradient-to-br from-[hsl(var(--card))] to-[hsl(var(--muted))]/30 p-8 shadow-sm h-full flex flex-col justify-center text-center">
-                    <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none text-emerald-500 -rotate-12">
-                      <ShieldCheck className="w-64 h-64" />
-                    </div>
-
-                    <div className="relative z-10 flex flex-col items-center justify-center">
-                      <span className="inline-block px-3 py-1 bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))] text-[10px] font-black uppercase tracking-widest rounded-full mb-3">
-                        {t.billing.currentActivePlan}
-                      </span>
-                      <div className="flex items-center justify-center gap-3 mb-2">
-                        <h2 className="text-2xl sm:text-3xl font-black text-[hsl(var(--foreground))] capitalize">
-                          {activePlan === "starter" ? t.billing.startFreemium : activePlan === "standard" ? t.billing.pro : activePlan} {t.billing.plan}
-                        </h2>
-                        {activePlan !== "starter" && (
-                          <span className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-500">
-                            <CheckCircle2 className="w-4 h-4" />
-                          </span>
-                        )}
+                  {!isPendingApproval && (
+                    <div className="relative overflow-hidden rounded-3xl border border-[hsl(var(--border))] bg-gradient-to-br from-[hsl(var(--card))] to-[hsl(var(--muted))]/30 p-8 shadow-sm h-full flex flex-col justify-center text-center">
+                      <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none text-emerald-500 -rotate-12">
+                        <ShieldCheck className="w-64 h-64" />
                       </div>
 
-                      {activeSubscription ? (
-                        <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-medium text-[hsl(var(--muted-foreground))] mt-4">
-                          <div className="flex items-center gap-1.5 bg-[hsl(var(--background))] px-3 py-1.5 rounded-lg border border-[hsl(var(--border))]">
-                            <span>{t.billing.status}</span>
-                            <span className="text-emerald-500 font-bold uppercase">{activeSubscription.status}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 bg-[hsl(var(--background))] px-3 py-1.5 rounded-lg border border-[hsl(var(--border))]">
-                            <span>{t.billing.expires}</span>
-                            <span className="text-[hsl(var(--foreground))]">{new Date(activeSubscription.endDate).toLocaleDateString()}</span>
-                          </div>
-
-                          {activeSubscription.isGifted && (
-                            <div className="flex items-center gap-1.5 bg-purple-500/10 text-purple-500 px-3 py-1.5 rounded-lg border border-purple-500/20">
-                              <span>{t.billing.gifted} {activeSubscription.giftReason}</span>
-                            </div>
+                      <div className="relative z-10 flex flex-col items-center justify-center">
+                        <span className="inline-block px-3 py-1 bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))] text-[10px] font-black uppercase tracking-widest rounded-full mb-3">
+                          {t.billing.currentActivePlan}
+                        </span>
+                        <div className="flex items-center justify-center gap-3 mb-2">
+                          <h2 className="text-2xl sm:text-3xl font-black text-[hsl(var(--foreground))] capitalize">
+                            {activePlan === "starter" ? t.billing.startFreemium : activePlan === "standard" ? t.billing.pro : activePlan} {t.billing.plan}
+                          </h2>
+                          {activePlan !== "starter" && (
+                            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-500">
+                              <CheckCircle2 className="w-4 h-4" />
+                            </span>
                           )}
                         </div>
-                      ) : (
-                        <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1">
-                          {t.billing.freeTierDesc}
-                        </p>
-                      )}
+
+                        {activeSubscription ? (
+                          <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-medium text-[hsl(var(--muted-foreground))] mt-4">
+                            <div className="flex items-center gap-1.5 bg-[hsl(var(--background))] px-3 py-1.5 rounded-lg border border-[hsl(var(--border))]">
+                              <span>{t.billing.status}</span>
+                              <span className="text-emerald-500 font-bold uppercase">{activeSubscription.status}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 bg-[hsl(var(--background))] px-3 py-1.5 rounded-lg border border-[hsl(var(--border))]">
+                              <span>{t.billing.expires}</span>
+                              <span className="text-[hsl(var(--foreground))]">{new Date(activeSubscription.endDate).toLocaleDateString()}</span>
+                            </div>
+
+                            {activeSubscription.isGifted && (
+                              <div className="flex items-center gap-1.5 bg-purple-500/10 text-purple-500 px-3 py-1.5 rounded-lg border border-purple-500/20">
+                                <span>{t.billing.gifted} {activeSubscription.giftReason}</span>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1">
+                            {t.billing.freeTierDesc}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Promo Code Section */}
                   <div className="relative overflow-hidden rounded-3xl border border-[hsl(var(--border))] bg-gradient-to-bl from-[hsl(var(--card))] to-[hsl(var(--muted))]/30 p-8 shadow-sm h-full flex flex-col justify-center text-center">
@@ -609,16 +626,16 @@ function DashboardBillingPageInner() {
 
                             {/* Delete Button Overlay */}
                             <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSavedCards(cards => {
-                                    const next = cards.filter(c => c.id !== card.id);
-                                    if (businessId) localStorage.setItem(`billing_cards_${businessId}`, JSON.stringify(next));
-                                    return next;
-                                  });
-                                }}
-                                className="absolute top-4 right-4 z-30 w-7 h-7 rounded-full bg-red-500/80 text-white hover:bg-red-500 flex items-center justify-center backdrop-blur-md transition-all shadow-lg opacity-0 group-hover:opacity-100"
-                                title={t.billing.receipts.delete}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSavedCards(cards => {
+                                  const next = cards.filter(c => c.id !== card.id);
+                                  if (businessId) localStorage.setItem(`billing_cards_${businessId}`, JSON.stringify(next));
+                                  return next;
+                                });
+                              }}
+                              className="absolute top-4 right-4 z-30 w-7 h-7 rounded-full bg-red-500/80 text-white hover:bg-red-500 flex items-center justify-center backdrop-blur-md transition-all shadow-lg opacity-0 group-hover:opacity-100"
+                              title={t.billing.receipts.delete}
                             >
                               <X className="w-3.5 h-3.5" />
                             </button>
@@ -757,7 +774,7 @@ function DashboardBillingPageInner() {
                 {receipts.length > 0 && (
                   <div className="flex flex-wrap items-center justify-between gap-4 mb-6 bg-[hsl(var(--card))] p-3 rounded-xl border border-[hsl(var(--border))] shadow-sm">
                     <div className="flex items-center gap-4">
-                      <button 
+                      <button
                         onClick={toggleSelectAllReceipts}
                         className="flex items-center gap-2 text-sm font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors"
                       >
@@ -768,9 +785,9 @@ function DashboardBillingPageInner() {
                         )}
                         {t.billing.receipts.selectAll}
                       </button>
-                      
+
                       <div className="h-4 w-[1px] bg-[hsl(var(--border))]" />
-                      
+
                       <button
                         onClick={() => setReceiptSortOrder(prev => prev === "newest" ? "oldest" : "newest")}
                         className="flex items-center gap-2 text-sm font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors"
@@ -810,90 +827,91 @@ function DashboardBillingPageInner() {
                   {sortedReceipts.map((receipt) => {
                     const isSelected = selectedReceipts.has(receipt.id);
                     return (
-                    <div 
-                      key={receipt.id} 
-                      className={`relative w-full max-w-[280px] mx-auto sm:mx-0 group cursor-pointer perspective-1000 transition-all duration-300 ${isSelected ? "scale-105" : ""}`}
-                      onClick={() => toggleReceiptSelection(receipt.id)}
-                    >
-                      <div className={`w-full bg-[#fcfbfa] flex flex-col pb-6 rounded-t-md relative transition-all duration-500 group-hover:-translate-y-2 border-x border-t ${isSelected ? "border-[hsl(var(--primary))] border-2 drop-shadow-[0_20px_35px_rgba(0,0,0,0.2)]" : "border-slate-200/60 drop-shadow-[0_15px_30px_rgba(0,0,0,0.15)] group-hover:drop-shadow-[0_25px_40px_rgba(0,0,0,0.25)]"}`}
-                        style={{
-                          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E")`
-                        }}
+                      <div
+                        key={receipt.id}
+                        className={`relative w-full max-w-[280px] mx-auto sm:mx-0 group cursor-pointer perspective-1000 transition-all duration-300 ${isSelected ? "scale-105" : ""}`}
+                        onClick={() => toggleReceiptSelection(receipt.id)}
                       >
-                        {/* Faint Watermark (FQ Logo) */}
-                        <img src="/fq-logo.png" alt="Watermark" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 opacity-[0.04] grayscale mix-blend-multiply pointer-events-none object-contain" />
-
-                        {/* Selection Checkbox */}
-                        <div className="absolute top-4 left-4 z-20">
-                          {isSelected ? (
-                            <CheckSquare className="w-5 h-5 text-[hsl(var(--primary))]" />
-                          ) : (
-                            <Square className="w-5 h-5 text-slate-300 group-hover:text-slate-400 transition-colors" />
-                          )}
-                        </div>
-
-                        {/* Delete Button */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteReceipt(receipt.id);
-                          }}
-                          className="absolute top-4 right-4 z-20 w-8 h-8 rounded-full bg-red-50 hover:bg-red-100 text-red-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
-                          title={t.billing.receipts.deleteReceipt}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-
-                        {/* Top of receipt */}
-                        <div className="w-full h-4" />
-
-                        {/* Content */}
-                        <div className="px-5 text-slate-800 text-center flex-1 relative z-10">
-                          <div className={`w-10 h-10 rounded-full mx-auto flex items-center justify-center mb-3 shadow-sm border-2 ${receipt.status === 'approved' ? 'bg-emerald-500 border-emerald-100' : 'bg-amber-500 border-amber-100'}`}>
-                            {receipt.status === 'approved' ? <CheckCircle2 className="w-5 h-5 text-white" /> : <Clock className="w-5 h-5 text-white" />}
-                          </div>
-
-                          <h3 className={`font-black text-lg mb-1 tracking-tight uppercase ${receipt.status === 'approved' ? 'text-emerald-600' : 'text-amber-600'}`} style={{ fontFamily: 'monospace' }}>
-                            {receipt.status === 'approved' ? 'APPROVED' : 'UNCONFIRMED'}
-                          </h3>
-                          <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mb-4 font-mono">{t.billing.receipts.receiptId} #{receipt.id}</p>
-
-                          <div className="border-t-[1.5px] border-dashed border-slate-400 w-full my-3 opacity-50" />
-
-                          <div className="flex justify-between items-center text-xs mb-2.5 font-mono">
-                            <span className="font-bold text-slate-500">{t.billing.receipts.plan}</span>
-                            <span className="font-bold text-slate-900">{receipt.plan}</span>
-                          </div>
-                          <div className="flex justify-between items-center text-xs mb-2.5 font-mono">
-                            <span className="font-bold text-slate-500">{t.billing.receipts.amount}</span>
-                            <span className="font-black text-slate-900 text-sm">{receipt.amount}</span>
-                          </div>
-                          <div className="flex justify-between items-center text-xs mb-2.5 font-mono">
-                            <span className="font-bold text-slate-500">{t.billing.receipts.date}</span>
-                            <span className="font-bold text-slate-800">{receipt.date}</span>
-                          </div>
-                          <div className="flex justify-between items-center text-xs mb-2.5 font-mono">
-                            <span className="font-bold text-slate-500">{t.billing.receipts.method}</span>
-                            <span className="font-bold text-slate-800">•••• {receipt.method}</span>
-                          </div>
-
-                          <div className="border-t-[1.5px] border-dashed border-slate-400 w-full my-3 opacity-50" />
-
-
-                          <p className="text-[7px] font-mono mt-1.5 tracking-[0.3em] opacity-50 font-bold">{t.billing.receipts.thankYou}</p>
-                        </div>
-
-                        {/* Jagged Bottom Edge */}
-                        <div className="absolute bottom-[-10px] left-0 w-full h-[10px]"
+                        <div className={`w-full bg-[#fcfbfa] flex flex-col pb-6 rounded-t-md relative transition-all duration-500 group-hover:-translate-y-2 border-x border-t ${isSelected ? "border-[hsl(var(--primary))] border-2 drop-shadow-[0_20px_35px_rgba(0,0,0,0.2)]" : "border-slate-200/60 drop-shadow-[0_15px_30px_rgba(0,0,0,0.15)] group-hover:drop-shadow-[0_25px_40px_rgba(0,0,0,0.25)]"}`}
                           style={{
-                            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 12 10' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0l6 10 6-10z' fill='%23fcfbfa'/%3E%3C/svg%3E")`,
-                            backgroundSize: '12px 10px',
-                            backgroundRepeat: 'repeat-x'
+                            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E")`
                           }}
-                        />
+                        >
+                          {/* Faint Watermark (FQ Logo) */}
+                          <img src="/fq-logo.png" alt="Watermark" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 opacity-[0.04] grayscale mix-blend-multiply pointer-events-none object-contain" />
+
+                          {/* Selection Checkbox */}
+                          <div className="absolute top-4 left-4 z-20">
+                            {isSelected ? (
+                              <CheckSquare className="w-5 h-5 text-[hsl(var(--primary))]" />
+                            ) : (
+                              <Square className="w-5 h-5 text-slate-300 group-hover:text-slate-400 transition-colors" />
+                            )}
+                          </div>
+
+                          {/* Delete Button */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteReceipt(receipt.id);
+                            }}
+                            className="absolute top-4 right-4 z-20 w-8 h-8 rounded-full bg-red-50 hover:bg-red-100 text-red-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
+                            title={t.billing.receipts.deleteReceipt}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+
+                          {/* Top of receipt */}
+                          <div className="w-full h-4" />
+
+                          {/* Content */}
+                          <div className="px-5 text-slate-800 text-center flex-1 relative z-10">
+                            <div className={`w-10 h-10 rounded-full mx-auto flex items-center justify-center mb-3 shadow-sm border-2 ${receipt.status === 'approved' ? 'bg-emerald-500 border-emerald-100' : 'bg-amber-500 border-amber-100'}`}>
+                              {receipt.status === 'approved' ? <CheckCircle2 className="w-5 h-5 text-white" /> : <Clock className="w-5 h-5 text-white" />}
+                            </div>
+
+                            <h3 className={`font-black text-lg mb-1 tracking-tight uppercase ${receipt.status === 'approved' ? 'text-emerald-600' : 'text-amber-600'}`} style={{ fontFamily: 'monospace' }}>
+                              {receipt.status === 'approved' ? 'APPROVED' : 'UNCONFIRMED'}
+                            </h3>
+                            <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mb-4 font-mono">{t.billing.receipts.receiptId} #{receipt.id}</p>
+
+                            <div className="border-t-[1.5px] border-dashed border-slate-400 w-full my-3 opacity-50" />
+
+                            <div className="flex justify-between items-center text-xs mb-2.5 font-mono">
+                              <span className="font-bold text-slate-500">{t.billing.receipts.plan}</span>
+                              <span className="font-bold text-slate-900">{receipt.plan}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-xs mb-2.5 font-mono">
+                              <span className="font-bold text-slate-500">{t.billing.receipts.amount}</span>
+                              <span className="font-black text-slate-900 text-sm">{receipt.amount}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-xs mb-2.5 font-mono">
+                              <span className="font-bold text-slate-500">{t.billing.receipts.date}</span>
+                              <span className="font-bold text-slate-800">{receipt.date}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-xs mb-2.5 font-mono">
+                              <span className="font-bold text-slate-500">{t.billing.receipts.method}</span>
+                              <span className="font-bold text-slate-800">•••• {receipt.method}</span>
+                            </div>
+
+                            <div className="border-t-[1.5px] border-dashed border-slate-400 w-full my-3 opacity-50" />
+
+
+                            <p className="text-[7px] font-mono mt-1.5 tracking-[0.3em] opacity-50 font-bold">{t.billing.receipts.thankYou}</p>
+                          </div>
+
+                          {/* Jagged Bottom Edge */}
+                          <div className="absolute bottom-[-10px] left-0 w-full h-[10px]"
+                            style={{
+                              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 12 10' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0l6 10 6-10z' fill='%23fcfbfa'/%3E%3C/svg%3E")`,
+                              backgroundSize: '12px 10px',
+                              backgroundRepeat: 'repeat-x'
+                            }}
+                          />
+                        </div>
                       </div>
-                    </div>
-                  );})}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -934,6 +952,11 @@ function DashboardBillingPageInner() {
                 return next;
               });
             }
+
+            showAlert({ message: "Վճարումը հաջողությամբ կատարվեց: Ձեր հայտը ուղարկվել է ադմինիստրատորին հաստատման համար:", type: "success" });
+            setTimeout(() => {
+              router.push("/dashboard/billing?tab=cards");
+            }, 500);
           }}
         />
       )}
@@ -948,7 +971,7 @@ function DashboardBillingPageInner() {
           });
         }}
       />
-      <ConfirmPlanChangeModal 
+      <ConfirmPlanChangeModal
         isOpen={isConfirmModalOpen}
         onClose={() => setIsConfirmModalOpen(false)}
         onConfirm={() => {

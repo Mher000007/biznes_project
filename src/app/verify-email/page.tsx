@@ -31,7 +31,7 @@ function VerifyEmailInner() {
           setMessage(res.data.message || "Your email address has been verified successfully!");
           updateUserVerifiedState(true);
           setTimeout(() => {
-            router.push("/profile");
+            router.push("/dashboard");
           }, 3000);
         } else {
           setStatus("error");
@@ -71,10 +71,10 @@ function VerifyEmailInner() {
           </p>
           <div className="pt-4">
             <Link
-              href="/profile"
+              href="/dashboard"
               className="inline-block bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm px-5 py-2.5 rounded-xl transition-colors"
             >
-              Go to Profile
+              Go to Dashboard
             </Link>
           </div>
         </div>

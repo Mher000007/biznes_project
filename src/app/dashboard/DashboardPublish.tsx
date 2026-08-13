@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Globe, Pencil, CheckCircle, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useI18n } from "@/i18n";
+import { useRouter } from "next/navigation";
 import { getApiUrl } from "@/lib/utils";
 import axios from "axios";
 import { getBusinessProfile, saveBusinessProfile } from "@/lib/auth";
@@ -20,6 +21,7 @@ export default function DashboardPublish() {
   const { currentUser } = useAuth();
   const { t } = useI18n();
   const { showAlert } = useAlert();
+  const router = useRouter();
   const [status, setStatus] = useState<"loading" | "draft" | "publishing" | "published">("loading");
   const [businessId, setBusinessId] = useState<string | null>(null);
 
@@ -119,20 +121,7 @@ export default function DashboardPublish() {
         throw new Error("No business profile is available to publish.");
       }
 
-      await axios.put(`${API}/businesses/${activeBusinessId}`, { active: true }, { headers: authHeader() });
-      
-      // Update local storage status
-      if (currentUser?.username) {
-        const localProfile = getBusinessProfile(currentUser.username);
-        if (localProfile) {
-          saveBusinessProfile({
-            ...localProfile,
-            isPublished: true
-          } as any);
-        }
-      }
-
-      setStatus("published");
+      router.push("/dashboard/billing?tab=plans");
     } catch (err: any) {
       console.error("Publishing failed:", err);
       const msg = err.response?.data?.message || err.message || "Failed to publish business profile.";
