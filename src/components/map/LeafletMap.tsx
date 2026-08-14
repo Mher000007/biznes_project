@@ -2,9 +2,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "../../styles/leaflet.css";
-import { Maximize2, Minimize2 } from "lucide-react";
+import { Maximize2, Minimize2, Bookmark } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/i18n";
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/context/ToastContext";
 
 // Resolve default marker icon asset path issues in Webpack/Vite bundlers
 if (typeof window !== "undefined") {
@@ -78,6 +80,7 @@ export interface LeafletMarkerItem {
   reviewCount?: number;
   plan?: 'starter' | 'standard' | 'premium' | string;
   isOpen?: boolean;
+  image?: string;
 }
 
 export interface LeafletMapProps {
@@ -96,6 +99,111 @@ export interface LeafletMapProps {
   fitAllBounds?: boolean;
   hoveredLocationId?: string | number | null;
   hideFullscreenControl?: boolean;
+}
+
+// ─── Subcomponents ──────────────────────────────────────────────────────────
+
+function MapSaveButton({ business }: { business: LeafletMarkerItem }) {
+  const { currentUser } = useAuth();
+  const { showToast } = useToast();
+  const isBusinessUser = currentUser?.role === "business_owner" || currentUser?.accountType === "business";
+
+  const [isFavorited, setIsFavorited] = useState(false);
+
+  useEffect(() => {
+    if (!currentUser || isBusinessUser || !business) {
+      setIsFavorited(false);
+      return;
+    }
+    if (typeof window !== "undefined") {
+      try {
+        const uKey = currentUser.username || currentUser.email || (currentUser as any).id || (currentUser as any)._id || "";
+        const userFavsKey = `armbiz_favorites_${uKey}`;
+        const favsStr = localStorage.getItem(userFavsKey);
+        if (favsStr) {
+          const favs: string[] = JSON.parse(favsStr);
+          if (favs.includes(String(business.id)) || (business.slug && favs.includes(business.slug))) {
+            setIsFavorited(true);
+          } else {
+            setIsFavorited(false);
+          }
+        } else {
+          setIsFavorited(false);
+        }
+      } catch (e) { }
+    }
+  }, [business.id, business.slug, currentUser, isBusinessUser]);
+
+  const toggleFavorite = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (isBusinessUser) return;
+
+    if (!currentUser) {
+      showToast();
+      return;
+    }
+
+    if (typeof window === "undefined") return;
+
+    try {
+      const uKey = currentUser.username || currentUser.email || (currentUser as any).id || (currentUser as any)._id || "";
+      if (!uKey) return;
+      const userFavsKey = `armbiz_favorites_${uKey}`;
+      const userItemsKey = `armbiz_favorites_items_${uKey}`;
+
+      const favsStr = localStorage.getItem(userFavsKey);
+      const itemsStr = localStorage.getItem(userItemsKey);
+
+      let favs: string[] = favsStr ? JSON.parse(favsStr) : [];
+      let itemsMap: Record<string, any> = itemsStr ? JSON.parse(itemsStr) : {};
+
+      const key = business.slug || String(business.id);
+      const isCurrentlyFav = favs.includes(String(business.id)) || (business.slug && favs.includes(business.slug));
+
+      if (isCurrentlyFav) {
+        favs = favs.filter((id) => id !== String(business.id) && id !== business.slug);
+        delete itemsMap[String(business.id)];
+        if (business.slug) delete itemsMap[business.slug];
+        setIsFavorited(false);
+      } else {
+        if (key && !favs.includes(key)) favs.push(key);
+        itemsMap[key] = {
+          id: String(business.id),
+          slug: business.slug || String(business.id),
+          name: business.name ? String(business.name).slice(0, 100) : "",
+          city: "Yerevan",
+          category: business.category,
+          ratingAvg: business.rating || 5.0,
+          logo: business.image || "",
+          logoUrl: business.image || ""
+        };
+        setIsFavorited(true);
+
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        const startX = rect.left + rect.width / 2;
+        const startY = rect.top + rect.height / 2;
+
+        const event = new CustomEvent("fly-to-bookmark", {
+          detail: { x: startX, y: startY },
+        });
+        window.dispatchEvent(event);
+      }
+
+      localStorage.setItem(userFavsKey, JSON.stringify(favs));
+      localStorage.setItem(userItemsKey, JSON.stringify(itemsMap));
+      window.dispatchEvent(new Event("favoritesUpdated"));
+    } catch (e) {
+      console.error("Failed to update favorites:", e);
+    }
+  };
+
+  return (
+    <button className={`save-btn ${isFavorited ? 'active' : ''}`} aria-label="Save" onClick={toggleFavorite}>
+      <Bookmark size={14} className={isFavorited ? 'fill-current text-[#111111]' : ''} color={isFavorited ? '#111111' : 'currentColor'} />
+    </button>
+  );
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -150,6 +258,7 @@ export default function LeafletMap({
 
   // Tracks the currently highlighted id so we can restore it on the next hover
   const prevHoveredIdRef = useRef<string | number | null>(null);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [internalHoveredCompanyId, setInternalHoveredCompanyId] = useState<string | number | null>(null);
 
@@ -193,7 +302,10 @@ export default function LeafletMap({
 
     if (!readonly) {
       map.on("focus", () => map.scrollWheelZoom.enable());
-      map.on("click", () => map.scrollWheelZoom.enable());
+      map.on("click", () => {
+        map.scrollWheelZoom.enable();
+        setInternalHoveredCompanyId(null);
+      });
       map.on("blur", () => map.scrollWheelZoom.disable());
     }
 
@@ -266,43 +378,20 @@ export default function LeafletMap({
           icon: buildDefaultIcon(m.plan, m.isOpen ?? true),
         });
 
-        // Tooltip (shown on marker hover)
-        if (m.name) {
-          const starsNum = m.rating ? Math.round(m.rating * 10) / 10 : null;
-          const starsHtml = starsNum
-            ? `<span class="marker-tooltip-rating">&#9733; ${starsNum.toFixed(1)}${m.reviewCount
-              ? ` <span class="marker-tooltip-reviews">(${m.reviewCount})</span>`
-              : ""
-            }</span>`
-            : "";
-          const catHtml = m.category
-            ? `<span class="marker-tooltip-category">${m.category}</span>`
-            : "";
-          const statusHtml = m.isOpen === false
-            ? `<span class="marker-tooltip-status is-closed">● ${closedText}</span>`
-            : `<span class="marker-tooltip-status is-open">● ${openText}</span>`;
-
-          marker.bindTooltip(
-            `<div class="marker-tooltip-inner">
-               <strong class="marker-tooltip-name">${m.name}</strong>
-               ${catHtml}
-               ${starsHtml}
-               ${statusHtml}
-             </div>`,
-            {
-              permanent: false,
-              direction: "right",
-              offset: [10, 0],
-              className: "leaflet-business-tooltip",
-              opacity: 1,
-            }
-          );
-        } else if (m.popupContent) {
+        if (!m.name && m.popupContent) {
           marker.bindPopup(m.popupContent);
         }
 
         if (m.slug && !readonly) {
-          marker.on("click", () => router.push(`/business/${m.slug}`));
+          marker.on("click", () => {
+            const isMobileView = typeof window !== "undefined" && window.innerWidth <= 768;
+            if (isMobileView && m.companyId) {
+              if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+              setInternalHoveredCompanyId(m.companyId!);
+            } else {
+              router.push(`/business/${m.slug}`);
+            }
+          });
         }
 
         if (m.draggable && !readonly && onMarkerDragEnd) {
@@ -313,8 +402,16 @@ export default function LeafletMap({
         }
 
         if (!readonly && m.companyId) {
-          marker.on("mouseover", () => setInternalHoveredCompanyId(m.companyId!));
-          marker.on("mouseout", () => setInternalHoveredCompanyId(null));
+          marker.on("mouseover", () => {
+            if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+            setInternalHoveredCompanyId(m.companyId!);
+          });
+          marker.on("mouseout", () => {
+            if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+            hoverTimeoutRef.current = setTimeout(() => {
+              setInternalHoveredCompanyId(null);
+            }, 300);
+          });
         }
 
         marker.addTo(markersGroup);
@@ -495,6 +592,14 @@ export default function LeafletMap({
 
   // ─────────────────────────────────────────────────────────────────────────
 
+  const activeHoveredId = internalHoveredCompanyId || hoveredLocationId;
+  const activeMarkerData = activeHoveredId 
+    ? markers.find(m => m.companyId === activeHoveredId || m.id === activeHoveredId)
+    : null;
+
+  const openText = t.business?.openNow || (locale === 'hy' ? 'Բաց է' : locale === 'ru' ? 'Открыто' : 'Open Now');
+  const closedText = t.business?.closed || (locale === 'hy' ? 'Փակ է' : locale === 'ru' ? 'Закрыто' : 'Closed');
+
   return (
     <div
       className={`leaflet-map-outer-wrapper ${isFullscreen ? "fullscreen-mode" : ""} ${className}`}
@@ -505,6 +610,48 @@ export default function LeafletMap({
         style={{ width: "100%", height: "100%", position: "relative", zIndex: 1 }}
         className="leaflet-map-wrapper leaflet-container"
       />
+      
+      {activeMarkerData && activeMarkerData.name && (
+        <div className="map-bottom-hover-card"
+             onMouseEnter={() => {
+               if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+               setInternalHoveredCompanyId(activeMarkerData.companyId || activeMarkerData.id);
+             }}
+             onMouseLeave={() => {
+               setInternalHoveredCompanyId(null);
+             }}>
+          <div className="map-bottom-hover-card-inner">
+            <div className="image-container" style={{ cursor: 'pointer' }} onClick={() => activeMarkerData.slug && router.push(`/business/${activeMarkerData.slug}`)}>
+              {activeMarkerData.image ? (
+                <img src={activeMarkerData.image} alt={activeMarkerData.name} />
+              ) : (
+                <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #f0f0f0, #e0e0e0)' }} />
+              )}
+            </div>
+            <div className="info-container">
+              <div className="header-row">
+                <strong className="name" style={{ cursor: 'pointer' }} onClick={() => activeMarkerData.slug && router.push(`/business/${activeMarkerData.slug}`)}>
+                  {activeMarkerData.name}
+                </strong>
+                <MapSaveButton business={activeMarkerData} />
+              </div>
+              {activeMarkerData.category && <span className="category">{activeMarkerData.category}</span>}
+              <div className="meta-row">
+                {activeMarkerData.rating ? (
+                  <span className="rating">
+                    &#9733; {(Math.round(activeMarkerData.rating * 10) / 10).toFixed(1)}
+                    {activeMarkerData.reviewCount && <span className="reviews">({activeMarkerData.reviewCount})</span>}
+                  </span>
+                ) : <span />}
+                <span className={`status ${activeMarkerData.isOpen === false ? 'is-closed' : 'is-open'}`}>
+                  {activeMarkerData.isOpen === false ? closedText : openText}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {!hideFullscreenControl && (
         <button
           type="button"

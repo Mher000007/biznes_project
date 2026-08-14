@@ -103,6 +103,14 @@ export default function DiscoverMap({
 
       const primaryCoords = getJitteredCoords(pLat, pLng, pCity || biz.city);
 
+      const getSafeLogo = (raw: any) => {
+        if (!raw || typeof raw !== "string") return "";
+        if (raw.startsWith("data:") && raw.length > 500000) return "";
+        return raw;
+      };
+      const rawLogo = (biz.logoUrl || biz.logo || (Array.isArray(biz.images) && biz.images[0]) || biz.coverImageUrl || biz.coverUrl || biz.image || biz.avatar || "") as string;
+      const logo = getSafeLogo(rawLogo);
+
       allLocations.push({
         id: biz.id || biz._id,
         companyId: biz.id || biz._id,
@@ -116,6 +124,7 @@ export default function DiscoverMap({
         reviewCount: biz.reviewCount || 0,
         plan: biz.plan || biz.subscriptionPlan,
         isOpen,
+        image: logo,
       });
 
       // 2. Add all non-primary branches
@@ -137,6 +146,7 @@ export default function DiscoverMap({
             reviewCount: biz.reviewCount || 0,
             plan: biz.plan || biz.subscriptionPlan,
             isOpen,
+            image: logo,
           });
         });
       }

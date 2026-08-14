@@ -399,3 +399,186 @@ body.map-fullscreen-active {
     background-color: rgba(239, 68, 68, 0.12);
   }
 }
+
+/* ─── Bottom Hover Card Overlay ─── */
+.map-bottom-hover-card {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  pointer-events: none;
+  animation: slideUpFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+
+  @media (max-width: 768px) {
+    bottom: 84px;
+  }
+  
+  .map-bottom-hover-card-inner {
+    background: var(--bg-secondary, #ffffff);
+    border: 1px solid var(--border-light, rgba(0,0,0,0.06));
+    border-radius: 20px;
+    padding: 16px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12), 0 2px 10px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 16px;
+    min-width: 280px;
+    max-width: 380px;
+    text-align: left;
+    backdrop-filter: blur(12px);
+    pointer-events: auto;
+
+    .image-container {
+      flex-shrink: 0;
+      width: 80px;
+      height: 80px;
+      border-radius: 14px;
+      overflow: hidden;
+      background-color: var(--bg-global, #f5f5f5);
+      border: 1px solid var(--border-light, rgba(0,0,0,0.04));
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.02);
+      
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+      }
+      
+      &:hover img {
+        transform: scale(1.05);
+      }
+    }
+
+    .info-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 6px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+
+      .name {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-primary, #111111);
+        line-height: 1.25;
+        letter-spacing: -0.01em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .save-btn {
+        background: var(--bg-global, #f8f9fa);
+        border: 1px solid var(--border-light, rgba(0,0,0,0.05));
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        margin: -4px -4px 0 0;
+        cursor: pointer;
+        color: var(--text-secondary, #666666);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        flex-shrink: 0;
+        pointer-events: auto;
+
+        &:hover {
+          color: var(--text-primary, #111111);
+          background: #ffffff;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+          transform: translateY(-1px);
+        }
+        
+        &:active {
+          transform: translateY(1px);
+        }
+      }
+    }
+
+    .category {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent-booking, #10b981);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 2px;
+
+      .rating {
+        font-size: 13px;
+        font-weight: 600;
+        color: #d97706;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        background: rgba(217, 119, 6, 0.08);
+        padding: 4px 8px;
+        border-radius: 6px;
+
+        .reviews {
+          color: var(--text-secondary, #888888);
+          font-weight: 500;
+          font-size: 11px;
+        }
+      }
+
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        font-weight: 700;
+        border-radius: 6px;
+        padding: 4px 8px;
+
+        &.is-open {
+          color: #059669;
+          background-color: rgba(16, 185, 129, 0.12);
+        }
+
+        &.is-closed {
+          color: #dc2626;
+          background-color: rgba(239, 68, 68, 0.12);
+        }
+      }
+    }
+  }
+}
+
+.dark .map-bottom-hover-card .map-bottom-hover-card-inner,
+[data-theme="dark"] .map-bottom-hover-card .map-bottom-hover-card-inner {
+  background: rgba(30, 30, 36, 0.9);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  
+  .name { color: #f0f0f0; }
+  .reviews { color: #888; }
+}
+
+@keyframes slideUpFadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 15px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}

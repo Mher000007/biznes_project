@@ -19,6 +19,7 @@ export interface LocationItem {
   reviewCount?: number;
   plan?: string;
   isOpen?: boolean;
+  image?: string;
 }
 
 // Map Component Props
@@ -73,6 +74,7 @@ export default function MapWorkspace({
         reviewCount: loc.reviewCount,
         plan: loc.plan,
         isOpen: loc.isOpen,
+        image: loc.image,
       };
     });
   }, [locations]);

@@ -254,7 +254,7 @@ function DiscoverContent() {
   };
 
   return (
-    <div className={styles.discoverPage}>
+    <div className={`${styles.discoverPage} ${mobileView === "map" ? styles.mapActiveMobile : ""}`}>
       {/* Main Column Container */}
       <div className={styles.mainContainer}>
         {/* Left Column (60%): Listing feed */}

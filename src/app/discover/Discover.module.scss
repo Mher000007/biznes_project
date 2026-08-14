@@ -15,6 +15,20 @@
     height: auto;
     min-height: 100vh;
     overflow: visible;
+
+    &.mapActiveMobile {
+      height: 100vh;
+      overflow: hidden;
+
+      .mainContainer {
+        height: calc(100vh - 64px);
+        overflow: hidden;
+      }
+
+      .mapColumn {
+        height: calc(100vh - 64px);
+      }
+    }
   }
 }
 
