@@ -338,6 +338,8 @@ export const hy: Translations = {
     alphabetical: "Այբբենական",
     verifiedOnlyButton: "Միայն հաստատվածները",
     bookNow: "Այցելել",
+    showMap: "Քարտեզ",
+    showList: "Ցանկ",
   },
   register: {
     title: "Գրանցեք ձեր բիզնեսը",

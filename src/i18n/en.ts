@@ -349,6 +349,8 @@ export const en = {
     alphabetical: "Alphabetical",
     verifiedOnlyButton: "Verified Only",
     bookNow: "Visit",
+    showMap: "Show Map",
+    showList: "Show List",
   },
   // Register
   register: {

@@ -860,7 +860,9 @@ export default function Navbar() {
                 {!isBusinessUser && (
                   <Bookmark className="w-4 h-4 text-amber-500 fill-amber-500/20" />
                 )}
-                Hi, {currentUser.name || currentUser.username}
+                <span className="truncate max-w-[160px]">
+                  {t.nav.hello}{currentUser.name || currentUser.username}
+                </span>
               </Link>
               <button
                 onClick={() => {
@@ -868,7 +870,7 @@ export default function Navbar() {
                 }}
                 className="block w-full text-left py-2 text-sm text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
               >
-                Sign out
+                {t.nav.signOut || "Sign out"}
               </button>
             </>
           ) : (

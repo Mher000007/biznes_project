@@ -810,3 +810,8 @@ body.admin-dark [data-admin-panel] {
 }
 
 @import "../components/map/MapWorkspace.scss";
+
+body.hide-navbar-mobile footer,
+body.hide-navbar-mobile .chat-widget-container {
+  display: none !important;
+}

@@ -433,7 +433,7 @@ export default function ChatWidget() {
     <>
       {/* Chat Panel */}
       {isOpen && (
-        <div className="fixed bottom-20 right-4 sm:right-6 z-50 w-[360px] max-w-[calc(100vw-2rem)] animate-scale-in">
+        <div className="fixed bottom-20 right-4 sm:right-6 z-50 w-[360px] max-w-[calc(100vw-2rem)] animate-scale-in chat-widget-container">
           <div className="flex flex-col h-[520px] rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-2xl shadow-black/10 overflow-hidden">
             {/* Header - Blended with transparent header design */}
             <div className="relative px-5 pt-5 pb-3 bg-gradient-to-b from-black/70 to-transparent overflow-hidden transition-colors">
@@ -513,7 +513,7 @@ export default function ChatWidget() {
 
       {/* FAB Button */}
       <div 
-        className={`fixed bottom-4 right-4 sm:right-6 z-50 ${isOpen ? "pointer-events-none" : ""}`}
+        className={`fixed bottom-4 right-4 sm:right-6 z-50 chat-widget-container ${isOpen ? "pointer-events-none" : ""}`}
         style={{ transform: `translate(${position.x}px, ${position.y}px)`, touchAction: 'none' }}
       >
         <button
