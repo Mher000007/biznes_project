@@ -136,6 +136,17 @@ function DiscoverContent() {
   // Mobile View Toggling: "list" or "map"
   const [mobileView, setMobileView] = useState<"list" | "map">("list");
 
+  useEffect(() => {
+    if (mobileView === "map") {
+      document.body.classList.add("hide-navbar-mobile");
+    } else {
+      document.body.classList.remove("hide-navbar-mobile");
+    }
+    return () => {
+      document.body.classList.remove("hide-navbar-mobile");
+    };
+  }, [mobileView]);
+
   // Sync Redux filters with URL query parameters on load
   useEffect(() => {
     const q = searchParams.get("q");
@@ -288,103 +299,105 @@ function DiscoverContent() {
 
           {/* Secondary Horizontal Filter Bar */}
           <div className={styles.categoryBar}>
-            <div className={styles.categoryList}>
-              {/* "All" Reset Button */}
-              <button
-                onClick={() => {
-                  dispatch(resetFilters());
-                  setStatusFilter("all");
-                }}
-                className={`${styles.categoryButton} ${(!filters.category &&
-                  !filters.city &&
-                  filters.ratingMin === 0 &&
-                  !filters.verifiedOnly &&
-                  !filters.query &&
-                  filters.sortBy === "popular" &&
-                  statusFilter === "all")
-                  ? styles.active
-                  : ""
-                  }`}
-              >
-                {t.discover.all || "All"}
-              </button>
-
-              {/* Location Selector Dropdown */}
-              <div className="relative inline-block">
-                <LocationSelect
-                  value={filters.city}
-                  onChange={(e) => dispatch(setCity(e.target.value))}
-                  className={`${styles.categoryButton} ${filters.city ? styles.active : ""} cursor-pointer`}
-                  placeholder={t.discover.allLocations || "All Locations"}
-                  disablePlaceholder={false}
-                />
-              </div>
-
-              {/* Rating Selector Dropdown */}
-              <div className="relative inline-block">
-                <RatingSelect
-                  value={filters.ratingMin || 0}
-                  onChange={(val) => dispatch(setRatingMin(val))}
-                  className={`${styles.categoryButton} ${filters.ratingMin > 0 ? styles.active : ""} cursor-pointer`}
-                />
-              </div>
-
-              {/* Open/Closed Selector Dropdown */}
-              <div className="relative inline-block">
-                <StatusSelect
-                  value={statusFilter}
-                  onChange={(val) => setStatusFilter(val)}
-                  className={`${styles.categoryButton} ${statusFilter !== "all" ? styles.active : ""} cursor-pointer`}
-                />
-              </div>
-
-              {/* Sort By Selector Dropdown */}
-              <div className="relative inline-block">
-                <SortSelect
-                  value={filters.sortBy}
-                  onChange={(val) => dispatch(setSortBy(val as any))}
-                  className={`${styles.categoryButton} ${filters.sortBy !== "popular" ? styles.active : ""} cursor-pointer`}
-                />
-              </div>
-
-              {/* View Toggle Icons */}
-              <div className={styles.viewToggle}>
-                <button
-                  onClick={() => setViewMode("list")}
-                  className={viewMode === "list" ? styles.active : ""}
-                  title="List View"
-                >
-                  <ListIcon className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => setViewMode("grid")}
-                  className={viewMode === "grid" ? styles.active : ""}
-                  title="Grid View"
-                >
-                  <LayoutGrid className="h-4 w-4" />
-                </button>
-              </div>
-
-
-
-              {/* Reset Filters Button */}
-              {(!filters.category &&
-                !filters.city &&
-                filters.ratingMin === 0 &&
-                !filters.verifiedOnly &&
-                !filters.query &&
-                filters.sortBy === "popular" &&
-                statusFilter === "all") ? null : (
+            <div className={styles.categoryBarInner}>
+              <div className={styles.categoryListWrapper}>
+                <div className={styles.categoryList}>
+                {/* "All" Reset Button */}
                 <button
                   onClick={() => {
                     dispatch(resetFilters());
                     setStatusFilter("all");
                   }}
-                  className="text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors px-2 font-semibold cursor-pointer underline"
+                  className={`${styles.categoryButton} ${(!filters.category &&
+                    !filters.city &&
+                    filters.ratingMin === 0 &&
+                    !filters.verifiedOnly &&
+                    !filters.query &&
+                    filters.sortBy === "popular" &&
+                    statusFilter === "all")
+                    ? styles.active
+                    : ""
+                    } shrink-0`}
                 >
-                  {t.discover.reset || "Reset"}
+                  {t.discover.all || "All"}
                 </button>
-              )}
+
+                {/* Location Selector Dropdown */}
+                <div className="relative inline-block shrink-0">
+                  <LocationSelect
+                    value={filters.city}
+                    onChange={(e) => dispatch(setCity(e.target.value))}
+                    className={`${styles.categoryButton} ${filters.city ? styles.active : ""} cursor-pointer`}
+                    placeholder={t.discover.allLocations || "All Locations"}
+                    disablePlaceholder={false}
+                  />
+                </div>
+
+                {/* Rating Selector Dropdown */}
+                <div className="relative inline-block shrink-0">
+                  <RatingSelect
+                    value={filters.ratingMin || 0}
+                    onChange={(val) => dispatch(setRatingMin(val))}
+                    className={`${styles.categoryButton} ${filters.ratingMin > 0 ? styles.active : ""} cursor-pointer`}
+                  />
+                </div>
+
+                {/* Open/Closed Selector Dropdown */}
+                <div className="relative inline-block shrink-0">
+                  <StatusSelect
+                    value={statusFilter}
+                    onChange={(val) => setStatusFilter(val)}
+                    className={`${styles.categoryButton} ${statusFilter !== "all" ? styles.active : ""} cursor-pointer`}
+                  />
+                </div>
+
+                {/* Sort By Selector Dropdown */}
+                <div className="relative inline-block shrink-0">
+                  <SortSelect
+                    value={filters.sortBy}
+                    onChange={(val) => dispatch(setSortBy(val as any))}
+                    className={`${styles.categoryButton} ${filters.sortBy !== "popular" ? styles.active : ""} cursor-pointer`}
+                  />
+                </div>
+
+                {/* Reset Filters Button */}
+                {(!filters.category &&
+                  !filters.city &&
+                  filters.ratingMin === 0 &&
+                  !filters.verifiedOnly &&
+                  !filters.query &&
+                  filters.sortBy === "popular" &&
+                  statusFilter === "all") ? null : (
+                  <button
+                    onClick={() => {
+                      dispatch(resetFilters());
+                      setStatusFilter("all");
+                    }}
+                    className="text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors px-2 font-semibold cursor-pointer underline shrink-0"
+                  >
+                    {t.discover.reset || "Reset"}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* View Toggle Icons */}
+            <div className={styles.viewToggle}>
+              <button
+                onClick={() => setViewMode("list")}
+                className={viewMode === "list" ? styles.active : ""}
+                title="List View"
+              >
+                <ListIcon className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setViewMode("grid")}
+                className={viewMode === "grid" ? styles.active : ""}
+                title="Grid View"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+            </div>
             </div>
           </div>
 

@@ -19,14 +19,15 @@
     &.mapActiveMobile {
       height: 100vh;
       overflow: hidden;
+      padding-top: 0 !important;
 
       .mainContainer {
-        height: calc(100vh - 64px);
+        height: 100vh;
         overflow: hidden;
       }
 
       .mapColumn {
-        height: calc(100vh - 64px);
+        height: 100vh;
       }
     }
   }
@@ -45,11 +46,7 @@
   border-bottom: 1px solid $border-light;
   min-height: 68px;
   height: auto;
-  display: flex;
-  align-items: center;
   overflow: visible;
-  flex-shrink: 0;
-  padding: 6px 0;
 
   @include mq-down("md") {
     top: 64px;
@@ -57,14 +54,35 @@
   }
 }
 
+.categoryBarInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 6px 24px;
+  gap: 16px;
+
+  @include mq-down("md") {
+    padding: 6px 16px;
+    gap: 8px;
+  }
+}
+
+.categoryListWrapper {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
 .categoryList {
   display: flex;
   align-items: center;
   gap: 12px;
   width: 100%;
-  max-width: 1440px;
-  margin: 0 auto;
-  padding: 4px 24px 8px 24px;
+  padding: 4px 0 8px 0;
   overflow-x: auto;
   white-space: nowrap;
 
@@ -93,7 +111,6 @@
   }
 
   @include mq-down("md") {
-    padding: 4px 16px 6px 16px;
     gap: 8px;
   }
 }
@@ -311,7 +328,7 @@
 
 .feedGrid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
   padding: 0 24px 24px 24px;
 
@@ -329,7 +346,7 @@
   padding: 4px;
   border-radius: 999px;
   border: 1px solid transparent;
-  margin-left: auto; // Push to the right edge
+  flex-shrink: 0;
 
   button {
     background: transparent;

@@ -384,8 +384,13 @@ export default function LeafletMap({
 
         if (m.slug && !readonly) {
           marker.on("click", () => {
-            const isMobileView = typeof window !== "undefined" && window.innerWidth <= 768;
-            if (isMobileView && m.companyId) {
+            const isMobileOrTouch = typeof window !== "undefined" && (
+              window.innerWidth <= 768 || 
+              window.matchMedia("(hover: none)").matches || 
+              ('ontouchstart' in window) || 
+              navigator.maxTouchPoints > 0
+            );
+            if (isMobileOrTouch && m.companyId) {
               if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
               setInternalHoveredCompanyId(m.companyId!);
             } else {

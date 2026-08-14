@@ -15,10 +15,12 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
+  gap: 16px;
   transition: $transition-smooth;
 
   @include mq-down("md") {
     padding: 0 16px;
+    gap: 8px;
   }
 }
 
@@ -36,6 +38,7 @@
   /* Green filter matching exactly #00C853 */
   filter: brightness(0) saturate(100%) invert(55%) sepia(70%) saturate(1473%) hue-rotate(101deg) brightness(93%) contrast(101%) !important;
   transition: filter 0.3s ease;
+  flex-shrink: 0;
 }
 
 .mobileLogoImage {
@@ -53,7 +56,6 @@
   gap: 8px;
   flex: 1;
   max-width: 320px;
-  margin-left: 24px;
 
   @include mq-down("lg") {
     max-width: none;
@@ -492,5 +494,11 @@
     &:hover {
       background-color: rgba(255, 255, 255, 0.08) !important;
     }
+  }
+}
+
+:global(body.hide-navbar-mobile) .header {
+  @include mq-down("md") {
+    display: none !important;
   }
 }

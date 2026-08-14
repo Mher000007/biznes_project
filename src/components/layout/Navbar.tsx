@@ -679,12 +679,14 @@ export default function Navbar() {
             >
               <Link
                 href={isBusinessUser ? "/dashboard" : "/profile"}
-                className={`hidden lg:inline-flex items-center gap-1.5 text-[13px] font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors cursor-pointer ${styles.authText}`}
+                className={`hidden lg:inline-flex items-center gap-1.5 text-[13px] font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors cursor-pointer max-w-[160px] xl:max-w-[220px] ${styles.authText}`}
               >
                 {!isBusinessUser && (
-                  <Bookmark id="navbar-bookmark-icon" className="w-3.5 h-3.5 text-amber-500 fill-amber-500/20" />
+                  <Bookmark id="navbar-bookmark-icon" className="w-3.5 h-3.5 text-amber-500 fill-amber-500/20 shrink-0" />
                 )}
-                {t.nav.hello}{currentUser.name || currentUser.username}
+                <span className="truncate">
+                  {t.nav.hello}{currentUser.name || currentUser.username}
+                </span>
               </Link>
 
               {/* Favorites Hover Dropdown */}
