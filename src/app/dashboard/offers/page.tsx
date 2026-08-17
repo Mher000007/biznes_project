@@ -154,7 +154,7 @@ const fetchGoogleTranslate = async (text: string, fromLang: string, toLang: stri
       const full = parts.join("").trim();
       if (full) return full;
     }
-  } catch (e) {}
+  } catch (e) { }
   return null;
 };
 
@@ -168,7 +168,7 @@ const isScriptValidForLang = (text: string, targetLang: LangKey): boolean => {
 
 const translateSingleDish = async (dishName: string, fromLang: LangKey, toLang: LangKey): Promise<string> => {
   const cleanKey = dishName.trim().toLowerCase();
-  
+
   // 1. Check custom culinary glossary
   if (DISH_GLOSSARY[cleanKey] && DISH_GLOSSARY[cleanKey][toLang]) {
     return DISH_GLOSSARY[cleanKey][toLang];
@@ -187,7 +187,7 @@ const translateSingleDish = async (dishName: string, fromLang: LangKey, toLang: 
     if (trans && trans !== "NO QUERY SPECIFIED" && !trans.includes("MYMEMORY WARNING") && isScriptValidForLang(trans, toLang)) {
       return trans.charAt(0).toUpperCase() + trans.slice(1);
     }
-  } catch (e) {}
+  } catch (e) { }
 
   return "";
 };
@@ -270,7 +270,7 @@ export default function DashboardOffers() {
             return;
           }
         }
-      } catch {}
+      } catch { }
 
       if (typeof window !== "undefined") {
         const profilesStr = window.localStorage.getItem("armbiz-business-profiles");
@@ -281,7 +281,7 @@ export default function DashboardOffers() {
             if (myProfile && (myProfile.plan || myProfile.subscriptionPlan)) {
               setActivePlan(myProfile.plan || myProfile.subscriptionPlan);
             }
-          } catch (e) {}
+          } catch (e) { }
         }
       }
     };
@@ -625,7 +625,7 @@ export default function DashboardOffers() {
                 <div className="flex items-center justify-between gap-2 flex-wrap pt-0.5">
                   <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/20 text-xs shadow-2xs">
-                      <Tag className="h-3.5 w-3.5 text-emerald-500" /> 
+                      <Tag className="h-3.5 w-3.5 text-emerald-500" />
                       <span>{offer.price.toLocaleString()} AMD</span>
                     </div>
 
@@ -637,20 +637,19 @@ export default function DashboardOffers() {
 
                   {/* Atmosphere Badge */}
                   {offer.atmosphere && (
-                    <span className={`text-[11px] font-bold px-3 py-1 rounded-xl flex items-center gap-1.5 border shadow-2xs backdrop-blur-xs transition-all ${
-                      offer.atmosphere === 'family' 
-                        ? 'bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/15 border-amber-500/30 text-amber-700 dark:text-amber-300' 
-                        : offer.atmosphere === 'friends' 
-                        ? 'bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-indigo-500/15 border-indigo-500/30 text-indigo-700 dark:text-indigo-300' 
-                        : 'bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-cyan-500/15 border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
-                    }`}>
+                    <span className={`text-[11px] font-bold px-3 py-1 rounded-xl flex items-center gap-1.5 border shadow-2xs backdrop-blur-xs transition-all ${offer.atmosphere === 'family'
+                        ? 'bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/15 border-amber-500/30 text-amber-700 dark:text-amber-300'
+                        : offer.atmosphere === 'friends'
+                          ? 'bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-indigo-500/15 border-indigo-500/30 text-indigo-700 dark:text-indigo-300'
+                          : 'bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-cyan-500/15 border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
+                      }`}>
                       <Sparkles className="w-3 h-3 shrink-0" />
                       <span>
-                        {offer.atmosphere === 'family' 
-                          ? `👨‍👩‍👧‍👦 ${offersT.atmosphereFamily || 'Ընտանեկան'}` 
-                          : offer.atmosphere === 'friends' 
-                          ? `👥 ${offersT.atmosphereFriends || 'Ընկերական'}` 
-                          : `⚡ ${offersT.atmosphereActive || 'Ակտիվ'}`}
+                        {offer.atmosphere === 'family'
+                          ? `👨‍👩‍👧‍👦 ${offersT.atmosphereFamily || 'Ընտանեկան'}`
+                          : offer.atmosphere === 'friends'
+                            ? `👥 ${offersT.atmosphereFriends || 'Ընկերական'}`
+                            : `⚡ ${offersT.atmosphereActive || 'Ակտիվ'}`}
                       </span>
                     </span>
                   )}
@@ -665,7 +664,7 @@ export default function DashboardOffers() {
                     {offer.location}
                   </span>
                 </div>
-                
+
                 {/* Dishes Summary */}
                 <div className="mt-3 pt-3 border-t border-[hsl(var(--border))]/60 space-y-1.5">
                   <p className="font-bold text-[hsl(var(--foreground))] text-[11px] uppercase tracking-wider text-[hsl(var(--muted-foreground))] flex items-center gap-1.5">
@@ -686,7 +685,7 @@ export default function DashboardOffers() {
                     </p>
                   )}
                 </div>
-                
+
                 {offer.inclusions && offer.inclusions.length > 0 && (
                   <div className="mt-2 pt-2 border-t border-[hsl(var(--border))]/40">
                     <p className="font-bold text-[hsl(var(--foreground))] mb-1 text-[11px] uppercase tracking-wider text-[hsl(var(--muted-foreground))]">{offersT.inclusionsLabel || "Inclusions"}</p>
@@ -700,7 +699,7 @@ export default function DashboardOffers() {
       )}
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl shadow-2xl w-full max-w-4xl max-h-[92vh] overflow-hidden flex flex-col animate-scale-in">
             <div className="px-6 py-4 border-b border-[hsl(var(--border))] flex justify-between items-center bg-[hsl(var(--muted))]/30">
               <h3 className="text-lg font-semibold">{editingId ? (offersT.editModalTitle || "Edit Package") : (offersT.createModalTitle || "Create Package")}</h3>
@@ -776,11 +775,10 @@ export default function DashboardOffers() {
                                     setFormData({ ...formData, location: loc.address });
                                     setIsLocationOpen(false);
                                   }}
-                                  className={`w-full flex items-center justify-between p-2.5 rounded-xl transition-all text-left cursor-pointer ${
-                                    isSelected 
-                                      ? 'bg-[hsl(var(--primary))]/10 border border-[hsl(var(--primary))]/30 text-[hsl(var(--primary))] font-bold shadow-2xs' 
+                                  className={`w-full flex items-center justify-between p-2.5 rounded-xl transition-all text-left cursor-pointer ${isSelected
+                                      ? 'bg-[hsl(var(--primary))]/10 border border-[hsl(var(--primary))]/30 text-[hsl(var(--primary))] font-bold shadow-2xs'
                                       : 'hover:bg-[hsl(var(--muted))]/50 text-[hsl(var(--foreground))] border border-transparent'
-                                  }`}
+                                    }`}
                                 >
                                   <div className="flex items-center gap-2.5 truncate pr-2">
                                     <div className="p-1.5 rounded-lg bg-[hsl(var(--muted))]/60 text-[hsl(var(--primary))] shrink-0">
@@ -820,11 +818,11 @@ export default function DashboardOffers() {
                           {formData.atmosphere === 'family' ? '👨‍👩‍👧‍👦' : formData.atmosphere === 'friends' ? '👥' : '⚡'}
                         </span>
                         <span className="font-semibold text-[hsl(var(--foreground))] text-xs sm:text-sm">
-                          {formData.atmosphere === 'family' 
-                            ? (offersT.atmosphereFamily || 'Ընտանեկան') 
-                            : formData.atmosphere === 'friends' 
-                            ? (offersT.atmosphereFriends || 'Ընկերական') 
-                            : (offersT.atmosphereActive || 'Ակտիվ')}
+                          {formData.atmosphere === 'family'
+                            ? (offersT.atmosphereFamily || 'Ընտանեկան')
+                            : formData.atmosphere === 'friends'
+                              ? (offersT.atmosphereFriends || 'Ընկերական')
+                              : (offersT.atmosphereActive || 'Ակտիվ')}
                         </span>
                       </div>
                       <ChevronDown className={`w-4 h-4 text-[hsl(var(--muted-foreground))] transition-transform duration-200 ${isAtmosphereOpen ? 'rotate-180 text-[hsl(var(--primary))]' : ''}`} />
@@ -846,11 +844,10 @@ export default function DashboardOffers() {
                                 setFormData({ ...formData, atmosphere: item.id });
                                 setIsAtmosphereOpen(false);
                               }}
-                              className={`w-full flex items-center justify-between p-2.5 rounded-xl transition-all text-left cursor-pointer ${
-                                isSelected 
-                                  ? 'bg-[hsl(var(--primary))]/10 border border-[hsl(var(--primary))]/30 text-[hsl(var(--primary))] font-bold shadow-2xs' 
+                              className={`w-full flex items-center justify-between p-2.5 rounded-xl transition-all text-left cursor-pointer ${isSelected
+                                  ? 'bg-[hsl(var(--primary))]/10 border border-[hsl(var(--primary))]/30 text-[hsl(var(--primary))] font-bold shadow-2xs'
                                   : 'hover:bg-[hsl(var(--muted))]/50 text-[hsl(var(--foreground))] border border-transparent'
-                              }`}
+                                }`}
                             >
                               <div className="flex items-center gap-3">
                                 <span className="text-xl p-1.5 rounded-lg bg-[hsl(var(--muted))]/60 shrink-0">{item.icon}</span>
@@ -941,11 +938,10 @@ export default function DashboardOffers() {
                               else if (langKey === 'ru') setFormData({ ...formData, dishesRuString: val });
                             }}
                             placeholder={placeholderText}
-                            className={`w-full rounded-xl border bg-[hsl(var(--background))] px-3.5 py-2.5 text-sm outline-none transition-colors resize-none ${
-                              scriptError 
-                                ? "border-red-500 focus:border-red-600 bg-red-500/5 text-red-900 dark:text-red-200" 
+                            className={`w-full rounded-xl border bg-[hsl(var(--background))] px-3.5 py-2.5 text-sm outline-none transition-colors resize-none ${scriptError
+                                ? "border-red-500 focus:border-red-600 bg-red-500/5 text-red-900 dark:text-red-200"
                                 : "border-[hsl(var(--border))] focus:border-[hsl(var(--primary))]"
-                            }`}
+                              }`}
                           />
 
                           {scriptError && (
@@ -1042,11 +1038,10 @@ export default function DashboardOffers() {
                                   else if (langKey === 'ru') setFormData({ ...formData, dishesRuString: val });
                                 }}
                                 placeholder={placeholderText}
-                                className={`w-full rounded-xl border bg-[hsl(var(--background))] px-3.5 py-2 text-xs outline-none transition-colors resize-none ${
-                                  scriptError 
-                                    ? "border-red-500 focus:border-red-600 bg-red-500/5 text-red-900 dark:text-red-200" 
+                                className={`w-full rounded-xl border bg-[hsl(var(--background))] px-3.5 py-2 text-xs outline-none transition-colors resize-none ${scriptError
+                                    ? "border-red-500 focus:border-red-600 bg-red-500/5 text-red-900 dark:text-red-200"
                                     : "border-[hsl(var(--border))] focus:border-[hsl(var(--primary))]"
-                                }`}
+                                  }`}
                               />
 
                               {scriptError && (
@@ -1063,12 +1058,11 @@ export default function DashboardOffers() {
                 </div>
 
                 <div className="pt-3 border-t border-[hsl(var(--border))]/60">
-                  <div 
-                    className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-200 cursor-pointer select-none ${
-                      hasInclusions 
-                        ? "border-[#00e676]/40 bg-[#00e676]/5 shadow-sm" 
+                  <div
+                    className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-200 cursor-pointer select-none ${hasInclusions
+                        ? "border-[#00e676]/40 bg-[#00e676]/5 shadow-sm"
                         : "border-[hsl(var(--border))] bg-[hsl(var(--background))] hover:border-[hsl(var(--border))]/80"
-                    }`}
+                      }`}
                     onClick={() => setHasInclusions(!hasInclusions)}
                   >
                     <div className="flex items-center gap-3">
@@ -1087,11 +1081,10 @@ export default function DashboardOffers() {
                         {offersT.inclusionsLabel || "Additional Inclusions"}
                       </label>
                     </div>
-                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full transition-colors ${
-                      hasInclusions 
-                        ? "bg-[#00e676]/15 text-[#00e676]" 
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full transition-colors ${hasInclusions
+                        ? "bg-[#00e676]/15 text-[#00e676]"
                         : "bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))]"
-                    }`}>
+                      }`}>
                       {hasInclusions ? (offersT.enabled || "Enabled") : (offersT.optional || "Optional")}
                     </span>
                   </div>

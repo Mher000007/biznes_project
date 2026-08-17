@@ -1238,154 +1238,166 @@ export default function UserProfileDashboard() {
         <div className="relative overflow-hidden rounded-2xl bg-[hsl(var(--card))] border border-[hsl(var(--border))] p-6 sm:p-8 shadow-sm">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 dark:from-primary/20 dark:via-primary/5 dark:to-primary/10 pointer-events-none" />
 
-          <div className="relative z-10 flex flex-col sm:flex-row items-center gap-6">
-            <div className="relative group cursor-pointer">
-              {avatar ? (
-                <img
-                  src={avatar}
-                  alt={displayName}
-                  className="w-24 h-24 rounded-full object-cover border-4 border-[hsl(var(--card))] shadow-md transition-all group-hover:brightness-90"
-                />
-              ) : (
-                <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-primary to-amber-500 flex items-center justify-center text-white text-3xl font-black shadow-md transition-all group-hover:brightness-90">
-                  {userInitial}
-                </div>
-              )}
-
-              {/* Camera Badge button */}
-              <label className="absolute bottom-0 right-0 p-2 rounded-full bg-primary text-white border-2 border-[hsl(var(--card))] cursor-pointer hover:scale-110 transition-transform shadow-md">
-                <Camera className="w-4 h-4" />
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onloadend = () => {
-                        const newImg = reader.result as string;
-                        setAvatar(newImg);
-                        if (typeof window !== "undefined") {
-                          try {
-                            const localUserStr = localStorage.getItem("user");
-                            if (localUserStr) {
-                              const u = JSON.parse(localUserStr);
-                              u.avatar = newImg;
-                              localStorage.setItem("user", JSON.stringify(u));
-                              refreshUser?.();
-                            }
-                          } catch (err) {
-                            console.error("Error saving avatar locally:", err);
-                          }
-                        }
-                      };
-                      reader.readAsDataURL(file);
-                    }
-                  }}
-                />
-              </label>
-            </div>
-
-            <div className="flex-1 text-center sm:text-left space-y-1">
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[hsl(var(--foreground))]">{displayName}</h1>
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                  <CheckCircle className="w-3 h-3" />
-                  {locale === "hy" ? "Անձնական Հաշիվ" : locale === "ru" ? "Личный аккаунт" : "Personal Account"}
-                </span>
-                <h3 className="text-2xl font-black text-[hsl(var(--foreground))] tracking-tight flex items-center ml-2">
-                  {findyCoins.toLocaleString()} <span className="text-emerald-500 text-sm font-bold uppercase tracking-wider ml-1">Coins</span>
-                </h3>
-              </div>
-              <p className="text-sm text-[hsl(var(--muted-foreground))] flex items-center justify-center sm:justify-start gap-3 flex-wrap">
-                <span>@{currentUser?.username || "user"}</span>
-                <span>•</span>
-                <span className="flex items-center gap-1"><Mail className="w-3.5 h-3.5 opacity-70" /> {currentUser?.email}</span>
-                {phone && (
-                  <>
-                    <span>•</span>
-                    <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5 opacity-70" /> +374 {phone}</span>
-                  </>
+          <div className="relative z-10 flex flex-col lg:flex-row items-center lg:items-start justify-between gap-8 lg:gap-6">
+            
+            {/* 1. Avatar & Info Section */}
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 sm:gap-6 flex-1 w-full text-center sm:text-left">
+              
+              {/* Avatar */}
+              <div className="relative group cursor-pointer shrink-0">
+                {avatar ? (
+                  <img
+                    src={avatar}
+                    alt={displayName}
+                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-[hsl(var(--card))] shadow-lg transition-all group-hover:brightness-90 group-hover:scale-[1.02]"
+                  />
+                ) : (
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-tr from-primary to-amber-500 flex items-center justify-center text-white text-3xl sm:text-4xl font-black shadow-lg transition-all group-hover:brightness-90 group-hover:scale-[1.02]">
+                    {userInitial}
+                  </div>
                 )}
-              </p>
+                {/* Camera Badge button */}
+                <label className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 p-2 sm:p-2.5 rounded-full bg-primary text-white border-2 border-[hsl(var(--card))] cursor-pointer hover:scale-110 transition-transform shadow-md">
+                  <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          const newImg = reader.result as string;
+                          setAvatar(newImg);
+                          if (typeof window !== "undefined") {
+                            try {
+                              const localUserStr = localStorage.getItem("user");
+                              if (localUserStr) {
+                                const u = JSON.parse(localUserStr);
+                                u.avatar = newImg;
+                                localStorage.setItem("user", JSON.stringify(u));
+                                refreshUser?.();
+                              }
+                            } catch (err) {
+                              console.error("Error saving avatar locally:", err);
+                            }
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+
+              {/* Info Text */}
+              <div className="flex-1 space-y-3 sm:space-y-2 mt-1 sm:mt-2">
+                <div className="flex flex-col sm:flex-row flex-wrap items-center sm:items-center justify-center sm:justify-start gap-2 sm:gap-3">
+                  <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[hsl(var(--foreground))]">{displayName}</h1>
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-sm">
+                      <CheckCircle className="w-3.5 h-3.5" />
+                      {locale === "hy" ? "Անձնական Հաշիվ" : locale === "ru" ? "Личный аккаунт" : "Personal Account"}
+                    </span>
+                    <h3 className="text-xl sm:text-2xl font-black text-[hsl(var(--foreground))] tracking-tight flex items-center bg-[hsl(var(--muted))]/50 px-3 py-0.5 rounded-full border border-[hsl(var(--border))]/50">
+                      {findyCoins.toLocaleString()} <span className="text-emerald-500 text-xs sm:text-sm font-bold uppercase tracking-wider ml-1.5">Coins</span>
+                    </h3>
+                  </div>
+                </div>
+                
+                <div className="text-sm text-[hsl(var(--muted-foreground))] flex flex-col sm:flex-row items-center sm:items-center justify-center sm:justify-start gap-2 sm:gap-3 flex-wrap mt-2 sm:mt-1">
+                  <span className="font-semibold text-[hsl(var(--foreground))]/80 bg-[hsl(var(--muted))] px-2 py-0.5 rounded-md">@{currentUser?.username || "user"}</span>
+                  <span className="hidden sm:inline text-[hsl(var(--border))]">•</span>
+                  <span className="flex items-center gap-1.5"><Mail className="w-4 h-4 opacity-70" /> {currentUser?.email}</span>
+                  {phone && (
+                    <>
+                      <span className="hidden sm:inline text-[hsl(var(--border))]">•</span>
+                      <span className="flex items-center gap-1.5"><Phone className="w-4 h-4 opacity-70" /> +374 {phone}</span>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 w-full sm:w-auto shrink-0">
+            {/* 2. Action Buttons */}
+            <div className="flex flex-col sm:flex-row lg:flex-col items-stretch sm:items-center lg:items-end justify-center gap-2.5 w-full sm:w-auto shrink-0 mt-2 sm:mt-4 lg:mt-0">
               <button
                 onClick={() => dispatch(toggleWidgetVisibility())}
-                className={`h-10 px-4 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm ${isWidgetVisible ? 'bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200 shadow-md' : 'bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]'}`}
+                className={`h-10 sm:h-11 px-4 sm:px-5 rounded-xl text-[13px] font-bold transition-all flex items-center justify-center gap-2 w-full sm:w-auto lg:w-full shadow-sm hover:shadow-md active:scale-[0.98] ${isWidgetVisible ? 'bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200' : 'bg-[hsl(var(--card))] text-[hsl(var(--foreground))] border border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))]'}`}
               >
-                {isWidgetVisible ? <Bot className="w-3.5 h-3.5" /> : <BotOff className="w-3.5 h-3.5" />}
+                {isWidgetVisible ? <Bot className="w-4 h-4" /> : <BotOff className="w-4 h-4" />}
                 {isWidgetVisible
                   ? (locale === "hy" ? "Անջատել AI Չատը" : "Disable AI Chat")
                   : (locale === "hy" ? "Միացնել AI Չատը" : "Enable AI Chat")}
               </button>
+              
               <button
                 onClick={() => setActiveTab("security")}
-                className={`h-10 px-4 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${activeTab === "security"
-                  ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
-                  : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
+                className={`h-10 sm:h-11 px-4 sm:px-5 text-[13px] font-bold rounded-xl transition-all flex items-center justify-center gap-2 w-full sm:w-auto lg:w-full border cursor-pointer active:scale-[0.98] shadow-sm hover:shadow-md ${activeTab === "security"
+                  ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white"
+                  : "bg-[hsl(var(--card))] text-[hsl(var(--foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))]"
                   }`}
               >
-                <Lock className="w-3.5 h-3.5" />
-                {locale === "hy" ? "Անվտանգություն" : locale === "ru" ? "Безопасность" : "Security & Password"}
+                <Lock className="w-4 h-4" />
+                {locale === "hy" ? "Անվտանգություն" : locale === "ru" ? "Безопасность" : "Security"}
               </button>
+              
               <button
                 onClick={logout}
-                className="h-10 px-3.5 rounded-xl text-xs font-medium border border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] transition-colors flex items-center gap-1.5 text-red-600 dark:text-red-400"
+                className="h-10 sm:h-11 px-4 sm:px-5 rounded-xl text-[13px] font-bold border border-[hsl(var(--border))] hover:bg-red-50 dark:hover:bg-red-500/10 hover:border-red-200 dark:hover:border-red-500/30 transition-all flex items-center justify-center gap-2 w-full sm:w-auto lg:w-full text-red-600 dark:text-red-400 active:scale-[0.98]"
               >
-                <LogOut className="w-3.5 h-3.5" />
+                <LogOut className="w-4 h-4" />
                 {locale === "hy" ? "Դուրս գալ" : "Sign out"}
               </button>
             </div>
           </div>
 
-          {/* Quick Stats Grid */}
-          <div className="relative z-10 grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-[hsl(var(--border))]">
-            <div className="bg-[hsl(var(--background))] rounded-xl p-3 border border-[hsl(var(--border))] flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500">
-                <Bookmark className="w-4 h-4 fill-amber-500 text-amber-500" />
+          {/* 3. Quick Stats Grid */}
+          <div className="relative z-10 grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mt-8 pt-6 border-t border-[hsl(var(--border))]/60">
+            <div className="bg-[hsl(var(--background))] rounded-xl p-3 sm:p-4 border border-[hsl(var(--border))] flex items-center gap-3 sm:gap-4 shadow-sm hover:shadow-md transition-all group cursor-pointer hover:border-amber-500/30">
+              <div className="p-2 sm:p-2.5 rounded-lg bg-amber-500/10 text-amber-500 transition-transform group-hover:scale-110">
+                <Bookmark className="w-4 h-4 sm:w-5 sm:h-5 fill-amber-500 text-amber-500" />
               </div>
               <div>
-                <div className="text-lg font-black text-[hsl(var(--foreground))]">{savedBusinesses.length}</div>
-                <div className="text-[11px] text-[hsl(var(--muted-foreground))]">
+                <div className="text-xl sm:text-2xl font-black text-[hsl(var(--foreground))] leading-none">{savedBusinesses.length}</div>
+                <div className="text-[11px] sm:text-xs font-medium text-[hsl(var(--muted-foreground))] mt-1">
                   {locale === "hy" ? "Նախընտրածներ" : "Saved Places"}
                 </div>
               </div>
             </div>
 
-            <div className="bg-[hsl(var(--background))] rounded-xl p-3 border border-[hsl(var(--border))] flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
-                <Calendar className="w-4 h-4" />
+            <div className="bg-[hsl(var(--background))] rounded-xl p-3 sm:p-4 border border-[hsl(var(--border))] flex items-center gap-3 sm:gap-4 shadow-sm hover:shadow-md transition-all group cursor-pointer hover:border-blue-500/30">
+              <div className="p-2 sm:p-2.5 rounded-lg bg-blue-500/10 text-blue-500 transition-transform group-hover:scale-110">
+                <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
               <div>
-                <div className="text-lg font-black text-[hsl(var(--foreground))]">{userBookings.length}</div>
-                <div className="text-[11px] text-[hsl(var(--muted-foreground))]">
+                <div className="text-xl sm:text-2xl font-black text-[hsl(var(--foreground))] leading-none">{userBookings.length}</div>
+                <div className="text-[11px] sm:text-xs font-medium text-[hsl(var(--muted-foreground))] mt-1">
                   {locale === "hy" ? "Ամրագրումներ" : "My Bookings"}
                 </div>
               </div>
             </div>
 
-            <div className="bg-[hsl(var(--background))] rounded-xl p-3 border border-[hsl(var(--border))] flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                <MessageSquare className="w-4 h-4" />
+            <div className="bg-[hsl(var(--background))] rounded-xl p-3 sm:p-4 border border-[hsl(var(--border))] flex items-center gap-3 sm:gap-4 shadow-sm hover:shadow-md transition-all group cursor-pointer hover:border-emerald-500/30">
+              <div className="p-2 sm:p-2.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 transition-transform group-hover:scale-110">
+                <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
               <div>
-                <div className="text-lg font-black text-[hsl(var(--foreground))]">{userReviewsCount}</div>
-                <div className="text-[11px] text-[hsl(var(--muted-foreground))]">
+                <div className="text-xl sm:text-2xl font-black text-[hsl(var(--foreground))] leading-none">{userReviewsCount}</div>
+                <div className="text-[11px] sm:text-xs font-medium text-[hsl(var(--muted-foreground))] mt-1">
                   {locale === "hy" ? "Մեկնաբանություններ" : locale === "ru" ? "Отзывы" : "Reviews"}
                 </div>
               </div>
             </div>
 
-            <div className="bg-[hsl(var(--background))] rounded-xl p-3 border border-[hsl(var(--border))] flex items-center gap-3">
-              <div className={`p-2 rounded-lg ${accountTier.badgeBg}`}>
-                <TierIcon className="w-4 h-4" />
+            <div className="bg-[hsl(var(--background))] rounded-xl p-3 sm:p-4 border border-[hsl(var(--border))] flex items-center gap-3 sm:gap-4 shadow-sm hover:shadow-md transition-all group cursor-pointer">
+              <div className={`p-2 sm:p-2.5 rounded-lg ${accountTier.badgeBg} transition-transform group-hover:scale-110`}>
+                <TierIcon className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
               <div>
-                <div className={`text-lg ${accountTier.colorClass}`}>{accountTier.label}</div>
-                <div className="text-[11px] text-[hsl(var(--muted-foreground))]">
+                <div className={`text-lg sm:text-xl font-black leading-none ${accountTier.colorClass}`}>{accountTier.label}</div>
+                <div className="text-[11px] sm:text-xs font-medium text-[hsl(var(--muted-foreground))] mt-1">
                   {locale === "hy" ? "Կարգավիճակ" : "Account Status"}
                 </div>
               </div>

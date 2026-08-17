@@ -274,28 +274,6 @@ function DiscoverContent() {
           className={`${styles.feedColumn} ${mobileView === "map" ? styles.hiddenMobile : ""
             }`}
         >
-          <div className={styles.feedHeader}>
-
-            <div className={styles.resultsCount}>
-              {loading ? (
-                <span>
-                  {locale === "hy"
-                    ? "Բեռնվում է..."
-                    : locale === "ru"
-                      ? "Загрузка каталога..."
-                      : "Loading directory..."}
-                </span>
-              ) : (
-                <span>
-                  {locale === "hy"
-                    ? `Ցուցադրված է ${filtered.length} բիզնես`
-                    : locale === "ru"
-                      ? `Показано ${filtered.length} компаний`
-                      : `Showing ${filtered.length} business${filtered.length !== 1 ? "es" : ""}`}
-                </span>
-              )}
-            </div>
-          </div>
 
           {/* Secondary Horizontal Filter Bar */}
           <div className={styles.categoryBar}>

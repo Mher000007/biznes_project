@@ -101,11 +101,7 @@
   opacity: 0.8;
 }
 
-@media (min-width: 640px) {
-  .swipeIndicator {
-    display: none;
-  }
-}
+
 
 .swipeIcon {
   width: 1.25rem;
@@ -492,5 +488,21 @@
 
   .ratingScore {
     font-size: 1.25rem;
+  }
+}
+.greenScrollbar {
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #6ee7b7; /* Tailwind emerald-300 */
+    border-radius: 4px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: #34d399; /* Tailwind emerald-400 */
   }
 }

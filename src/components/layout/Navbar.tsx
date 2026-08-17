@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X, Search, MapPin, Bookmark, ArrowUp, ArrowDown, LogOut, ArrowRight } from "lucide-react";
+import { Menu, X, Search, MapPin, Bookmark, ArrowUp, ArrowDown, LogOut, ArrowRight, ArrowLeft, User } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { useI18n } from "@/i18n";
@@ -28,6 +28,7 @@ export default function Navbar() {
   const [navQuery, setNavQuery] = useState("");
   const [navLocation, setNavLocation] = useState("");
   const [scrolled, setScrolled] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   // Favorites state for dropdown
   const [favorites, setFavorites] = useState<any[]>([]);
@@ -464,14 +465,21 @@ export default function Navbar() {
           e.preventDefault();
           router.push("/");
         }}
-        className={styles.logo}
+        className={`${styles.logo} ${isMobileSearchOpen ? "!hidden md:!flex" : ""}`}
       >
-        <img src="/logo.png" alt="Findy Logo" className={styles.logoImage} />
+        <div role="img" aria-label="Findy Logo" className={styles.logoImage} />
       </Link>
 
       {/* Search Form (always visible) */}
-      <form onSubmit={handleNavSearch} className={styles.searchForm}>
+      <form onSubmit={handleNavSearch} className={`${styles.searchForm} ${isMobileSearchOpen ? styles.mobileActive : ""}`}>
         <div className={styles.searchGroup}>
+          <button
+            type="button"
+            className={`${styles.mobileSearchBack} ${isTransparent ? 'text-white' : 'text-slate-900 dark:text-white'}`}
+            onClick={() => setIsMobileSearchOpen(false)}
+          >
+            <ArrowRight className="h-5 w-5" />
+          </button>
           <div className={`${styles.inputWrapper} relative`} ref={suggestionsRef}>
             <Search className={styles.inputIcon} />
             <input
@@ -598,9 +606,9 @@ export default function Navbar() {
             />
           </div> */}
         </div>
-        <button type="submit" className={styles.searchButton}>
+        {/* <button type="submit" className={styles.searchButton}>
           {t.nav?.searchButton || "Search"}
-        </button>
+        </button> */}
       </form>
 
       <div className={styles.links}>
@@ -664,7 +672,7 @@ export default function Navbar() {
       </div>
 
       {/* Actions */}
-      <div className={styles.navActions}>
+      <div className={`${styles.navActions} ${isMobileSearchOpen ? styles.hideOnMobileSearch : ""}`}>
         <div className="hidden lg:flex items-center gap-2">
           <LanguageSwitcher />
           <ThemeToggle />
@@ -679,12 +687,13 @@ export default function Navbar() {
             >
               <Link
                 href={isBusinessUser ? "/dashboard" : "/profile"}
-                className={`hidden lg:inline-flex items-center gap-1.5 text-[13px] font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors cursor-pointer max-w-[160px] xl:max-w-[220px] ${styles.authText}`}
+                className={`hidden lg:flex items-center gap-1.5 text-[13px] font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors cursor-pointer xl:max-w-[220px] ${styles.authText}`}
               >
                 {!isBusinessUser && (
-                  <Bookmark id="navbar-bookmark-icon" className="w-3.5 h-3.5 text-amber-500 fill-amber-500/20 shrink-0" />
+                  <Bookmark id="navbar-bookmark-icon" className="hidden xl:block w-3.5 h-3.5 text-amber-500 fill-amber-500/20 shrink-0" />
                 )}
-                <span className="truncate">
+                <User className="w-5 h-5 xl:hidden" />
+                <span className="hidden xl:block truncate">
                   {t.nav.hello}{currentUser.name || currentUser.username}
                 </span>
               </Link>
@@ -692,7 +701,7 @@ export default function Navbar() {
               {/* Favorites Hover Dropdown */}
               {!isBusinessUser && (
                 <div
-                  className={`absolute top-full right-0 pt-2 w-72 transition-all duration-200 z-50 ${isFavOpen
+                  className={`hidden xl:block absolute top-full right-0 pt-2 w-72 transition-all duration-200 z-50 ${isFavOpen
                       ? "opacity-100 visible pointer-events-auto"
                       : "opacity-0 invisible pointer-events-none group-hover/fav:opacity-100 group-hover/fav:visible group-hover/fav:pointer-events-auto"
                     }`}
@@ -778,6 +787,16 @@ export default function Navbar() {
 
         {/* Mobile controls */}
         <div className={styles.mobileControls}>
+          {!isMobileSearchOpen && (
+            <button
+              type="button"
+              onClick={() => setIsMobileSearchOpen(true)}
+              className={styles.iconButton}
+              aria-label="Open Search"
+            >
+              <Search className="h-5 w-5" />
+            </button>
+          )}
           <button
             id="mobile-menu-btn"
             onClick={() => setIsOpen(!isOpen)}
@@ -860,6 +879,7 @@ export default function Navbar() {
                 {!isBusinessUser && (
                   <Bookmark className="w-4 h-4 text-amber-500 fill-amber-500/20" />
                 )}
+                <User className="w-5 h-5 xl:hidden" />
                 <span className="truncate max-w-[160px]">
                   {t.nav.hello}{currentUser.name || currentUser.username}
                 </span>

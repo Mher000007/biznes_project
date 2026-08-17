@@ -235,25 +235,28 @@ export default function FeaturedBusinesses() {
             {/* Offers (Premium Businesses Cards Grid) */}
             {premiumBusinesses.length > 0 && (
               <div className="mb-14">
-                <div className="flex items-center justify-between mb-8">
+                <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
                   <div>
                     <h2 className="text-xl sm:text-2xl font-bold text-[hsl(var(--foreground))]">
                       {t.featured.premiumTitle}
                     </h2>
-                    <p className="text-xs sm:text-sm text-[hsl(var(--muted-foreground))]">
+                    <p className="text-xs sm:text-sm text-[hsl(var(--muted-foreground))]/80 mt-1">
                       {t.featured.premiumSubtitle}
                     </p>
                   </div>
-                  <Link href="/discover?verified=true" className={styles.viewAll}>
-                    {t.featured.viewAll}
-                  </Link>
-                  <div className={styles.swipeIndicator}>
-                    <span className={styles.swipeText}>Թերթել</span>
-                    <SwipeIcon className={styles.swipeIcon} />
+                  
+                  <div className="flex items-center gap-3 sm:gap-4 self-start sm:self-auto">
+                    <div className={styles.swipeIndicator}>
+                      <span className={styles.swipeText}>Թերթել</span>
+                      <SwipeIcon className={styles.swipeIcon} />
+                    </div>
+                    <Link href="/discover?verified=true" className={styles.viewAll}>
+                      {t.featured.viewAll}
+                    </Link>
                   </div>
                 </div>
 
-                <div className="flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory custom-scrollbar">
+                <div className={`flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory custom-scrollbar ${styles.greenScrollbar}`}>
                   {premiumBusinesses.map((biz) => (
                     <div key={biz.id} className="w-[85vw] sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] shrink-0 snap-start">
                       <BusinessCard business={biz} viewMode="grid" />
