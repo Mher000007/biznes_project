@@ -118,6 +118,7 @@ function DiscoverContent() {
       clearTimeout(hoverTimeoutRef.current);
     }
     hoverTimeoutRef.current = setTimeout(() => {
+      if (typeof window !== "undefined" && window.innerWidth < 1024) return;
       setHoveredBusinessId(null);
     }, 300); // 300ms delay to allow cursor to reach the map
   };
@@ -135,6 +136,7 @@ function DiscoverContent() {
 
   // Mobile View Toggling: "list" or "map"
   const [mobileView, setMobileView] = useState<"list" | "map">("list");
+  const [mapKey, setMapKey] = useState(0);
 
   useEffect(() => {
     if (mobileView === "map") {
@@ -398,15 +400,10 @@ function DiscoverContent() {
                       viewMode={viewMode}
                       onShowMap={() => {
                         setMobileView("map");
-                        // Delay setting the hovered ID to prevent mouseleave events 
-                        // from clearing it when the list hides, and to ensure the map 
-                        // has stabilized its dimensions for flyTo to work.
-                        setTimeout(() => {
-                          if (hoverTimeoutRef.current) {
-                            clearTimeout(hoverTimeoutRef.current);
-                          }
-                          setHoveredBusinessId(biz.id);
-                        }, 400);
+                        if (hoverTimeoutRef.current) {
+                          clearTimeout(hoverTimeoutRef.current);
+                        }
+                        setHoveredBusinessId(biz.id);
                       }}
                     />
                   </div>
@@ -467,8 +464,10 @@ function DiscoverContent() {
           onMouseLeave={handleMouseLeaveMap}
         >
           <DiscoverMap
+            key={mapKey}
             businesses={filtered}
             hoveredBusinessId={hoveredBusinessId}
+            onMapClick={() => setHoveredBusinessId(null)}
           />
         </div>
       </div>
@@ -476,7 +475,14 @@ function DiscoverContent() {
       {/* Mobile view toggle switcher button */}
       <div className={styles.mobileToggleWrapper}>
         <button
-          onClick={() => setMobileView(mobileView === "list" ? "map" : "list")}
+          onClick={() => {
+            const nextView = mobileView === "list" ? "map" : "list";
+            setMobileView(nextView);
+            if (nextView === "map") {
+              setHoveredBusinessId(null);
+              setMapKey((prev) => prev + 1);
+            }
+          }}
           className={styles.mobileToggleButton}
         >
           {mobileView === "list" ? (

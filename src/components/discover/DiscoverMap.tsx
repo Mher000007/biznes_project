@@ -7,6 +7,7 @@ import { useI18n } from "@/i18n";
 interface DiscoverMapProps {
   businesses: any[];
   hoveredBusinessId: string | null;
+  onMapClick?: () => void;
 }
 
 // City coordinates mapping for fallback resolution in Armenia
@@ -30,6 +31,7 @@ const CITY_COORDINATES: Record<string, [number, number]> = {
 export default function DiscoverMap({
   businesses,
   hoveredBusinessId,
+  onMapClick,
 }: DiscoverMapProps) {
   const { t } = useI18n();
 
@@ -159,6 +161,7 @@ export default function DiscoverMap({
     <MapWorkspace
       locations={locations}
       hoveredLocationId={hoveredBusinessId}
+      onMapClick={onMapClick}
     />
   );
 }

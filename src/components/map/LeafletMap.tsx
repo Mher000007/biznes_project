@@ -516,6 +516,7 @@ export default function LeafletMap({
 
       // If triggered by external hover (list card), fly to the markers
       if (hoveredLocationId && map) {
+        map.invalidateSize({ animate: false }); // Force size update immediately when hover activates
         const size = map.getSize();
         if (size.x > 0 && size.y > 0) {
           // Collect all markers for the active company

@@ -26,11 +26,13 @@ export interface LocationItem {
 export interface MapWorkspaceProps {
   locations: LocationItem[];
   hoveredLocationId?: string | number | null;
+  onMapClick?: () => void;
 }
 
 export default function MapWorkspace({
   locations,
   hoveredLocationId,
+  onMapClick,
 }: MapWorkspaceProps) {
   const theme = useSelector((s: RootState) => s.ui.theme);
   const { locale, t } = useI18n();
@@ -96,6 +98,7 @@ export default function MapWorkspace({
         tileLayerAttribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
         fitAllBounds={true}
         hoveredLocationId={hoveredLocationId}
+        onMapClick={onMapClick}
       />
     </div>
   );
