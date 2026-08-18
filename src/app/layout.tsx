@@ -80,6 +80,13 @@ export default async function RootLayout({
                     }
                   }
                 } catch (e) {}
+
+                // Prevent right-clicking on images
+                document.addEventListener('contextmenu', function(e) {
+                  if (e.target && e.target.tagName === 'IMG') {
+                    e.preventDefault();
+                  }
+                });
               })();
             `,
           }}

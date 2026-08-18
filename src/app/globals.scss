@@ -815,3 +815,12 @@ body.hide-navbar-mobile footer,
 body.hide-navbar-mobile .chat-widget-container {
   display: none !important;
 }
+/* Prevent image downloading */
+img {
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
