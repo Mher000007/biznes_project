@@ -311,7 +311,7 @@ export default function BusinessCard({ business, viewMode = "list", onShowMap }:
                 }}
                 aria-label="Show on map"
                 title="Show on map"
-                className="lg:hidden bg-transparent border-0 p-1.5 transition-transform hover:scale-110 cursor-pointer flex items-center justify-center shrink-0"
+                className="xl:hidden bg-transparent border-0 p-1.5 transition-transform hover:scale-110 cursor-pointer flex items-center justify-center shrink-0"
               >
                 <MapPin className="h-5 w-5 transition-colors text-[hsl(var(--muted-foreground))] hover:text-emerald-500" />
               </button>
