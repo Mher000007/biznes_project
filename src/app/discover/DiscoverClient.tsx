@@ -393,7 +393,22 @@ function DiscoverContent() {
                     onMouseEnter={() => handleMouseEnterCard(biz.id)}
                     onMouseLeave={handleMouseLeaveCard}
                   >
-                    <BusinessCard business={biz} viewMode={viewMode} />
+                    <BusinessCard
+                      business={biz}
+                      viewMode={viewMode}
+                      onShowMap={() => {
+                        setMobileView("map");
+                        // Delay setting the hovered ID to prevent mouseleave events 
+                        // from clearing it when the list hides, and to ensure the map 
+                        // has stabilized its dimensions for flyTo to work.
+                        setTimeout(() => {
+                          if (hoverTimeoutRef.current) {
+                            clearTimeout(hoverTimeoutRef.current);
+                          }
+                          setHoveredBusinessId(biz.id);
+                        }, 400);
+                      }}
+                    />
                   </div>
                 ))}
               </div>

@@ -91,7 +91,7 @@ export function getOpenStatus(operatingHours: any[] | undefined, t: any) {
   return { isOpen: false, text: t.business.closed || "Closed" };
 }
 
-export default function BusinessCard({ business, viewMode = "list" }: { business: Business, viewMode?: "list" | "grid" }) {
+export default function BusinessCard({ business, viewMode = "list", onShowMap }: { business: Business, viewMode?: "list" | "grid", onShowMap?: () => void }) {
   const { t } = useI18n();
   const { currentUser } = useAuth();
   const { showToast } = useToast();
@@ -283,23 +283,40 @@ export default function BusinessCard({ business, viewMode = "list" }: { business
         </div>
 
         <div className={styles.footerRow}>
-          {!isBusinessUser && (
-            <button
-              type="button"
-              onClick={toggleFavorite}
-              aria-label="Add to favorites"
-              title={isFavorited ? "Remove from favorites" : "Save to favorites"}
-              className="bg-transparent border-0 p-1.5 transition-transform hover:scale-115 cursor-pointer flex items-center justify-center shrink-0"
-            >
-              <Bookmark
-                className={`h-5 w-5 transition-all ${isFavorited ? "scale-110 drop-shadow-sm" : ""}`}
-                style={{
-                  stroke: isFavorited ? "#f59e0b" : "hsl(var(--muted-foreground))",
-                  fill: isFavorited ? "#f59e0b" : "none",
+          <div className="flex items-center gap-2 mr-auto">
+            {!isBusinessUser && (
+              <button
+                type="button"
+                onClick={toggleFavorite}
+                aria-label="Add to favorites"
+                title={isFavorited ? "Remove from favorites" : "Save to favorites"}
+                className="bg-transparent border-0 p-1.5 transition-transform hover:scale-115 cursor-pointer flex items-center justify-center shrink-0"
+              >
+                <Bookmark
+                  className={`h-5 w-5 transition-all ${isFavorited ? "scale-110 drop-shadow-sm" : ""}`}
+                  style={{
+                    stroke: isFavorited ? "#f59e0b" : "hsl(var(--muted-foreground))",
+                    fill: isFavorited ? "#f59e0b" : "none",
+                  }}
+                />
+              </button>
+            )}
+
+            {onShowMap && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onShowMap();
                 }}
-              />
-            </button>
-          )}
+                aria-label="Show on map"
+                title="Show on map"
+                className="lg:hidden bg-transparent border-0 p-1.5 transition-transform hover:scale-110 cursor-pointer flex items-center justify-center shrink-0"
+              >
+                <MapPin className="h-5 w-5 transition-colors text-[hsl(var(--muted-foreground))] hover:text-emerald-500" />
+              </button>
+            )}
+          </div>
 
           <Link href={`/business/${business.slug}`} className={styles.actionButton}>
             {t.discover?.bookNow || "Visit"}
