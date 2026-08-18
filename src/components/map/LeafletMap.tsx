@@ -385,9 +385,9 @@ export default function LeafletMap({
         if (m.slug && !readonly) {
           marker.on("click", () => {
             const isMobileOrTouch = typeof window !== "undefined" && (
-              window.innerWidth <= 768 || 
-              window.matchMedia("(hover: none)").matches || 
-              ('ontouchstart' in window) || 
+              window.innerWidth <= 768 ||
+              window.matchMedia("(hover: none)").matches ||
+              ('ontouchstart' in window) ||
               navigator.maxTouchPoints > 0
             );
             if (isMobileOrTouch && m.companyId) {
@@ -580,6 +580,35 @@ export default function LeafletMap({
     };
   }, [isFullscreen]);
 
+  // ── 5. Manage active marker popup body class ─────────────────────────────
+
+  const activeHoveredId = internalHoveredCompanyId || hoveredLocationId;
+  const activeMarkerData = activeHoveredId
+    ? markers.find(m => m.companyId === activeHoveredId || m.id === activeHoveredId)
+    : null;
+
+  useEffect(() => {
+    if (activeMarkerData) {
+      document.body.classList.add("map-hover-card-active");
+    } else {
+      document.body.classList.remove("map-hover-card-active");
+    }
+    return () => {
+      document.body.classList.remove("map-hover-card-active");
+    };
+  }, [activeMarkerData]);
+
+  // ── 6. Cleanup on unmount ──────────────────────────────────────────────────
+  useEffect(() => {
+    return () => {
+      const map = mapRef.current;
+      if (map) {
+        map.remove();
+        mapRef.current = null;
+      }
+    };
+  }, []);
+
   // ── 5. ResizeObserver ─────────────────────────────────────────────────────
   useEffect(() => {
     const map = mapRef.current;
@@ -598,11 +627,6 @@ export default function LeafletMap({
 
   // ─────────────────────────────────────────────────────────────────────────
 
-  const activeHoveredId = internalHoveredCompanyId || hoveredLocationId;
-  const activeMarkerData = activeHoveredId 
-    ? markers.find(m => m.companyId === activeHoveredId || m.id === activeHoveredId)
-    : null;
-
   const openText = t.business?.openNow || (locale === 'hy' ? 'Բաց է' : locale === 'ru' ? 'Открыто' : 'Open Now');
   const closedText = t.business?.closed || (locale === 'hy' ? 'Փակ է' : locale === 'ru' ? 'Закрыто' : 'Closed');
 
@@ -616,16 +640,16 @@ export default function LeafletMap({
         style={{ width: "100%", height: "100%", position: "relative", zIndex: 1 }}
         className="leaflet-map-wrapper leaflet-container"
       />
-      
+
       {activeMarkerData && activeMarkerData.name && (
         <div className="map-bottom-hover-card"
-             onMouseEnter={() => {
-               if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-               setInternalHoveredCompanyId(activeMarkerData.companyId || activeMarkerData.id);
-             }}
-             onMouseLeave={() => {
-               setInternalHoveredCompanyId(null);
-             }}>
+          onMouseEnter={() => {
+            if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+            setInternalHoveredCompanyId(activeMarkerData.companyId || activeMarkerData.id);
+          }}
+          onMouseLeave={() => {
+            setInternalHoveredCompanyId(null);
+          }}>
           <div className="map-bottom-hover-card-inner">
             <div className="image-container" style={{ cursor: 'pointer' }} onClick={() => activeMarkerData.slug && router.push(`/business/${activeMarkerData.slug}`)}>
               {activeMarkerData.image ? (

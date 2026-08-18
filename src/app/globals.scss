@@ -811,9 +811,14 @@ body.admin-dark [data-admin-panel] {
 
 @import "../components/map/MapWorkspace.scss";
 
-body.hide-navbar-mobile footer,
-body.hide-navbar-mobile .chat-widget-container {
+body.hide-navbar-mobile footer {
   display: none !important;
+}
+
+@media (max-width: 767px) {
+  body.hide-navbar-mobile .chat-widget-container {
+    display: none !important;
+  }
 }
 /* Prevent image downloading */
 img {
@@ -823,4 +828,10 @@ img {
   -o-user-drag: none;
   user-select: none;
   -webkit-touch-callout: none;
+}
+
+@media (max-width: 1024px) {
+  body.map-hover-card-active .chat-widget-container.at-bottom-right {
+    --chat-offset-y: 160px;
+  }
 }

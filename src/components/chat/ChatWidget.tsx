@@ -43,11 +43,11 @@ function OfferCard({ item, onBook }: { item: BusinessSuggestion; onBook: (id: st
   const packageName = item.packageName || item.name || "Սեթ No 1";
 
   const atmosphere = item.atmosphere || 'family';
-  const atmBadgeClass = atmosphere === 'family' 
-    ? 'bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/15 border-amber-500/30 text-amber-700 dark:text-amber-300' 
-    : atmosphere === 'friends' 
-    ? 'bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-indigo-500/15 border-indigo-500/30 text-indigo-700 dark:text-indigo-300' 
-    : 'bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-cyan-500/15 border-emerald-500/30 text-emerald-700 dark:text-emerald-300';
+  const atmBadgeClass = atmosphere === 'family'
+    ? 'bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/15 border-amber-500/30 text-amber-700 dark:text-amber-300'
+    : atmosphere === 'friends'
+      ? 'bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-indigo-500/15 border-indigo-500/30 text-indigo-700 dark:text-indigo-300'
+      : 'bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-cyan-500/15 border-emerald-500/30 text-emerald-700 dark:text-emerald-300';
   const atmText = atmosphere === 'family' ? '👨‍👩‍👧‍👦 Family' : atmosphere === 'friends' ? '👥 Friends' : '⚡ Active';
 
   return (
@@ -160,8 +160,8 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
           </div>
         )}
         <div className={`relative px-4 py-3 text-[14px] leading-relaxed whitespace-pre-wrap transition-all duration-300 ${isUser
-            ? "bg-green-500 text-white rounded-[20px] rounded-tr-[4px] shadow-sm"
-            : "bg-white/60 dark:bg-slate-800/60 backdrop-blur-md text-slate-800 dark:text-slate-100 rounded-[20px] rounded-tl-[4px] border border-white/40 dark:border-white/10 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]"
+          ? "bg-green-500 text-white rounded-[20px] rounded-tr-[4px] shadow-sm"
+          : "bg-white/60 dark:bg-slate-800/60 backdrop-blur-md text-slate-800 dark:text-slate-100 rounded-[20px] rounded-tl-[4px] border border-white/40 dark:border-white/10 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]"
           }`}>
           {msg.content.split("**").map((part, i) =>
             i % 2 === 1 ? <strong key={i} className="font-semibold text-slate-800 dark:text-slate-100">{part}</strong> : <span key={i} className="text-slate-800 dark:text-slate-100">{part}</span>
@@ -280,14 +280,20 @@ export default function ChatWidget() {
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const { t } = useI18n();
 
-  // Drag state
   const dragStartPos = useRef({ x: 0, y: 0 });
   const dragInitClient = useRef({ x: 0, y: 0 });
   const isPointerDown = useRef(false);
+  const dragPreventClick = useRef(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.style.transition = 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)';
+    }
+  }, []);
 
   const handlePointerDown = (e: React.PointerEvent) => {
     if (e.button !== 0 && e.pointerType === 'mouse') return;
@@ -295,45 +301,46 @@ export default function ChatWidget() {
     isPointerDown.current = true;
     dragStartPos.current = { x: position.x, y: position.y };
     dragInitClient.current = { x: e.clientX, y: e.clientY };
-    setIsDragging(false);
+    dragPreventClick.current = false;
+
+    if (containerRef.current) {
+      containerRef.current.style.transition = 'none';
+    }
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
     if (!isPointerDown.current) return;
     const dx = e.clientX - dragInitClient.current.x;
     const dy = e.clientY - dragInitClient.current.y;
-    
+
     if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
-      setIsDragging(true);
+      dragPreventClick.current = true;
     }
-    
+
     let newX = dragStartPos.current.x + dx;
     let newY = dragStartPos.current.y + dy;
 
     // Prevent dragging outside the screen or above the header/stories/hero
     if (typeof window !== "undefined") {
       const btnSize = 56;
-      const margin = 24; // approximate bottom/right tailwind margin
-      
-      let topBoundary = 80; // fallback
+      const marginX = window.innerWidth >= 640 ? 24 : 16;
+      const marginY = 16;
+
+      let topBoundary = 80;
       const storiesEl = document.querySelector('.stories-section-container');
       const headerEl = document.querySelector('header');
       const heroEl = document.querySelector('.hero-section');
-      
-      if (heroEl) {
-        topBoundary = Math.max(topBoundary, heroEl.getBoundingClientRect().bottom);
-      }
-      if (storiesEl) {
-        topBoundary = Math.max(topBoundary, storiesEl.getBoundingClientRect().bottom);
-      }
-      if (headerEl) {
-        topBoundary = Math.max(topBoundary, headerEl.getBoundingClientRect().bottom);
-      }
+      const categoryBarEl = document.querySelector('[class*="categoryBarInner"]');
 
-      const maxMoveLeft = -(window.innerWidth - btnSize - margin);
-      const maxMoveRight = margin;
-      const maxMoveUp = -(window.innerHeight - btnSize - margin - topBoundary);
-      const maxMoveDown = margin;
+      if (heroEl) topBoundary = Math.max(topBoundary, heroEl.getBoundingClientRect().bottom);
+      if (storiesEl) topBoundary = Math.max(topBoundary, storiesEl.getBoundingClientRect().bottom);
+      if (headerEl) topBoundary = Math.max(topBoundary, headerEl.getBoundingClientRect().bottom);
+      if (categoryBarEl) topBoundary = Math.max(topBoundary, categoryBarEl.getBoundingClientRect().bottom);
+
+      const maxMoveLeft = -(window.innerWidth - btnSize - marginX * 2);
+      const maxMoveRight = 0; // Cannot move further right than initial position
+      const maxMoveUp = -(window.innerHeight - btnSize - marginY - topBoundary);
+      const maxMoveDown = 0;
 
       newX = Math.max(maxMoveLeft, Math.min(newX, maxMoveRight));
       newY = Math.max(maxMoveUp, Math.min(newY, maxMoveDown));
@@ -345,10 +352,64 @@ export default function ChatWidget() {
   const handlePointerUp = (e: React.PointerEvent) => {
     isPointerDown.current = false;
     (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+
+    if (containerRef.current) {
+      containerRef.current.style.transition = 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)';
+    }
+
+    if (dragPreventClick.current && typeof window !== "undefined") {
+      const btnSize = 56;
+      const marginX = window.innerWidth >= 640 ? 24 : 16;
+      const marginY = 16;
+
+      let topBoundary = 80;
+      const storiesEl = document.querySelector('.stories-section-container');
+      const headerEl = document.querySelector('header');
+      const heroEl = document.querySelector('.hero-section');
+      const categoryBarEl = document.querySelector('[class*="categoryBarInner"]');
+
+      if (heroEl) topBoundary = Math.max(topBoundary, heroEl.getBoundingClientRect().bottom);
+      if (storiesEl) topBoundary = Math.max(topBoundary, storiesEl.getBoundingClientRect().bottom);
+      if (headerEl) topBoundary = Math.max(topBoundary, headerEl.getBoundingClientRect().bottom);
+      if (categoryBarEl) topBoundary = Math.max(topBoundary, categoryBarEl.getBoundingClientRect().bottom);
+
+      const maxMoveLeft = -(window.innerWidth - btnSize - marginX * 2);
+      const maxMoveRight = 0;
+      const maxMoveUp = -(window.innerHeight - btnSize - marginY - topBoundary);
+      const maxMoveDown = 0;
+
+      const dx = e.clientX - dragInitClient.current.x;
+      const dy = e.clientY - dragInitClient.current.y;
+
+      let snapX = position.x;
+      let snapY = position.y;
+      const swipeThreshold = 40; // Push threshold
+
+      const movedX = Math.abs(dx) > swipeThreshold;
+      const movedY = Math.abs(dy) > swipeThreshold;
+
+      // Always snap X to the left or right edge
+      if (movedX) {
+        snapX = dx < 0 ? maxMoveLeft : maxMoveRight;
+      } else {
+        const midX = maxMoveLeft / 2;
+        snapX = position.x < midX ? maxMoveLeft : maxMoveRight;
+      }
+
+      // If Y was actively moved, snap it to Top or Bottom edge
+      if (movedY) {
+        snapY = dy < 0 ? maxMoveUp : maxMoveDown;
+      } else {
+        // Keep it where dropped vertically if not swiped, but strictly bounded
+        snapY = Math.max(maxMoveUp, Math.min(position.y, maxMoveDown));
+      }
+
+      setPosition({ x: snapX, y: snapY });
+    }
   };
 
   const handleClick = (e: React.MouseEvent) => {
-    if (isDragging) {
+    if (dragPreventClick.current) {
       e.preventDefault();
       e.stopPropagation();
       return;
@@ -512,9 +573,14 @@ export default function ChatWidget() {
       )}
 
       {/* FAB Button */}
-      <div 
-        className={`fixed bottom-4 right-4 sm:right-6 z-50 chat-widget-container ${isOpen ? "pointer-events-none" : ""}`}
-        style={{ transform: `translate(${position.x}px, ${position.y}px)`, touchAction: 'none' }}
+      <div
+        ref={containerRef}
+        className={`fixed bottom-4 right-4 sm:right-6 z-50 chat-widget-container ${isOpen ? "pointer-events-none" : ""} ${position.x >= -10 && position.y >= -10 ? "at-bottom-right" : ""
+          }`}
+        style={{
+          transform: `translate(${position.x}px, calc(${position.y}px - var(--chat-offset-y, 0px)))`,
+          touchAction: 'none'
+        }}
       >
         <button
           onPointerDown={handlePointerDown}
