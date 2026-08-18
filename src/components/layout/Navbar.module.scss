@@ -366,6 +366,12 @@
   }
 }
 
+.mobileSearchTrigger {
+  @include mq-up("md") {
+    display: none !important;
+  }
+}
+
 /* Mobile Full Screen Menu Overlay */
 .mobileMenu {
   display: none;

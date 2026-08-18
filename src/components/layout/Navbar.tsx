@@ -791,7 +791,7 @@ export default function Navbar() {
             <button
               type="button"
               onClick={() => setIsMobileSearchOpen(true)}
-              className={styles.iconButton}
+              className={`${styles.iconButton} ${styles.mobileSearchTrigger}`}
               aria-label="Open Search"
             >
               <Search className="h-5 w-5" />
