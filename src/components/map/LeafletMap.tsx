@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import L from "leaflet";
-import { Maximize2, Minimize2, Bookmark, Navigation, Radar, X, Search } from "lucide-react";
+import { Maximize2, Minimize2, Bookmark, Navigation, Radar, X, Search, ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/i18n";
 import { useAuth } from "@/context/AuthContext";
@@ -213,7 +213,7 @@ function MapSaveButton({ business }: { business: LeafletMarkerItem }) {
 
   return (
     <button className={`save-btn ${isFavorited ? 'active' : ''}`} aria-label="Save" onClick={toggleFavorite}>
-      <Bookmark size={14} className={isFavorited ? 'fill-current text-[#111111]' : ''} color={isFavorited ? '#111111' : 'currentColor'} />
+      <Bookmark size={14} className={isFavorited ? 'fill-current text-[#F59E0B]' : ''} color={isFavorited ? '#F59E0B' : 'currentColor'} />
     </button>
   );
 }
@@ -249,6 +249,7 @@ export default function LeafletMap({
   const [hasSearchedNearby, setHasSearchedNearby] = useState(false);
   const [searchRadius, setSearchRadius] = useState<number>(1000);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const [isRadiusPanelExpanded, setIsRadiusPanelExpanded] = useState(true);
   const [activeNearbyId, setActiveNearbyId] = useState<string | number | null>(null);
   const cardsContainerRef = useRef<HTMLDivElement>(null);
   const blockFitBoundsRef = useRef(false);
@@ -259,6 +260,7 @@ export default function LeafletMap({
       document.body.classList.add('nearby-restaurants-active');
     } else {
       document.body.classList.remove('nearby-restaurants-active');
+      setActiveNearbyId(null);
     }
     return () => {
       document.body.classList.remove('nearby-restaurants-active');
@@ -814,6 +816,7 @@ export default function LeafletMap({
     }
   }, [showNearbyRestaurants]);
 
+
   const handleSliderScroll = () => {
     if (!cardsContainerRef.current) return;
     const container = cardsContainerRef.current;
@@ -860,78 +863,107 @@ export default function LeafletMap({
           transform: "translateX(-50%)",
           zIndex: 1000,
           background: "var(--bg-secondary, white)",
-          padding: "12px 20px",
+          padding: isRadiusPanelExpanded ? "8px 20px 12px" : "4px 20px 8px",
           borderRadius: "16px",
           boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
           display: "flex",
           flexDirection: "column",
-          gap: "8px",
+          gap: isRadiusPanelExpanded ? "8px" : "0",
           width: "300px",
           border: "1px solid var(--border-light, rgba(0,0,0,0.1))",
           pointerEvents: "auto",
-          transition: "bottom 0.4s cubic-bezier(0.16, 1, 0.3, 1)"
+          transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+          overflow: "hidden"
         }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", width: "100%", fontSize: "14px", fontWeight: "700", color: "var(--text-primary, #111)" }}>
-              <span>{locale === 'hy' ? 'Որոնման շառավիղ' : locale === 'ru' ? 'Радиус поиска' : 'Search Radius'}</span>
-              <span style={{ color: "#10b981" }}>{searchRadius < 1000 ? `${searchRadius} մ` : `${(searchRadius / 1000).toFixed(1)} կմ`}</span>
-            </div>
+          {/* Toggle Button / Handle */}
+          <div 
+             style={{ 
+               display: "flex", 
+               justifyContent: "center", 
+               alignItems: "center", 
+               cursor: "pointer",
+               padding: "4px 0",
+               width: "100%"
+             }}
+             onClick={() => setIsRadiusPanelExpanded(!isRadiusPanelExpanded)}
+          >
+             <ChevronDown size={20} style={{ 
+               transform: isRadiusPanelExpanded ? "rotate(0deg)" : "rotate(180deg)", 
+               transition: "transform 0.3s ease",
+               color: "var(--text-secondary, #999)"
+             }} />
           </div>
 
-          <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-            <input
-              type="range"
-              min="100"
-              max="10000"
-              step="100"
-              value={searchRadius}
-              onChange={(e) => {
-                const newRadius = Number(e.target.value);
-                setSearchRadius(newRadius);
-                setHasSearchedNearby(false); // Hide results when radius changes
+          <div style={{
+            display: "grid",
+            gridTemplateRows: isRadiusPanelExpanded ? "1fr" : "0fr",
+            opacity: isRadiusPanelExpanded ? 1 : 0,
+            transition: "all 0.3s ease"
+          }}>
+            <div style={{ overflow: "hidden", display: "flex", flexDirection: "column", gap: "8px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", width: "100%", fontSize: "14px", fontWeight: "700", color: "var(--text-primary, #111)" }}>
+                  <span>{locale === 'hy' ? 'Որոնման շառավիղ' : locale === 'ru' ? 'Радиус поиска' : 'Search Radius'}</span>
+                  <span style={{ color: "#10b981" }}>{searchRadius < 1000 ? `${searchRadius} մ` : `${(searchRadius / 1000).toFixed(1)} կմ`}</span>
+                </div>
+              </div>
 
-                const map = mapRef.current;
-                if (map && userLocation) {
-                  blockFitBoundsRef.current = true;
-                  const tempCircle = L.circle(userLocation, { radius: newRadius }).addTo(map);
-                  map.fitBounds(tempCircle.getBounds(), { animate: false, padding: [20, 20] });
-                  tempCircle.remove();
-                  setTimeout(() => { blockFitBoundsRef.current = false; }, 100);
-                }
-              }}
-              style={{ flex: 1, accentColor: "#10b981", cursor: "pointer" }}
-              onMouseDown={(e) => e.stopPropagation()}
-              onTouchStart={(e) => e.stopPropagation()}
-            />
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsSearchingNearby(true);
-                setHasSearchedNearby(false);
-                setTimeout(() => {
-                  setIsSearchingNearby(false);
-                  setHasSearchedNearby(true);
-                }, 2000);
-              }}
-              disabled={isSearchingNearby}
-              style={{
-                background: isSearchingNearby ? "#ccc" : "#10b981",
-                color: "white",
-                border: "none",
-                borderRadius: "50%",
-                width: "36px",
-                height: "36px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: isSearchingNearby ? "not-allowed" : "pointer",
-                boxShadow: "0 2px 8px rgba(16,185,129,0.3)",
-                flexShrink: 0
-              }}
-              title={locale === 'hy' ? 'Որոնել' : locale === 'ru' ? 'Поиск' : 'Search'}
-            >
-              <Search size={16} />
-            </button>
+              <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                <input
+                  type="range"
+                  min="100"
+                  max="10000"
+                  step="100"
+                  value={searchRadius}
+                  onChange={(e) => {
+                    const newRadius = Number(e.target.value);
+                    setSearchRadius(newRadius);
+                    setHasSearchedNearby(false); // Hide results when radius changes
+
+                    const map = mapRef.current;
+                    if (map && userLocation) {
+                      blockFitBoundsRef.current = true;
+                      const tempCircle = L.circle(userLocation, { radius: newRadius }).addTo(map);
+                      map.fitBounds(tempCircle.getBounds(), { animate: false, padding: [20, 20] });
+                      tempCircle.remove();
+                      setTimeout(() => { blockFitBoundsRef.current = false; }, 100);
+                    }
+                  }}
+                  style={{ flex: 1, accentColor: "#10b981", cursor: "pointer" }}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => e.stopPropagation()}
+                />
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsSearchingNearby(true);
+                    setHasSearchedNearby(false);
+                    setTimeout(() => {
+                      setIsSearchingNearby(false);
+                      setHasSearchedNearby(true);
+                    }, 2000);
+                  }}
+                  disabled={isSearchingNearby}
+                  style={{
+                    background: isSearchingNearby ? "#ccc" : "#10b981",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: "36px",
+                    height: "36px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: isSearchingNearby ? "not-allowed" : "pointer",
+                    boxShadow: "0 2px 8px rgba(16,185,129,0.3)",
+                    flexShrink: 0
+                  }}
+                  title={locale === 'hy' ? 'Որոնել' : locale === 'ru' ? 'Поиск' : 'Search'}
+                >
+                  <Search size={16} />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import Navbar from "@/components/layout/Navbar";
+import { QRCodeSVG } from "qrcode.react";
 import { ExchangeIllustration } from "@/components/ui/ExchangeIllustration";
 import { ArrowDown, ArrowUp, ArrowUpDown, Coins, ShieldCheck, Zap, X, UserPlus, Gift, Send, Heart, CheckCircle2, Sparkles } from "lucide-react";
 import { useI18n } from "@/i18n";
@@ -54,7 +55,9 @@ const MOCK_OFFERS = [
 ];
 
 export default function ExchangePage() {
-  const { locale, t } = useI18n();
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [qrAmount, setQrAmount] = useState("");
+  const { t, locale } = useI18n();
   const { currentUser, refreshUser } = useAuth();
   const { showToast } = useToast();
   const { showAlert } = useAlert();
@@ -73,6 +76,17 @@ export default function ExchangePage() {
 
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
   const sortDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isQrModalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isQrModalOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -266,7 +280,7 @@ export default function ExchangePage() {
 
         {/* STICKY COINS COUNTER */}
         <div className="sticky top-24 z-50 flex justify-center mb-12">
-          <div className="relative group cursor-default inline-block">
+          <div className="relative group cursor-pointer inline-block" onClick={() => setIsQrModalOpen(true)}>
             {/* Glowing gradient aura */}
             <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/40 via-teal-400/40 to-emerald-500/40 rounded-full blur-md opacity-70 group-hover:opacity-100 transition duration-500 animate-pulse"></div>
 
@@ -745,6 +759,106 @@ export default function ExchangePage() {
                 <Sparkles className="w-4 h-4 !text-white text-white fill-white/20" />
                 <span className="!text-white text-white font-extrabold">{locale === "hy" ? "Լավ, հասկացա" : locale === "ru" ? "Отлично, понятно!" : "Great, Got It!"}</span>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {isQrModalOpen && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden relative">
+            <button 
+              onClick={() => { setIsQrModalOpen(false); setQrAmount(""); }}
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-[hsl(var(--muted))] transition-colors z-10"
+            >
+              <X className="w-5 h-5 text-[hsl(var(--muted-foreground))]" />
+            </button>
+
+            <div className="p-6 pt-10 flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center mb-4 border border-emerald-500/20">
+                <Coins className="w-8 h-8 text-emerald-500" />
+              </div>
+              <h2 className="text-xl font-bold mb-2 text-[hsl(var(--foreground))]">
+                {locale === 'hy' ? 'Գեներացնել վճարման QR' : locale === 'ru' ? 'Сгенерировать QR для оплаты' : 'Generate Payment QR'}
+              </h2>
+              <p className="text-sm text-[hsl(var(--muted-foreground))] mb-6">
+                {locale === 'hy' ? 'Մուտքագրեք գումարի չափը, որը ցանկանում եք վճարել Ձեր բալանսից:' : locale === 'ru' ? 'Введите сумму, которую хотите оплатить с вашего баланса.' : 'Enter the amount you wish to pay from your balance.'}
+              </p>
+
+              <div className="w-full mb-6 relative">
+                <style>{`
+                  @keyframes error-shake {
+                    0%, 100% { transform: translateX(0); }
+                    20% { transform: translateX(-6px); }
+                    40% { transform: translateX(6px); }
+                    60% { transform: translateX(-3px); }
+                    80% { transform: translateX(3px); }
+                  }
+                  .animate-error-shake {
+                    animation: error-shake 0.4s ease-in-out;
+                  }
+                `}</style>
+                <div className="relative">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={qrAmount}
+                    onChange={(e) => setQrAmount(e.target.value.replace(/[^0-9]/g, ''))}
+                    placeholder="0"
+                    className={`w-full bg-[hsl(var(--muted))]/50 border rounded-xl px-4 py-3 text-2xl font-bold text-center focus:outline-none focus:ring-2 transition-all ${
+                      Number(qrAmount) > ((currentUser as any)?.treeoCoins || 0)
+                        ? 'border-red-500 focus:ring-red-500/50 text-red-500 animate-error-shake'
+                        : 'border-[hsl(var(--border))] focus:ring-emerald-500/50 text-[hsl(var(--foreground))]'
+                    }`}
+                  />
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col text-right">
+                     <span className={`text-xs font-bold uppercase tracking-wider ${Number(qrAmount) > ((currentUser as any)?.treeoCoins || 0) ? 'text-red-500' : 'text-emerald-500'}`}>Coins</span>
+                  </div>
+                </div>
+                
+                <div className="flex justify-between items-center mt-2 px-1">
+                  <span className="text-xs font-medium text-[hsl(var(--muted-foreground))]">
+                    {locale === 'hy' ? 'Ձեր բալանսը:' : locale === 'ru' ? 'Ваш баланс:' : 'Your Balance:'} 
+                  </span>
+                  <span className={`text-sm font-bold ${Number(qrAmount) > ((currentUser as any)?.treeoCoins || 0) ? 'text-red-500' : 'text-emerald-500'}`}>
+                    {(currentUser as any)?.treeoCoins || 0}
+                  </span>
+                </div>
+                
+                {Number(qrAmount) > ((currentUser as any)?.treeoCoins || 0) && (
+                  <p className="text-xs font-semibold text-red-500 mt-2 animate-error-shake text-center">
+                    {locale === 'hy' ? 'Անբավարար միջոցներ' : locale === 'ru' ? 'Недостаточно средств' : 'Insufficient funds'}
+                  </p>
+                )}
+              </div>
+
+              {Number(qrAmount) > 0 && Number(qrAmount) <= ((currentUser as any)?.treeoCoins || 0) ? (
+                <div className="p-4 bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center">
+                  <QRCodeSVG 
+                    value={JSON.stringify({ 
+                      action: "PAYMENT", 
+                      userId: currentUser?.id, 
+                      amount: Number(qrAmount),
+                      timestamp: Date.now()
+                    })} 
+                    size={200}
+                    level="H"
+                    includeMargin={false}
+                    fgColor="#111"
+                  />
+                  <p className="text-xs text-slate-500 font-medium mt-4">
+                    {locale === 'hy' ? 'Ցույց տվեք այս QR կոդը դրամարկղում' : locale === 'ru' ? 'Покажите этот QR-код на кассе' : 'Show this QR code at checkout'}
+                  </p>
+                </div>
+              ) : (
+                <div className="w-full aspect-square max-w-[200px] border-2 border-dashed border-[hsl(var(--muted))] rounded-2xl flex items-center justify-center">
+                  <p className="text-sm text-[hsl(var(--muted-foreground))] px-4">
+                    {Number(qrAmount) > ((currentUser as any)?.treeoCoins || 0) 
+                      ? (locale === 'hy' ? 'Անբավարար միջոցներ' : locale === 'ru' ? 'Недостаточно средств' : 'Insufficient funds')
+                      : (locale === 'hy' ? 'Մուտքագրեք վավեր գումար' : locale === 'ru' ? 'Введите правильную сумму' : 'Enter a valid amount')}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
