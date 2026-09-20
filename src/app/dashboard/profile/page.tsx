@@ -7,7 +7,7 @@ import BusinessMap from "@/components/map/BusinessMap";
 import { useAuth } from "@/context/AuthContext";
 import { getBusinessProfile, saveBusinessProfile } from "@/lib/auth";
 import Link from "next/link";
-import { Save, CheckCircle, Plus, X, Image as ImageIcon, Star, Phone, Mail, Globe, MapPin, Clock, Camera, Trash2, Eye, ChevronRight, ChevronLeft, Award, PlusCircle, Sparkles, Smartphone, Settings, Grid as GridIcon, User as UserIcon, BadgeCheck, Compass, ArrowLeft, Calendar, Navigation, Lock, Upload } from "lucide-react";
+import { Save, CheckCircle, Plus, X, Image as ImageIcon, Star, Phone, Mail, Globe, MapPin, Clock, Camera, Trash2, Eye, EyeOff, ChevronRight, ChevronLeft, Award, PlusCircle, Sparkles, Smartphone, Settings, Grid as GridIcon, User as UserIcon, BadgeCheck, Compass, ArrowLeft, Calendar, Navigation, Lock, Upload, Link as LinkIcon } from "lucide-react";
 import axios from "axios";
 import styles from "@/components/dashboard/Dashboard.module.scss";
 import profileStyles from "@/components/business/BusinessProfile.module.scss";
@@ -16,6 +16,9 @@ import { getApiUrl } from "@/lib/utils";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAlert } from "@/context/AlertContext";
 import StoryViewer from "@/components/landing/StoryViewer";
+import { compressImageFile } from "@/lib/imageUtils";
+import ImageCropper from "@/components/ui/ImageCropper";
+import HighlightsBuilder from "@/components/dashboard/HighlightsBuilder";
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -42,6 +45,9 @@ interface Highlight {
   imageUrl: string;
   title: string;
   stories?: string[]; // Array of story IDs
+  isActive?: boolean;
+  link?: string;
+  ringColor?: string;
 }
 
 const isDefaultImage = (url: string) => {
@@ -74,12 +80,7 @@ export default function ProfilePage() {
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
-  // Delete Account Modal State
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleteConfirmText, setDeleteConfirmText] = useState("");
-  const [deleteLoading, setDeleteLoading] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [isInitialFetching, setIsInitialFetching] = useState(true);
 
   // Track the MongoDB ObjectId of the category so we can send it back on save
   const [categoryId, setCategoryId] = useState<string | null>(null);
@@ -108,75 +109,83 @@ export default function ProfilePage() {
   const highlightInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
-  const convertFileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === "string") {
-          resolve(reader.result);
-        } else {
-          reject(new Error("File conversion failed"));
-        }
-      };
-      reader.onerror = (error) => reject(error);
-      reader.readAsDataURL(file);
-    });
-  };
-
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 3 * 1024 * 1024) {
-        showAlert({ message: "File size exceeds 3MB limit", type: "error" });
+      if (file.size > 5 * 1024 * 1024) {
+        showAlert({ message: "File size exceeds 5MB limit", type: "error" });
         return;
       }
-      convertFileToBase64(file).then(setLogoUrl).catch(console.error);
+      compressImageFile(file, { maxWidth: 500, maxHeight: 500, quality: 0.8 })
+        .then(setLogoUrl)
+        .catch((err) => {
+          console.error("Logo upload error:", err);
+          showAlert({ message: "Failed to process logo image", type: "error" });
+        });
     }
   };
 
   const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 3 * 1024 * 1024) {
-        showAlert({ message: "File size exceeds 3MB limit", type: "error" });
+      if (file.size > 5 * 1024 * 1024) {
+        showAlert({ message: "File size exceeds 5MB limit", type: "error" });
         return;
       }
-      convertFileToBase64(file).then(base64 => {
-        setCoverUrls(prev => [...prev, base64]);
-      }).catch(console.error);
+      compressImageFile(file, { maxWidth: 1400, maxHeight: 800, quality: 0.75 })
+        .then((base64) => {
+          setCoverUrls((prev) => [...prev, base64]);
+        })
+        .catch((err) => {
+          console.error("Cover upload error:", err);
+          showAlert({ message: "Failed to process cover image", type: "error" });
+        });
     }
   };
 
   const handleHighlightCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 3 * 1024 * 1024) {
-        showAlert({ message: "File size exceeds 3MB limit", type: "error" });
+      if (file.size > 5 * 1024 * 1024) {
+        showAlert({ message: "File size exceeds 5MB limit", type: "error" });
         return;
       }
-      convertFileToBase64(file).then(setHighlightCoverUrl).catch(console.error);
+      const imageUrl = URL.createObjectURL(file);
+      
+      // Reset input value so same file can be selected again
+      if (e.target) {
+        e.target.value = '';
+      }
     }
   };
 
   const handleStoryUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 3 * 1024 * 1024) {
-        showAlert({ message: "File size exceeds 3MB limit", type: "error" });
+      if (file.size > 5 * 1024 * 1024) {
+        showAlert({ message: "File size exceeds 5MB limit", type: "error" });
         return;
       }
-      convertFileToBase64(file).then(setNewStoryImg).catch(console.error);
+      compressImageFile(file, { maxWidth: 1080, maxHeight: 1920, quality: 0.75 })
+        .catch((err) => {
+          console.error("Story upload error:", err);
+          showAlert({ message: "Failed to process story media", type: "error" });
+        });
     }
   };
 
   const handleHighlightUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 3 * 1024 * 1024) {
-        showAlert({ message: "File size exceeds 3MB limit", type: "error" });
+      if (file.size > 5 * 1024 * 1024) {
+        showAlert({ message: "File size exceeds 5MB limit", type: "error" });
         return;
       }
-      convertFileToBase64(file).then(setNewHighlightImg).catch(console.error);
+      compressImageFile(file, { maxWidth: 1080, maxHeight: 1920, quality: 0.75 })
+        .catch((err) => {
+          console.error("Highlight upload error:", err);
+          showAlert({ message: "Failed to process highlight media", type: "error" });
+        });
     }
   };
 
@@ -186,19 +195,19 @@ export default function ProfilePage() {
       const newImages: string[] = [];
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        if (file.size > 3 * 1024 * 1024) {
-          showAlert({ message: `File ${file.name} exceeds 3MB limit and was skipped`, type: "error" });
+        if (file.size > 5 * 1024 * 1024) {
+          showAlert({ message: `File ${file.name} exceeds 5MB limit and was skipped`, type: "error" });
           continue;
         }
         try {
-          const base64 = await convertFileToBase64(file);
+          const base64 = await compressImageFile(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.75 });
           newImages.push(base64);
         } catch (err) {
-          console.error(err);
+          console.error("Gallery item error:", err);
         }
       }
       if (newImages.length > 0) {
-        setGallery(prev => [...prev, ...newImages]);
+        setGallery((prev) => [...prev, ...newImages]);
       }
     }
   };
@@ -232,17 +241,6 @@ export default function ProfilePage() {
   // Services State
   const [services, setServices] = useState<Service[]>([]);
 
-  // Instagram-like Stories State
-  const [stories, setStories] = useState<Story[]>([]);
-
-  // Instagram-style Highlights State
-  const [highlights, setHighlights] = useState<Highlight[]>([]);
-
-  // Story Archive State (for Highlights builder)
-  const [storyArchive, setStoryArchive] = useState<any[]>([]);
-  const [isStoryArchiveModalOpen, setIsStoryArchiveModalOpen] = useState(false);
-  const [selectedArchiveStories, setSelectedArchiveStories] = useState<string[]>([]);
-
   // Gallery Images List State
   const [gallery, setGallery] = useState<string[]>([]);
 
@@ -258,13 +256,6 @@ export default function ProfilePage() {
   ]);
 
   // Custom Add Fields
-  const [newStoryTitle, setNewStoryTitle] = useState("");
-  const [newStoryImg, setNewStoryImg] = useState("");
-  const [newHighlightTitle, setNewHighlightTitle] = useState("");
-  const [newHighlightImg, setNewHighlightImg] = useState("");
-  const [highlightCoverUrl, setHighlightCoverUrl] = useState<string>("");
-  const [editingHighlightId, setEditingHighlightId] = useState<string | null>(null);
-  const [previewingHighlightGroup, setPreviewingHighlightGroup] = useState<any | null>(null);
   const [newGalleryUrl, setNewGalleryUrl] = useState("");
 
   // Active Subscription
@@ -275,6 +266,10 @@ export default function ProfilePage() {
   const [promoMessage, setPromoMessage] = useState("");
   const [promoMessageType, setPromoMessageType] = useState<"success" | "error" | "">("");
   const [applyingPromo, setApplyingPromo] = useState(false);
+
+  // Highlights & Story Archive State
+  const [highlights, setHighlights] = useState<any[]>([]);
+  const [storyArchive, setStoryArchive] = useState<any[]>([]);
 
   // Listen for plan updates
   useEffect(() => {
@@ -315,15 +310,6 @@ export default function ProfilePage() {
           setWebsite(biz.website || "");
           setLogoUrl(biz.logo && !isDefaultImage(biz.logo) ? biz.logo : "");
           setGallery((biz.images || []).filter((url: string) => !isDefaultImage(url)));
-          setHighlights((biz.highlights || [])
-            .map((h: any, index: number) => ({
-              id: index.toString(),
-              imageUrl: h.imageUrl,
-              title: h.title,
-              stories: h.stories || []
-            }))
-            .filter((h: any) => !isDefaultHighlight(h))
-          );
           setServices((biz.services || []).map((s: any) => ({ name: s.name, price: s.price.toString() })));
 
           setRating(biz.rating !== undefined ? biz.rating : (biz.ratingAvg !== undefined ? biz.ratingAvg : 0.0));
@@ -353,7 +339,8 @@ export default function ProfilePage() {
           } catch (err) {
             console.error("Failed to fetch story archive", err);
           }
-          setStories(biz.metadata?.stories || []);
+          
+          setHighlights(biz.highlights || []);
           if (biz.metadata?.operatingHours) setOperatingHours(biz.metadata.operatingHours);
           setNoteText(biz.metadata?.noteText || "");
           setFoundedYear(biz.metadata?.foundedYear ? biz.metadata.foundedYear.toString() : "");
@@ -378,6 +365,7 @@ export default function ProfilePage() {
             }
             setActiveSubscription(subRes.data.data);
           }
+          setIsInitialFetching(false);
           return;
         }
       } catch (err) {
@@ -413,8 +401,6 @@ export default function ProfilePage() {
             setCoverUrls([]);
           }
           setGallery((mockProfile.gallery || []).filter((url: string) => !isDefaultImage(url)));
-          setStories(mockProfile.stories || []);
-          setHighlights((mockProfile.highlights || []).filter((h: any) => !isDefaultHighlight(h)));
           if (mockProfile.operatingHours) setOperatingHours(mockProfile.operatingHours);
           setNoteText(mockProfile.noteText || "");
           setServices((mockProfile.services || []).map((s: any) => ({ name: s.name, price: s.price.toString() })));
@@ -422,6 +408,7 @@ export default function ProfilePage() {
           setReviewCount(mockProfile.reviewCount || 0);
         }
       }
+      setIsInitialFetching(false);
     }
     if (currentUser) {
       fetchBusinessData();
@@ -448,7 +435,6 @@ export default function ProfilePage() {
       logo: logoUrl,
       images: gallery,
       services: services.map(s => ({ name: s.name, price: Number(s.price) || 0 })),
-      highlights: highlights.map(h => ({ imageUrl: h.imageUrl, title: h.title, stories: h.stories || [] })),
       layoutConfig: {
         themeColor: '#0f172a',
         displayLogo: true,
@@ -457,7 +443,6 @@ export default function ProfilePage() {
       },
       metadata: {
         coverUrl: coverUrls,
-        stories,
         operatingHours,
         noteText,
         foundedYear
@@ -491,6 +476,22 @@ export default function ProfilePage() {
             }
           }
         }
+      } else {
+        // Business doesn't exist yet, create it
+        const createRes = await axios.post(`${apiURL}/businesses`, payload, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        if (createRes.data?.success) {
+          backendSaveOk = true;
+          if (createRes.data.data?.category) {
+            const resolvedCat = createRes.data.data.category;
+            if (typeof resolvedCat === 'string') {
+              setCategoryId(resolvedCat);
+            } else if (resolvedCat._id) {
+              setCategoryId(resolvedCat._id);
+            }
+          }
+        }
       }
     } catch (err: any) {
       currentSaveError = err.response?.data?.message || err.message || 'Unknown error';
@@ -499,48 +500,50 @@ export default function ProfilePage() {
     }
 
     // 2. Synchronize to local storage mock database
-    let wasPublished = false;
-    let existingProfile: any = null;
-    if (currentUser?.username) {
-      existingProfile = getBusinessProfile(currentUser.username);
-      if (existingProfile && (existingProfile as any).isPublished) {
-        wasPublished = true;
+    try {
+      let wasPublished = false;
+      let existingProfile: any = null;
+      if (currentUser?.username) {
+        existingProfile = getBusinessProfile(currentUser.username);
+        if (existingProfile && (existingProfile as any).isPublished) {
+          wasPublished = true;
+        }
       }
-    }
 
-    saveBusinessProfile({
-      ownerUsername: currentUser?.username || "guest_vendor",
-      businessName: name,
-      category,
-      shortDesc: description,
-      fullDesc: description,
-      foundedYear: foundedYear,
-      city,
-      address,
-      latitude: lat,
-      longitude: lng,
-      phone,
-      email,
-      website,
-      services: services,
-      operatingHours: operatingHours,
-      instagram: "",
-      facebook: "",
-      telegram: "",
-      linkedin: "",
-      tags: category,
-      logo: logoUrl,
-      coverUrl: coverUrls,
-      stories: stories,
-      highlights: highlights,
-      gallery: gallery,
-      noteText: noteText,
-      isPublished: wasPublished,
-      ratingAvg: existingProfile?.ratingAvg !== undefined ? existingProfile.ratingAvg : rating,
-      reviewCount: existingProfile?.reviewCount !== undefined ? existingProfile.reviewCount : reviewCount,
-      viewCount: existingProfile?.viewCount !== undefined ? existingProfile.viewCount : 0,
-      inquiryCount: existingProfile?.inquiryCount !== undefined ? existingProfile.inquiryCount : 0
-    } as any);
+      saveBusinessProfile({
+        ownerUsername: currentUser?.username || "guest_vendor",
+        businessName: name,
+        category,
+        shortDesc: description,
+        fullDesc: description,
+        foundedYear: foundedYear,
+        city,
+        address,
+        latitude: lat,
+        longitude: lng,
+        phone,
+        email,
+        website,
+        services: services,
+        operatingHours: operatingHours,
+        instagram: "",
+        facebook: "",
+        telegram: "",
+        linkedin: "",
+        tags: category,
+        logo: logoUrl,
+        coverUrl: coverUrls,
+        gallery: gallery,
+        noteText: noteText,
+        isPublished: wasPublished,
+        ratingAvg: existingProfile?.ratingAvg !== undefined ? existingProfile.ratingAvg : rating,
+        reviewCount: existingProfile?.reviewCount !== undefined ? existingProfile.reviewCount : reviewCount,
+        viewCount: existingProfile?.viewCount !== undefined ? existingProfile.viewCount : 0,
+        inquiryCount: existingProfile?.inquiryCount !== undefined ? existingProfile.inquiryCount : 0
+      } as any);
+    } catch (localErr) {
+      console.warn("Local storage fallback sync bypassed:", localErr);
+    }
 
     setLoading(false);
     if (!currentSaveError) {
@@ -560,33 +563,6 @@ export default function ProfilePage() {
     setServices(updated);
   };
 
-  // Story actions
-  const addStoryItem = () => {
-    if (!newStoryImg || !newStoryTitle) return;
-    const newStory = {
-      id: Date.now().toString(),
-      title: newStoryTitle,
-      imageUrl: newStoryImg
-    };
-    setStories([...stories, newStory]);
-    setNewStoryTitle("");
-    setNewStoryImg("");
-  };
-  const removeStoryItem = (id: string) => setStories(stories.filter(s => s.id !== id));
-
-  // Highlight actions
-  const addHighlightItem = () => {
-    if (!newHighlightImg || !newHighlightTitle) return;
-    const newHighlight = {
-      id: Date.now().toString(),
-      title: newHighlightTitle,
-      imageUrl: newHighlightImg
-    };
-    setHighlights([...highlights, newHighlight]);
-    setNewHighlightTitle("");
-    setNewHighlightImg("");
-  };
-  const removeHighlightItem = (id: string) => setHighlights(highlights.filter(h => h.id !== id));
 
   // Gallery actions
   const addGalleryItem = () => {
@@ -725,9 +701,29 @@ export default function ProfilePage() {
     }
   };
 
+  // Auto-scroll cover images
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (coverUrls && coverUrls.length > 1) {
+      interval = setInterval(() => {
+        setActiveCoverIdx((prev) => (prev + 1) % coverUrls.length);
+      }, 4000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [coverUrls, activeCoverIdx]);
+
+  // Reset if active index is out of bounds
+  useEffect(() => {
+    if (coverUrls && coverUrls.length > 0 && activeCoverIdx >= coverUrls.length) {
+      setActiveCoverIdx(0);
+    }
+  }, [coverUrls, activeCoverIdx]);
+
   // Cover banner selection logic for preview (matches public detail view logic)
   const previewCoverImage = coverUrls && coverUrls.length > 0
-    ? coverUrls[0]
+    ? coverUrls[activeCoverIdx] || coverUrls[0]
     : (gallery && gallery.length > 0
       ? gallery[0]
       : logoUrl || "");
@@ -772,7 +768,6 @@ export default function ProfilePage() {
         {[
           { id: "branding", label: t.builder.tabs.branding, icon: Sparkles },
           { id: "credentials", label: t.builder.tabs.credentials, icon: Lock },
-          { id: "stories", label: t.builder.tabs.stories, icon: Camera },
           { id: "hours", label: t.builder.tabs.hours, icon: Clock },
         ].map((tab) => {
           const Icon = tab.icon;
@@ -808,23 +803,13 @@ export default function ProfilePage() {
                     <p className="text-xs text-[hsl(var(--muted-foreground))]">{t.builder.branding.subtitle}</p>
                   </div>
 
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1.5">{t.builder.branding.noteBubble}</label>
-                      <input
-                        value={noteText}
-                        onChange={e => setNoteText(e.target.value)}
-                        placeholder={`${t.builder.branding.noteBubble}...`}
-                        type="text"
-                        className="w-full rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]"
-                      />
-                    </div>
+                  <div className="flex flex-col gap-6">
 
                     <div>
                       <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1.5">{t.builder.branding.logoUrl}</label>
                       <div className="flex items-center gap-3">
                         {logoUrl ? (
-                          <div className="relative w-12 h-12 rounded-full overflow-hidden border border-[hsl(var(--border))]/60 group">
+                          <div className="relative w-10 h-10 rounded-full overflow-hidden border border-[hsl(var(--border))]/60 group shrink-0">
                             <img src={logoUrl} alt="Logo preview" className="w-full h-full object-cover" />
                             <button
                               type="button"
@@ -835,53 +820,36 @@ export default function ProfilePage() {
                             </button>
                           </div>
                         ) : (
-                          <div className="w-12 h-12 rounded-full bg-[hsl(var(--muted))] border border-[hsl(var(--border))] flex items-center justify-center text-[hsl(var(--muted-foreground))]">
-                            <Camera className="h-5 w-5" />
+                          <div className="w-10 h-10 rounded-full bg-[hsl(var(--muted))] border border-[hsl(var(--border))] flex items-center justify-center text-[hsl(var(--muted-foreground))] shrink-0">
+                            <Camera className="h-4 w-4" />
                           </div>
                         )}
                         <button
                           type="button"
                           onClick={() => logoInputRef.current?.click()}
-                          className="px-3 py-2 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] transition-colors border border-[hsl(var(--border))] flex items-center gap-1 font-semibold"
+                          className="px-4 py-2.5 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] transition-colors border border-[hsl(var(--border))] flex items-center justify-center gap-2 font-semibold flex-1 min-h-[40px] h-auto"
                         >
-                          <Camera className="h-3.5 w-3.5" /> Upload
+                          <Camera className="h-3.5 w-3.5 shrink-0" /> {t.builder.branding.uploadLogo}
                         </button>
                       </div>
                     </div>
 
                     <div>
                       <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1.5">{t.builder.branding.coverUrl}</label>
-                      <div className="flex gap-2">
-                        <input
-                          value={newCoverUrl}
-                          onChange={e => setNewCoverUrl(e.target.value)}
-                          placeholder="cover-style banner"
-                          type="text"
-                          className="flex-1 rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (newCoverUrl.trim()) {
-                              setCoverUrls([...coverUrls, newCoverUrl.trim()]);
-                              setNewCoverUrl("");
-                            }
-                          }}
-                          className="px-3 py-2 bg-[hsl(var(--primary))] text-white rounded-lg text-xs hover:opacity-90 transition-colors font-semibold font-semibold"
-                        >
-                          Add
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => coverInputRef.current?.click()}
-                          className="px-3 py-2 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] transition-colors border border-[hsl(var(--border))] flex items-center gap-1 font-semibold"
-                        >
-                          <Camera className="h-3.5 w-3.5" /> Upload
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => coverInputRef.current?.click()}
+                        className="w-full px-4 py-2 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] transition-colors border border-[hsl(var(--border))] flex items-center justify-center gap-2 font-semibold min-h-[40px] h-auto text-center"
+                        title="Upload Image"
+                      >
+                        <Camera className="h-3.5 w-3.5 shrink-0" /> {t.builder.branding.uploadCover}
+                      </button>
+                    </div>
 
+                    {/* Previews */}
+                    <div>
                       {coverUrls.length > 0 && (
-                        <div className="grid grid-cols-3 gap-3 mt-3">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-1">
                           {coverUrls.map((url, index) => (
                             <div key={index} className="relative group aspect-video rounded-xl border border-[hsl(var(--border))] overflow-hidden bg-slate-900 shadow-sm">
                               <img src={url} alt="" className="h-full w-full object-cover transition-transform group-hover:scale-105" />
@@ -909,36 +877,21 @@ export default function ProfilePage() {
                       />
                     </div>
 
-                    {/* Divider */}
-                    <hr className="border-[hsl(var(--border))]/60 my-4" />
+                    <div>
+                      <hr className="border-[hsl(var(--border))]/60 my-2" />
+                    </div>
 
                     {/* Showcase Gallery Upload (Interior/Salon Photos) */}
                     <div>
-                      <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1.5">{t.builder.gallery.title} (Սրահի նկարներ)</label>
-                      <p className="text-[11px] text-[hsl(var(--muted-foreground))] mb-2">{t.builder.gallery.subtitle}</p>
-                      <div className="flex gap-2 mb-3">
-                        <input
-                          type="text"
-                          placeholder={t.builder.gallery.placeholder}
-                          value={newGalleryUrl}
-                          onChange={e => setNewGalleryUrl(e.target.value)}
-                          className="flex-1 rounded-lg border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none bg-transparent text-[hsl(var(--foreground))]"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => galleryInputRef.current?.click()}
-                          className="flex items-center gap-1 px-3 py-2 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] border border-[hsl(var(--border))] transition-colors font-semibold"
-                        >
-                          <Camera className="h-3.5 w-3.5" /> Upload
-                        </button>
-                        <button
-                          type="button"
-                          onClick={addGalleryItem}
-                          className="flex items-center gap-1.5 px-4 py-2 bg-[hsl(var(--primary))] text-white font-semibold rounded-lg text-xs hover:opacity-90 font-semibold"
-                        >
-                          <Plus className="h-4 w-4" /> {t.builder.gallery.addPhoto}
-                        </button>
-                      </div>
+                      <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))] mb-1.5">{t.builder.gallery.title}</label>
+                      <p className="text-[11px] text-[hsl(var(--muted-foreground))] mb-3">{t.builder.gallery.subtitle}</p>
+                      <button
+                        type="button"
+                        onClick={() => galleryInputRef.current?.click()}
+                        className="w-full px-4 py-2 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-lg text-xs hover:bg-[hsl(var(--border))] border border-[hsl(var(--border))] transition-colors font-semibold flex items-center justify-center gap-2 min-h-[40px] h-auto mb-4 text-center"
+                      >
+                        <Camera className="h-3.5 w-3.5 shrink-0" /> {t.builder.gallery.uploadGallery}
+                      </button>
 
                       <input
                         type="file"
@@ -1041,329 +994,9 @@ export default function ProfilePage() {
                       />
                     </div>
                   </div>
-
-                  {/* Danger Zone: Account Deletion */}
-                  <div className="pt-6 mt-6 border-t border-red-500/20">
-                    <div className="rounded-xl border border-red-200 dark:border-red-900/40 bg-red-50/50 dark:bg-red-950/20 p-4">
-                      <div className="flex items-center justify-between gap-4">
-                        <div>
-                          <h4 className="text-xs font-bold text-red-600 dark:text-red-400">Danger Zone</h4>
-                          <p className="text-[11px] text-red-700/80 dark:text-red-300/80 mt-0.5">
-                            Permanently delete your account, business profile, and all associated data.
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setShowDeleteModal(true)}
-                          className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold transition-colors shrink-0 flex items-center gap-1.5"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" /> Delete Account
-                        </button>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               )}
 
-              {/* TAB 3: HIGHLIGHTS ONLY */}
-              {activeFormTab === "stories" && (
-                (!activePlan || activePlan === "starter" || activePlan === "start" || activePlan === "free" || activePlan === "basic") ? (
-                  <div className="max-w-xl mx-auto py-10 px-4 text-center bg-[hsl(var(--card))] rounded-3xl shadow-xl border border-[hsl(var(--border))] my-4">
-                    <div className="w-14 h-14 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 text-amber-500 shadow-inner">
-                      <Lock className="w-7 h-7" />
-                    </div>
-                    <h2 className="text-lg font-bold mb-2">Stories & Highlights Feature Locked</h2>
-                    <p className="text-xs sm:text-sm text-[hsl(var(--muted-foreground))] mb-6 leading-relaxed">
-                      The Stories & Highlights feature is not available on the Start plan. Upgrade your plan to Pro or Premium to manage stories and highlights.
-                    </p>
-                    <Link href="/dashboard/settings" className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-xs transition-all inline-block shadow-lg shadow-emerald-500/20 hover:scale-105">
-                      Upgrade Plan
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="space-y-6 animate-scale-in">
-
-                    {/* Highlights Management System */}
-                    {(() => {
-                      const effectiveArchive = (storyArchive && storyArchive.length > 0)
-                        ? storyArchive
-                        : stories.map((s: any, idx: number) => ({
-                          _id: s._id || s.id || `local-story-${idx}`,
-                          mediaUrl: s.imageUrl || s.mediaUrl || s.url || "",
-                          mediaType: s.mediaType || "image",
-                          caption: s.title || `Story #${idx + 1}`,
-                          expiresAt: s.expiresAt || new Date().toISOString()
-                        }));
-
-                      return (
-                        <div className="space-y-6">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h3 className="text-base font-bold text-[hsl(var(--foreground))] mb-1 flex items-center gap-2">
-                                <Sparkles className="h-4.5 w-4.5 text-amber-500" />
-                                {t.builder.stories.highlightsTitle || "Circular Highlights"}
-                              </h3>
-                              <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                                {t.builder.stories.highlightsSubtitle || "Create story collection tags from your archive and publish them on your profile."}
-                              </p>
-                            </div>
-                            {editingHighlightId && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setEditingHighlightId(null);
-                                  setNewHighlightTitle("");
-                                  setSelectedArchiveStories([]);
-                                  setHighlightCoverUrl("");
-                                }}
-                                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors"
-                              >
-                                Cancel Edit
-                              </button>
-                            )}
-                          </div>
-
-                          {/* Builder Box */}
-                          <div className="p-4 sm:p-5 rounded-2xl bg-[hsl(var(--muted))]/30 border border-[hsl(var(--border))] space-y-4 shadow-sm">
-                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                              {/* Live Circle Cover Thumbnail (Clickable to Upload) */}
-                              <div className="flex flex-col items-center shrink-0">
-                                <input
-                                  ref={highlightInputRef}
-                                  type="file"
-                                  accept="image/*"
-                                  onChange={handleHighlightCoverUpload}
-                                  className="hidden"
-                                />
-                                <div
-                                  onClick={() => highlightInputRef.current?.click()}
-                                  className="group relative h-16 w-16 rounded-full p-[2px] border-2 border-[hsl(var(--primary))] shadow-sm overflow-hidden cursor-pointer transition-all hover:scale-105 hover:border-amber-500"
-                                  title="Click to upload custom cover photo"
-                                >
-                                  <div className="h-full w-full rounded-full bg-[hsl(var(--background))] overflow-hidden flex items-center justify-center relative">
-                                    {highlightCoverUrl || (selectedArchiveStories.length > 0 && effectiveArchive.find((s: any) => selectedArchiveStories.includes(s._id))?.mediaUrl) ? (
-                                      <img
-                                        src={highlightCoverUrl || effectiveArchive.find((s: any) => selectedArchiveStories.includes(s._id))?.mediaUrl}
-                                        alt="Cover"
-                                        className="h-full w-full rounded-full object-cover group-hover:opacity-70 transition-opacity"
-                                      />
-                                    ) : (
-                                      <span className="text-xl">✨</span>
-                                    )}
-
-                                    {/* Camera Overlay on Hover */}
-                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[9px] font-bold">
-                                      <Camera className="h-4 w-4 mb-0.5" />
-                                      <span>Change</span>
-                                    </div>
-                                  </div>
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() => highlightInputRef.current?.click()}
-                                  className="text-[10px] font-bold text-[hsl(var(--primary))] hover:underline mt-1 flex items-center gap-1 cursor-pointer"
-                                >
-                                  <Camera className="h-3 w-3" /> Change Cover
-                                </button>
-                              </div>
-
-                              {/* Inputs & Actions */}
-                              <div className="flex-1 w-full space-y-3">
-                                <div>
-                                  <label className="block text-xs font-semibold text-[hsl(var(--foreground))] mb-1">
-                                    Highlight Title / Label *
-                                  </label>
-                                  <input
-                                    type="text"
-                                    placeholder={t.builder.stories.highlightsPlaceholder || "Highlight Label (e.g. Products, Menu, Reviews)"}
-                                    value={newHighlightTitle}
-                                    onChange={e => setNewHighlightTitle(e.target.value)}
-                                    className="w-full rounded-xl border border-[hsl(var(--border))] px-3.5 py-2 text-xs outline-none bg-[hsl(var(--card))] text-[hsl(var(--foreground))] focus:border-[hsl(var(--primary))] transition-all"
-                                  />
-                                </div>
-
-                                <div className="flex flex-wrap gap-2.5">
-                                  {/* Archive Selector Button */}
-                                  <button
-                                    type="button"
-                                    onClick={() => setIsStoryArchiveModalOpen(true)}
-                                    className="flex-1 min-w-[200px] px-3.5 py-2 bg-[hsl(var(--card))] text-[hsl(var(--foreground))] rounded-xl text-xs hover:border-[hsl(var(--primary))] transition-all border border-[hsl(var(--border))] flex justify-center items-center gap-2 font-semibold shadow-sm"
-                                  >
-                                    <GridIcon className="h-4 w-4 text-[hsl(var(--primary))]" />
-                                    <span>
-                                      {selectedArchiveStories.length > 0
-                                        ? `${selectedArchiveStories.length} stories selected`
-                                        : "Select stories from archive"}
-                                    </span>
-                                  </button>
-
-                                  {/* Publish / Save Button */}
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      if (!newHighlightTitle.trim()) return;
-                                      const effectiveStories = selectedArchiveStories.length > 0
-                                        ? selectedArchiveStories
-                                        : (effectiveArchive.length > 0 ? [effectiveArchive[0]._id] : []);
-
-                                      const coverImageToUse = highlightCoverUrl || (
-                                        effectiveStories.length > 0
-                                          ? (effectiveArchive.find((s: any) => s._id === effectiveStories[0])?.mediaUrl || "")
-                                          : ""
-                                      );
-
-                                      if (editingHighlightId) {
-                                        setHighlights(prev => prev.map(h => h.id === editingHighlightId ? {
-                                          ...h,
-                                          title: newHighlightTitle.trim(),
-                                          imageUrl: coverImageToUse,
-                                          stories: effectiveStories
-                                        } : h));
-                                        setEditingHighlightId(null);
-                                      } else {
-                                        const newHighlight = {
-                                          id: Date.now().toString(),
-                                          title: newHighlightTitle.trim(),
-                                          imageUrl: coverImageToUse,
-                                          stories: effectiveStories
-                                        };
-                                        setHighlights(prev => [...prev, newHighlight]);
-                                      }
-                                      setNewHighlightTitle("");
-                                      setSelectedArchiveStories([]);
-                                      setHighlightCoverUrl("");
-                                    }}
-                                    disabled={!newHighlightTitle.trim()}
-                                    className="w-full sm:w-auto px-5 py-2 bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] font-semibold rounded-xl text-xs hover:opacity-90 disabled:opacity-50 transition-all shadow-md flex justify-center items-center gap-1.5 cursor-pointer shrink-0"
-                                  >
-                                    <Sparkles className="h-3.5 w-3.5" />
-                                    {editingHighlightId ? "Update Highlight" : t.builder.stories.add || "Publish Highlight"}
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Story Cover Selector */}
-                            {selectedArchiveStories.length > 0 && (
-                              <div className="flex items-center gap-2 pt-2 border-t border-[hsl(var(--border))]/50">
-                                <span className="text-[10px] text-[hsl(var(--muted-foreground))] font-medium whitespace-nowrap">Pick Cover from selected:</span>
-                                <div className="flex items-center gap-1.5 overflow-x-auto py-1 custom-scrollbar">
-                                  {selectedArchiveStories.map((storyId, idx) => {
-                                    const st = effectiveArchive.find((s: any) => s._id === storyId);
-                                    const isCurrentCover = (highlightCoverUrl || (effectiveArchive.find((s: any) => s._id === selectedArchiveStories[0])?.mediaUrl)) === st?.mediaUrl;
-                                    return (
-                                      <button
-                                        key={storyId}
-                                        type="button"
-                                        onClick={() => setHighlightCoverUrl(st?.mediaUrl || "")}
-                                        className={`relative h-8 w-8 rounded-full overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${isCurrentCover ? 'border-[hsl(var(--primary))] ring-2 ring-[hsl(var(--primary))]/30 scale-105' : 'border-transparent opacity-60 hover:opacity-100'}`}
-                                        title={`Use story #${idx + 1} as cover image`}
-                                      >
-                                        <img src={st?.mediaUrl} className="h-full w-full object-cover" alt="" />
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Published Highlights List */}
-                          <div>
-                            <div className="flex items-center justify-between mb-3">
-                              <h4 className="text-xs font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
-                                Published Highlights ({highlights.length})
-                              </h4>
-                            </div>
-
-                            {highlights.length === 0 ? (
-                              <div className="text-center py-6 border border-dashed border-[hsl(var(--border))] rounded-2xl">
-                                <p className="text-xs text-[hsl(var(--muted-foreground))]">No highlights created yet. Build your first highlight collection above!</p>
-                              </div>
-                            ) : (
-                              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5">
-                                {highlights.map((h: any) => (
-                                  <div
-                                    key={h.id}
-                                    className="group relative p-3.5 rounded-2xl bg-[hsl(var(--card))] border border-[hsl(var(--border))] hover:border-[hsl(var(--primary))]/50 transition-all flex flex-col items-center shadow-sm"
-                                  >
-                                    {/* Circle Avatar */}
-                                    <div className="h-14 w-14 rounded-full p-[2px] border-2 border-[hsl(var(--border))] group-hover:border-[hsl(var(--primary))] transition-all overflow-hidden mb-2">
-                                      <div className="h-full w-full rounded-full overflow-hidden bg-[hsl(var(--muted))] flex items-center justify-center">
-                                        {h.imageUrl ? (
-                                          <img src={h.imageUrl} alt={h.title} className="h-full w-full object-cover" />
-                                        ) : (
-                                          <span className="text-lg">✨</span>
-                                        )}
-                                      </div>
-                                    </div>
-
-                                    <span className="text-xs font-bold text-[hsl(var(--foreground))] truncate w-full text-center mb-0.5">{h.title}</span>
-                                    <span className="text-[10px] font-medium text-[hsl(var(--muted-foreground))]">
-                                      {h.stories ? `${h.stories.length} stories` : "Highlight"}
-                                    </span>
-
-                                    {/* Card Action Buttons */}
-                                    <div className="flex items-center gap-1.5 mt-2.5 pt-2 border-t border-[hsl(var(--border))]/50 w-full justify-center">
-                                      <button
-                                        type="button"
-                                        title="Edit Highlight"
-                                        onClick={() => {
-                                          setEditingHighlightId(h.id);
-                                          setNewHighlightTitle(h.title);
-                                          setHighlightCoverUrl(h.imageUrl || "");
-                                          setSelectedArchiveStories(h.stories || []);
-                                        }}
-                                        className="p-1.5 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))] rounded-lg transition-colors"
-                                      >
-                                        <Sparkles className="h-3.5 w-3.5" />
-                                      </button>
-                                      <button
-                                        type="button"
-                                        title="Preview Stories"
-                                        onClick={() => {
-                                          const storiesToView = (h.stories || []).map((stId: any) => {
-                                            if (typeof stId === 'object') return stId;
-                                            const found = effectiveArchive.find((a: any) => a._id === stId);
-                                            return found || { _id: stId, mediaUrl: h.imageUrl, mediaType: 'image' };
-                                          });
-                                          setPreviewingHighlightGroup({
-                                            business: {
-                                              _id: businessId || "preview",
-                                              name: h.title,
-                                              logo: h.imageUrl || logoUrl
-                                            },
-                                            stories: storiesToView.length > 0 ? storiesToView : [{ _id: '1', mediaUrl: h.imageUrl, mediaType: 'image' }]
-                                          });
-                                        }}
-                                        className="p-1.5 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--primary))] hover:bg-[hsl(var(--primary))]/10 rounded-lg transition-colors"
-                                      >
-                                        <Eye className="h-3.5 w-3.5" />
-                                      </button>
-                                      <button
-                                        type="button"
-                                        title="Delete Highlight"
-                                        onClick={() => removeHighlightItem(h.id)}
-                                        className="p-1.5 text-[hsl(var(--muted-foreground))] hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
-                                      >
-                                        <Trash2 className="h-3.5 w-3.5" />
-                                      </button>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                )
-              )}
-
-
-
-              {/* TAB 5: HOURS & LOCATION */}
               {activeFormTab === "hours" && (
                 <div className="space-y-6 animate-scale-in">
                   <div>
@@ -1457,6 +1090,18 @@ export default function ProfilePage() {
                 </div>
               )}
 
+              {/* TAB 3: HIGHLIGHTS */}
+              {activeFormTab === "stories" && (
+                <div className="space-y-6 animate-scale-in">
+                  <HighlightsBuilder 
+                    business={{ _id: businessId }}
+                    highlights={highlights}
+                    setHighlights={setHighlights}
+                    storyArchive={storyArchive}
+                  />
+                </div>
+              )}
+
             </div>
           </div>
         )}
@@ -1478,16 +1123,82 @@ export default function ProfilePage() {
           </div>
 
           {/* Live Business Profile Preview Canvas */}
+          {isInitialFetching ? (
+            <div className="w-full min-h-[600px] flex flex-col items-center justify-center bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-2xl p-6 shadow-sm">
+              <div className="w-8 h-8 border-4 border-[#10b981] border-t-transparent rounded-full animate-spin"></div>
+              <p className="mt-4 text-sm text-[hsl(var(--muted-foreground))] font-medium">{t.builder.mockup.loadingPreview}</p>
+            </div>
+          ) : (
           <div className="w-full relative flex flex-col bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-2xl p-4 md:p-6 shadow-sm overflow-hidden animate-scale-in">
             <div className={profileStyles.profileContainer} style={{ padding: "0", maxWidth: "100%" }}>
 
               {/* Cover / Media Gallery */}
               <div className={profileStyles.coverGallery} style={{ height: "180px", borderRadius: "1rem", marginBottom: "1.5rem", position: "relative" }}>
-                {previewCoverImage ? (
+                {coverUrls && coverUrls.length > 0 ? (
+                  <>
+                    {coverUrls.map((url, idx) => (
+                      <img
+                        key={idx}
+                        src={url}
+                        className={profileStyles.sliderImage}
+                        alt=""
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          opacity: activeCoverIdx === idx ? 1 : 0,
+                          transition: "opacity 0.8s ease-in-out",
+                          zIndex: activeCoverIdx === idx ? 1 : 0
+                        }}
+                      />
+                    ))}
+                    {coverUrls.length > 1 && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveCoverIdx((prev) => (prev === 0 ? coverUrls.length - 1 : prev - 1));
+                          }}
+                          className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white rounded-full p-1.5 transition-colors z-20"
+                        >
+                          <ChevronLeft className="h-5 w-5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveCoverIdx((prev) => (prev + 1) % coverUrls.length);
+                          }}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white rounded-full p-1.5 transition-colors z-20"
+                        >
+                          <ChevronRight className="h-5 w-5" />
+                        </button>
+                        <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-20">
+                          {coverUrls.map((_, idx) => (
+                            <button
+                              key={idx}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveCoverIdx(idx);
+                              }}
+                              className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                                activeCoverIdx === idx ? 'w-4 bg-white' : 'w-1.5 bg-white/50 hover:bg-white/80'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </>
+                ) : previewCoverImage ? (
                   <img
                     src={previewCoverImage}
                     className={profileStyles.sliderImage}
                     alt=""
+                    style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
                   />
                 ) : (
                   <span className={profileStyles.initialLogo} style={{ fontSize: "3rem" }}>{name ? name[0] : "A"}</span>
@@ -1524,7 +1235,7 @@ export default function ProfilePage() {
                         ? profileStyles.verifiedGold
                         : profileStyles.verifiedStarter
                         }`} style={{ fontSize: "0.65rem", padding: "0.15rem 0.45rem" }}>
-                        <BadgeCheck className="h-3 w-3" /> Verified Partner
+                        <BadgeCheck className="h-3 w-3" />
                       </span>
                     </h1>
                   </div>
@@ -1535,7 +1246,7 @@ export default function ProfilePage() {
                     </span>
                     <span className="flex items-center gap-1">
                       <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />{' '}
-                      {rating.toFixed(1)} ({reviewCount} review{reviewCount !== 1 ? 's' : ''})
+                      {rating.toFixed(1)} ({reviewCount} {reviewCount !== 1 ? t.builder.mockup.reviews : t.builder.mockup.review})
                     </span>
                     {foundedYear && (
                       <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> Est. {foundedYear}</span>
@@ -1547,37 +1258,46 @@ export default function ProfilePage() {
                   type="button"
                   className="btn-primary py-2 px-4 rounded-xl text-xs font-semibold shadow-md shrink-0 cursor-default"
                 >
-                  Book Appointment
+                  {t.builder.mockup.bookAppointment}
                 </button>
               </div>
 
               {/* Highlights Section */}
               {(() => {
-                const listToRender = (highlights && highlights.length > 0) ? highlights : [
-                  { id: '1', title: 'Մենյու', icon: '🍽️' },
+                const activeHighlights = highlights.filter((h: any) => h.isActive !== false);
+                const listToRender = (activeHighlights.length > 0) ? activeHighlights : [
+                  { id: '1', title: 'Մենյու', icon: '🍔' },
                   { id: '2', title: 'Լուսանկարներ', icon: '📸' },
                   { id: '3', title: 'Կարծիքներ', icon: '⭐' },
                   { id: '4', title: 'Ժամեր', icon: '🕒' },
                   { id: '5', title: 'Տեղադրություն', icon: '📍' },
                 ];
+                if (activeHighlights.length === 0 && highlights.length > 0) return null; // All hidden
                 return (
                   <div className={profileStyles.highlightsContainer} style={{ marginBottom: "1.5rem" }}>
                     <div className={profileStyles.highlightsHeader}>
-                      <h2>Ակնարկներ (Highlights)</h2>
+                      <h2>{t.builder.mockup.highlights}</h2>
                     </div>
                     <div className={profileStyles.highlightsWrapper}>
-                      {listToRender.map((h: any, i: number) => (
-                        <div key={h.id || i} className={profileStyles.highlightTile} style={{ minWidth: "64px" }}>
-                          <div className={profileStyles.storyRing} style={{ height: "54px", width: "54px" }}>
-                            {h.imageUrl ? (
-                              <img src={h.imageUrl} className={profileStyles.storyThumb} alt={h.title} style={{ borderRadius: "50%" }} />
-                            ) : (
-                              <div className={profileStyles.storyThumb}>{h.icon || "✨"}</div>
-                            )}
+                      {listToRender.map((h: any, i: number) => {
+                        const content = (
+                          <div key={h.id || i} className={profileStyles.highlightTile} style={{ minWidth: "64px" }}>
+                            <div className={profileStyles.storyRing} style={{ height: "54px", width: "54px", borderColor: h.ringColor || undefined }}>
+                              {h.imageUrl ? (
+                                <img src={h.imageUrl} className={profileStyles.storyThumb} alt={h.title} style={{ borderRadius: "50%" }} />
+                              ) : (
+                                <div className={profileStyles.storyThumb}>{h.icon || "✨"}</div>
+                              )}
+                            </div>
+                            <span style={{ fontSize: "0.65rem" }}>{h.title}</span>
                           </div>
-                          <span style={{ fontSize: "0.65rem" }}>{h.title}</span>
-                        </div>
-                      ))}
+                        );
+                        return h.link ? (
+                          <a key={h.id || i} href={h.link} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
+                            {content}
+                          </a>
+                        ) : content;
+                      })}
                     </div>
                   </div>
                 );
@@ -1587,9 +1307,9 @@ export default function ProfilePage() {
               {gallery && gallery.length > 0 && (
                 <section className={profileStyles.gallerySection} style={{ marginBottom: "1.5rem" }}>
                   <div className={profileStyles.galleryHeader}>
-                    <h2 style={{ fontSize: "0.95rem", fontWeight: 700 }}>Gallery</h2>
+                    <h2 style={{ fontSize: "0.95rem", fontWeight: 700 }}>{t.builder.mockup.gallery}</h2>
                     <span className={profileStyles.photoCount} style={{ fontSize: "0.75rem" }}>
-                      {gallery.length} {gallery.length === 1 ? "photo" : "photos"}
+                      {gallery.length} {gallery.length === 1 ? t.builder.mockup.photo : t.builder.mockup.photos}
                     </span>
                   </div>
                   <div className={`${profileStyles.bentoGrid} ${gallery.length === 1 ? profileStyles.grid1 :
@@ -1627,7 +1347,7 @@ export default function ProfilePage() {
 
                   {/* Operating hours */}
                   <section className="mb-6">
-                    <h2 className="text-sm font-bold mb-2">Operating Hours</h2>
+                    <h2 className="text-sm font-bold mb-2">{t.builder.mockup.operatingHours}</h2>
                     <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] divide-y divide-[hsl(var(--border))]">
                       {operatingHours.map((h) => {
                         const dayLabel = t.business?.days?.[h.day.toLowerCase() as keyof typeof t.business.days] || h.day;
@@ -1676,157 +1396,11 @@ export default function ProfilePage() {
                   </div>
                 </div>
               </div>
-
             </div>
           </div>
+          )}
         </div>
       </div>
-
-      {/* STORY ARCHIVE SELECTION MODAL */}
-      {isStoryArchiveModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-2xl p-6 shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col relative">
-            {(() => {
-              const effectiveArchive = (storyArchive && storyArchive.length > 0)
-                ? storyArchive
-                : stories.map((s: any, idx: number) => ({
-                  _id: s._id || s.id || `local-story-${idx}`,
-                  mediaUrl: s.imageUrl || s.mediaUrl || s.url || "",
-                  mediaType: s.mediaType || "image",
-                  caption: s.title || `Story #${idx + 1}`,
-                  expiresAt: s.expiresAt || new Date().toISOString()
-                }));
-
-              return (
-                <>
-                  <div className="flex items-center justify-between mb-3 pb-3 border-b border-[hsl(var(--border))]">
-                    <div>
-                      <h2 className="text-lg font-bold text-[hsl(var(--foreground))] flex items-center gap-2">
-                        <GridIcon className="h-5 w-5 text-[hsl(var(--primary))]" />
-                        Story Archive ({effectiveArchive.length})
-                      </h2>
-                      <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
-                        Select stories to include in this Highlight. Click the ⭐ star on any story to set it as the Cover Photo.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setIsStoryArchiveModalOpen(false)}
-                      className="p-2 bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-full hover:bg-[hsl(var(--border))] transition-colors"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-
-                  <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar pr-1 pb-4 my-2">
-                    {effectiveArchive.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center h-48 text-center text-[hsl(var(--muted-foreground))] space-y-2">
-                        <GridIcon className="h-10 w-10 opacity-20" />
-                        <p className="text-sm font-medium">No stories found in your archive.</p>
-                        <p className="text-xs max-w-xs">Publish stories first from the Stories page to group them into highlights.</p>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                        {effectiveArchive.map((story: any) => {
-                          const isSelected = selectedArchiveStories.includes(story._id);
-                          const selectedIndex = selectedArchiveStories.indexOf(story._id);
-                          const isCover = highlightCoverUrl === story.mediaUrl;
-                          return (
-                            <div
-                              key={story._id}
-                              onClick={() => {
-                                if (isSelected) {
-                                  setSelectedArchiveStories(prev => prev.filter(id => id !== story._id));
-                                } else {
-                                  setSelectedArchiveStories(prev => [...prev, story._id]);
-                                }
-                              }}
-                              className={`relative aspect-[9/16] rounded-xl overflow-hidden cursor-pointer border-2 transition-all group ${isSelected ? 'border-[hsl(var(--primary))] scale-[0.98] shadow-lg ring-2 ring-[hsl(var(--primary))]/20' : 'border-transparent hover:border-[hsl(var(--border))]'}`}
-                            >
-                              {story.mediaType === 'video' ? (
-                                <video src={story.mediaUrl} className="w-full h-full object-cover" />
-                              ) : (
-                                <img src={story.mediaUrl} className="w-full h-full object-cover" alt="Story" />
-                              )}
-
-                              {/* Selected Sequence Badge */}
-                              {isSelected && (
-                                <div className="absolute top-2 right-2 h-6 w-6 rounded-full bg-[hsl(var(--primary))] text-white flex items-center justify-center text-xs font-bold border-2 border-white shadow-md z-10">
-                                  {selectedIndex + 1}
-                                </div>
-                              )}
-
-                              {/* Set as Cover Photo Button */}
-                              {isSelected && (
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setHighlightCoverUrl(story.mediaUrl);
-                                  }}
-                                  className={`absolute top-2 left-2 p-1.5 rounded-full text-[10px] font-bold z-10 transition-all ${isCover ? 'bg-amber-500 text-white shadow-md ring-2 ring-amber-300' : 'bg-black/60 text-white/90 hover:bg-amber-500 hover:text-white'}`}
-                                  title="Set as Highlight Cover Photo"
-                                >
-                                  <Star className={`h-3 w-3 ${isCover ? 'fill-white' : ''}`} />
-                                </button>
-                              )}
-
-                              {/* Caption Overlay */}
-                              <div className="absolute inset-x-0 bottom-0 p-1.5 bg-gradient-to-t from-black/80 via-black/40 to-transparent text-[10px] text-white truncate">
-                                {story.caption || "Story"}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="pt-3 border-t border-[hsl(var(--border))] flex items-center justify-between mt-auto">
-                    <span className="text-xs font-semibold text-[hsl(var(--foreground))]">
-                      {selectedArchiveStories.length} stories selected
-                    </span>
-                    <div className="flex gap-2">
-                      {effectiveArchive.length > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (selectedArchiveStories.length === effectiveArchive.length) {
-                              setSelectedArchiveStories([]);
-                            } else {
-                              setSelectedArchiveStories(effectiveArchive.map((s: any) => s._id));
-                            }
-                          }}
-                          className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] hover:bg-[hsl(var(--border))] transition-colors"
-                        >
-                          {selectedArchiveStories.length === effectiveArchive.length ? "Deselect All" : "Select All"}
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => setIsStoryArchiveModalOpen(false)}
-                        className="btn-primary px-5 py-1.5 rounded-xl text-xs font-semibold"
-                      >
-                        Done
-                      </button>
-                    </div>
-                  </div>
-                </>
-              );
-            })()}
-          </div>
-        </div>
-      )}
-
-      {/* STORY VIEWER PREVIEW OVERLAY FOR VENDOR */}
-      {previewingHighlightGroup && (
-        <StoryViewer
-          groups={[previewingHighlightGroup]}
-          initialGroupIndex={0}
-          onClose={() => setPreviewingHighlightGroup(null)}
-          onStoriesViewedUpdate={() => { }}
-        />
-      )}
 
       {/* FULLSCREEN PREVIEW OVERLAY */}
       {isFullscreenPreview && (
@@ -1849,11 +1423,71 @@ export default function ProfilePage() {
 
               {/* Cover / Media Gallery */}
               <div className={profileStyles.coverGallery}>
-                {previewCoverImage ? (
+                {coverUrls && coverUrls.length > 0 ? (
+                  <>
+                    {coverUrls.map((url, idx) => (
+                      <img
+                        key={idx}
+                        src={url}
+                        className={profileStyles.sliderImage}
+                        alt=""
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          opacity: activeCoverIdx === idx ? 1 : 0,
+                          transition: "opacity 0.8s ease-in-out",
+                          zIndex: activeCoverIdx === idx ? 1 : 0
+                        }}
+                      />
+                    ))}
+                    {coverUrls.length > 1 && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveCoverIdx((prev) => (prev === 0 ? coverUrls.length - 1 : prev - 1));
+                          }}
+                          className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white rounded-full p-2 transition-colors z-20"
+                        >
+                          <ChevronLeft className="h-6 w-6" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveCoverIdx((prev) => (prev + 1) % coverUrls.length);
+                          }}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white rounded-full p-2 transition-colors z-20"
+                        >
+                          <ChevronRight className="h-6 w-6" />
+                        </button>
+                        <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-20">
+                          {coverUrls.map((_, idx) => (
+                            <button
+                              key={idx}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveCoverIdx(idx);
+                              }}
+                              className={`h-2 rounded-full transition-all cursor-pointer ${
+                                activeCoverIdx === idx ? 'w-6 bg-white' : 'w-2 bg-white/50 hover:bg-white/80'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </>
+                ) : previewCoverImage ? (
                   <img
                     src={previewCoverImage}
                     className={profileStyles.sliderImage}
                     alt=""
+                    style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
                   />
                 ) : (
                   <span className={profileStyles.initialLogo}>{name ? name[0] : "A"}</span>
@@ -1890,7 +1524,7 @@ export default function ProfilePage() {
                         ? profileStyles.verifiedGold
                         : profileStyles.verifiedStarter
                         }`}>
-                        <BadgeCheck className="h-3.5 w-3.5" /> Verified Partner
+                        <BadgeCheck className="h-3.5 w-3.5" />
                       </span>
                     </h1>
                   </div>
@@ -1901,7 +1535,7 @@ export default function ProfilePage() {
                     </span>
                     <span className="flex items-center gap-1">
                       <Star className="h-4 w-4 fill-amber-400 text-amber-400" />{' '}
-                      {rating.toFixed(1)} ({reviewCount} review{reviewCount !== 1 ? 's' : ''})
+                      {rating.toFixed(1)} ({reviewCount} {reviewCount !== 1 ? t.builder.mockup.reviews : t.builder.mockup.review})
                     </span>
                     {foundedYear && (
                       <span className="flex items-center gap-1"><Calendar className="h-4 w-4" /> Est. {foundedYear}</span>
@@ -1913,37 +1547,46 @@ export default function ProfilePage() {
                   type="button"
                   className="btn-primary py-3.5 px-6 rounded-xl text-sm font-semibold shadow-lg shrink-0 cursor-default"
                 >
-                  Book Appointment
+                  {t.builder.mockup.bookAppointment}
                 </button>
               </div>
 
               {/* Highlights Section (Story circles) */}
               {(() => {
-                const listToRender = (highlights && highlights.length > 0) ? highlights : [
+                const activeHighlights = [].filter((h: any) => h.isActive !== false);
+                const listToRender = (activeHighlights.length > 0) ? activeHighlights : [
                   { id: '1', title: 'Մենյու', icon: '🍽️' },
                   { id: '2', title: 'Լուսանկարներ', icon: '📸' },
                   { id: '3', title: 'Կարծիքներ', icon: '⭐' },
                   { id: '4', title: 'Ժամեր', icon: '🕒' },
                   { id: '5', title: 'Տեղադրություն', icon: '📍' },
                 ];
+                if (activeHighlights.length === 0 && [].length > 0) return null; // All hidden
                 return (
                   <div className={profileStyles.highlightsContainer}>
                     <div className={profileStyles.highlightsHeader}>
-                      <h2>Ակնարկներ (Highlights)</h2>
+                      <h2>{t.builder.mockup.highlights}</h2>
                     </div>
                     <div className={profileStyles.highlightsWrapper}>
-                      {listToRender.map((h: any, i: number) => (
-                        <div key={h.id || i} className={profileStyles.highlightTile}>
-                          <div className={profileStyles.storyRing}>
-                            {h.imageUrl ? (
-                              <img src={h.imageUrl} className={profileStyles.storyThumb} alt={h.title} style={{ borderRadius: "50%" }} />
-                            ) : (
-                              <div className={profileStyles.storyThumb}>{h.icon || "✨"}</div>
-                            )}
+                      {listToRender.map((h: any, i: number) => {
+                        const content = (
+                          <div key={h.id || i} className={profileStyles.highlightTile}>
+                            <div className={profileStyles.storyRing} style={{ borderColor: h.ringColor || undefined }}>
+                              {h.imageUrl ? (
+                                <img src={h.imageUrl} className={profileStyles.storyThumb} alt={h.title} style={{ borderRadius: "50%" }} />
+                              ) : (
+                                <div className={profileStyles.storyThumb}>{h.icon || "✨"}</div>
+                              )}
+                            </div>
+                            <span>{h.title}</span>
                           </div>
-                          <span>{h.title}</span>
-                        </div>
-                      ))}
+                        );
+                        return h.link ? (
+                          <a key={h.id || i} href={h.link} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
+                            {content}
+                          </a>
+                        ) : content;
+                      })}
                     </div>
                   </div>
                 );
@@ -1953,9 +1596,9 @@ export default function ProfilePage() {
               {gallery && gallery.length > 0 && (
                 <section className={profileStyles.gallerySection} style={{ marginBottom: "2rem" }}>
                   <div className={profileStyles.galleryHeader}>
-                    <h2>Gallery</h2>
+                    <h2>{t.builder.mockup.gallery}</h2>
                     <span className={profileStyles.photoCount}>
-                      {gallery.length} {gallery.length === 1 ? "photo" : "photos"}
+                      {gallery.length} {gallery.length === 1 ? t.builder.mockup.photo : t.builder.mockup.photos}
                     </span>
                   </div>
                   <div className={`${profileStyles.bentoGrid} ${gallery.length === 1 ? profileStyles.grid1 :
@@ -1995,7 +1638,7 @@ export default function ProfilePage() {
                   <div className="grid grid-cols-1 md:grid-cols-[1fr_280px] lg:grid-cols-[1fr_300px] gap-6 mb-6 items-stretch">
                     {/* Operating hours */}
                     <section className="flex flex-col h-full">
-                      <h2 className="text-lg font-bold mb-3">Operating Hours</h2>
+                      <h2 className="text-lg font-bold mb-3">{t.builder.mockup.operatingHours}</h2>
                       <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] divide-y divide-[hsl(var(--border))] flex-1">
                         {operatingHours.map((h) => {
                           const dayLabel = t.business?.days?.[h.day.toLowerCase() as keyof typeof t.business.days] || h.day;
@@ -2077,7 +1720,7 @@ export default function ProfilePage() {
               />
               <div className={profileStyles.lightboxText}>
                 <h3>{name || "Business Name"}</h3>
-                <p>Gallery ({zoomImageIdx + 1} / {gallery.length})</p>
+                <p>{t.builder.mockup.gallery} ({zoomImageIdx + 1} / {gallery.length})</p>
               </div>
             </div>
 
@@ -2117,89 +1760,6 @@ export default function ProfilePage() {
         accept="image/*"
         className="hidden"
       />
-
-      {/* DELETE ACCOUNT CONFIRMATION MODAL */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-red-200 dark:border-red-900/50 rounded-2xl p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-              <div className="flex items-center gap-2 text-red-600 dark:text-red-400 font-bold text-base">
-                <Trash2 className="h-5 w-5" />
-                <span>Delete Account & Data</span>
-              </div>
-              <button
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setDeleteConfirmText("");
-                  setDeleteError(null);
-                }}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-              This action is <strong className="text-red-600 dark:text-red-400">permanent and irreversible</strong>. Your user account, business profile, reviews, bookings, stories, and active sessions will be completely deleted from our servers.
-            </p>
-
-            <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                To confirm, type <span className="font-mono font-bold text-red-600 dark:text-red-400">DELETE</span> below:
-              </label>
-              <input
-                type="text"
-                value={deleteConfirmText}
-                onChange={(e) => setDeleteConfirmText(e.target.value)}
-                placeholder="DELETE"
-                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2 text-xs font-mono font-bold outline-none focus:border-red-500 text-slate-900 dark:text-slate-100"
-              />
-            </div>
-
-            {deleteError && (
-              <p className="text-xs text-red-600 dark:text-red-400 font-medium">
-                {deleteError}
-              </p>
-            )}
-
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setDeleteConfirmText("");
-                  setDeleteError(null);
-                }}
-                className="px-4 py-2 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              >
-                Cancel
-              </button>
-
-              <button
-                type="button"
-                disabled={deleteConfirmText !== "DELETE" || deleteLoading}
-                onClick={async () => {
-                  setDeleteLoading(true);
-                  setDeleteError(null);
-                  const res = await deleteAccount("DELETE");
-                  setDeleteLoading(false);
-                  if (res.success) {
-                    setShowDeleteModal(false);
-                    showAlert({ message: "Your account and all associated data have been permanently deleted.", type: "success" }).then(() => {
-                      router.push("/");
-                    });
-                  } else {
-                    setDeleteError(res.error || "Failed to delete account");
-                  }
-                }}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
-              >
-                {deleteLoading ? "Deleting..." : "Permanently Delete Account"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

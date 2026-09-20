@@ -95,7 +95,7 @@ export function userPayload(user: IUser) {
     accountType: user.accountType,
     avatar: user.avatar,
     phone: user.phone,
-    findyCoins: user.findyCoins || 0,
+    treeoCoins: user.treeoCoins || 0,
     verified: user.verified,
   };
 }
@@ -146,7 +146,7 @@ export const register = asyncHandler(async (req: Request, res: Response): Promis
       ]
     });
     if (inviter) {
-      inviter.findyCoins = (inviter.findyCoins || 0) + 100;
+      inviter.treeoCoins = (inviter.treeoCoins || 0) + 100;
       await inviter.save();
       initialCoins = 100;
     }
@@ -166,7 +166,7 @@ export const register = asyncHandler(async (req: Request, res: Response): Promis
     contactEmail,
     accountType: accountType || 'personal',
     role: accountType === 'business' ? 'business_owner' : 'user',
-    findyCoins: initialCoins,
+    treeoCoins: initialCoins,
     locale: userLang,
     emailVerificationToken: hashedToken,
     emailVerificationExpire: new Date(Date.now() + 24 * 60 * 60 * 1000),

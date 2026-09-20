@@ -22,6 +22,8 @@ import notificationRoutes from './routes/notificationRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import offerRoutes from './routes/offerRoutes.js';
 import exchangeOfferRoutes from './routes/exchangeOfferRoutes.js';
+import ragRoutes from './routes/ragRoutes.js';
+import aiRoutes from './routes/aiRoutes.js';
 import { getAllReviews } from './controllers/reviewController.js';
 import { getHeroImages } from './controllers/adminController.js';
 
@@ -90,6 +92,8 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/offers', offerRoutes);
 app.use('/api/exchange-offers', exchangeOfferRoutes);
+app.use('/api/rag', ragRoutes);
+app.use('/api/ai', aiRoutes);
 app.get('/api/reviews/all', getAllReviews);
 app.get('/api/hero-images', getHeroImages);
 

@@ -11,6 +11,10 @@ export interface IOffer extends Document {
   inclusions: string[];
   location: string;
   atmosphere?: string;
+  cuisine?: string;
+  entertainment?: string;
+  amenities?: string[];
+  embedding?: number[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -61,6 +65,20 @@ const offerSchema = new Schema<IOffer>(
       type: String,
       default: 'family',
     },
+    cuisine: {
+      type: String,
+    },
+    entertainment: {
+      type: String,
+    },
+    amenities: {
+      type: [String],
+      default: [],
+    },
+    embedding: {
+      type: [Number],
+      index: false,
+    },
   },
   {
     timestamps: true,
@@ -69,7 +87,7 @@ const offerSchema = new Schema<IOffer>(
 
 // Indexes for fast AI assistant search & multi-field filtering
 offerSchema.index({ business: 1 });
-offerSchema.index({ pax: 1, price: 1, atmosphere: 1 });
+offerSchema.index({ pax: 1, price: 1, atmosphere: 1, cuisine: 1 });
 offerSchema.index({
   packageName: 'text',
   dishes: 'text',
@@ -78,6 +96,7 @@ offerSchema.index({
   inclusions: 'text',
   location: 'text',
   atmosphere: 'text',
+  cuisine: 'text',
 });
 
 export default mongoose.model<IOffer>('Offer', offerSchema);

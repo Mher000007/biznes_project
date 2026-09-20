@@ -9,7 +9,7 @@ export interface User {
   role: string;
   verified: boolean;
   phone?: string;
-  findyCoins?: number;
+  treeoCoins?: number;
   redeemedInviteCode?: string;
   avatar?: string;
   locale?: "hy" | "en" | "ru";
@@ -21,7 +21,7 @@ export interface UserAccount {
   email: string;
   password: string;
   accountType: AccountType;
-  findyCoins?: number;
+  treeoCoins?: number;
   redeemedInviteCode?: string;
   createdAt: string;
 }
@@ -61,28 +61,34 @@ function safeParse<T>(jsonString: string | null, fallback: T): T {
   }
 }
 
+import { safeSetLocalStorage, safeGetLocalStorage } from "./storage";
+
 export function getUsers(): UserAccount[] {
   if (typeof window === "undefined") return [];
-  return safeParse<UserAccount[]>(window.localStorage.getItem(USERS_KEY), []);
+  return safeGetLocalStorage<UserAccount[]>(USERS_KEY, []);
 }
 
 export function setUsers(users: UserAccount[]): void {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  safeSetLocalStorage(USERS_KEY, JSON.stringify(users));
 }
 
 export function getCurrentUser(): UserAccount | null {
   if (typeof window === "undefined") return null;
-  return safeParse<UserAccount | null>(window.localStorage.getItem(CURRENT_USER_KEY), null);
+  return safeGetLocalStorage<UserAccount | null>(CURRENT_USER_KEY, null);
 }
 
 export function setCurrentUser(user: UserAccount | null): void {
   if (typeof window === "undefined") return;
   if (!user) {
-    window.localStorage.removeItem(CURRENT_USER_KEY);
+    try {
+      window.localStorage.removeItem(CURRENT_USER_KEY);
+    } catch {
+      // ignore
+    }
     return;
   }
-  window.localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
+  safeSetLocalStorage(CURRENT_USER_KEY, JSON.stringify(user));
 }
 
 export function signOut() {
@@ -135,7 +141,7 @@ export function createAccount(input: {
     if (inviterIndex !== -1) {
       users[inviterIndex] = {
         ...users[inviterIndex],
-        findyCoins: (users[inviterIndex].findyCoins || 0) + 100
+        treeoCoins: (users[inviterIndex].treeoCoins || 0) + 100
       };
     }
   }
@@ -146,7 +152,7 @@ export function createAccount(input: {
     email: normalizedEmail,
     password: input.password,
     accountType: input.accountType,
-    findyCoins: initialCoins,
+    treeoCoins: initialCoins,
     redeemedInviteCode: redeemedCode,
     createdAt: new Date().toISOString(),
   };
@@ -157,8 +163,8 @@ export function createAccount(input: {
   if (redeemedCode) {
     const uKey = normalizedUsername || normalizedEmail;
     if (uKey) {
-      localStorage.setItem(`armbiz_redeemed_code_${uKey}`, redeemedCode);
-      localStorage.setItem(`armbiz_user_coins_${uKey}`, String(initialCoins));
+      safeSetLocalStorage(`armbiz_redeemed_code_${uKey}`, redeemedCode);
+      safeSetLocalStorage(`armbiz_user_coins_${uKey}`, String(initialCoins));
     }
   }
 
@@ -221,15 +227,33 @@ export function saveBusinessProfile(profile: Omit<BusinessProfile, "createdAt">)
     return { success: false, error: "Client-only auth is not available." };
   }
 
-  const profiles = safeParse<BusinessProfile[]>(window.localStorage.getItem(BUSINESS_PROFILES_KEY), []);
   const nextProfile: BusinessProfile = {
     ...profile,
     createdAt: new Date().toISOString(),
   };
-  const updated = profiles.filter((item) => item.ownerUsername !== profile.ownerUsername);
-  updated.push(nextProfile);
-  window.localStorage.setItem(BUSINESS_PROFILES_KEY, JSON.stringify(updated));
-  return { success: true, profile: nextProfile };
+
+  try {
+    const profiles = safeGetLocalStorage<BusinessProfile[]>(BUSINESS_PROFILES_KEY, []);
+    const updated = profiles.filter((item) => item.ownerUsername !== profile.ownerUsername);
+
+    // Keep profile storage optimized to prevent localStorage overflow
+    const storageProfile = {
+      ...nextProfile,
+      gallery: Array.isArray((nextProfile as any).gallery)
+        ? (nextProfile as any).gallery.slice(0, 8)
+        : (nextProfile as any).gallery,
+      stories: Array.isArray((nextProfile as any).stories)
+        ? (nextProfile as any).stories.slice(0, 6)
+        : (nextProfile as any).stories,
+    };
+
+    updated.push(storageProfile as BusinessProfile);
+    safeSetLocalStorage(BUSINESS_PROFILES_KEY, JSON.stringify(updated));
+    return { success: true, profile: nextProfile };
+  } catch (err) {
+    console.warn("Could not synchronize business profile to localStorage:", err);
+    return { success: true, profile: nextProfile };
+  }
 }
 
 export function getBusinessProfile(ownerUsername: string): BusinessProfile | null {
@@ -237,7 +261,7 @@ export function getBusinessProfile(ownerUsername: string): BusinessProfile | nul
     return null;
   }
 
-  const profiles = safeParse<BusinessProfile[]>(window.localStorage.getItem(BUSINESS_PROFILES_KEY), []);
+  const profiles = safeGetLocalStorage<BusinessProfile[]>(BUSINESS_PROFILES_KEY, []);
   return profiles.find((profile) => profile.ownerUsername === ownerUsername) ?? null;
 }
 
@@ -246,8 +270,14 @@ export function deleteBusinessProfile(ownerUsername: string): { success: boolean
     return { success: false };
   }
 
-  const profiles = safeParse<BusinessProfile[]>(window.localStorage.getItem(BUSINESS_PROFILES_KEY), []);
-  const updated = profiles.filter((item) => item.ownerUsername !== ownerUsername);
-  window.localStorage.setItem(BUSINESS_PROFILES_KEY, JSON.stringify(updated));
-  return { success: true };
+  try {
+    const profiles = safeGetLocalStorage<BusinessProfile[]>(BUSINESS_PROFILES_KEY, []);
+    const updated = profiles.filter((item) => item.ownerUsername !== ownerUsername);
+    safeSetLocalStorage(BUSINESS_PROFILES_KEY, JSON.stringify(updated));
+    return { success: true };
+  } catch (err) {
+    console.warn("Could not delete business profile from localStorage:", err);
+    return { success: false };
+  }
 }
+

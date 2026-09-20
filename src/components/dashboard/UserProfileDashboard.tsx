@@ -13,6 +13,8 @@ import { RootState } from "@/store/store";
 import { toggleWidgetVisibility } from "@/store/slices/chatSlice";
 import { QRCodeSVG } from "qrcode.react";
 import axios from "axios";
+import { compressImageFile } from "@/lib/imageUtils";
+import { safeSetLocalStorage } from "@/lib/storage";
 import {
   User,
   Mail,
@@ -231,7 +233,7 @@ export default function UserProfileDashboard() {
       const existingCoinsStr = uKey ? localStorage.getItem(`armbiz_user_coins_${uKey}`) : null;
       let currentCoins = existingCoinsStr !== null && !isNaN(Number(existingCoinsStr))
         ? Number(existingCoinsStr)
-        : ((currentUser as any).findyCoins || 0);
+        : ((currentUser as any).treeoCoins || 0);
 
       const newCoins = currentCoins + 100;
 
@@ -246,21 +248,21 @@ export default function UserProfileDashboard() {
           const users: any[] = JSON.parse(usersStr);
           const idx = users.findIndex((u) => u.username === currentUser.username || u.email === currentUser.email);
           if (idx !== -1) {
-            users[idx].findyCoins = newCoins;
+            users[idx].treeoCoins = newCoins;
             users[idx].redeemedInviteCode = code;
             localStorage.setItem("armbiz_users", JSON.stringify(users));
           }
         } catch (e) { }
       }
-      const updatedUser = { ...currentUser, findyCoins: newCoins, redeemedInviteCode: code };
+      const updatedUser = { ...currentUser, treeoCoins: newCoins, redeemedInviteCode: code };
       localStorage.setItem("armbiz_current_user", JSON.stringify(updatedUser));
-      (currentUser as any).findyCoins = newCoins;
+      (currentUser as any).treeoCoins = newCoins;
       (currentUser as any).redeemedInviteCode = code;
 
       setAppliedInviteCode(code);
       setInviteCodeMsg({
         type: "success",
-        text: locale === "hy" ? "Հրավերի կոդը ակտիվացվեց! +100 FindyCoins ավելացվեց:" : "Invite code activated! +100 FindyCoins added!"
+        text: locale === "hy" ? "Հրավերի կոդը ակտիվացվեց! +100 TreeoCoins ավելացվեց:" : "Invite code activated! +100 TreeoCoins added!"
       });
       window.dispatchEvent(new Event("userUpdated"));
       window.dispatchEvent(new Event("coinsUpdated"));
@@ -440,8 +442,8 @@ export default function UserProfileDashboard() {
       setTransferMsg({
         type: "error",
         text: locale === "hy"
-          ? "Օրական առավելագույն փոխանցման չափը 200 FindyCoins է:"
-          : "Maximum transfer amount is 200 FindyCoins per day."
+          ? "Օրական առավելագույն փոխանցման չափը 200 TreeoCoins է:"
+          : "Maximum transfer amount is 200 TreeoCoins per day."
       });
       return;
     }
@@ -449,12 +451,12 @@ export default function UserProfileDashboard() {
     const savedCoinsStr = uKey ? localStorage.getItem(`armbiz_user_coins_${uKey}`) : null;
     const currentCoins = savedCoinsStr !== null && !isNaN(Number(savedCoinsStr))
       ? Number(savedCoinsStr)
-      : ((currentUser as any).findyCoins || 0);
+      : ((currentUser as any).treeoCoins || 0);
 
     if (amount > currentCoins) {
       setTransferMsg({
         type: "error",
-        text: locale === "hy" ? "Դուք չունեք բավարար Findy Coins փոխանցելու համար" : "You don't have enough Findy Coins"
+        text: locale === "hy" ? "Դուք չունեք բավարար Treeo Coins փոխանցելու համար" : "You don't have enough Treeo Coins"
       });
       return;
     }
@@ -462,7 +464,7 @@ export default function UserProfileDashboard() {
     try {
       const newSenderCoins = currentCoins - amount;
       if (uKey) localStorage.setItem(`armbiz_user_coins_${uKey}`, String(newSenderCoins));
-      (currentUser as any).findyCoins = newSenderCoins;
+      (currentUser as any).treeoCoins = newSenderCoins;
 
       const recipientCoinsStr = localStorage.getItem(`armbiz_user_coins_${selectedFriendUsername}`);
       const recipientCurrentCoins = recipientCoinsStr !== null && !isNaN(Number(recipientCoinsStr))
@@ -476,9 +478,9 @@ export default function UserProfileDashboard() {
         try {
           const users: any[] = JSON.parse(usersStr);
           const senderIdx = users.findIndex((u) => u.username === currentUser.username || u.email === currentUser.email);
-          if (senderIdx !== -1) users[senderIdx].findyCoins = newSenderCoins;
+          if (senderIdx !== -1) users[senderIdx].treeoCoins = newSenderCoins;
           const recipientIdx = users.findIndex((u) => u.username === selectedFriendUsername);
-          if (recipientIdx !== -1) users[recipientIdx].findyCoins = newRecipientCoins;
+          if (recipientIdx !== -1) users[recipientIdx].treeoCoins = newRecipientCoins;
           localStorage.setItem("armbiz_users", JSON.stringify(users));
         } catch (e) { }
       }
@@ -510,7 +512,7 @@ export default function UserProfileDashboard() {
       setTransferAmount("");
       setTransferMsg({
         type: "success",
-        text: locale === "hy" ? `${amount} FindyCoins հաջողությամբ փոխանցվեց ${selectedFriendUsername}-ին:` : `${amount} FindyCoins successfully transferred to ${selectedFriendUsername}!`
+        text: locale === "hy" ? `${amount} TreeoCoins հաջողությամբ փոխանցվեց ${selectedFriendUsername}-ին:` : `${amount} TreeoCoins successfully transferred to ${selectedFriendUsername}!`
       });
 
       window.dispatchEvent(new Event("userUpdated"));
@@ -1223,12 +1225,12 @@ export default function UserProfileDashboard() {
   const displayName = currentUser?.name || currentUser?.username || "User";
   const userInitial = displayName.charAt(0).toUpperCase();
 
-  // Calculate Findy Coins (from user-specific storage key or DB profile or 1% of total bookings value fallback)
+  // Calculate Treeo Coins (from user-specific storage key or DB profile or 1% of total bookings value fallback)
   const uKeyForCoins = currentUser?.username || currentUser?.email || (currentUser as any)?.id || "";
   const savedCoinsStr = uKeyForCoins && typeof localStorage !== "undefined" ? localStorage.getItem(`armbiz_user_coins_${uKeyForCoins}`) : null;
-  const findyCoins = savedCoinsStr !== null && !isNaN(Number(savedCoinsStr))
+  const treeoCoins = savedCoinsStr !== null && !isNaN(Number(savedCoinsStr))
     ? Number(savedCoinsStr)
-    : (currentUser?.findyCoins !== undefined ? currentUser.findyCoins : Math.floor(userBookings.reduce((sum, b) => sum + ((Number(b.totalPrice) || 0) * 0.01), 0)));
+    : (currentUser?.treeoCoins !== undefined ? currentUser.treeoCoins : Math.floor(userBookings.reduce((sum, b) => sum + ((Number(b.totalPrice) || 0) * 0.01), 0)));
 
   return (
     <div className="min-h-screen bg-[hsl(var(--background))] text-[hsl(var(--foreground))] py-8 px-4 sm:px-6 lg:px-8">
@@ -1266,25 +1268,26 @@ export default function UserProfileDashboard() {
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                          const newImg = reader.result as string;
-                          setAvatar(newImg);
-                          if (typeof window !== "undefined") {
-                            try {
-                              const localUserStr = localStorage.getItem("user");
-                              if (localUserStr) {
-                                const u = JSON.parse(localUserStr);
-                                u.avatar = newImg;
-                                localStorage.setItem("user", JSON.stringify(u));
-                                refreshUser?.();
+                        compressImageFile(file, { maxWidth: 400, maxHeight: 400, quality: 0.8 })
+                          .then((newImg) => {
+                            setAvatar(newImg);
+                            if (typeof window !== "undefined") {
+                              try {
+                                const localUserStr = localStorage.getItem("user");
+                                if (localUserStr) {
+                                  const u = JSON.parse(localUserStr);
+                                  u.avatar = newImg;
+                                  safeSetLocalStorage("user", JSON.stringify(u));
+                                  refreshUser?.();
+                                }
+                              } catch (err) {
+                                console.error("Error saving avatar locally:", err);
                               }
-                            } catch (err) {
-                              console.error("Error saving avatar locally:", err);
                             }
-                          }
-                        };
-                        reader.readAsDataURL(file);
+                          })
+                          .catch((err) => {
+                            console.error("Avatar compression error:", err);
+                          });
                       }
                     }}
                   />
@@ -1301,7 +1304,7 @@ export default function UserProfileDashboard() {
                       {locale === "hy" ? "Անձնական Հաշիվ" : locale === "ru" ? "Личный аккаунт" : "Personal Account"}
                     </span>
                     <h3 className="text-xl sm:text-2xl font-black text-[hsl(var(--foreground))] tracking-tight flex items-center bg-[hsl(var(--muted))]/50 px-3 py-0.5 rounded-full border border-[hsl(var(--border))]/50">
-                      {findyCoins.toLocaleString()} <span className="text-emerald-500 text-xs sm:text-sm font-bold uppercase tracking-wider ml-1.5">Coins</span>
+                      {treeoCoins.toLocaleString()} <span className="text-emerald-500 text-xs sm:text-sm font-bold uppercase tracking-wider ml-1.5">Coins</span>
                     </h3>
                   </div>
                 </div>
@@ -1513,7 +1516,7 @@ export default function UserProfileDashboard() {
         {/* ── TAB CONTENT: Profile Info ── */}
         {activeTab === "profile" && (
           <div className="space-y-6">
-            {/* Findy Coin Balance Card */}
+            {/* Treeo Coin Balance Card */}
             <div className="bg-gradient-to-r from-emerald-500/10 via-[hsl(var(--card))] to-[hsl(var(--card))] border border-emerald-500/30 rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20 shrink-0">
@@ -1769,7 +1772,7 @@ export default function UserProfileDashboard() {
                 {locale === "hy" ? "Իմ Ամրագրումները" : "My Reservations"}
               </h2>
               <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
-                {locale === "hy" ? "Ստացեք 1% քեշբեք Findy Coins-ով ձեր բոլոր ամրագրումներից" : locale === "ru" ? "Вы получаете 1% кэшбэка от всех ваших бронирований" : "You earn 1% back from all your bookings"}
+                {locale === "hy" ? "Ստացեք 1% քեշբեք Treeo Coins-ով ձեր բոլոր ամրագրումներից" : locale === "ru" ? "Вы получаете 1% кэшбэка от всех ваших бронирований" : "You earn 1% back from all your bookings"}
               </p>
             </div>
 
@@ -2099,12 +2102,12 @@ export default function UserProfileDashboard() {
                 {locale === "hy" ? "Բիզնես Սեփականատերերի համար" : "For Business Owners"}
               </span>
               <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-                {locale === "hy" ? "Գրանցեք Ձեր Բիզնեսը Findy-ում" : "Grow Your Business with Findy"}
+                {locale === "hy" ? "Գրանցեք Ձեր Բիզնեսը Treeo-ում" : "Grow Your Business with Treeo"}
               </h2>
               <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
                 {locale === "hy"
                   ? "Ներկայացրեք ձեր ռեստորանը, սրճարանը կամ ծառայությունները հազարավոր այցելուների: Կառավարեք վերապահումները, հրապարակեք մենյուներ և սթորիներ:"
-                  : "List your restaurant, cafe, or business on Findy. Manage online reservations, publish menus, stories and reach thousands of customers."}
+                  : "List your restaurant, cafe, or business on Treeo. Manage online reservations, publish menus, stories and reach thousands of customers."}
               </p>
             </div>
 
@@ -2150,10 +2153,10 @@ export default function UserProfileDashboard() {
                 </div>
                 <div>
                   <h3 className="font-bold text-lg text-[hsl(var(--foreground))]">
-                    {locale === "hy" ? "Իմ Գնած Առաջարկները (Findy Coins)" : locale === "ru" ? "Мои купленные предложения (Findy Coins)" : "My Purchased Offers (Findy Coins)"}
+                    {locale === "hy" ? "Իմ Գնած Առաջարկները (Treeo Coins)" : locale === "ru" ? "Мои купленные предложения (Treeo Coins)" : "My Purchased Offers (Treeo Coins)"}
                   </h3>
                   <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
-                    {locale === "hy" ? "Այստեղ ցուցադրված են Findy Coins-ով ձեր ձեռք բերած բոլոր առաջարկներն ու զեղչային կուպոնները:" : "Here are all the offers and coupons you purchased using Findy Coins."}
+                    {locale === "hy" ? "Այստեղ ցուցադրված են Treeo Coins-ով ձեր ձեռք բերած բոլոր առաջարկներն ու զեղչային կուպոնները:" : "Here are all the offers and coupons you purchased using Treeo Coins."}
                   </p>
                 </div>
               </div>
@@ -2173,8 +2176,8 @@ export default function UserProfileDashboard() {
                 </h3>
                 <p className="text-sm text-[hsl(var(--muted-foreground))] max-w-md mx-auto">
                   {locale === "hy"
-                    ? "Բացահայտեք Findy Coin Offers էջը, փոխանակեք ձեր կուտակած քոյնները էքսկլյուզիվ առաջարկների հետ:"
-                    : "Explore Findy Coin Offers, exchange your accumulated coins for exclusive deals."}
+                    ? "Բացահայտեք Treeo Coin Offers էջը, փոխանակեք ձեր կուտակած քոյնները էքսկլյուզիվ առաջարկների հետ:"
+                    : "Explore Treeo Coin Offers, exchange your accumulated coins for exclusive deals."}
                 </p>
                 <Link href="/exchange" className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-xs shadow-md transition-all">
                   <Coins className="w-4 h-4" />
@@ -2184,7 +2187,7 @@ export default function UserProfileDashboard() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {claimedOffers.map((item, idx) => {
-                  const code = item.couponCode || `FINDY-${Math.floor(100000 + idx * 4521)}`;
+                  const code = item.couponCode || `TREEO-${Math.floor(100000 + idx * 4521)}`;
                   const fullItem = { ...item, couponCode: code };
 
                   // Expiry helpers
@@ -2297,7 +2300,7 @@ export default function UserProfileDashboard() {
               {/* QR Code Container */}
               <div className="bg-white p-4 rounded-2xl border-4 border-emerald-500/20 shadow-inner inline-block mx-auto">
                 <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(selectedCoupon.couponCode || "FINDY-COUPON")}`}
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(selectedCoupon.couponCode || "TREEO-COUPON")}`}
                   alt="Coupon QR Code"
                   className="w-52 h-52 object-contain mx-auto rounded-lg"
                 />
@@ -2307,15 +2310,15 @@ export default function UserProfileDashboard() {
               <div className="flex flex-col items-center gap-1.5 mx-auto">
                 <button
                   type="button"
-                  onClick={() => handleCopyCouponCode(selectedCoupon.couponCode || "FINDY-284076")}
+                  onClick={() => handleCopyCouponCode(selectedCoupon.couponCode || "TREEO-284076")}
                   className="bg-[hsl(var(--background))] hover:bg-[hsl(var(--muted))] active:scale-95 border border-[hsl(var(--border))] hover:border-emerald-500/50 rounded-xl p-3 inline-flex items-center gap-2.5 mx-auto transition-all cursor-pointer group shadow-sm"
                   title={locale === "hy" ? "Սեղմեք կոդը պատճենելու համար" : "Click to copy code"}
                 >
                   <Ticket className="w-4.5 h-4.5 text-emerald-500 group-hover:rotate-12 transition-transform" />
                   <span className="font-mono font-black text-lg tracking-widest text-[hsl(var(--foreground))]">
-                    {selectedCoupon.couponCode || "FINDY-284076"}
+                    {selectedCoupon.couponCode || "TREEO-284076"}
                   </span>
-                  {copiedCouponCode === (selectedCoupon.couponCode || "FINDY-284076") ? (
+                  {copiedCouponCode === (selectedCoupon.couponCode || "TREEO-284076") ? (
                     <span className="flex items-center gap-1 text-xs font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20 animate-in fade-in">
                       <Check className="w-3.5 h-3.5" />
                       {locale === "hy" ? "Պատճենված է" : "Copied!"}
@@ -2359,7 +2362,7 @@ export default function UserProfileDashboard() {
                   <Coins className="w-7 h-7" />
                 </div>
                 <h3 className="text-2xl font-black mb-1">{locale === "hy" ? "Ուղարկել ընկերոջը" : "Send to a Friend"}</h3>
-                <p className="text-xs sm:text-sm text-[hsl(var(--muted-foreground))] mb-6">{locale === "hy" ? "Անմիջապես փոխանցեք Findy Coins ձեր հրավիրած ընկերներին:" : "Transfer Findy Coins instantly to friends you have invited."}</p>
+                <p className="text-xs sm:text-sm text-[hsl(var(--muted-foreground))] mb-6">{locale === "hy" ? "Անմիջապես փոխանցեք Treeo Coins ձեր հրավիրած ընկերներին:" : "Transfer Treeo Coins instantly to friends you have invited."}</p>
 
                 <div className="space-y-5">
                   {cooldownRemainingSec > 0 && (

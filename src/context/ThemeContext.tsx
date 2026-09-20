@@ -16,7 +16,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem("findy_theme") as Theme | null;
+    const saved = localStorage.getItem("treeo_theme") as Theme | null;
     if (saved) {
       setThemeState(saved);
     }
@@ -42,7 +42,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
-    localStorage.setItem("findy_theme", newTheme);
+    localStorage.setItem("treeo_theme", newTheme);
     applyTheme(newTheme);
   };
 

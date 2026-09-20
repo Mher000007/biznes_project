@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
+import { useI18n } from "@/i18n";
 import axios from "axios";
 const axiosInstance = axios;
 import { useRouter } from "next/navigation";
@@ -33,7 +34,8 @@ import {
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 export default function SettingsPage() {
-  const { currentUser, logout, refreshUser } = useAuth();
+  const { currentUser, logout, refreshUser, deleteAccount } = useAuth();
+  const { t } = useI18n();
   const router = useRouter();
 
   // Navigation
@@ -75,7 +77,7 @@ export default function SettingsPage() {
 
   // Danger Zone Deletion States
   const [showModal, setShowModal] = useState(false);
-  const [emailInput, setEmailInput] = useState("");
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [loading, setLoading] = useState(false);
   const [deleteError, setDeleteError] = useState("");
 
@@ -187,33 +189,17 @@ export default function SettingsPage() {
     setTimeout(() => setCopiedApi(false), 2000);
   };
 
-  const handleDeleteBusiness = async () => {
-    if (!currentUser) return;
-    const userEmail = currentUser.email || "";
-    if (emailInput.trim().toLowerCase() !== userEmail.trim().toLowerCase()) {
-      setDeleteError("Մուտքագրված էլ. հասցեն չի համընկնում:");
-      return;
-    }
+  const handleDeleteAccount = async () => {
     setLoading(true);
     setDeleteError("");
-    try {
-      const apiURL = getApiUrl();
-      const token = typeof window !== 'undefined' ? window.localStorage.getItem('token') : null;
-      const listRes = await axiosInstance.get(`${apiURL}/businesses/me/all`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
-      });
-      if (listRes.data?.success && listRes.data.data?.length > 0) {
-        const bizId = listRes.data.data[0]._id;
-        await axiosInstance.delete(`${apiURL}/businesses/${bizId}`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {}
-        });
-      }
-      logout();
+    const res = await deleteAccount("DELETE");
+    setLoading(false);
+    if (res.success) {
+      setShowModal(false);
+      // Wait, there is no showAlert imported here, just redirect.
       router.push("/");
-    } catch (err: any) {
-      console.error("Error during deletion", err);
-      setDeleteError(err.response?.data?.message || "Տեղի է ունեցել սխալ:");
-      setLoading(false);
+    } else {
+      setDeleteError(res.error || "Failed to delete account");
     }
   };
 
@@ -620,23 +606,24 @@ export default function SettingsPage() {
 
             {/* SUBTAB 5: DANGER ZONE */}
             {activeSettingsTab === "danger" && (
-              <div className="bg-[hsl(var(--card))] border border-red-200 dark:border-red-900 bg-red-500/5 rounded-2xl p-6 shadow-sm space-y-4 animate-scale-in">
-                <div>
-                  <h3 className="text-base font-bold text-red-600">Danger Zone</h3>
-                  <p className="text-xs text-[hsl(var(--muted-foreground))]">Once deleted, your business listing cannot be recovered. All reviews, inquiries, and analytics will be permanently destroyed.</p>
-                </div>
-
-                <div className="pt-2">
-                  <button
-                    onClick={() => {
-                      setDeleteError("");
-                      setEmailInput("");
-                      setShowModal(true);
-                    }}
-                    className="px-4 py-2 rounded-lg text-xs font-semibold bg-red-600 hover:bg-red-700 text-white cursor-pointer transition-colors"
-                  >
-                    Delete Business Listing
-                  </button>
+              <div className="animate-scale-in">
+                <div className="rounded-xl border border-red-200 dark:border-red-900/40 bg-red-50/50 dark:bg-red-950/20 p-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <h4 className="text-xs font-bold text-red-600 dark:text-red-400">{t.builder.dangerZone.title}</h4>
+                      <p className="text-xs text-red-700 dark:text-red-300 mt-1">
+                        {t.builder.dangerZone.description}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowModal(true)}
+                      className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold transition-colors shrink-0 flex items-center gap-1.5"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      {t.builder.dangerZone.button}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -646,60 +633,68 @@ export default function SettingsPage() {
 
         {/* Delete Confirmation Modal */}
         {showModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-full max-w-md rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-6 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
-              <button
-                onClick={() => setShowModal(false)}
-                className="absolute top-4 right-4 text-[hsl(var(--muted-foreground))] hover:text-foreground transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
-
-              <div className="flex items-center gap-3 text-red-600 mb-4">
-                <div className="p-2 rounded-lg bg-red-100 dark:bg-red-950/50">
-                  <AlertTriangle className="h-6 w-6" />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+            <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-red-200 dark:border-red-900/50 rounded-2xl p-6 shadow-2xl space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                <div className="flex items-center gap-2 text-red-600 dark:text-red-400 font-bold text-base">
+                  <Trash2 className="h-5 w-5" />
+                  <span>Delete Account & Data</span>
                 </div>
-                <h3 className="text-lg font-semibold">Ջնջել բիզնես պրոֆիլը</h3>
+                <button
+                  onClick={() => {
+                    setShowModal(false);
+                    setDeleteConfirmText("");
+                    setDeleteError("");
+                  }}
+                  className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
 
-              <p className="text-sm text-[hsl(var(--muted-foreground))] mb-4">
-                Արդյո՞ք ցանկանում եք ջնջել ցանցից Ձեր պրոֆիլը։ Այս գործողությունը անդառնալի է և Ձեր բոլոր տվյալները կորելու են։
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                This action is <strong className="text-red-600 dark:text-red-400">permanent and irreversible</strong>. Your user account, business profile, reviews, bookings, stories, and active sessions will be completely deleted from our servers.
               </p>
 
-              <div className="space-y-3 mb-6">
-                <label className="block text-xs font-medium text-[hsl(var(--muted-foreground))]">
-                  Հաստատելու համար մուտքագրեք Ձեր էլ. հասցեն ({currentUser?.email})
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  To confirm, type <span className="font-mono font-bold text-red-600 dark:text-red-400">DELETE</span> below:
                 </label>
                 <input
-                  type="email"
-                  placeholder="Մուտքագրեք Ձեր էլ. հասցեն"
-                  value={emailInput}
-                  onChange={(e) => setEmailInput(e.target.value)}
-                  className="w-full rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 py-2.5 text-sm outline-none focus:border-red-500 transition-colors"
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="DELETE"
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2 text-xs font-mono font-bold outline-none focus:border-red-500 text-slate-900 dark:text-slate-100"
                 />
-                {deleteError && (
-                  <p className="text-xs font-medium text-red-500">{deleteError}</p>
-                )}
               </div>
 
-              <div className="flex items-center justify-end gap-3">
+              {deleteError && (
+                <p className="text-xs text-red-600 dark:text-red-400 font-medium">
+                  {deleteError}
+                </p>
+              )}
+
+              <div className="flex items-center justify-end gap-3 pt-2">
                 <button
-                  onClick={() => setShowModal(false)}
-                  disabled={loading}
-                  className="h-9 px-4 rounded-lg text-xs font-medium border border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] transition-colors disabled:opacity-50"
+                  type="button"
+                  onClick={() => {
+                    setShowModal(false);
+                    setDeleteConfirmText("");
+                    setDeleteError("");
+                  }}
+                  className="px-4 py-2 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                 >
-                  Չեղարկել
+                  Cancel
                 </button>
+
                 <button
-                  onClick={handleDeleteBusiness}
-                  disabled={loading || emailInput.trim().toLowerCase() !== (currentUser?.email || "").trim().toLowerCase()}
-                  className="h-9 px-4 rounded-lg text-xs font-semibold bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                  type="button"
+                  disabled={deleteConfirmText !== "DELETE" || loading}
+                  onClick={handleDeleteAccount}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
                 >
-                  {loading ? (
-                    <><Loader2 className="h-3 w-3 animate-spin" /> Ջնջվում է...</>
-                  ) : (
-                    <><Trash2 className="h-3 w-3" /> Հաստատել ջնջումը</>
-                  )}
+                  {loading ? "Deleting..." : "Permanently Delete Account"}
                 </button>
               </div>
             </div>

@@ -8,25 +8,25 @@ import { ChevronDown } from "lucide-react";
 
 const FAQ_DATA = {
   hy: [
-    { q: "Ի՞նչ է Findy-ն և ինչպե՞ս է այն աշխատում:", a: "Findy-ն միասնական հարթակ է, որը թույլ է տալիս գտնել և ամրագրել սեղաններ ռեստորաններում, սենյակներ հյուրանոցներում և այլ ծառայություններ HoReCa ոլորտում։" },
+    { q: "Ի՞նչ է Treeo-ն և ինչպե՞ս է այն աշխատում:", a: "Treeo-ն միասնական հարթակ է, որը թույլ է տալիս գտնել և ամրագրել սեղաններ ռեստորաններում, սենյակներ հյուրանոցներում և այլ ծառայություններ HoReCa ոլորտում։" },
     { q: "Արդյոք հավելվածն անվճա՞ր է օգտագործողների համար:", a: "Այո, հարթակում որոնումն ու ամրագրումն անվճար են բոլոր օգտատերերի համար:" },
     { q: "Ինչպե՞ս կարող եմ ամրագրել սեղան կամ ծառայություն:", a: "Պարզապես գտեք ձեզ համապատասխան վայրը, ընտրեք ամսաթիվն ու ժամը և սեղմեք «Ամրագրել»: Ամրագրման հաստատումը կստանաք ակնթարթորեն:" },
     { q: "Կարո՞ղ եմ չեղարկել իմ ամրագրումը:", a: "Այո, ամրագրումները կարելի է չեղարկել ձեր անձնական հաշվի «Իմ ամրագրումները» բաժնից՝ նախապես սահմանված ժամկետներում:" },
-    { q: "Ինչպե՞ս կարող եմ ավելացնել իմ բիզնեսը Findy-ում:", a: "Բիզնես գրանցելու համար սեղմեք «Բիզնեսների համար» բաժինը, լրացրեք հայտը և մեր թիմը կկապվի ձեզ հետ՝ ակտիվացման համար:" }
+    { q: "Ինչպե՞ս կարող եմ ավելացնել իմ բիզնեսը Treeo-ում:", a: "Բիզնես գրանցելու համար սեղմեք «Բիզնեսների համար» բաժինը, լրացրեք հայտը և մեր թիմը կկապվի ձեզ հետ՝ ակտիվացման համար:" }
   ],
   en: [
-    { q: "What is Findy and how does it work?", a: "Findy is a unified platform that allows you to find and book tables in restaurants, rooms in hotels, and other services in the HoReCa sector." },
+    { q: "What is Treeo and how does it work?", a: "Treeo is a unified platform that allows you to find and book tables in restaurants, rooms in hotels, and other services in the HoReCa sector." },
     { q: "Is the app free for users?", a: "Yes, searching and booking on the platform is completely free for all our users." },
     { q: "How can I book a table or service?", a: "Simply find the place you like, select the date and time, and click 'Book'. You will receive the booking confirmation instantly." },
     { q: "Can I cancel my booking?", a: "Yes, bookings can be cancelled from the 'My Bookings' section in your personal account within the predefined timeframe." },
-    { q: "How can I add my business to Findy?", a: "To register a business, fill out the application on our 'For Businesses' page, and our team will contact you for activation." }
+    { q: "How can I add my business to Treeo?", a: "To register a business, fill out the application on our 'For Businesses' page, and our team will contact you for activation." }
   ],
   ru: [
-    { q: "Что такое Findy и как это работает?", a: "Findy — это единая платформа, которая позволяет находить и бронировать столики в ресторанах, номера в отелях и другие услуги в сфере HoReCa." },
+    { q: "Что такое Treeo и как это работает?", a: "Treeo — это единая платформа, которая позволяет находить и бронировать столики в ресторанах, номера в отелях и другие услуги в сфере HoReCa." },
     { q: "Бесплатно ли приложение для пользователей?", a: "Да, поиск и бронирование на платформе абсолютно бесплатны для всех наших пользователей." },
     { q: "Как я могу забронировать столик или услугу?", a: "Просто найдите подходящее место, выберите дату и время и нажмите «Забронировать». Вы получите подтверждение бронирования мгновенно." },
     { q: "Могу ли я отменить свое бронирование?", a: "Да, бронирования можно отменить в разделе «Мои бронирования» вашего личного кабинета в заранее установленные сроки." },
-    { q: "Как я могу добавить свой бизнес в Findy?", a: "Чтобы зарегистрировать бизнес, заполните заявку на странице «Для бизнеса», и наша команда свяжется с вами для активации." }
+    { q: "Как я могу добавить свой бизнес в Treeo?", a: "Чтобы зарегистрировать бизнес, заполните заявку на странице «Для бизнеса», и наша команда свяжется с вами для активации." }
   ]
 };
 

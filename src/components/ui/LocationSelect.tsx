@@ -11,6 +11,7 @@ export interface LocationSelectProps extends Omit<React.ButtonHTMLAttributes<HTM
   placeholder?: string;
   disablePlaceholder?: boolean;
   required?: boolean;
+  icon?: React.ReactNode;
 }
 
 export function LocationSelect({ 
@@ -20,6 +21,8 @@ export function LocationSelect({
   disablePlaceholder = true,
   className,
   style,
+  icon,
+  onClick,
   ...props 
 }: LocationSelectProps) {
   const { locale } = useI18n();
@@ -205,15 +208,21 @@ export function LocationSelect({
     <div className="relative w-full h-full" ref={wrapperRef}>
       <button
         type="button"
-        onClick={toggleOpen}
+        onClick={(e) => {
+          toggleOpen();
+          onClick?.(e);
+        }}
         className={`focus:outline-none flex items-center justify-between w-full text-left ${className || 'min-h-[38px] px-3 py-2 bg-transparent'}`}
         style={style}
         {...props}
       >
-        <span className={`block truncate pr-2 ${!value ? 'text-[hsl(var(--muted-foreground))]' : 'font-medium'}`}>
-          {displayValue || placeholder}
-        </span>
-        <ChevronDown className={`w-4 h-4 text-[hsl(var(--muted-foreground))] transition-transform duration-200 flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
+        <div className="flex items-center gap-2 truncate pr-2">
+          {icon}
+          <span className={`block truncate ${!value ? 'text-[hsl(var(--muted-foreground))]' : (icon ? 'font-semibold text-[hsl(var(--foreground))] text-xs sm:text-sm' : 'font-medium')}`}>
+            {displayValue || placeholder}
+          </span>
+        </div>
+        <ChevronDown className={`w-4 h-4 text-[hsl(var(--muted-foreground))] transition-transform duration-200 flex-shrink-0 ${isOpen ? 'rotate-180 text-[hsl(var(--primary))]' : ''}`} />
       </button>
 
       {isOpen && typeof document !== 'undefined' && createPortal(

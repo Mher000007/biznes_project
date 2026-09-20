@@ -111,7 +111,7 @@ interface Review {
 }
 interface User {
   _id: string; name: string; username?: string; email: string;
-  phone?: string; role: "user" | "business_owner" | "admin"; findyCoins?: number; createdAt: string;
+  phone?: string; role: "user" | "business_owner" | "admin"; treeoCoins?: number; createdAt: string;
 }
 interface Stats {
   totalBusinesses: number; pendingBusinesses: number; verifiedBusinesses: number;
@@ -232,7 +232,7 @@ function AdminLogin({ onLogin }: { onLogin: (token: string) => void }) {
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 12, marginBottom: 8 }}>
-            <img src="/logo.png" alt="Findy Logo" style={{ height: "52px", objectFit: "contain" }} />
+            <img src="/logo.png" alt="Treeo Logo" style={{ height: "52px", objectFit: "contain" }} />
             <span style={{ fontSize: 22, fontWeight: 800, color: "#00E676", letterSpacing: "2.5px", textTransform: "uppercase" }}>
               Admin
             </span>
@@ -1055,7 +1055,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           display: "flex", alignItems: "center", justifyContent: "space-between", height: 52
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <img src="/logo.png" alt="Findy Logo" style={{ height: "34px", objectFit: "contain" }} />
+            <img src="/logo.png" alt="Treeo Logo" style={{ height: "34px", objectFit: "contain" }} />
             <span style={{ fontSize: 15, fontWeight: 800, color: "#00E676", letterSpacing: "1.5px", textTransform: "uppercase" }}>
               Admin
             </span>
@@ -1628,12 +1628,12 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                           border: "1px solid rgba(16,185,129,0.3)", display: "flex", alignItems: "center", gap: 5
                         }}>
                           <Coins size={13} color="#10b981" />
-                          {(u.findyCoins || 0).toLocaleString()} Coins
+                          {(u.treeoCoins || 0).toLocaleString()} Coins
                         </span>
                         <button
                           type="button"
                           onClick={() => openCoinModal(u)}
-                          title="Լրացնել Findy Մետաղադրամ"
+                          title="Լրացնել Treeo Մետաղադրամ"
                           style={{
                             background: "rgba(16,185,129,0.2)", border: "1px solid rgba(16,185,129,0.4)",
                             color: "#6ee7b7", borderRadius: 10, padding: "5px 12px", fontSize: 11,
@@ -2853,7 +2853,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                   <Coins size={22} />
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: C.text }}>Top Up Findy Coins</h3>
+                  <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: C.text }}>Top Up Treeo Coins</h3>
                   <span style={{ fontSize: 12, color: C.muted }}>Manage user's coin balance</span>
                 </div>
               </div>
@@ -2874,7 +2874,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               <div style={{ textAlign: "right" }}>
                 <span style={{ fontSize: 10, color: C.muted, display: "block", fontWeight: 700, textTransform: "uppercase" }}>Current Balance</span>
                 <strong style={{ fontSize: 16, color: "#10b981", display: "flex", alignItems: "center", gap: 4, justifyContent: "flex-end" }}>
-                  <Coins size={16} /> {(coinUser.findyCoins || 0).toLocaleString()} Coins
+                  <Coins size={16} /> {(coinUser.treeoCoins || 0).toLocaleString()} Coins
                 </strong>
               </div>
             </div>

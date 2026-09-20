@@ -71,7 +71,7 @@ export const SORT_OPTIONS = [
 ];
 
 export const SITE_CONFIG = {
-  name: "Findy Hub",
+  name: "Treeo Hub",
   description:
     "Armenia's premier business directory. Discover, connect, and grow with Armenian entrepreneurs.",
   url: "https://armenbiz.am",

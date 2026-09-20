@@ -4,7 +4,8 @@ import {
   getActiveStories,
   getMyBusinessStories,
   viewStory,
-  deleteStory
+  deleteStory,
+  incrementStoryStat
 } from '../controllers/storyController.js';
 import { authenticate, requireVerified } from '../middleware/auth.js';
 
@@ -13,6 +14,7 @@ const router = Router();
 // Public routes
 router.get('/', getActiveStories);
 router.post('/:id/view', viewStory);
+router.post('/:id/stat', incrementStoryStat);
 
 // Protected routes
 router.post('/', authenticate, requireVerified, createStory);

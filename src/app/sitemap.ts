@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next';
 import { CATEGORIES } from '@/lib/constants';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://findy.am';
+  const baseUrl = 'https://treeo.am';
 
   const staticPages: MetadataRoute.Sitemap = [
     '',

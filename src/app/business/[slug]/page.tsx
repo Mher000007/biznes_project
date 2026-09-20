@@ -35,7 +35,7 @@ export async function generateMetadata(
   if (!business) {
     const nameFromSlug = slug.split('-').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
     return {
-      title: `${nameFromSlug} | Findy`,
+      title: `${nameFromSlug} | Treeo`,
       description: t.seo.businessDesc.replace("{{description}}", nameFromSlug),
     };
   }
@@ -47,7 +47,7 @@ export async function generateMetadata(
   // Format description
   const rawDesc = business.description || business.metadata?.description || business.shortDescription || "";
   const shortDesc = rawDesc.length > 150 ? rawDesc.substring(0, 150) + "..." : rawDesc;
-  const description = shortDesc || t.seo.businessDesc.replace("{{description}}", `Find ${name} services in ${city} on Findy.`);
+  const description = shortDesc || t.seo.businessDesc.replace("{{description}}", `Find ${name} services in ${city} on Treeo.`);
   
   // Generate title by replacing placeholders
   const title = t.seo.businessTitle
@@ -65,7 +65,7 @@ export async function generateMetadata(
     image = business.images[0];
   }
   
-  const currentUrl = `https://findy.am/business/${slug}`;
+  const currentUrl = `https://treeo.am/business/${slug}`;
 
   // JSON-LD Schema
   const structuredData = {
@@ -95,9 +95,9 @@ export async function generateMetadata(
     alternates: {
       canonical: currentUrl,
       languages: {
-        en: `https://findy.am/en/business/${slug}`,
-        hy: `https://findy.am/hy/business/${slug}`,
-        ru: `https://findy.am/ru/business/${slug}`,
+        en: `https://treeo.am/en/business/${slug}`,
+        hy: `https://treeo.am/hy/business/${slug}`,
+        ru: `https://treeo.am/ru/business/${slug}`,
         "x-default": currentUrl,
       },
     },
@@ -105,7 +105,7 @@ export async function generateMetadata(
       title,
       description,
       url: currentUrl,
-      siteName: "Findy",
+      siteName: "Treeo",
       images: [
         {
           url: image,

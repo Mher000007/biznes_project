@@ -8,12 +8,12 @@ export async function generateMetadata(): Promise<Metadata> {
     title: t.seo.aboutTitle,
     description: t.seo.aboutDesc,
     alternates: {
-      canonical: "https://findy.am/about",
+      canonical: "https://treeo.am/about",
       languages: {
-        en: "https://findy.am/en/about",
-        hy: "https://findy.am/hy/about",
-        ru: "https://findy.am/ru/about",
-        "x-default": "https://findy.am/about",
+        en: "https://treeo.am/en/about",
+        hy: "https://treeo.am/hy/about",
+        ru: "https://treeo.am/ru/about",
+        "x-default": "https://treeo.am/about",
       },
     }
   };

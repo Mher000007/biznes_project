@@ -16,6 +16,7 @@ import { useAlert } from "@/context/AlertContext";
 import dynamic from "next/dynamic";
 import { getOpenStatus } from "@/components/discover/BusinessCard";
 import CustomServiceSelect from "@/components/ui/CustomServiceSelect";
+import { safeSetLocalStorage } from "@/lib/storage";
 
 const BusinessMap = dynamic(() => import("@/components/map/BusinessMap"), {
   ssr: false,
@@ -104,7 +105,27 @@ export default function BusinessProfilePage() {
   // Extract gallery images
   const galleryImages: string[] = (() => {
     if (!business) return [];
-    return business.images || [];
+    const list: string[] = [];
+    const addImg = (url: any) => {
+      if (typeof url === "string" && url.trim().length > 0 && !isDefaultImage(url) && !list.includes(url.trim())) {
+        list.push(url.trim());
+      }
+    };
+
+    if (Array.isArray(business.images)) business.images.forEach(addImg);
+    if (Array.isArray((business as any).gallery)) (business as any).gallery.forEach(addImg);
+    if (Array.isArray((business as any).metadata?.gallery)) (business as any).metadata.gallery.forEach(addImg);
+    if (Array.isArray((business as any).metadata?.interiorImages)) (business as any).metadata.interiorImages.forEach(addImg);
+    if (Array.isArray(business.highlights)) {
+      business.highlights.forEach((h: any) => addImg(typeof h === "string" ? h : h?.imageUrl));
+    }
+    if ((business as any).metadata?.coverUrl) {
+      if (Array.isArray((business as any).metadata.coverUrl)) (business as any).metadata.coverUrl.forEach(addImg);
+      else addImg((business as any).metadata.coverUrl);
+    }
+    if (business.coverImageUrl) addImg(business.coverImageUrl);
+
+    return list;
   })();
 
   // Keyboard navigation for gallery lightbox
@@ -439,7 +460,7 @@ export default function BusinessProfilePage() {
               // Increment viewCount
               const currentViews = foundProfile.viewCount !== undefined ? foundProfile.viewCount : 0;
               foundProfile.viewCount = currentViews + 1;
-              window.localStorage.setItem("armbiz-business-profiles", JSON.stringify(profiles));
+              safeSetLocalStorage("armbiz-business-profiles", JSON.stringify(profiles));
 
               const categorySlug = foundProfile.category || "building-material";
               const categoryObj = {
@@ -491,7 +512,11 @@ export default function BusinessProfilePage() {
                 services: servicesMapped,
                 logoUrl: foundProfile.logo && !isDefaultImage(foundProfile.logo) ? foundProfile.logo : "",
                 coverImageUrl: foundProfile.coverUrl ? (Array.isArray(foundProfile.coverUrl) ? foundProfile.coverUrl.filter((url: string) => !isDefaultImage(url))[0] : (!isDefaultImage(foundProfile.coverUrl) ? foundProfile.coverUrl : "")) : "",
-                images: (foundProfile.gallery || []).filter((url: string) => !isDefaultImage(url)),
+                images: [
+                  ...(foundProfile.gallery || []),
+                  ...(foundProfile.images || []),
+                  ...(foundProfile.coverUrl ? (Array.isArray(foundProfile.coverUrl) ? foundProfile.coverUrl : [foundProfile.coverUrl]) : [])
+                ].filter((url: string) => !isDefaultImage(url)),
                 status: "active",
                 isFeatured: false,
                 isVerified: true,
@@ -720,7 +745,7 @@ export default function BusinessProfilePage() {
             const foundProfile = profiles[foundProfileIndex];
             const currentInq = foundProfile.inquiryCount !== undefined ? foundProfile.inquiryCount : 0;
             foundProfile.inquiryCount = currentInq + 1;
-            window.localStorage.setItem("armbiz-business-profiles", JSON.stringify(profiles));
+            safeSetLocalStorage("armbiz-business-profiles", JSON.stringify(profiles));
           }
         } catch (e) {
           console.error("Error updating local storage profile inquiryCount", e);
@@ -1347,7 +1372,7 @@ export default function BusinessProfilePage() {
                           <span>{Number(selectedService.price).toLocaleString()} AMD</span>
                         </div>
                       )}
-                      {/* 1% Findy Coins Cashback Reward */}
+                      {/* 1% Treeo Coins Cashback Reward */}
                       {selectedService.price > 0 && (
                         <div className="flex items-center justify-between p-2 my-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs">
                           <div className="flex items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400">
@@ -1695,6 +1720,7 @@ export default function BusinessProfilePage() {
           onStoriesViewedUpdate={() => {
             handleMarkStoryAsViewed();
           }}
+          isOwner={isBusinessUser}
         />
       )}
 
@@ -1704,6 +1730,7 @@ export default function BusinessProfilePage() {
           initialGroupIndex={0}
           onClose={() => setShowHighlightViewer(false)}
           onStoriesViewedUpdate={() => { }}
+          isOwner={isBusinessUser}
         />
       )}
 

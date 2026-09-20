@@ -8,6 +8,7 @@ export interface ChatMessage {
   suggestions?: BusinessSuggestion[];
   quickReplies?: string[];
   intent?: string;
+  imageUrl?: string;
 }
 
 export interface BusinessSuggestion {
@@ -18,14 +19,26 @@ export interface BusinessSuggestion {
   city: string;
   shortDescription: string;
   slug: string;
+  plan?: string;
   packageName?: string;
   price?: number;
   pax?: number;
   atmosphere?: string;
+  cuisine?: string;
   location?: string;
   dishesHy?: string;
   dishesEn?: string;
   dishesRu?: string;
+  latitude?: number;
+  longitude?: number;
+  address?: string;
+  phone?: string;
+  coverImage?: string;
+  logo?: string;
+  images?: string[];
+  photos?: string[];
+  gallery?: string[];
+  highlights?: Array<{ imageUrl: string; title?: string; description?: string }>;
 }
 
 interface ChatState {

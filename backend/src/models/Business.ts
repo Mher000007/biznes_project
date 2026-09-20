@@ -51,6 +51,7 @@ export interface IBusiness extends Document {
     layoutType?: string;
   };
   metadata?: Record<string, any>;
+  embedding?: number[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -152,6 +153,9 @@ const businessSchema = new Schema<IBusiness>({
     title: { type: String, required: true },
     description: String,
     stories: [{ type: Schema.Types.ObjectId, ref: 'Story' }],
+    isActive: { type: Boolean, default: true },
+    link: { type: String },
+    ringColor: { type: String }
   }],
   layoutConfig: {
     themeColor: { type: String, default: '#0f172a' },
@@ -160,6 +164,10 @@ const businessSchema = new Schema<IBusiness>({
     layoutType: { type: String, default: 'standard' },
   },
   metadata: Schema.Types.Mixed,
+  embedding: {
+    type: [Number],
+    index: false,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

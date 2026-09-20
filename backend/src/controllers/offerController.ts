@@ -109,9 +109,14 @@ export const updateOffer = async (req: Request, res: Response) => {
  */
 export const searchOffersForAi = async (req: Request, res: Response) => {
   try {
-    const { query, pax, minPrice, maxPrice, atmosphere, location, limit } = req.query;
+    const { query, pax, minPrice, maxPrice, atmosphere, cuisine, entertainment, location, businessId, business, limit } = req.query;
 
     const filter: any = {};
+
+    const targetBiz = businessId || business;
+    if (targetBiz) {
+      filter.business = targetBiz;
+    }
 
     if (pax) {
       filter.pax = { $gte: Number(pax) };
@@ -125,6 +130,14 @@ export const searchOffersForAi = async (req: Request, res: Response) => {
 
     if (atmosphere) {
       filter.atmosphere = atmosphere;
+    }
+
+    if (cuisine) {
+      filter.cuisine = cuisine;
+    }
+
+    if (entertainment) {
+      filter.entertainment = entertainment;
     }
 
     if (location) {

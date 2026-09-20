@@ -13,7 +13,7 @@ export default function CTASection() {
               {t.cta?.title || "List your business"}
             </h2>
             <p className="text-sm opacity-60 mb-6 leading-relaxed">
-              {t.cta?.subtitle || "Join 900+ businesses on Findy. Create your profile, manage bookings, and reach thousands of customers across Armenia."}
+              {t.cta?.subtitle || "Join 900+ businesses on Treeo. Create your profile, manage bookings, and reach thousands of customers across Armenia."}
             </p>
             <div className="flex flex-wrap gap-3">
               <Link href="/signup" className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-[hsl(var(--background))] text-[hsl(var(--foreground))] px-5 text-sm font-medium transition-opacity hover:opacity-85">

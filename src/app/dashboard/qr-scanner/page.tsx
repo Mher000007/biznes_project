@@ -263,7 +263,7 @@ export default function QrScannerPage() {
         } else {
           // Check prefix for manual / direct input
           const inputPrefix = cleanCode.split("-")[0];
-          if (inputPrefix && currentBizPrefix && inputPrefix !== "FINDY" && inputPrefix !== "OFFER" && currentBizPrefix !== "FINDY" && inputPrefix !== currentBizPrefix && !currentBizPrefix.startsWith(inputPrefix) && !inputPrefix.startsWith(currentBizPrefix)) {
+          if (inputPrefix && currentBizPrefix && inputPrefix !== "TREEO" && inputPrefix !== "OFFER" && currentBizPrefix !== "TREEO" && inputPrefix !== currentBizPrefix && !currentBizPrefix.startsWith(inputPrefix) && !inputPrefix.startsWith(currentBizPrefix)) {
             setScanResult({
               status: "error",
               message: locale === "hy"
@@ -275,7 +275,7 @@ export default function QrScannerPage() {
             return;
           }
 
-          if (cleanCode.startsWith("FINDY-") || cleanCode.startsWith("OFFER-") || cleanCode.length >= 6) {
+          if (cleanCode.startsWith("TREEO-") || cleanCode.startsWith("OFFER-") || cleanCode.length >= 6) {
             // Demo / Direct verification fallback
             newRecord = {
               id: `redeemed-${Date.now()}-${Math.random()}`,
@@ -404,8 +404,8 @@ export default function QrScannerPage() {
           </div>
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
             {locale === "hy"
-              ? "Ստուգեք հաճախորդների QR/կուպոնային կոդերը (օրինակ՝ FINDY-218245): Հաստատելուց հետո կուպոնը կհեռանա հաճախորդի My Purchased Offers բաժնից:"
-              : "Verify customer QR/coupon codes (e.g., FINDY-218245). Upon confirmation, the coupon is automatically redeemed and saved."}
+              ? "Ստուգեք հաճախորդների QR/կուպոնային կոդերը (օրինակ՝ TREEO-218245): Հաստատելուց հետո կուպոնը կհեռանա հաճախորդի My Purchased Offers բաժնից:"
+              : "Verify customer QR/coupon codes (e.g., TREEO-218245). Upon confirmation, the coupon is automatically redeemed and saved."}
           </p>
         </div>
       </div>
@@ -427,7 +427,7 @@ export default function QrScannerPage() {
             </p>
 
             <button
-              onClick={() => handleVerifyCode("FINDY-218245")}
+              onClick={() => handleVerifyCode("TREEO-218245")}
               disabled={isScanning}
               className="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/20 transition-all flex items-center gap-2 cursor-pointer"
             >
@@ -439,7 +439,7 @@ export default function QrScannerPage() {
               ) : (
                 <>
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>{locale === "hy" ? "Փորձնական Սկան (FINDY-218245)" : "Test Scan (FINDY-218245)"}</span>
+                  <span>{locale === "hy" ? "Փորձնական Սկան (TREEO-218245)" : "Test Scan (TREEO-218245)"}</span>
                 </>
               )}
             </button>
@@ -464,7 +464,7 @@ export default function QrScannerPage() {
                   value={manualCode}
                   onChange={(e) => setManualCode(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleVerifyCode(manualCode)}
-                  placeholder="օրինակ՝ FINDY-218245"
+                  placeholder="օրինակ՝ TREEO-218245"
                   className="flex-1 px-4 py-3 bg-[hsl(var(--muted))]/40 border border-[hsl(var(--border))] rounded-xl text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 uppercase"
                 />
                 <button

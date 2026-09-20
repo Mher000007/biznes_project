@@ -7,36 +7,36 @@ export interface EmailTemplateOptions {
 export function getVerifyEmailTemplate({ name, link, lang = 'hy' }: EmailTemplateOptions) {
   const translations = {
     hy: {
-      subject: 'Հաստատեք Ձեր էլ. հասցեն — Findy',
+      subject: 'Հաստատեք Ձեր էլ. հասցեն — Treeo',
       heading: 'Հաստատեք Ձեր էլ. հասցեն',
       greeting: `Բարև ${name},`,
-      body: 'Շնորհակալություն Findy-ին միանալու համար: Խնդրում ենք հաստատել Ձեր էլ. հասցեն՝ Ձեր հաշիվն ակտիվացնելու և բոլոր հնարավորություններից օգտվելու համար:',
+      body: 'Շնորհակալություն Treeo-ին միանալու համար: Խնդրում ենք հաստատել Ձեր էլ. հասցեն՝ Ձեր հաշիվն ակտիվացնելու և բոլոր հնարավորություններից օգտվելու համար:',
       buttonText: 'Հաստատել Էլ. Հասցեն',
       expiryNote: '⏳ Այս հղումը վավեր է <strong>24 ժամ</strong>:',
       fallbackText: 'Եթե կոճակը չի աշխատում, պատճենեք և տեղադրեք այս հղումը Ձեր կրկնօրինակի (browser) մեջ.',
-      securityNotice: 'Եթե Դուք հաշիվ չեք ստեղծել Findy-ում, կարող եք անտեսել այս էլ. նամակը:',
+      securityNotice: 'Եթե Դուք հաշիվ չեք ստեղծել Treeo-ում, կարող եք անտեսել այս էլ. նամակը:',
       rights: 'Բոլոր իրավունքները պաշտպանված են:',
     },
     en: {
-      subject: 'Confirm your email address — Findy',
+      subject: 'Confirm your email address — Treeo',
       heading: 'Confirm your email address',
       greeting: `Hello ${name},`,
-      body: 'Thank you for joining Findy. Please confirm your email address to activate your account and access all business features.',
+      body: 'Thank you for joining Treeo. Please confirm your email address to activate your account and access all business features.',
       buttonText: 'Verify Email Address',
       expiryNote: '⏳ This verification link will expire in <strong>24 hours</strong>.',
       fallbackText: "If the button above doesn't work, copy and paste this link into your browser:",
-      securityNotice: "If you did not create an account on Findy, no action is required and you can safely ignore this email.",
+      securityNotice: "If you did not create an account on Treeo, no action is required and you can safely ignore this email.",
       rights: 'All rights reserved.',
     },
     ru: {
-      subject: 'Подтвердите ваш email — Findy',
+      subject: 'Подтвердите ваш email — Treeo',
       heading: 'Подтвердите ваш email',
       greeting: `Здравствуйте, ${name}!`,
-      body: 'Спасибо за регистрацию в Findy. Пожалуйста, подтвердите ваш адрес электронной почты, чтобы активировать аккаунт.',
+      body: 'Спасибо за регистрацию в Treeo. Пожалуйста, подтвердите ваш адрес электронной почты, чтобы активировать аккаунт.',
       buttonText: 'Подтвердить Email',
       expiryNote: '⏳ Эта ссылка действительна в течение <strong>24 часов</strong>.',
       fallbackText: 'Если кнопка выше не работает, скопируйте и вставьте эту ссылку в браузер:',
-      securityNotice: 'Если вы не регистрировались в Findy, просто проигнорируйте это письмо.',
+      securityNotice: 'Если вы не регистрировались в Treeo, просто проигнорируйте это письмо.',
       rights: 'Все права защищены.',
     },
   };
@@ -121,7 +121,7 @@ export function getVerifyEmailTemplate({ name, link, lang = 'hy' }: EmailTemplat
           <!-- Footer -->
           <tr>
             <td align="center" style="padding: 20px 32px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8;">
-              © 2026 Findy. ${t.rights}
+              © 2026 Treeo. ${t.rights}
             </td>
           </tr>
         </table>

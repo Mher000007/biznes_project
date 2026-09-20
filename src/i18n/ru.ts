@@ -3,14 +3,14 @@ export const ru: Translations = {
   nav: { home: "Главная", discover: "Каталог", categories: "Категории", about: "О нас", login: "Войти", getStarted: "Начать", signOut: "Выйти", hello: "Привет, ", serviceOrBusiness: "Поиск ...", allLocations: "Все локации", searchButton: "Найти", popularBusinesses: "Топ поиски", searchResults: "Результаты поиска", useArrowKeys: "Используйте ↑↓ для навигации", noBusinessesFound: "Компании не найдены", exchange: "Обмен" },
   hero: { title: "Найдите нужный рестораныв Армении", subtitle: "Более 900 проверенных компаний во всех отраслях. Находите услуги, читайте отзывы, связывайтесь напрямую.", searchPlaceholder: "Поиск компаний...", search: "Найти", businesses: "компаний", cities: "городов", industries: "отраслей" },
   categories: { title: "Поиск по категориям", subtitle: "Все основные отрасли бизнеса Армении", listed: "в списке", allCategories: "Все категории", allSubtitle: "Просмотрите все отрасли" },
-  featured: { title: "Топ-5", subtitle: "Рестораны с самым высоким рейтингом на Findy", viewAll: "Все", premiumTitle: "Предложения", premiumSubtitle: "Проверенные и лучшие предложения" },
+  featured: { title: "Топ-5", subtitle: "Рестораны с самым высоким рейтингом на Treeo", viewAll: "Все", premiumTitle: "Предложения", premiumSubtitle: "Проверенные и лучшие предложения" },
   stats: { businesses: "Компаний", cities: "Городов", industries: "Отраслей", visitors: "Посетителей в месяц" },
   reviewsFeed: { loading: "Загрузка отзывов...", title: "Последние отзывы", subtitle: "отзывы и фото клиентов ", showMore: "Показать больше" },
-  cta: { title: "Добавьте свой бизнес", subtitle: "Присоединяйтесь к 900+ компаниям на Findy. Создайте профиль, управляйте бронированиями.", getStarted: "Начать бесплатно", browse: "Каталог" },
+  cta: { title: "Добавьте свой бизнес", subtitle: "Присоединяйтесь к 900+ компаниям на Treeo. Создайте профиль, управляйте бронированиями.", getStarted: "Начать бесплатно", browse: "Каталог" },
   footer: { tagline: "Бизнес-каталог Армении. Найди, свяжись, расти.", product: "Продукт", contact: "Контакты", privacy: "Конфиденциальность", terms: "Условия" },
   auth: {
     createAccount: "Создать аккаунт",
-    chooseType: "Как вы хотите использовать Findy",
+    chooseType: "Как вы хотите использовать Treeo",
     personal: "Личный аккаунт",
     personalDesc: "Поиск, отзывы, бронирование",
     business: "Бизнес аккаунт",
@@ -71,7 +71,9 @@ export const ru: Translations = {
     welcome: "С возвращением! Обзор вашего бизнеса.",
     publish: "Опубликовать",
     publishing: "Публикация...",
-    liveOn: "На findy",
+    pendingApproval: "Ожидает одобрения",
+    pendingApprovalAlert: "Ваши изменения сохранены и ожидают одобрения администратора. После одобрения ваш сайт будет опубликован.",
+    liveOn: "В прямом эфире на Treeo",
     edit: "Редактировать",
     unpublished: "Есть изменения",
     totalViews: "Всего просмотров",
@@ -118,8 +120,8 @@ export const ru: Translations = {
       report: "Пожаловаться",
     },
     exchangeOffers: {
-      title: "Предложения Findy Coin",
-      subtitle: "Создавайте предложения, которые пользователи могут обменивать на Findy Coins.",
+      title: "Предложения Treeo Coin",
+      subtitle: "Создавайте предложения, которые пользователи могут обменивать на Treeo Coins.",
       active: "Активно",
       addOffer: "Добавить предложение",
       edit: "Редактировать",
@@ -136,7 +138,7 @@ export const ru: Translations = {
       activeVisible: "Активно (видно пользователям)",
       saveChanges: "Сохранить изменения",
       noOffersYet: "Пока нет предложений",
-      noOffersSubtitle: "Создайте свое первое предложение обмена, чтобы пользователи могли тратить свои Findy Coins в вашем бизнесе.",
+      noOffersSubtitle: "Создайте свое первое предложение обмена, чтобы пользователи могли тратить свои Treeo Coins в вашем бизнесе.",
       createFirstOffer: "Создать первое предложение",
     },
     supportPage: {
@@ -162,11 +164,14 @@ export const ru: Translations = {
       priceLabel: "Общая стоимость (драм)",
       locationLabel: "Локация / Филиал",
       selectLocationPlaceholder: "Выберите локацию...",
+      allLocations: "Все локации",
       atmosphereLabel: "Атмосфера",
       atmosphereFamily: "Семейная",
       atmosphereFamilyDesc: "Уютная, теплая и семейная атмосфера",
       atmosphereFriends: "Дружеская",
       atmosphereFriendsDesc: "Для душевных встреч и веселых вечеров с друзьями",
+      atmosphereRomantic: "Романтическая",
+      atmosphereRomanticDesc: "Для романтических свиданий и ужинов",
       atmosphereActive: "Активная",
       atmosphereActiveDesc: "Динамичная, оживленная атмосфера с музыкой и танцами",
       dishesLabel: "Включенные блюда",
@@ -265,13 +270,13 @@ export const ru: Translations = {
   },
   register: { title: "Регистрация бизнеса", subtitle: "Создайте профессиональный профиль", accountSetup: "Настройка Аккаунта", businessDetails: "Данные Бизнеса", contactAddress: "Контакты и Адрес", selectUsername: "Выберите Имя Пользователя *", usernamePlaceholder: "напр. aram_petrosyan", accountEmail: "Эл. почта *", emailPlaceholder: "aram@domain.am", accountPassword: "Пароль *", confirmPassword: "Подтвердите Пароль *", businessNameLabel: "Название Бизнеса / Бренд *", businessNamePlaceholder: "напр. Ресторан Lavash", industryCategory: "Категория *", businessDescLabel: "Описание Бизнеса *", businessDescPlaceholder: "Опишите ваш бизнес, основные товары/услуги (обязательно)", foundedYearText: "Год основания", cityLabel: "Город *", mapPicker: "Выбор на карте", addressDetails: "Детали адреса", addressPlaceholder: "Адрес, определенный по карте или вручную", contactPhone: "Контактный Телефон *", contactEmailLabel: "Контактный Email *", websiteOptional: "Веб-сайт (необязательно)", oneDigitMissing: "Не хватает 1 цифры", digitsMissing: "цифр не хватает", registering: "Регистрация...", completeActivate: "Завершить и Активировать", onboardingComplete: "Регистрация Завершена!", onboardingDesc: "Ваш профиль бренда и учетные данные зарегистрированы. Теперь вы можете войти в любое время для изменения данных.", statusLabel: "Статус", pendingApprovalStatus: "Ожидает Одобрения", returnHome: "На Главную", partnerOnboarding: "Регистрация Партнера", onboardingSub: "Выполните 4 простых шага, чтобы добавить ваш бренд в бизнес-каталог Армении", nextStep: "Следующий Шаг", businessName: "Название", category: "Категория", companySize: "Размер", shortDesc: "Краткое описание", fullDesc: "Полное описание", foundedYear: "Год основания", city: "Город", address: "Адрес", phone: "Телефон", website: "Сайт", serviceName: "Название услуги", price: "Цена", description: "Описание", duration: "Длительность", addService: "Добавить услугу", businessPhotos: "Фото", dragDrop: "Перетащите фото сюда", browseFiles: "Выбрать файлы", socialLinks: "Соцсети", tags: "Теги", preview: "Предпросмотр", submit: "Отправить", next: "Далее", back: "Назад", optional: "Этот шаг необязателен — можно заполнить позже.", complete: "Регистрация завершена!", underReview: "Ваш профиль на проверке. Мы уведомим вас.", pendingReview: "На проверке", steps: ["Информация", "Контакты", "Услуги"] },
   chat: {
-    title: "Findy AI",
+    title: "Treeo AI",
     subtitle: "Премиум Ассистент",
     placeholder: "Спросите о компаниях...",
-    welcome: "👋 Добро пожаловать в Findy AI! Я ваш личный помощник по поиску компаний в Армении.\n\nСпрашивайте меня о чем угодно — ищите рестораны, бронируйте услуги или изучайте местный бизнес.",
+    welcome: "👋 Добро пожаловать в Treeo AI! Я ваш личный помощник по поиску компаний в Армении.\n\nСпрашивайте меня о чем угодно — ищите рестораны, бронируйте услуги или изучайте местный бизнес.",
     error: "Извините, что-то пошло не так. Пожалуйста, попробуйте еще раз.",
-    assistantName: "Findy Ассистент",
-    typing: "Findy AI печатает",
+    assistantName: "Treeo Ассистент",
+    typing: "Treeo AI печатает",
     askPaxQuestion: "На сколько человек вы планируете бронирование?",
     askAtmosphereQuestion: "Какую атмосферу вы предпочитаете?",
     askLocationQuestion: "В каком районе вы хотите забронировать ресторан?",
@@ -287,10 +292,26 @@ export const ru: Translations = {
   // Profile Builder
   builder: {
     title: "Визуальный конструктор профиля бренда",
-    subtitle: "Редактируйте данные, управляйте историями в стиле Instagram, настраивайте баннеры обложек и просматривайте обновления в реальном времени на экране макета клиента.",
+    subtitle: "Редактируйте данные, настраивайте баннеры обложек и просматривайте обновления в реальном времени на экране макета клиента.",
     published: "Опубликовано",
     saveSync: "Сохранить и синхронизировать профиль",
     publishing: "Публикация...",
+    mockup: {
+      highlights: "Подборки (Highlights)",
+      bookAppointment: "Забронировать",
+      review: "отзыв",
+      reviews: "отзывов",
+      gallery: "Галерея",
+      photo: "фото",
+      photos: "фото",
+      operatingHours: "Часы работы",
+      loadingPreview: "Загрузка предпросмотра...",
+    },
+    dangerZone: {
+      title: "Опасная зона",
+      description: "Безвозвратно удалить ваш аккаунт, бизнес-профиль и все связанные данные.",
+      button: "Удалить аккаунт",
+    },
     tabs: {
       branding: "Брендинг",
       credentials: "Реквизиты",
@@ -303,11 +324,13 @@ export const ru: Translations = {
       title: "Настройка визуальных ресурсов",
       subtitle: "Укажите прямые ссылки на изображения для брендинга вашей витрины.",
       noteBubble: "Облачко краткой заметки",
-      logoUrl: "URL аватара логотипа бренда",
-      coverUrl: "URL фонового баннера обложки",
+      logoUrl: "Аватара логотипа бренда",
+      coverUrl: " Фонового баннера обложки",
       demoTitle: "Нужны демо-материалы?",
       demoDesc: "Вы можете вставить ссылки Unsplash высокого качества (например, еда, кафе, технологии) для быстрого заполнения обложек.",
       reset: "Сбросить",
+      uploadLogo: "Загрузить",
+      uploadCover: "Загрузить обложку",
     },
     credentials: {
       title: "Реквизиты бренда",
@@ -325,9 +348,15 @@ export const ru: Translations = {
       titlePlaceholder: "Название истории (напр., Большая распродажа)",
       imgPlaceholder: "URL изображения",
       add: "Добавить",
-      highlightsTitle: "Круглые подборки",
-      highlightsSubtitle: "Добавляйте статические каталоги или отзывы в качестве тегов коллекций.",
-      highlightsPlaceholder: "Название подборки (напр., Товары)",
+      highlightsTitle: "Актуальные (Highlights)",
+      highlightsSubtitle: "Добавьте каталоги или отзывы в виде круглых иконок.",
+      highlightsPlaceholder: "Название (например, Товары)",
+      selectStoriesFromArchive: "Выбрать истории из архива",
+      changeCover: "Изменить обложку",
+      highlightTitleLabel: "Название / Метка *",
+      publishedHighlights: "Опубликованные актуальные",
+      cancelEdit: "Отменить",
+      pickCover: "Выберите обложку из выбранных:",
     },
     gallery: {
       title: "Сетка фотогалереи",
@@ -338,6 +367,7 @@ export const ru: Translations = {
       emptyStateTitle: "Поделиться фото",
       emptyStateDesc: "Фотографии, которыми вы делитесь, будут показываться в вашем профиле.",
       emptyStateAction: "Поделитесь своим первым фото",
+      uploadGallery: "Загрузить изображения галереи",
     },
     hours: {
       title: "Детали местоположения и координаты",
@@ -381,7 +411,7 @@ export const ru: Translations = {
       },
     },
     preview: {
-      liveTitle: "Интерактивный предварительный просмотр в стиле Instagram",
+      liveTitle: "Интерактивный предварительный просмотр",
       viewFullscreen: "Во весь экран",
       coverBanner: "Баннер обложки",
       callPhone: "Позвонить",
@@ -438,8 +468,8 @@ export const ru: Translations = {
     expiresAt: "Истекает",
   },
   about: {
-    metaTitle: "О Findy — HoReCa Платформа Армении",
-    metaDesc: "Findy - первая специализированная платформа в Армении, объединяющая все предприятия HoReCa в одном месте.",
+    metaTitle: "О Treeo — HoReCa Платформа Армении",
+    metaDesc: "Treeo - первая специализированная платформа в Армении, объединяющая все предприятия HoReCa в одном месте.",
     stats: {
       businesses: "Зарегистрировано бизнесов",
       sector: "Специализированный сектор",
@@ -448,14 +478,14 @@ export const ru: Translations = {
     },
     story: {
       label: "О нас",
-      title: "Что такое\nFindy?",
-      p1: "Findy — первая **специализированная платформа** в Армении, объединяющая все предприятия сферы HoReCa (гостиницы, рестораны, кафе) в одном месте.",
+      title: "Что такое\nTreeo?",
+      p1: "Treeo — первая **специализированная платформа** в Армении, объединяющая все предприятия сферы HoReCa (гостиницы, рестораны, кафе) в одном месте.",
       p2: "Мы создали платформу, где вы легко найдете ближайшее кафе, ресторан или гостиницу, забронируете столик прямо с сайта, изучите меню, услуги и цены, а также сориентируетесь по карте исходя из вашего местоположения.",
-      p3: "Для бизнеса Findy — это возможность расширить клиентскую базу, управлять бронированием и стать более заметным для нужной аудитории."
+      p3: "Для бизнеса Treeo — это возможность расширить клиентскую базу, управлять бронированием и стать более заметным для нужной аудитории."
     },
     userFeatures: {
       chip: "Для вас",
-      title: "Что вы получите от Findy",
+      title: "Что вы получите от Treeo",
       sub: "Мы создали возможность, с помощью которой вы можете легко пользоваться сферой HoReCa.",
       items: [
         {
@@ -486,12 +516,12 @@ export const ru: Translations = {
     },
     bizBenefits: {
       chip: "Для бизнеса",
-      title: "Как Findy помогает вашему бизнесу",
-      sub: "Для бизнеса Findy — это возможность расширить клиентскую базу, управлять бронированием и стать более заметным для нужной аудитории.",
+      title: "Как Treeo помогает вашему бизнесу",
+      sub: "Для бизнеса Treeo — это возможность расширить клиентскую базу, управлять бронированием и стать более заметным для нужной аудитории.",
       items: [
         {
           title: "Расширьте клиентскую базу",
-          desc: "Для бизнеса Findy – это возможность расширить базу клиентов."
+          desc: "Для бизнеса Treeo – это возможность расширить базу клиентов."
         },
         {
           title: "Управляйте бронированием",
@@ -509,7 +539,7 @@ export const ru: Translations = {
     }
   },
   exchange: {
-    heroDesc: "Превратите ваши накопленные Findy Coins в реальные преимущества. Обменивайтесь с другими пользователями или используйте для специальных предложений.",
+    heroDesc: "Превратите ваши накопленные Treeo Coins в реальные преимущества. Обменивайтесь с другими пользователями или используйте для специальных предложений.",
     startExchanging: "Начать обмен",
   },
   billing: {
@@ -640,17 +670,17 @@ export const ru: Translations = {
     }
   },
   seo: {
-    homeTitle: "Findy — Бизнес-каталог Армении",
+    homeTitle: "Treeo — Бизнес-каталог Армении",
     homeDesc: "Открывайте, связывайтесь и развивайтесь с армянскими предпринимателями. Найдите B2B-партнеров и услуги во всех отраслях Армении.",
-    businessTitle: "{{name}} — {{category}} в {{city}} | Findy",
+    businessTitle: "{{name}} — {{category}} в {{city}} | Treeo",
     businessDesc: "{{description}}",
-    categoryTitle: "{{category}} в Армении | Findy",
-    cityTitle: "Бизнесы в {{city}} | Findy",
-    searchTitle: "Поиск: {{query}} | Findy",
-    aboutTitle: "О нас | Findy — Бизнес-платформа Армении",
-    aboutDesc: "Findy — ведущая платформа Армении, объединяющая все бизнесы в одном месте.",
-    discoverTitle: "Откройте для себя бизнесы | Findy",
-    discoverDesc: "Ищите и находите компании на Findy.",
-    categoryCityTitle: "{{category}} в {{city}} | Findy"
+    categoryTitle: "{{category}} в Армении | Treeo",
+    cityTitle: "Бизнесы в {{city}} | Treeo",
+    searchTitle: "Поиск: {{query}} | Treeo",
+    aboutTitle: "О нас | Treeo — Бизнес-платформа Армении",
+    aboutDesc: "Treeo — ведущая платформа Армении, объединяющая все бизнесы в одном месте.",
+    discoverTitle: "Откройте для себя бизнесы | Treeo",
+    discoverDesc: "Ищите и находите компании на Treeo.",
+    categoryCityTitle: "{{category}} в {{city}} | Treeo"
   }
 };

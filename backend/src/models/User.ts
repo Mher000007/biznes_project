@@ -15,7 +15,7 @@ export interface IUser extends Document {
   location?: string;
   verified: boolean;
   role: 'user' | 'business_owner' | 'admin';
-  findyCoins?: number;
+  treeoCoins?: number;
   resetPasswordToken?: string;
   resetPasswordExpire?: Date;
   emailVerificationToken?: string;
@@ -81,7 +81,7 @@ const userSchema = new Schema<IUser>({
     enum: ['user', 'business_owner', 'admin'],
     default: 'user',
   },
-  findyCoins: {
+  treeoCoins: {
     type: Number,
     default: 0,
     min: 0,

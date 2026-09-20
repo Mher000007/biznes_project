@@ -17,7 +17,7 @@ export async function generateMetadata(
 
   const title = t.seo.cityTitle.replace("{{city}}", name);
   const description = t.seo.homeDesc;
-  const url = `https://findy.am/city/${slug}`;
+  const url = `https://treeo.am/city/${slug}`;
 
   return {
     title,
@@ -25,9 +25,9 @@ export async function generateMetadata(
     alternates: {
       canonical: url,
       languages: {
-        en: `https://findy.am/en/city/${slug}`,
-        hy: `https://findy.am/hy/city/${slug}`,
-        ru: `https://findy.am/ru/city/${slug}`,
+        en: `https://treeo.am/en/city/${slug}`,
+        hy: `https://treeo.am/hy/city/${slug}`,
+        ru: `https://treeo.am/ru/city/${slug}`,
         "x-default": url,
       },
     },

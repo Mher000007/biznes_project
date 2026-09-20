@@ -6,6 +6,7 @@ import { useI18n } from "@/i18n";
 import axios from "axios";
 import Link from "next/link";
 import { Plus, Trash2, Edit2, Utensils, Users, MapPin, Tag, Lock, Loader2, Languages, AlertCircle, Globe, ChevronDown, Sparkles, Check } from "lucide-react";
+import { LocationSelect } from "@/components/ui/LocationSelect";
 
 interface Offer {
   _id: string;
@@ -18,6 +19,9 @@ interface Offer {
   inclusions: string[];
   location: string;
   atmosphere?: string;
+  cuisine?: string;
+  entertainment?: string;
+  amenities?: string[];
 }
 
 type LangKey = 'hy' | 'en' | 'ru';
@@ -224,9 +228,13 @@ export default function DashboardOffers() {
   // Custom dropdown open states & refs
   const [isLocationOpen, setIsLocationOpen] = useState(false);
   const [isAtmosphereOpen, setIsAtmosphereOpen] = useState(false);
+  const [isCuisineOpen, setIsCuisineOpen] = useState(false);
+  const [isEntertainmentOpen, setIsEntertainmentOpen] = useState(false);
 
   const locationRef = useRef<HTMLDivElement>(null);
   const atmosphereRef = useRef<HTMLDivElement>(null);
+  const cuisineRef = useRef<HTMLDivElement>(null);
+  const entertainmentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -235,6 +243,12 @@ export default function DashboardOffers() {
       }
       if (atmosphereRef.current && !atmosphereRef.current.contains(event.target as Node)) {
         setIsAtmosphereOpen(false);
+      }
+      if (cuisineRef.current && !cuisineRef.current.contains(event.target as Node)) {
+        setIsCuisineOpen(false);
+      }
+      if (entertainmentRef.current && !entertainmentRef.current.contains(event.target as Node)) {
+        setIsEntertainmentOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -295,6 +309,9 @@ export default function DashboardOffers() {
     price: 0 as number | string,
     location: "",
     atmosphere: "family",
+    cuisine: "armenian",
+    entertainment: "none",
+    amenities: [] as string[],
     dishesString: "",
     dishesEnString: "",
     dishesRuString: "",
@@ -457,6 +474,11 @@ export default function DashboardOffers() {
     e.preventDefault();
     if (!businessId) return;
 
+    if (!formData.location) {
+      alert(offersT.selectLocationPlaceholder || "Խնդրում ենք ընտրել հասցեն");
+      return;
+    }
+
     try {
       const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
       const payload = {
@@ -466,6 +488,9 @@ export default function DashboardOffers() {
         price: formData.price,
         location: formData.location,
         atmosphere: formData.atmosphere,
+        cuisine: formData.cuisine,
+        entertainment: formData.entertainment,
+        amenities: formData.amenities,
         dishes: formData.dishesString.split(',').map(s => s.trim()).filter(Boolean),
         dishesEn: formData.dishesEnString.split(',').map(s => s.trim()).filter(Boolean),
         dishesRu: formData.dishesRuString.split(',').map(s => s.trim()).filter(Boolean),
@@ -481,7 +506,7 @@ export default function DashboardOffers() {
       setIsModalOpen(false);
       fetchOffers();
     } catch (err: any) {
-      console.error("Failed to save offer", err.response?.data || err.message);
+      console.error("Failed to save offer", err.response?.data ? JSON.stringify(err.response?.data) : err.message);
       alert(err.response?.data?.error || "Failed to save offer");
     }
   };
@@ -512,6 +537,9 @@ export default function DashboardOffers() {
       price: 0,
       location: locations.length > 0 ? locations[0].address : "",
       atmosphere: "family",
+      cuisine: "armenian",
+      entertainment: "none",
+      amenities: [],
       dishesString: "",
       dishesEnString: "",
       dishesRuString: "",
@@ -533,6 +561,9 @@ export default function DashboardOffers() {
       price: offer.price || 0,
       location: offer.location || (locations.length > 0 ? locations[0].address : ""),
       atmosphere: offer.atmosphere || "family",
+      cuisine: offer.cuisine || "armenian",
+      entertainment: offer.entertainment || "none",
+      amenities: offer.amenities || [],
       dishesString: dishesArm,
       dishesEnString: Array.isArray(offer.dishesEn) ? offer.dishesEn.join(", ") : "",
       dishesRuString: Array.isArray(offer.dishesRu) ? offer.dishesRu.join(", ") : "",
@@ -638,10 +669,10 @@ export default function DashboardOffers() {
                   {/* Atmosphere Badge */}
                   {offer.atmosphere && (
                     <span className={`text-[11px] font-bold px-3 py-1 rounded-xl flex items-center gap-1.5 border shadow-2xs backdrop-blur-xs transition-all ${offer.atmosphere === 'family'
-                        ? 'bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/15 border-amber-500/30 text-amber-700 dark:text-amber-300'
-                        : offer.atmosphere === 'friends'
-                          ? 'bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-indigo-500/15 border-indigo-500/30 text-indigo-700 dark:text-indigo-300'
-                          : 'bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-cyan-500/15 border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
+                      ? 'bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/15 border-amber-500/30 text-amber-700 dark:text-amber-300'
+                      : offer.atmosphere === 'friends'
+                        ? 'bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-indigo-500/15 border-indigo-500/30 text-indigo-700 dark:text-indigo-300'
+                        : 'bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-cyan-500/15 border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
                       }`}>
                       <Sparkles className="w-3 h-3 shrink-0" />
                       <span>
@@ -649,7 +680,9 @@ export default function DashboardOffers() {
                           ? `👨‍👩‍👧‍👦 ${offersT.atmosphereFamily || 'Ընտանեկան'}`
                           : offer.atmosphere === 'friends'
                             ? `👥 ${offersT.atmosphereFriends || 'Ընկերական'}`
-                            : `⚡ ${offersT.atmosphereActive || 'Ակտիվ'}`}
+                            : offer.atmosphere === 'romantic'
+                              ? `💖 ${offersT.atmosphereRomantic || 'Ռոմանտիկ'}`
+                              : `⚡ ${offersT.atmosphereActive || 'Ակտիվ'}`}
                       </span>
                     </span>
                   )}
@@ -747,62 +780,15 @@ export default function DashboardOffers() {
                   {/* CUSTOM LOCATION DROPDOWN */}
                   <div className="relative" ref={locationRef}>
                     <label className="block text-sm font-medium mb-1">{offersT.locationLabel || "Location"}</label>
-                    {locations.length > 0 ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => { setIsLocationOpen(!isLocationOpen); setIsAtmosphereOpen(false); }}
-                          className="w-full flex items-center justify-between rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-4 py-2.5 text-sm outline-none focus:border-[hsl(var(--primary))] transition-all cursor-pointer select-none font-medium shadow-2xs hover:bg-[hsl(var(--muted))]/30"
-                        >
-                          <div className="flex items-center gap-2 truncate pr-2">
-                            <MapPin className="w-4 h-4 text-[hsl(var(--primary))] shrink-0" />
-                            <span className="truncate font-semibold text-[hsl(var(--foreground))] text-xs sm:text-sm">
-                              {formData.location || (offersT.selectLocationPlaceholder || "Select a location...")}
-                            </span>
-                          </div>
-                          <ChevronDown className={`w-4 h-4 text-[hsl(var(--muted-foreground))] shrink-0 transition-transform duration-200 ${isLocationOpen ? 'rotate-180 text-[hsl(var(--primary))]' : ''}`} />
-                        </button>
-
-                        {isLocationOpen && (
-                          <div className="absolute left-0 right-0 top-full mt-1.5 z-40 bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl shadow-2xl p-1.5 animate-scale-in space-y-1 max-h-60 overflow-y-auto backdrop-blur-md">
-                            {locations.map((loc) => {
-                              const isSelected = formData.location === loc.address;
-                              return (
-                                <button
-                                  key={loc._id}
-                                  type="button"
-                                  onClick={() => {
-                                    setFormData({ ...formData, location: loc.address });
-                                    setIsLocationOpen(false);
-                                  }}
-                                  className={`w-full flex items-center justify-between p-2.5 rounded-xl transition-all text-left cursor-pointer ${isSelected
-                                      ? 'bg-[hsl(var(--primary))]/10 border border-[hsl(var(--primary))]/30 text-[hsl(var(--primary))] font-bold shadow-2xs'
-                                      : 'hover:bg-[hsl(var(--muted))]/50 text-[hsl(var(--foreground))] border border-transparent'
-                                    }`}
-                                >
-                                  <div className="flex items-center gap-2.5 truncate pr-2">
-                                    <div className="p-1.5 rounded-lg bg-[hsl(var(--muted))]/60 text-[hsl(var(--primary))] shrink-0">
-                                      <MapPin className="w-3.5 h-3.5" />
-                                    </div>
-                                    <span className="text-xs sm:text-sm font-medium truncate">{loc.address}</span>
-                                  </div>
-                                  {isSelected && <Check className="w-4 h-4 text-[hsl(var(--primary))] shrink-0" />}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <input
-                        required
-                        type="text"
-                        placeholder="Exact Address"
-                        value={formData.location}
-                        onChange={e => setFormData({ ...formData, location: e.target.value })}
-                        className="w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-4 py-2.5 text-sm outline-none focus:border-[hsl(var(--primary))] transition-colors"
-                      />
-                    )}
+                    <LocationSelect
+                      value={formData.location === 'all' ? '' : formData.location}
+                      onChange={(e) => setFormData({ ...formData, location: e.target.value === '' ? 'all' : e.target.value })}
+                      placeholder={offersT.allLocations || 'Բոլոր վայրերը'}
+                      disablePlaceholder={false}
+                      className="w-full flex items-center justify-between rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-4 py-2.5 text-sm outline-none focus:border-[hsl(var(--primary))] transition-all cursor-pointer select-none font-medium shadow-2xs hover:bg-[hsl(var(--muted))]/30"
+                      onClick={() => setIsAtmosphereOpen(false)}
+                      icon={<MapPin className="w-4 h-4 text-[hsl(var(--primary))] shrink-0" />}
+                    />
                   </div>
 
                   {/* CUSTOM ATMOSPHERE DROPDOWN */}
@@ -815,14 +801,16 @@ export default function DashboardOffers() {
                     >
                       <div className="flex items-center gap-2 truncate">
                         <span className="text-base">
-                          {formData.atmosphere === 'family' ? '👨‍👩‍👧‍👦' : formData.atmosphere === 'friends' ? '👥' : '⚡'}
+                          {formData.atmosphere === 'family' ? '👨‍👩‍👧‍👦' : formData.atmosphere === 'friends' ? '👥' : formData.atmosphere === 'romantic' ? '💖' : '⚡'}
                         </span>
                         <span className="font-semibold text-[hsl(var(--foreground))] text-xs sm:text-sm">
                           {formData.atmosphere === 'family'
                             ? (offersT.atmosphereFamily || 'Ընտանեկան')
                             : formData.atmosphere === 'friends'
                               ? (offersT.atmosphereFriends || 'Ընկերական')
-                              : (offersT.atmosphereActive || 'Ակտիվ')}
+                              : formData.atmosphere === 'romantic'
+                                ? (offersT.atmosphereRomantic || 'Ռոմանտիկ')
+                                : (offersT.atmosphereActive || 'Ակտիվ')}
                         </span>
                       </div>
                       <ChevronDown className={`w-4 h-4 text-[hsl(var(--muted-foreground))] transition-transform duration-200 ${isAtmosphereOpen ? 'rotate-180 text-[hsl(var(--primary))]' : ''}`} />
@@ -833,6 +821,7 @@ export default function DashboardOffers() {
                         {[
                           { id: 'family', icon: '👨‍👩‍👧‍👦', name: offersT.atmosphereFamily || 'Ընտանեկան', desc: offersT.atmosphereFamilyDesc || 'Հարմարավետ, ջերմ և ընտանեկան միջավայր' },
                           { id: 'friends', icon: '👥', name: offersT.atmosphereFriends || 'Ընկերական', desc: offersT.atmosphereFriendsDesc || 'Ջերմ հավաքույթների և ընկերական երեկոների համար' },
+                          { id: 'romantic', icon: '💖', name: offersT.atmosphereRomantic || 'Ռոմանտիկ', desc: offersT.atmosphereRomanticDesc || 'Ռոմանտիկ ժամադրությունների և հանդիպումների համար' },
                           { id: 'active', icon: '⚡', name: offersT.atmosphereActive || 'Ակտիվ', desc: offersT.atmosphereActiveDesc || 'Ակտիվ, աշխույժ, երաժշտություն և պարեր' },
                         ].map((item) => {
                           const isSelected = formData.atmosphere === item.id;
@@ -845,8 +834,8 @@ export default function DashboardOffers() {
                                 setIsAtmosphereOpen(false);
                               }}
                               className={`w-full flex items-center justify-between p-2.5 rounded-xl transition-all text-left cursor-pointer ${isSelected
-                                  ? 'bg-[hsl(var(--primary))]/10 border border-[hsl(var(--primary))]/30 text-[hsl(var(--primary))] font-bold shadow-2xs'
-                                  : 'hover:bg-[hsl(var(--muted))]/50 text-[hsl(var(--foreground))] border border-transparent'
+                                ? 'bg-[hsl(var(--primary))]/10 border border-[hsl(var(--primary))]/30 text-[hsl(var(--primary))] font-bold shadow-2xs'
+                                : 'hover:bg-[hsl(var(--muted))]/50 text-[hsl(var(--foreground))] border border-transparent'
                                 }`}
                             >
                               <div className="flex items-center gap-3">
@@ -860,6 +849,77 @@ export default function DashboardOffers() {
                             </button>
                           );
                         })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* CUSTOM CUISINE DROPDOWN */}
+                  <div className="relative" ref={cuisineRef}>
+                    <label className="block text-sm font-medium mb-1">{offersT.cuisineLabel || "Խոհանոց"}</label>
+                    <button
+                      type="button"
+                      onClick={() => { setIsCuisineOpen(!isCuisineOpen); setIsAtmosphereOpen(false); setIsLocationOpen(false); setIsEntertainmentOpen(false); }}
+                      className="w-full flex items-center justify-between rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-4 py-2.5 text-sm outline-none focus:border-[hsl(var(--primary))] transition-all cursor-pointer shadow-2xs hover:bg-[hsl(var(--muted))]/30"
+                    >
+                      <span className="font-semibold text-[hsl(var(--foreground))] text-xs sm:text-sm">
+                        {formData.cuisine === 'armenian' ? '🇦🇲 Հայկական' :
+                          formData.cuisine === 'georgian' ? '🇬🇪 Վրացական' :
+                            formData.cuisine === 'russian' ? '🇷🇺 Ռուսական' :
+                              formData.cuisine === 'italian' ? '🇮🇹 Իտալական' :
+                                formData.cuisine === 'japanese' ? '🇯🇵 Ճապոնական' :
+                                  formData.cuisine === 'fastfood' ? '🍔 Արագ սնունդ' : 'Այլ'}
+                      </span>
+                      <ChevronDown className={`w-4 h-4 text-[hsl(var(--muted-foreground))] transition-transform duration-200 ${isCuisineOpen ? 'rotate-180 text-[hsl(var(--primary))]' : ''}`} />
+                    </button>
+                    {isCuisineOpen && (
+                      <div className="absolute left-0 right-0 top-full mt-1.5 z-40 bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl shadow-2xl p-1.5 max-h-60 overflow-y-auto backdrop-blur-md animate-scale-in">
+                        {[
+                          { id: 'armenian', name: '🇦🇲 Հայկական' },
+                          { id: 'georgian', name: '🇬🇪 Վրացական' },
+                          { id: 'russian', name: '🇷🇺 Ռուսական' },
+                          { id: 'italian', name: '🇮🇹 Իտալական' },
+                          { id: 'japanese', name: '🇯🇵 Ճապոնական' },
+                          { id: 'fastfood', name: '🍔 Արագ սնունդ' },
+                          { id: 'other', name: 'Այլ' }
+                        ].map(c => (
+                          <button key={c.id} type="button" onClick={() => { setFormData({ ...formData, cuisine: c.id }); setIsCuisineOpen(false); }} className={`w-full text-left p-2.5 rounded-xl transition-all hover:bg-[hsl(var(--muted))]/50 flex items-center justify-between ${formData.cuisine === c.id ? 'bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))] font-bold shadow-2xs' : 'text-[hsl(var(--foreground))]'}`}>
+                            <span className="text-xs sm:text-sm">{c.name}</span>
+                            {formData.cuisine === c.id && <Check className="w-4 h-4 shrink-0" />}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* CUSTOM ENTERTAINMENT DROPDOWN */}
+                  <div className="relative" ref={entertainmentRef}>
+                    <label className="block text-sm font-medium mb-1">{offersT.entertainmentLabel || "Ժամանց / Երաժշտություն"}</label>
+                    <button
+                      type="button"
+                      onClick={() => { setIsEntertainmentOpen(!isEntertainmentOpen); setIsAtmosphereOpen(false); setIsLocationOpen(false); setIsCuisineOpen(false); }}
+                      className="w-full flex items-center justify-between rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-4 py-2.5 text-sm outline-none focus:border-[hsl(var(--primary))] transition-all cursor-pointer shadow-2xs hover:bg-[hsl(var(--muted))]/30"
+                    >
+                      <span className="font-semibold text-[hsl(var(--foreground))] text-xs sm:text-sm">
+                        {formData.entertainment === 'none' ? '🔇 Չկա / Ֆոնային' :
+                          formData.entertainment === 'live' ? '🎸 Կենդանի երաժշտություն' :
+                            formData.entertainment === 'dj' ? '🎧 DJ / Ակումբային' : 'Ընտրեք'}
+                      </span>
+                      <ChevronDown className={`w-4 h-4 text-[hsl(var(--muted-foreground))] transition-transform duration-200 ${isEntertainmentOpen ? 'rotate-180 text-[hsl(var(--primary))]' : ''}`} />
+                    </button>
+                    {isEntertainmentOpen && (
+                      <div className="absolute left-0 right-0 top-full mt-1.5 z-40 bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl shadow-2xl p-1.5 max-h-60 overflow-y-auto backdrop-blur-md animate-scale-in">
+                        {[
+                          { id: 'none', name: '🔇 Չկա / Ֆոնային' },
+                          { id: 'live', name: '🎸 Կենդանի երաժշտություն' },
+                          { id: 'dj', name: '🎧 DJ / Ակումբային' }
+                        ].map(e => (
+                          <button key={e.id} type="button" onClick={() => { setFormData({ ...formData, entertainment: e.id }); setIsEntertainmentOpen(false); }} className={`w-full text-left p-2.5 rounded-xl transition-all hover:bg-[hsl(var(--muted))]/50 flex items-center justify-between ${formData.entertainment === e.id ? 'bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))] font-bold shadow-2xs' : 'text-[hsl(var(--foreground))]'}`}>
+                            <span className="text-xs sm:text-sm">{e.name}</span>
+                            {formData.entertainment === e.id && <Check className="w-4 h-4 shrink-0" />}
+                          </button>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -939,8 +999,8 @@ export default function DashboardOffers() {
                             }}
                             placeholder={placeholderText}
                             className={`w-full rounded-xl border bg-[hsl(var(--background))] px-3.5 py-2.5 text-sm outline-none transition-colors resize-none ${scriptError
-                                ? "border-red-500 focus:border-red-600 bg-red-500/5 text-red-900 dark:text-red-200"
-                                : "border-[hsl(var(--border))] focus:border-[hsl(var(--primary))]"
+                              ? "border-red-500 focus:border-red-600 bg-red-500/5 text-red-900 dark:text-red-200"
+                              : "border-[hsl(var(--border))] focus:border-[hsl(var(--primary))]"
                               }`}
                           />
 
@@ -1039,8 +1099,8 @@ export default function DashboardOffers() {
                                 }}
                                 placeholder={placeholderText}
                                 className={`w-full rounded-xl border bg-[hsl(var(--background))] px-3.5 py-2 text-xs outline-none transition-colors resize-none ${scriptError
-                                    ? "border-red-500 focus:border-red-600 bg-red-500/5 text-red-900 dark:text-red-200"
-                                    : "border-[hsl(var(--border))] focus:border-[hsl(var(--primary))]"
+                                  ? "border-red-500 focus:border-red-600 bg-red-500/5 text-red-900 dark:text-red-200"
+                                  : "border-[hsl(var(--border))] focus:border-[hsl(var(--primary))]"
                                   }`}
                               />
 
@@ -1060,8 +1120,8 @@ export default function DashboardOffers() {
                 <div className="pt-3 border-t border-[hsl(var(--border))]/60">
                   <div
                     className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-200 cursor-pointer select-none ${hasInclusions
-                        ? "border-[#00e676]/40 bg-[#00e676]/5 shadow-sm"
-                        : "border-[hsl(var(--border))] bg-[hsl(var(--background))] hover:border-[hsl(var(--border))]/80"
+                      ? "border-[#00e676]/40 bg-[#00e676]/5 shadow-sm"
+                      : "border-[hsl(var(--border))] bg-[hsl(var(--background))] hover:border-[hsl(var(--border))]/80"
                       }`}
                     onClick={() => setHasInclusions(!hasInclusions)}
                   >
@@ -1082,8 +1142,8 @@ export default function DashboardOffers() {
                       </label>
                     </div>
                     <span className={`text-xs font-semibold px-2.5 py-1 rounded-full transition-colors ${hasInclusions
-                        ? "bg-[#00e676]/15 text-[#00e676]"
-                        : "bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))]"
+                      ? "bg-[#00e676]/15 text-[#00e676]"
+                      : "bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))]"
                       }`}>
                       {hasInclusions ? (offersT.enabled || "Enabled") : (offersT.optional || "Optional")}
                     </span>

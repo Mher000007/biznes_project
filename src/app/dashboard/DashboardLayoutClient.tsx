@@ -41,10 +41,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const { t } = useI18n();
 
   const [profileExpanded, setProfileExpanded] = useState(true);
-  const [billingExpanded, setBillingExpanded] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [activePlan, setActivePlan] = useState<string>("starter");
-  const [shakingHrefs, setShakingHrefs] = useState<string[]>([]);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
@@ -59,9 +56,6 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (pathname.startsWith("/dashboard/profile")) {
       setProfileExpanded(true);
-    }
-    if (pathname.startsWith("/dashboard/billing")) {
-      setBillingExpanded(true);
     }
   }, [pathname]);
 
@@ -98,51 +92,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     fetchUnread();
   }, [pathname, currentUser]);
 
-  // 4. Subscription plan loading effect
-  useEffect(() => {
-    async function loadPlan() {
-      if (!currentUser || currentUser.verified === false) return;
-      try {
-        const bizRes = await api.get("/businesses/me/all");
-        if (bizRes.data?.success && bizRes.data.data?.length > 0) {
-          const bizId = bizRes.data.data[0]._id;
-          try {
-            const subRes = await api.get(`/subscriptions/business/${bizId}`);
-            if (subRes.data?.success && subRes.data.data?.plan) {
-              setActivePlan(subRes.data.data.plan);
-              return;
-            }
-          } catch { }
-        }
-      } catch { }
 
-      if (typeof window !== "undefined") {
-        const profilesStr = window.localStorage.getItem("armbiz-business-profiles");
-        if (profilesStr) {
-          try {
-            const profiles = JSON.parse(profilesStr);
-            const myProfile = profiles.find((p: any) => p.ownerUsername === currentUser?.username);
-            if (myProfile && myProfile.plan) {
-              setActivePlan(myProfile.plan);
-            }
-          } catch (e) { }
-        }
-      }
-    }
-    loadPlan();
-
-    // Listen for custom plan update event from the dashboard
-    const handlePlanUpdate = () => {
-      const demoPlan = window.localStorage.getItem("demo_active_plan");
-      if (demoPlan) setActivePlan(demoPlan);
-    };
-
-    // Also check demo_active_plan on initial mount
-    handlePlanUpdate();
-
-    window.addEventListener("plan_updated", handlePlanUpdate);
-    return () => window.removeEventListener("plan_updated", handlePlanUpdate);
-  }, [currentUser]);
 
   // ── CONDITIONAL EARLY RETURNS (ALL HOOKS HAVE BEEN CALLED ABOVE) ──────────
 
@@ -163,46 +113,28 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     router.push("/");
   };
 
-  const isStarterPlan = !activePlan || activePlan === "starter" || activePlan === "start" || activePlan === "free" || activePlan === "basic";
 
-  const handleLockedClick = (e: React.MouseEvent, href: string) => {
-    if (isStarterPlan) {
-      e.preventDefault();
-      e.stopPropagation();
-      setShakingHrefs((prev) => [...prev, href]);
-      setTimeout(() => {
-        setShakingHrefs((prev) => prev.filter((h) => h !== href));
-      }, 500);
-    }
-  };
 
   const navT = (t as any).dashboard?.nav || {};
 
   const links = [
     { href: "/dashboard", label: navT.overview || "Overview", icon: LayoutDashboard },
     { href: "/dashboard/profile", label: navT.businessProfile || "Business Profile", icon: Building2 },
-    { href: "/dashboard/offers", label: navT.menusOffers || "Menus & Offers", icon: Utensils, isPro: true },
+    { href: "/dashboard/offers", label: navT.menusOffers || "Menus & Offers", icon: Utensils },
     { href: "/dashboard/locations", label: navT.myLocations || "My Locations", icon: MapPin },
-    { href: "/dashboard/stories", label: navT.stories || "Stories", icon: Sparkles, isPro: true },
+    { href: "/dashboard/stories", label: navT.stories || "Stories", icon: Sparkles },
     { href: "/dashboard/inquiries", label: navT.inquiries || "Inquiries", icon: MessageSquare },
-    { href: "/dashboard/exchange", label: navT.exchange || "Exchange", icon: ArrowRightLeft, isPro: true },
-    { href: "/dashboard/qr-scanner", label: navT.qrScanner || "QR Scanner", icon: QrCode, isPro: true },
+    { href: "/dashboard/exchange", label: navT.exchange || "Exchange", icon: ArrowRightLeft },
+    { href: "/dashboard/qr-scanner", label: navT.qrScanner || "QR Scanner", icon: QrCode },
     { href: "/dashboard/support", label: navT.supportChat || "Support Chat", icon: HeadphonesIcon },
-    { href: "/dashboard/billing", label: navT.billing || "Billing & Plans", icon: CreditCard },
     { href: "/dashboard/settings", label: navT.settings || "Settings", icon: Settings },
   ];
 
   const profileSubLinks = [
     { href: "/dashboard/profile?tab=branding", label: navT.branding || "Branding", icon: Sparkles },
     { href: "/dashboard/profile?tab=credentials", label: navT.credentials || "Credentials", icon: Lock },
-    { href: "/dashboard/profile?tab=stories", label: navT.storiesHighlights || "Stories & Highlights", icon: Camera, isPro: true },
+    { href: "/dashboard/profile?tab=stories", label: navT.storiesHighlights || "Stories & Highlights", icon: Camera },
     { href: "/dashboard/profile?tab=hours", label: navT.operatingHours || "Operating Hours", icon: Clock },
-  ];
-
-  const billingSubLinks = [
-    { href: "/dashboard/billing?tab=plans", label: navT.plans || "Plans & Subscriptions", icon: CreditCard },
-    { href: "/dashboard/billing?tab=cards", label: navT.cards || "Saved Cards", icon: Wallet },
-    { href: "/dashboard/billing?tab=receipts", label: navT.receipts || "Receipts & Invoices", icon: Receipt },
   ];
 
   const isSubActive = (href: string) => {
@@ -224,13 +156,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     <div className="pt-16 min-h-screen flex flex-col">
       <UnverifiedBanner />
       <div className="flex flex-1">
-        <style jsx global>{`
-        @keyframes planLockShake {
-          0%, 100% { transform: translateX(0); }
-          20%, 60% { transform: translateX(-4px); }
-          40%, 80% { transform: translateX(4px); }
-        }
-      `}</style>
+
         {/* Mobile Overlay */}
         {isMobileOpen && (
           <div
@@ -271,8 +197,6 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           {/* Scrollable Content */}
           <div className={`flex flex-col flex-1 px-4 pb-4 gap-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-[hsl(var(--border))] [&::-webkit-scrollbar-thumb]:rounded-full ${isSidebarCollapsed ? "overflow-visible" : "overflow-y-auto"}`}>
             {links.map((link) => {
-              const isLocked = isStarterPlan && link.isPro;
-              const isShaking = shakingHrefs.includes(link.href);
 
               if (link.href === "/dashboard/profile") {
                 const isProfileActive = pathname.startsWith("/dashboard/profile");
@@ -301,25 +225,18 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                             <div className="flex flex-col p-1.5 gap-0.5">
                               {profileSubLinks.map((sub) => {
                                 const active = isSubActive(sub.href);
-                                const isSubLocked = isStarterPlan && sub.isPro;
                                 return (
                                   <Link
                                     key={sub.href}
                                     href={sub.href}
-                                    onClick={(e) => {
-                                      if (isSubLocked) handleLockedClick(e, sub.href);
-                                      else setIsMobileOpen(false);
-                                    }}
-                                    className={`flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium transition-colors ${isSubLocked
-                                      ? "text-[hsl(var(--muted-foreground))]/70 hover:bg-amber-500/10 cursor-pointer"
-                                      : active
+                                    onClick={() => setIsMobileOpen(false)}
+                                    className={`flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium transition-colors ${active
                                         ? "text-[hsl(var(--primary))] font-semibold bg-[hsl(var(--primary))]/10"
                                         : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
                                       }`}
                                   >
                                     <sub.icon className="h-3.5 w-3.5 shrink-0" />
                                     <span className="truncate">{sub.label}</span>
-                                    {isSubLocked && <Lock className="h-3 w-3 text-amber-500 shrink-0 ml-auto" />}
                                   </Link>
                                 );
                               })}
@@ -333,22 +250,13 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                       <div className="pl-6 flex flex-col gap-1 border-l border-[hsl(var(--border))]/60 ml-5 mt-1">
                         {profileSubLinks.map((sub) => {
                           const active = isSubActive(sub.href);
-                          const isSubLocked = isStarterPlan && sub.isPro;
-                          const isSubShaking = shakingHrefs.includes(sub.href);
 
                           return (
                             <Link
                               key={sub.href}
                               href={sub.href}
-                              onClick={(e) => {
-                                if (isSubLocked) handleLockedClick(e, sub.href);
-                                else setIsMobileOpen(false);
-                              }}
-                              style={isSubShaking ? { animation: "planLockShake 0.4s ease-in-out" } : undefined}
-                              title={isSubLocked ? "Pro & Premium feature — Locked on Starter Plan" : undefined}
-                              className={`flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${isSubLocked
-                                ? "text-[hsl(var(--muted-foreground))]/70 hover:bg-amber-500/10 cursor-pointer"
-                                : active
+                              onClick={() => setIsMobileOpen(false)}
+                              className={`flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${active
                                   ? "text-[hsl(var(--primary))] font-semibold bg-[hsl(var(--primary))]/5"
                                   : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]/50 hover:text-[hsl(var(--foreground))]"
                                 }`}
@@ -357,7 +265,6 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                                 <sub.icon className="h-3 w-3 shrink-0" />
                                 <span className="truncate">{sub.label}</span>
                               </div>
-                              {isSubLocked && <Lock className="h-3 w-3 text-amber-500 shrink-0" />}
                             </Link>
                           );
                         })}
@@ -367,95 +274,15 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                 );
               }
 
-              if (link.href === "/dashboard/billing") {
-                const isBillingActive = pathname.startsWith("/dashboard/billing");
-                return (
-                  <div key={link.href} className="flex flex-col gap-1">
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => !isSidebarCollapsed && setBillingExpanded(!billingExpanded)}
-                      className={`group relative flex items-center w-full rounded-lg py-2.5 text-sm font-medium transition-all duration-300 cursor-pointer text-left ${isSidebarCollapsed ? "px-3 lg:px-2" : "px-3"} ${isBillingActive
-                        ? "bg-[hsl(var(--primary))]/5 text-[hsl(var(--primary))]"
-                        : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
-                        }`}
-                    >
-                      <link.icon className="h-4 w-4 shrink-0" />
-                      <div className={`flex items-center justify-between overflow-hidden transition-all duration-300 ${isSidebarCollapsed ? "max-w-[200px] opacity-100 lg:max-w-0 lg:opacity-0 ml-3" : "max-w-[200px] opacity-100 ml-3"} flex-1`}>
-                        <span className="truncate">{link.label}</span>
-                        {billingExpanded ? <ChevronDown className="h-3.5 w-3.5 shrink-0" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0" />}
-                      </div>
-                      {isSidebarCollapsed && (
-                        <div className="hidden lg:block absolute left-full top-0 pl-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl shadow-xl flex flex-col overflow-hidden w-48 text-[hsl(var(--foreground))]">
-                            <div className="px-3 py-2 font-semibold text-xs border-b border-[hsl(var(--border))] bg-[hsl(var(--muted))]/30">
-                              {link.label}
-                            </div>
-                            <div className="flex flex-col p-1.5 gap-0.5">
-                              {billingSubLinks.map((sub) => {
-                                const active = isSubActive(sub.href);
-                                return (
-                                  <Link
-                                    key={sub.href}
-                                    href={sub.href}
-                                    onClick={() => setIsMobileOpen(false)}
-                                    className={`flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium transition-colors ${active
-                                      ? "text-[hsl(var(--primary))] font-semibold bg-[hsl(var(--primary))]/10"
-                                      : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
-                                      }`}
-                                  >
-                                    <sub.icon className="h-3.5 w-3.5 shrink-0" />
-                                    <span className="truncate">{sub.label}</span>
-                                  </Link>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
 
-                    {!isSidebarCollapsed && billingExpanded && (
-                      <div className="pl-6 flex flex-col gap-1 border-l border-[hsl(var(--border))]/60 ml-5 mt-1">
-                        {billingSubLinks.map((sub) => {
-                          const active = isSubActive(sub.href);
-
-                          return (
-                            <Link
-                              key={sub.href}
-                              href={sub.href}
-                              onClick={() => setIsMobileOpen(false)}
-                              className={`flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${active
-                                ? "text-[hsl(var(--primary))] font-semibold bg-[hsl(var(--primary))]/5"
-                                : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]/50 hover:text-[hsl(var(--foreground))]"
-                                }`}
-                            >
-                              <div className="flex items-center gap-2 truncate">
-                                <sub.icon className="h-3 w-3 shrink-0" />
-                                <span className="truncate">{sub.label}</span>
-                              </div>
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              }
 
               const isActive = pathname === link.href;
               return (
                 <Link
                   key={link.href}
                   href={link.href}
-                  onClick={(e) => {
-                    if (isLocked) handleLockedClick(e, link.href);
-                    else setIsMobileOpen(false);
-                  }}
-                  style={isShaking ? { animation: "planLockShake 0.4s ease-in-out" } : undefined}
-                  className={`group relative flex items-center rounded-lg py-2.5 text-sm font-medium transition-all duration-300 ${isSidebarCollapsed ? "px-3 lg:px-2" : "px-3"} ${isLocked
-                    ? "text-[hsl(var(--muted-foreground))]/70 hover:bg-amber-500/10 cursor-pointer"
-                    : isActive
+                  onClick={() => setIsMobileOpen(false)}
+                  className={`group relative flex items-center rounded-lg py-2.5 text-sm font-medium transition-all duration-300 ${isSidebarCollapsed ? "px-3 lg:px-2" : "px-3"} ${isActive
                       ? "bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))]"
                       : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
                     }`}
@@ -463,20 +290,15 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                   <link.icon className="h-4 w-4 shrink-0" />
                   <div className={`flex items-center justify-between overflow-hidden transition-all duration-300 ${isSidebarCollapsed ? "max-w-[200px] opacity-100 lg:max-w-0 lg:opacity-0 ml-3" : "max-w-[200px] opacity-100 ml-3"} flex-1`}>
                     <span className="truncate">{link.label}</span>
-                    {isLocked ? (
-                      <Lock className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                    ) : (
-                      link.href === "/dashboard/inquiries" && unreadCount > 0 && (
-                        <div className="flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold shadow-sm">
-                          {unreadCount}
-                        </div>
-                      )
+                    {link.href === "/dashboard/inquiries" && unreadCount > 0 && (
+                      <div className="flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold shadow-sm">
+                        {unreadCount}
+                      </div>
                     )}
                   </div>
                   {isSidebarCollapsed && (
                     <div className="hidden lg:block absolute left-full top-1/2 -translate-y-1/2 ml-4 px-2.5 py-1.5 bg-[hsl(var(--foreground))] text-[hsl(var(--background))] text-xs font-semibold rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50 shadow-md">
                       {link.label}
-                      {isLocked && <span className="ml-1 text-amber-500">(Locked)</span>}
                     </div>
                   )}
                 </Link>

@@ -121,7 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               localStorage.setItem(`armbiz_redeemed_code_${uKey}`, cleanInvite);
               localStorage.setItem(`armbiz_user_coins_${uKey}`, "100");
             }
-            u.findyCoins = (u.findyCoins || 0) + 100;
+            u.treeoCoins = (u.treeoCoins || 0) + 100;
             u.redeemedInviteCode = cleanInvite;
           }
 

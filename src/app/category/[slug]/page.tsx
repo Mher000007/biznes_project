@@ -17,7 +17,7 @@ export async function generateMetadata(
 
   const title = t.seo.categoryTitle.replace("{{category}}", name);
   const description = t.seo.homeDesc;
-  const url = `https://findy.am/category/${slug}`;
+  const url = `https://treeo.am/category/${slug}`;
 
   return {
     title,
@@ -25,9 +25,9 @@ export async function generateMetadata(
     alternates: {
       canonical: url,
       languages: {
-        en: `https://findy.am/en/category/${slug}`,
-        hy: `https://findy.am/hy/category/${slug}`,
-        ru: `https://findy.am/ru/category/${slug}`,
+        en: `https://treeo.am/en/category/${slug}`,
+        hy: `https://treeo.am/hy/category/${slug}`,
+        ru: `https://treeo.am/ru/category/${slug}`,
         "x-default": url,
       },
     },

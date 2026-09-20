@@ -22,7 +22,7 @@ export default function DashboardPublish() {
   const { t } = useI18n();
   const { showAlert } = useAlert();
   const router = useRouter();
-  const [status, setStatus] = useState<"loading" | "draft" | "publishing" | "published">("loading");
+  const [status, setStatus] = useState<"loading" | "draft" | "publishing" | "published" | "pending_approval">("loading");
   const [businessId, setBusinessId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -32,8 +32,15 @@ export default function DashboardPublish() {
       .then((res) => {
         const businesses = res.data?.data || [];
         if (businesses.length > 0) {
-          setBusinessId(businesses[0]._id);
-          setStatus(businesses[0].active ? "published" : "draft");
+          const biz = businesses[0];
+          setBusinessId(biz._id);
+          if (biz.active && biz.verified) {
+            setStatus("published");
+          } else if (biz.active && !biz.verified) {
+            setStatus("pending_approval");
+          } else {
+            setStatus("draft");
+          }
         } else {
           setStatus("draft");
         }
@@ -97,18 +104,6 @@ export default function DashboardPublish() {
           if (onboardRes.data?.success && onboardRes.data.data?._id) {
             activeBusinessId = onboardRes.data.data._id;
             setBusinessId(activeBusinessId);
-            
-            // Auto-subscribe to standard plan
-            try {
-              await axios.post(`${API}/subscriptions/subscribe`, {
-                businessId: activeBusinessId,
-                plan: "standard"
-              }, {
-                headers: token ? { Authorization: `Bearer ${token}` } : {}
-              });
-            } catch (subErr) {
-              console.warn("Auto-subscription failed, proceeding", subErr);
-            }
           } else {
             throw new Error("Could not onboard local business profile to the database.");
           }
@@ -121,7 +116,15 @@ export default function DashboardPublish() {
         throw new Error("No business profile is available to publish.");
       }
 
-      router.push("/dashboard/billing?tab=plans");
+      const updateRes = await axios.put(`${API}/businesses/${activeBusinessId}`, { active: true }, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+      const updatedBiz = updateRes.data?.data;
+
+      if (updatedBiz && updatedBiz.verified) {
+        setStatus("published");
+      } else {
+        setStatus("pending_approval");
+        showAlert({ message: t.dashboard.pendingApprovalAlert, type: "info" });
+      }
     } catch (err: any) {
       console.error("Publishing failed:", err);
       const msg = err.response?.data?.message || err.message || "Failed to publish business profile.";
@@ -163,6 +166,22 @@ export default function DashboardPublish() {
       <div className="flex items-center gap-3">
         <span className="flex items-center gap-1.5 text-xs font-medium text-green-600 dark:text-green-400">
           <CheckCircle className="h-3.5 w-3.5" /> {t.dashboard.liveOn}
+        </span>
+        <button
+          onClick={handleUnpublish}
+          className="flex h-9 items-center gap-1.5 rounded-xl border border-[hsl(var(--border))] px-4 text-xs font-medium transition-all hover:bg-[hsl(var(--muted))]"
+        >
+          <Pencil className="h-3 w-3" /> {t.dashboard.edit}
+        </button>
+      </div>
+    );
+  }
+
+  if (status === "pending_approval") {
+    return (
+      <div className="flex items-center gap-3">
+        <span className="flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" /> {t.dashboard.pendingApproval}
         </span>
         <button
           onClick={handleUnpublish}

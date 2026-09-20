@@ -15,12 +15,12 @@ export async function generateMetadata(): Promise<Metadata> {
     title: t.seo.homeTitle,
     description: t.seo.homeDesc,
     alternates: {
-      canonical: "https://findy.am",
+      canonical: "https://treeo.am",
       languages: {
-        en: "https://findy.am/en",
-        hy: "https://findy.am/hy",
-        ru: "https://findy.am/ru",
-        "x-default": "https://findy.am",
+        en: "https://treeo.am/en",
+        hy: "https://treeo.am/hy",
+        ru: "https://treeo.am/ru",
+        "x-default": "https://treeo.am",
       },
     },
   };

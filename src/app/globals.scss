@@ -3,6 +3,7 @@
 
 @import "../styles/leaflet";
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
 
 
@@ -63,6 +64,7 @@
   }
 
   --animate-eye-glow: eye-glow 2.5s ease-in-out infinite;
+  --animate-slide-up: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 
   @keyframes eye-glow {
 
@@ -75,6 +77,17 @@
     50% {
       transform: scale(1.15);
       filter: drop-shadow(0 0 10px rgba(6, 182, 212, 0.9));
+    }
+  }
+
+  @keyframes slide-up {
+    0% {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
     }
   }
 }
@@ -326,6 +339,39 @@ span {
 
 ::-webkit-scrollbar-thumb:hover {
   background: $text-secondary;
+}
+
+/* Custom Sleek Scrollbar for Chat & Modals */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(16, 185, 129, 0.35) transparent;
+
+  &::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 9999px;
+    margin: 8px 0;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(16, 185, 129, 0.4) 0%, rgba(6, 182, 212, 0.4) 100%);
+    border-radius: 9999px;
+    border: none;
+    transition: all 0.25s ease-in-out;
+
+    &:hover {
+      background: linear-gradient(180deg, rgba(16, 185, 129, 0.8) 0%, rgba(6, 182, 212, 0.8) 100%);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+    }
+
+    &:active {
+      background: linear-gradient(180deg, #10b981 0%, #06b6d4 100%);
+    }
+  }
 }
 
 /* ========== HEADER & NAVBAR MOOD OVERHAUL ========== */
@@ -834,4 +880,9 @@ img {
   body.map-hover-card-active .chat-widget-container.at-bottom-right {
     --chat-offset-y: 160px;
   }
+}
+
+/* Hide Chat Widget when Story Viewer is Open */
+body.story-viewer-open .chat-widget-container {
+  display: none !important;
 }

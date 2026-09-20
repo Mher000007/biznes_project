@@ -8,7 +8,7 @@ import { AuthRequest } from '../middleware/auth.js';
 // ─── CREATE story ─────────────────────────────────────────────────────────────
 export const createStory = asyncHandler(
   async (req: AuthRequest, res: Response): Promise<void> => {
-    const { mediaUrl, mediaType, caption, duration } = req.body;
+    const { mediaUrl, mediaType, caption, duration, cta, scheduledFor, interactiveElements, overlay } = req.body;
 
     if (!mediaUrl) {
       res.status(400).json({ success: false, message: 'Please provide mediaUrl' });
@@ -36,7 +36,7 @@ export const createStory = asyncHandler(
     const sub = await Subscription.findOne({ business: business._id, status: 'active' });
 
     let validDuration = 24;
-    if (sub && sub.plan === 'premium' && duration && !isNaN(Number(duration))) {
+    if (sub && (sub.plan === 'premium' || sub.plan === 'standard') && duration && !isNaN(Number(duration))) {
       validDuration = Number(duration);
     }
 
@@ -48,6 +48,10 @@ export const createStory = asyncHandler(
       mediaType: mediaType || 'image',
       caption,
       expiresAt,
+      cta: cta ? cta : undefined,
+      scheduledFor: scheduledFor ? new Date(scheduledFor) : undefined,
+      interactiveElements: interactiveElements || [],
+      overlay: overlay || undefined,
     });
 
     res.status(201).json({
@@ -62,8 +66,15 @@ export const getActiveStories = asyncHandler(
   async (req: AuthRequest, res: Response): Promise<void> => {
     const now = new Date();
 
-    // Fetch all stories that are active
-    const activeStories = await Story.find({ expiresAt: { $gt: now } })
+    // Fetch all stories that are active and either not scheduled or scheduled for a past/current time
+    const activeStories = await Story.find({ 
+      expiresAt: { $gt: now },
+      $or: [
+        { scheduledFor: { $exists: false } },
+        { scheduledFor: null },
+        { scheduledFor: { $lte: now } }
+      ]
+    })
       .populate({
         path: 'business',
         select: 'name slug logo verified active'
@@ -98,6 +109,9 @@ export const getActiveStories = asyncHandler(
         mediaUrl: story.mediaUrl,
         mediaType: story.mediaType,
         caption: story.caption,
+        cta: story.cta,
+        interactiveElements: story.interactiveElements,
+        overlay: story.overlay,
         createdAt: story.createdAt,
         expiresAt: story.expiresAt,
         views: story.views,
@@ -183,6 +197,38 @@ export const deleteStory = asyncHandler(
     res.status(200).json({
       success: true,
       message: 'Story deleted successfully',
+    });
+  }
+);
+
+// ─── INCREMENT STATS ────────────────────────────────────────────────────────
+export const incrementStoryStat = asyncHandler(
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    const { id } = req.params;
+    const { statType } = req.body; // 'clicks', 'saves', 'reactions'
+
+    if (!['clicks', 'saves', 'reactions'].includes(statType)) {
+      res.status(400).json({ success: false, message: 'Invalid stat type' });
+      return;
+    }
+
+    const story = await Story.findById(id);
+    if (!story) {
+      res.status(404).json({ success: false, message: 'Story not found' });
+      return;
+    }
+
+    if (!story.stats) {
+      story.stats = { clicks: 0, saves: 0, reactions: 0 };
+    }
+    
+    // @ts-ignore
+    story.stats[statType] += 1;
+    await story.save();
+
+    res.status(200).json({
+      success: true,
+      stats: story.stats,
     });
   }
 );

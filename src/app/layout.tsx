@@ -25,25 +25,25 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://findy.am"),
+  metadataBase: new URL("https://treeo.am"),
   title: {
-    template: "%s | Findy",
-    default: "Findy — Armenia's Business Directory",
+    template: "%s | Treeo",
+    default: "Treeo — Armenia's Business Directory",
   },
   description: "Discover, connect, and grow with Armenian entrepreneurs. Find B2B partners and services across every industry in Armenia.",
-  keywords: ["Armenia", "business directory", "Armenian businesses", "B2B", "Yerevan", "Findy"],
-  authors: [{ name: "Findy Team" }],
+  keywords: ["Armenia", "business directory", "Armenian businesses", "B2B", "Yerevan", "Treeo"],
+  authors: [{ name: "Treeo Team" }],
   robots: "index, follow",
   openGraph: {
     type: "website",
-    siteName: "Findy",
-    title: "Findy — Armenia's Business Directory",
+    siteName: "Treeo",
+    title: "Treeo — Armenia's Business Directory",
     description: "Discover, connect, and grow with Armenian entrepreneurs. Find B2B partners and services across every industry in Armenia.",
     images: ["/og-default.jpg"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Findy — Armenia's Business Directory",
+    title: "Treeo — Armenia's Business Directory",
     description: "Discover, connect, and grow with Armenian entrepreneurs. Find B2B partners and services across every industry in Armenia.",
     images: ["/og-default.jpg"],
   },
@@ -66,7 +66,7 @@ export default async function RootLayout({
             __html: `
               (function() {
                 try {
-                  var theme = localStorage.getItem('findy_theme') || 'system';
+                  var theme = localStorage.getItem('treeo_theme') || 'system';
                   if (theme === 'dark') {
                     document.documentElement.classList.add('dark');
                   } else if (theme === 'light') {

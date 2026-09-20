@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useI18n } from "@/i18n";
 import { useAlert } from "@/context/AlertContext";
 import { Plus, Trash2, Edit2, Coins, Tag, RefreshCw, Heart, Lock, Image as ImageIcon, Camera, Upload, X } from "lucide-react";
+import { compressImageFile } from "@/lib/imageUtils";
 
 interface ExchangeOffer {
   _id: string;
@@ -81,26 +82,14 @@ export default function DashboardExchange() {
     imageUrl: "",
   });
 
-  const convertFileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === "string") resolve(reader.result);
-        else reject(new Error("File conversion failed"));
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
-
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 3 * 1024 * 1024) {
-        showAlert({ message: "File size exceeds 3MB limit", type: "error" });
+      if (file.size > 5 * 1024 * 1024) {
+        showAlert({ message: "File size exceeds 5MB limit", type: "error" });
         return;
       }
-      convertFileToBase64(file)
+      compressImageFile(file, { maxWidth: 1000, maxHeight: 1000, quality: 0.75 })
         .then((base64) => setFormData((prev) => ({ ...prev, imageUrl: base64 })))
         .catch(console.error);
     }
@@ -152,8 +141,8 @@ export default function DashboardExchange() {
   }, [isModalOpen]);
 
   const isProPlan = activePlan === "pro" || activePlan === "standard";
-  const isPremiumPlan = activePlan === "premium" || activePlan === "vip";
-  const isLimitReached = !editingId && isProPlan && offers.length >= 3;
+  const isPremiumPlan = activePlan === "premium" || activePlan === "vip" || activePlan === "standard" || activePlan === "pro";
+  const isLimitReached = false; // !editingId && isProPlan && offers.length >= 3;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -255,7 +244,7 @@ export default function DashboardExchange() {
           </div>
           <h2 className="text-xl font-bold text-[hsl(var(--foreground))] mb-2">Exchange Feature Locked</h2>
           <p className="text-xs sm:text-sm text-[hsl(var(--muted-foreground))] mb-6 leading-relaxed">
-            The Findy Coin Exchange feature is not available on the Start plan. Upgrade your plan to Pro or Premium to manage exchange offers.
+            The Treeo Coin Exchange feature is not available on the Start plan. Upgrade your plan to Pro or Premium to manage exchange offers.
           </p>
           <Link href="/dashboard/settings" className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-sm transition-all inline-block shadow-lg shadow-emerald-500/20 hover:scale-105">
             Upgrade Plan
@@ -295,7 +284,7 @@ export default function DashboardExchange() {
           </div>
           <h3 className="text-xl font-bold text-[hsl(var(--foreground))] mb-2">{(t.dashboard.exchangeOffers as any).noOffersYet || "No Offers Yet"}</h3>
           <p className="text-[hsl(var(--muted-foreground))] mb-6 max-w-md mx-auto">
-            {(t.dashboard.exchangeOffers as any).noOffersSubtitle || "Create your first exchange offer to allow users to spend their Findy Coins at your business."}
+            {(t.dashboard.exchangeOffers as any).noOffersSubtitle || "Create your first exchange offer to allow users to spend their Treeo Coins at your business."}
           </p>
           <button
             onClick={handleOpenAddModal}

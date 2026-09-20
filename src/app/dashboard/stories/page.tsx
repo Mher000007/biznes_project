@@ -4,7 +4,9 @@ import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { useI18n } from "@/i18n";
 import Link from "next/link";
-import { Sparkles, Trash2, Eye, Calendar, Upload, Link as LinkIcon, AlertCircle, CheckCircle, Lock, Clock, ChevronDown, Check } from "lucide-react";
+import { Sparkles, Trash2, Eye, Calendar, Upload, Link as LinkIcon, AlertCircle, CheckCircle, Lock, Clock, ChevronDown, Check, MousePointerClick, Bookmark, Heart } from "lucide-react";
+import { compressImageFile } from "@/lib/imageUtils";
+import HighlightsBuilder from "@/components/dashboard/HighlightsBuilder";
 
 interface Story {
   _id: string;
@@ -14,6 +16,11 @@ interface Story {
   views: string[];
   createdAt: string;
   expiresAt: string;
+  stats?: {
+    clicks?: number;
+    saves?: number;
+    reactions?: number;
+  };
 }
 
 interface BusinessInfo {
@@ -41,6 +48,19 @@ export default function DashboardStoriesPage() {
   const [activePlan, setActivePlan] = useState<string>("starter");
   const [duration, setDuration] = useState<number>(24);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const captionRef = useRef<HTMLTextAreaElement>(null);
+
+  // Advanced Features State
+  const [scheduledFor, setScheduledFor] = useState<string>("");
+  const [ctaType, setCtaType] = useState<string>("none");
+  const [ctaLink, setCtaLink] = useState<string>("");
+  const [generatingCaption, setGeneratingCaption] = useState(false);
+  const [overlayText, setOverlayText] = useState("");
+  const [overlayColor, setOverlayColor] = useState("#ffffff");
+  const [overlayBadge, setOverlayBadge] = useState("none");
+
+  // Highlights State
+  const [highlights, setHighlights] = useState<any[]>([]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -62,6 +82,7 @@ export default function DashboardStoriesPage() {
         verified: biz.verified,
         active: biz.active,
       });
+      setHighlights(biz.highlights || []);
 
       // Fetch subscription plan
       try {
@@ -118,31 +139,38 @@ export default function DashboardStoriesPage() {
   }, []);
 
   useEffect(() => {
+    if (captionRef.current) {
+      captionRef.current.style.height = 'auto';
+      captionRef.current.style.height = `${captionRef.current.scrollHeight}px`;
+    }
+  }, [caption]);
+
+  useEffect(() => {
     loadData();
   }, [loadData]);
 
-  // Convert uploaded file to Base64
+  // Convert uploaded file to Base64 (with compression for images)
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-      setError("File size should not exceed 2MB.");
+    if (file.size > 5 * 1024 * 1024) {
+      setError("File size should not exceed 5MB.");
       return;
     }
 
     const type = file.type.startsWith("video/") ? "video" : "image";
     setMediaType(type);
 
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => {
-      setMediaUrl(reader.result as string);
-      setError("");
-    };
-    reader.onerror = () => {
-      setError("Failed to read file.");
-    };
+    compressImageFile(file, { maxWidth: 1080, maxHeight: 1920, quality: 0.75 })
+      .then((dataUrl) => {
+        setMediaUrl(dataUrl);
+        setError("");
+      })
+      .catch((err) => {
+        console.error("Story file processing error:", err);
+        setError("Failed to process file.");
+      });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -156,17 +184,29 @@ export default function DashboardStoriesPage() {
     setError("");
     setSuccess("");
 
+    const payload = {
+      mediaUrl,
+      mediaType,
+      caption,
+      duration,
+      cta: ctaType !== "none" ? { type: ctaType, link: ctaLink } : undefined,
+      scheduledFor: scheduledFor ? new Date(scheduledFor).toISOString() : undefined,
+      overlay: (overlayText || overlayBadge !== "none") ? { text: overlayText, color: overlayColor, badge: overlayBadge } : undefined
+    };
+
     try {
-      const res = await api.post(
-        "/stories",
-        { mediaUrl, mediaType, caption, duration }
-      );
+      const res = await api.post("/stories", payload);
 
       if (res.data?.success) {
         setSuccess(t.stories.successPublish);
         setMediaUrl("");
         setCaption("");
         setMediaType("image");
+        setCtaType("none");
+        setCtaLink("");
+        setScheduledFor("");
+        setOverlayText("");
+        setOverlayBadge("none");
         if (fileInputRef.current) fileInputRef.current.value = "";
         loadData();
       }
@@ -187,6 +227,26 @@ export default function DashboardStoriesPage() {
     } catch (err) {
       console.error("Failed to delete story:", err);
       setError("Failed to delete story.");
+    }
+  };
+
+  const handleGenerateCaption = async () => {
+    if (!business) return;
+    setGeneratingCaption(true);
+    try {
+      const res = await api.post("/ai/generate-caption", {
+        businessName: business.name,
+        businessType: "Local Business",
+        topic: caption || "general promotion"
+      });
+      if (res.data?.success && res.data.caption) {
+        setCaption(res.data.caption);
+      }
+    } catch (err) {
+      console.error("AI generation error", err);
+      setError("Failed to generate caption.");
+    } finally {
+      setGeneratingCaption(false);
     }
   };
 
@@ -285,23 +345,49 @@ export default function DashboardStoriesPage() {
             <div className="space-y-2">
               <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))]">{t.stories.mediaContent}</label>
               
-              <div 
-                onClick={() => fileInputRef.current?.click()}
-                className="group relative h-40 rounded-xl bg-[hsl(var(--muted))]/30 flex flex-col items-center justify-center border-0 cursor-pointer overflow-hidden transition-all hover:bg-[hsl(var(--muted))]/50"
-              >
-                {mediaUrl ? (
-                  mediaType === "video" ? (
-                    <video src={mediaUrl} className="w-full h-full object-cover" muted playsInline />
+              <div className="relative group">
+                <div 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="group relative h-40 sm:h-56 rounded-xl bg-[hsl(var(--muted))]/30 flex flex-col items-center justify-center border-0 cursor-pointer overflow-hidden transition-all hover:bg-[hsl(var(--muted))]/50"
+                >
+                  {mediaUrl ? (
+                    <>
+                      {mediaType === "video" ? (
+                        <video src={mediaUrl} className="w-full h-full object-cover" muted playsInline />
+                      ) : (
+                        <img src={mediaUrl} className="w-full h-full object-cover" alt="Preview" />
+                      )}
+                      {/* Visual Editor Overlay Preview */}
+                      <div className="absolute inset-0 pointer-events-none p-4 flex flex-col justify-between">
+                        <div className="flex justify-end">
+                          {overlayBadge !== "none" && (
+                            <span className={`px-2 py-1 text-[10px] font-bold rounded-lg uppercase tracking-wider ${
+                              overlayBadge === 'sale' ? 'bg-red-500 text-white' : 
+                              overlayBadge === 'new' ? 'bg-blue-500 text-white' : 'bg-amber-500 text-white'
+                            }`}>
+                              {overlayBadge}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-center">
+                          {overlayText && (
+                            <h3 
+                              style={{ color: overlayColor, textShadow: '0 2px 10px rgba(0,0,0,0.8)' }} 
+                              className="font-black text-2xl"
+                            >
+                              {overlayText}
+                            </h3>
+                          )}
+                        </div>
+                      </div>
+                    </>
                   ) : (
-                    <img src={mediaUrl} className="w-full h-full object-cover" alt="Preview" />
-                  )
-                ) : (
-                  <div className="text-center p-4">
-                    <Upload className="w-8 h-8 text-[hsl(var(--muted-foreground))]/60 mx-auto mb-2 transition-transform group-hover:-translate-y-0.5" />
-                    <p className="text-xs font-semibold">{t.stories.choosePhoto}</p>
-                    <p className="text-[10px] text-[hsl(var(--muted-foreground))]/70 mt-1">{t.stories.fileSizeLimit}</p>
-                  </div>
-                )}
+                    <div className="text-center p-4">
+                      <Upload className="w-8 h-8 text-[hsl(var(--muted-foreground))]/60 mx-auto mb-2 transition-transform group-hover:-translate-y-0.5" />
+                      <p className="text-xs font-semibold">{t.stories.choosePhoto}</p>
+                      <p className="text-[10px] text-[hsl(var(--muted-foreground))]/70 mt-1">{t.stories.fileSizeLimit}</p>
+                    </div>
+                  )}
 
                 {mediaUrl && (
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-xs font-medium">
@@ -309,9 +395,10 @@ export default function DashboardStoriesPage() {
                   </div>
                 )}
               </div>
+            </div>
 
-              <input 
-                type="file" 
+            <input 
+              type="file" 
                 ref={fileInputRef} 
                 onChange={handleFileUpload} 
                 accept="image/*,video/*" 
@@ -325,11 +412,11 @@ export default function DashboardStoriesPage() {
               
               {(() => {
                 const durationOptions = [
-                  { value: 24, label: `${t.stories.durations?.hours24 || "24 Hours"} ${activePlan !== "premium" ? "(Pro)" : ""}` },
+                  { value: 24, label: `${t.stories.durations?.hours24 || "24 Hours"} ${(activePlan !== "premium" && activePlan !== "standard") ? "(Pro)" : ""}` },
                   { value: 48, label: t.stories.durations?.hours48 || "48 Hours" },
                   { value: 72, label: t.stories.durations?.days3 || "3 Days" },
                   { value: 168, label: t.stories.durations?.week1 || "1 Week" },
-                ].filter(opt => opt.value === 24 || activePlan === "premium");
+                ].filter(opt => opt.value === 24 || activePlan === "premium" || activePlan === "standard");
 
                 const currentOpt = durationOptions.find(o => o.value === duration) || durationOptions[0];
 
@@ -370,21 +457,40 @@ export default function DashboardStoriesPage() {
                 );
               })()}
 
-              {activePlan !== "premium" && (
+              {(activePlan !== "premium" && activePlan !== "standard") && (
                 <p className="text-[9px] text-[hsl(var(--primary))] mt-1">Upgrade to Premium for custom durations.</p>
               )}
             </div>
 
+            {/* Schedule Post */}
+            <div className="space-y-1.5 relative">
+              <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))]">Schedule Post (Optional)</label>
+              <div className="flex items-center gap-2 px-3.5 py-2.5 bg-[hsl(var(--input))] border border-[hsl(var(--border))]/50 rounded-xl">
+                <Calendar className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
+                <input 
+                  type="datetime-local" 
+                  value={scheduledFor}
+                  onChange={(e) => setScheduledFor(e.target.value)}
+                  className="bg-transparent border-0 outline-none text-xs text-[hsl(var(--foreground))] w-full cursor-pointer"
+                />
+              </div>
+            </div>
+
+
+
             {/* Caption */}
             <div className="space-y-1">
-              <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))]">{t.stories.caption}</label>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))]">{t.stories.caption}</label>
+              </div>
               <textarea
+                ref={captionRef}
                 value={caption}
                 onChange={(e) => setCaption(e.target.value)}
                 placeholder={(t.stories as any).writeCaptionPlaceholder || "Write caption or special offer details..."}
                 rows={2}
                 maxLength={150}
-                className="w-full text-xs rounded-xl bg-[hsl(var(--input))] p-3 outline-none focus:bg-[hsl(var(--card))] border-0 text-[hsl(var(--foreground))]"
+                className="w-full text-xs rounded-xl bg-[hsl(var(--input))] p-3 outline-none focus:bg-[hsl(var(--card))] border-0 text-[hsl(var(--foreground))] resize-none overflow-hidden"
               />
               <span className="text-[9px] text-[hsl(var(--muted-foreground))] text-right block pr-1">{caption.length}/150</span>
             </div>
@@ -443,9 +549,20 @@ export default function DashboardStoriesPage() {
                       {story.caption && (
                         <p className="text-xs font-medium leading-snug drop-shadow line-clamp-2">{story.caption}</p>
                       )}
-                      <div className="flex items-center gap-1 text-[10px] text-white/70 font-semibold">
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>{story.views.length} {t.stories.viewsCount}</span>
+                      <div className="flex items-center gap-3 text-[10px] text-white/70 font-semibold mt-2 border-t border-white/20 pt-2">
+                        <div className="flex items-center gap-1" title="Views">
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>{story.views.length}</span>
+                        </div>
+                        <div className="flex items-center gap-1" title="Clicks">
+                          <MousePointerClick className="w-3.5 h-3.5" />
+                          <span>{story.stats?.clicks || 0}</span>
+                        </div>
+
+                        <div className="flex items-center gap-1" title="Reactions">
+                          <Heart className="w-3.5 h-3.5" />
+                          <span>{story.stats?.reactions || 0}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -486,9 +603,20 @@ export default function DashboardStoriesPage() {
                     </div>
 
                     <div className="flex items-center gap-4 shrink-0">
-                      <div className="flex items-center gap-1 text-xs text-[hsl(var(--muted-foreground))] font-semibold">
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>{story.views.length}</span>
+                      <div className="flex items-center gap-3 text-xs text-[hsl(var(--muted-foreground))] font-semibold">
+                        <div className="flex items-center gap-1" title="Views">
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>{story.views.length}</span>
+                        </div>
+                        <div className="flex items-center gap-1" title="Clicks">
+                          <MousePointerClick className="w-3.5 h-3.5" />
+                          <span>{story.stats?.clicks || 0}</span>
+                        </div>
+
+                        <div className="flex items-center gap-1" title="Reactions">
+                          <Heart className="w-3.5 h-3.5" />
+                          <span>{story.stats?.reactions || 0}</span>
+                        </div>
                       </div>
                       <button
                         onClick={() => handleDelete(story._id)}
@@ -503,6 +631,14 @@ export default function DashboardStoriesPage() {
               </div>
             )}
           </div>
+
+          {/* Highlights Builder Component */}
+          <HighlightsBuilder 
+            business={business} 
+            highlights={highlights} 
+            setHighlights={setHighlights} 
+            storyArchive={archivedStories} 
+          />
 
         </div>
 

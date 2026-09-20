@@ -615,7 +615,7 @@ export const sendNotification = asyncHandler(
   }
 );
 
-// ─── TOP UP USER FINDY COINS ───────────────────────────────────────────────────
+// ─── TOP UP USER TREEO COINS ───────────────────────────────────────────────────
 export const topUpUserCoins = asyncHandler(
   async (req: AuthRequest, res: Response): Promise<void> => {
     const { id } = req.params;
@@ -633,7 +633,7 @@ export const topUpUserCoins = asyncHandler(
       return;
     }
 
-    let currentCoins = user.findyCoins || 0;
+    let currentCoins = user.treeoCoins || 0;
     if (action === 'set') {
       currentCoins = numAmount;
     } else if (action === 'subtract') {
@@ -643,7 +643,7 @@ export const topUpUserCoins = asyncHandler(
       currentCoins += numAmount;
     }
 
-    user.findyCoins = currentCoins;
+    user.treeoCoins = currentCoins;
     await user.save();
 
     // Log audit action
@@ -659,7 +659,7 @@ export const topUpUserCoins = asyncHandler(
     res.status(200).json({
       success: true,
       message: `Successfully updated ${user.name}'s coins to ${currentCoins.toLocaleString()} Coins`,
-      data: { userId: user._id, findyCoins: currentCoins },
+      data: { userId: user._id, treeoCoins: currentCoins },
     });
   }
 );

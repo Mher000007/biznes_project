@@ -111,9 +111,9 @@ export default function ExchangePage() {
     }
     if (!selectedOffer) return;
 
-    const userCoins = (currentUser as any)?.findyCoins || 0;
+    const userCoins = (currentUser as any)?.treeoCoins || 0;
     if (userCoins < selectedOffer.cost) {
-      showAlert({ message: `Դուք չունեք բավարար Findy Coins (${selectedOffer.cost} Coins) այս առաջարկը ստանալու համար: Ձեր մնացորդը: ${userCoins} Coins:`, type: "warning" });
+      showAlert({ message: `Դուք չունեք բավարար Treeo Coins (${selectedOffer.cost} Coins) այս առաջարկը ստանալու համար: Ձեր մնացորդը: ${userCoins} Coins:`, type: "warning" });
       return;
     }
 
@@ -131,10 +131,10 @@ export default function ExchangePage() {
 
       setOffers(prev => prev.map(o => o.id === selectedOffer.id ? { ...o, claimedQuantity: o.claimedQuantity + 1 } : o));
 
-      const bizNameClean = (selectedOffer.business || "FINDY")
+      const bizNameClean = (selectedOffer.business || "TREEO")
         .toUpperCase()
         .replace(/[^A-Z0-9]/g, "")
-        .substring(0, 6) || "FINDY";
+        .substring(0, 6) || "TREEO";
       const generatedCode = `${bizNameClean}-${Math.floor(100000 + Math.random() * 900000)}`;
 
       if (typeof window !== "undefined") {
@@ -280,7 +280,7 @@ export default function ExchangePage() {
 
               {/* Text */}
               <h3 className="text-2xl font-black text-[hsl(var(--foreground))] tracking-tight flex items-baseline gap-1.5">
-                {(currentUser as any)?.findyCoins || 0} <span className="text-emerald-500 text-[11px] font-extrabold uppercase tracking-[0.15em] drop-shadow-sm">Coins</span>
+                {(currentUser as any)?.treeoCoins || 0} <span className="text-emerald-500 text-[11px] font-extrabold uppercase tracking-[0.15em] drop-shadow-sm">Coins</span>
               </h3>
             </div>
           </div>
@@ -336,15 +336,15 @@ export default function ExchangePage() {
             <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-[hsl(var(--foreground))]">
               {locale === "hy" ? "Ինչպե՞ս " : locale === "ru" ? "Как " : "How to "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">
-                {locale === "hy" ? "Օգտագործել Findy Coins?" : locale === "ru" ? "Использовать Findy Coins?" : "Use Findy Coins?"}
+                {locale === "hy" ? "Օգտագործել Treeo Coins?" : locale === "ru" ? "Использовать Treeo Coins?" : "Use Treeo Coins?"}
               </span>
             </h2>
             <p className="mt-4 text-[hsl(var(--muted-foreground))] max-w-xl mx-auto">
               {locale === "hy"
-                ? "Ստացեք Findy Coins ամեն ամրագրումից, կուտակեք, ապա փոխանակեք բացառիկ առաջարկների հետ:"
+                ? "Ստացեք Treeo Coins ամեն ամրագրումից, կուտակեք, ապա փոխանակեք բացառիկ առաջարկների հետ:"
                 : locale === "ru"
-                  ? "Зарабатывайте Findy Coins с каждого бронирования, накапливайте их и обменивайте на эксклюзивные предложения."
-                  : "Earn Findy Coins with every booking, accumulate them, then exchange for exclusive real-world offers."}
+                  ? "Зарабатывайте Treeo Coins с каждого бронирования, накапливайте их и обменивайте на эксклюзивные предложения."
+                  : "Earn Treeo Coins with every booking, accumulate them, then exchange for exclusive real-world offers."}
             </p>
           </div>
 
@@ -365,10 +365,10 @@ export default function ExchangePage() {
               </h3>
               <p className="text-[hsl(var(--muted-foreground))] text-sm leading-relaxed max-w-[240px]">
                 {locale === "hy"
-                  ? "Գտեք ձեզ հետաքրքրող բիզնեսները, ամրագրեք ծառայություններ և ավտոմատ կերպով ստացեք Findy Coins — ամեն ամրագրման 1%:"
+                  ? "Գտեք ձեզ հետաքրքրող բիզնեսները, ամրագրեք ծառայություններ և ավտոմատ կերպով ստացեք Treeo Coins — ամեն ամրագրման 1%:"
                   : locale === "ru"
-                    ? "Найдите интересующие вас бизнесы, бронируйте услуги и автоматически получайте Findy Coins — 1% от каждого бронирования."
-                    : "Find the businesses you love, book their services and automatically earn Findy Coins — 1% back from every booking."}
+                    ? "Найдите интересующие вас бизнесы, бронируйте услуги и автоматически получайте Treeo Coins — 1% от каждого бронирования."
+                    : "Find the businesses you love, book their services and automatically earn Treeo Coins — 1% back from every booking."}
               </p>
             </div>
 
@@ -385,10 +385,10 @@ export default function ExchangePage() {
               </h3>
               <p className="text-[hsl(var(--muted-foreground))] text-sm leading-relaxed max-w-[240px]">
                 {locale === "hy"
-                  ? "Ձեր Findy Coins-ները պահվում են ձեր հաշվում: Հետևեք ձեր մնացորդին Dashboard-ում և կուտակեք ավելի շատ:"
+                  ? "Ձեր Treeo Coins-ները պահվում են ձեր հաշվում: Հետևեք ձեր մնացորդին Dashboard-ում և կուտակեք ավելի շատ:"
                   : locale === "ru"
-                    ? "Ваши Findy Coins хранятся на вашем счёте. Отслеживайте баланс в Dashboard и накапливайте больше."
-                    : "Your Findy Coins are stored in your account. Track your balance on the Dashboard and keep earning more."}
+                    ? "Ваши Treeo Coins хранятся на вашем счёте. Отслеживайте баланс в Dashboard и накапливайте больше."
+                    : "Your Treeo Coins are stored in your account. Track your balance on the Dashboard and keep earning more."}
               </p>
             </div>
 
@@ -720,7 +720,7 @@ export default function ExchangePage() {
               </div>
               <div className="flex justify-between items-center border-t border-[hsl(var(--border))]/40 pt-2">
                 <span className="text-[hsl(var(--muted-foreground))] font-semibold">
-                  {locale === "hy" ? "Գանձված Findy Coins:" : locale === "ru" ? "Списано Findy Coins:" : "Coins Deducted:"}
+                  {locale === "hy" ? "Գանձված Treeo Coins:" : locale === "ru" ? "Списано Treeo Coins:" : "Coins Deducted:"}
                 </span>
                 <span className="font-extrabold text-emerald-500 flex items-center gap-1">
                   <Coins className="w-3.5 h-3.5" />

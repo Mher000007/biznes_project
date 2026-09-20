@@ -38,7 +38,7 @@ const exchangeOfferSchema = new Schema<IExchangeOffer>(
     },
     cost: {
       type: Number,
-      required: [true, 'Please specify the cost in Findy Coins'],
+      required: [true, 'Please specify the cost in Treeo Coins'],
       min: 0,
     },
     totalQuantity: {

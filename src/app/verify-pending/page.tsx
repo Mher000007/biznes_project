@@ -28,7 +28,7 @@ export default function VerifyPendingPage() {
   const translations = {
     hy: {
       title: "Էլ. հասցեի հաստատում",
-      subtitle: "Խնդրում ենք հաստատել Ձեր էլ. հասցեն՝ Ձեր Findy հաշվին մուտք գործելու և բոլոր հնարավորություններից օգտվելու համար:",
+      subtitle: "Խնդրում ենք հաստատել Ձեր էլ. հասցեն՝ Ձեր Treeo հաշվին մուտք գործելու և բոլոր հնարավորություններից օգտվելու համար:",
       sentTo: "Հաստատման հղումն ուղարկվել է հետևյալ էլ. հասցեին:",
       resendBtn: "Ուղարկել կրկին",
       resending: "Ուղարկվում է...",
@@ -38,7 +38,7 @@ export default function VerifyPendingPage() {
     },
     en: {
       title: "Verify Your Email Address",
-      subtitle: "Please confirm your email address to access your Findy account and unlock all features.",
+      subtitle: "Please confirm your email address to access your Treeo account and unlock all features.",
       sentTo: "A verification link was sent to your email address:",
       resendBtn: "Resend verification email",
       resending: "Sending...",
@@ -48,7 +48,7 @@ export default function VerifyPendingPage() {
     },
     ru: {
       title: "Подтверждение Email",
-      subtitle: "Пожалуйста, подтвердите ваш email, чтобы получить доступ к вашему аккаунту Findy и всем функциям.",
+      subtitle: "Пожалуйста, подтвердите ваш email, чтобы получить доступ к вашему аккаунту Treeo и всем функциям.",
       sentTo: "Ссылка для подтверждения отправлена на ваш адрес электронной почты:",
       resendBtn: "Отправить повторно",
       resending: "Отправка...",

@@ -254,7 +254,7 @@ export const verifyBookingQr = asyncHandler(async (req: Request & { user?: any }
       }
 
       if (customerUser) {
-        customerUser.findyCoins = (customerUser.findyCoins || 0) + coinsToCredit;
+        customerUser.treeoCoins = (customerUser.treeoCoins || 0) + coinsToCredit;
         await customerUser.save();
       }
     }

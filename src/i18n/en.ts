@@ -39,7 +39,7 @@ export const en = {
   // Featured
   featured: {
     title: "Top 5",
-    subtitle: "Highest rated restaurants on Findy",
+    subtitle: "Highest rated restaurants on Treeo",
     viewAll: "View all",
     premiumTitle: "Offers",
     premiumSubtitle: "Verified and top recommended offers",
@@ -61,7 +61,7 @@ export const en = {
   // CTA
   cta: {
     title: "List your business",
-    subtitle: "Join 900+ businesses on Findy. Create your profile, manage bookings, and reach thousands of customers across Armenia.",
+    subtitle: "Join 900+ businesses on Treeo. Create your profile, manage bookings, and reach thousands of customers across Armenia.",
     getStarted: "Get started free",
     browse: "Browse directory",
   },
@@ -76,7 +76,7 @@ export const en = {
   // Auth
   auth: {
     createAccount: "Create an account",
-    chooseType: "Choose how you want to use Findy",
+    chooseType: "Choose how you want to use Treeo",
     personal: "Personal account",
     personalDesc: "Browse, review, and book services",
     business: "Business account",
@@ -138,7 +138,9 @@ export const en = {
     welcome: "Welcome back! Here's your business overview.",
     publish: "Publish to Global",
     publishing: "Publishing...",
-    liveOn: "Live on ArmBiz",
+    pendingApproval: "Pending Approval",
+    pendingApprovalAlert: "Your edits have been saved and are pending admin approval. Once approved, your site will be published.",
+    liveOn: "Live on Treeo",
     edit: "Edit",
     unpublished: "Unpublished changes",
     totalViews: "Total Views",
@@ -185,8 +187,8 @@ export const en = {
       report: "Report",
     },
     exchangeOffers: {
-      title: "Findy Coin Offers",
-      subtitle: "Create offers that users can redeem using Findy Coins.",
+      title: "Treeo Coin Offers",
+      subtitle: "Create offers that users can redeem using Treeo Coins.",
       active: "Active",
       addOffer: "Add Offer",
       edit: "Edit",
@@ -203,7 +205,7 @@ export const en = {
       activeVisible: "Active (visible to users)",
       saveChanges: "Save Changes",
       noOffersYet: "No Offers Yet",
-      noOffersSubtitle: "Create your first exchange offer to allow users to spend their Findy Coins at your business.",
+      noOffersSubtitle: "Create your first exchange offer to allow users to spend their Treeo Coins at your business.",
       createFirstOffer: "Create First Offer",
     },
     supportPage: {
@@ -248,11 +250,14 @@ export const en = {
       priceLabel: "Total Price (AMD)",
       locationLabel: "Location",
       selectLocationPlaceholder: "Select a location...",
+      allLocations: "All Locations",
       atmosphereLabel: "Atmosphere",
       atmosphereFamily: "Family",
       atmosphereFamilyDesc: "Cozy, warm, and family-friendly atmosphere",
       atmosphereFriends: "Friends / Social",
       atmosphereFriendsDesc: "Great for warm gatherings and fun evenings with friends",
+      atmosphereRomantic: "Romantic",
+      atmosphereRomanticDesc: "For romantic dates and cozy dinners",
       atmosphereActive: "Active & Lively",
       atmosphereActiveDesc: "Vibrant, active atmosphere with music and dancing",
       dishesLabel: "Dishes Included",
@@ -422,13 +427,13 @@ export const en = {
   },
   // Chat
   chat: {
-    title: "Findy AI",
+    title: "Treeo AI",
     subtitle: "Premium Assistant",
     placeholder: "Ask about businesses...",
-    welcome: "👋 Welcome to Findy AI! I'm your personal assistant for discovering businesses across Armenia.\n\nAsk me anything — find restaurants, book services, or explore local businesses.",
+    welcome: "👋 Welcome to Treeo AI! I'm your personal assistant for discovering businesses across Armenia.\n\nAsk me anything — find restaurants, book services, or explore local businesses.",
     error: "Sorry, something went wrong. Please try again.",
-    assistantName: "Findy Assistant",
-    typing: "Findy AI is typing",
+    assistantName: "Treeo Assistant",
+    typing: "Treeo AI is typing",
     askPaxQuestion: "How many people are you planning the booking for?",
     askAtmosphereQuestion: "What atmosphere do you prefer?",
     askLocationQuestion: "In which area do you want to book a restaurant?",
@@ -456,6 +461,22 @@ export const en = {
     published: "Published live",
     saveSync: "Save and Sync Profile",
     publishing: "Publishing...",
+    mockup: {
+      highlights: "Highlights",
+      bookAppointment: "Book Appointment",
+      review: "review",
+      reviews: "reviews",
+      gallery: "Gallery",
+      photo: "photo",
+      photos: "photos",
+      operatingHours: "Operating Hours",
+      loadingPreview: "Loading preview...",
+    },
+    dangerZone: {
+      title: "Danger Zone",
+      description: "Permanently delete your account, business profile, and all associated data.",
+      button: "Delete Account",
+    },
     tabs: {
       branding: "Branding",
       credentials: "Credentials",
@@ -473,6 +494,8 @@ export const en = {
       demoTitle: "Need demo assets?",
       demoDesc: "You can paste high-quality Unsplash URLs (e.g. food, cafe, digital tech) to populate cover photos instantly.",
       reset: "Reset",
+      uploadLogo: "Upload",
+      uploadCover: "Upload Cover",
     },
     credentials: {
       title: "Brand Credentials",
@@ -493,6 +516,12 @@ export const en = {
       highlightsTitle: "Circular Highlights",
       highlightsSubtitle: "Add static catalogs or reviews as profile collection tags.",
       highlightsPlaceholder: "Highlight Label (e.g. Products)",
+      selectStoriesFromArchive: "Select stories from archive",
+      changeCover: "Change Cover",
+      highlightTitleLabel: "Highlight Title / Label *",
+      publishedHighlights: "Published Highlights",
+      cancelEdit: "Cancel Edit",
+      pickCover: "Pick Cover from selected:",
     },
     gallery: {
       title: "Image Gallery Grid",
@@ -503,6 +532,7 @@ export const en = {
       emptyStateTitle: "Share photos",
       emptyStateDesc: "Photos you share will be displayed on your profile.",
       emptyStateAction: "Share your first photo",
+      uploadGallery: "Upload Gallery Images",
     },
     hours: {
       title: "Operating Hours",
@@ -546,7 +576,7 @@ export const en = {
       },
     },
     preview: {
-      liveTitle: "Live Instagram-Style Preview (Interactive)",
+      liveTitle: "Live Preview (Interactive)",
       viewFullscreen: "View Fullscreen Live Preview",
       coverBanner: "Cover Wall Banner",
       callPhone: "Call Phone",
@@ -604,8 +634,8 @@ export const en = {
   },
   // About
   about: {
-    metaTitle: "About Findy — Armenia's HoReCa Platform",
-    metaDesc: "Findy is Armenia's first specialized platform that unites all HoReCa businesses in one place.",
+    metaTitle: "About Treeo — Armenia's HoReCa Platform",
+    metaDesc: "Treeo is Armenia's first specialized platform that unites all HoReCa businesses in one place.",
     stats: {
       businesses: "Registered businesses",
       sector: "Specialized sector",
@@ -614,14 +644,14 @@ export const en = {
     },
     story: {
       label: "About us",
-      title: "What is\nFindy?",
-      p1: "Findy is Armenia's first **specialized platform**, uniting all HoReCa businesses (hotels, restaurants, cafes) in one place.",
+      title: "What is\nTreeo?",
+      p1: "Treeo is Armenia's first **specialized platform**, uniting all HoReCa businesses (hotels, restaurants, cafes) in one place.",
       p2: "We have created a platform where you can easily find the nearest cafe, restaurant or hotel, make a reservation directly from the site, explore the menu, services and prices, and navigate via the map based on your location.",
-      p3: "For businesses, Findy is an opportunity to expand their customer base, manage reservations, and become more visible to the right audience."
+      p3: "For businesses, Treeo is an opportunity to expand their customer base, manage reservations, and become more visible to the right audience."
     },
     userFeatures: {
       chip: "For you",
-      title: "What you get from Findy",
+      title: "What you get from Treeo",
       sub: "We have created an opportunity where you can easily use the HoReCa sector.",
       items: [
         {
@@ -652,12 +682,12 @@ export const en = {
     },
     bizBenefits: {
       chip: "For businesses",
-      title: "How Findy helps your business",
-      sub: "Findy is an opportunity for businesses to expand their customer base, manage reservations and become more visible to the right audience.",
+      title: "How Treeo helps your business",
+      sub: "Treeo is an opportunity for businesses to expand their customer base, manage reservations and become more visible to the right audience.",
       items: [
         {
           title: "Expand your customer base",
-          desc: "For businesses, Findy is an opportunity to expand the customer base."
+          desc: "For businesses, Treeo is an opportunity to expand the customer base."
         },
         {
           title: "Manage reservations",
@@ -675,7 +705,7 @@ export const en = {
     }
   },
   exchange: {
-    heroDesc: "Convert your accumulated Findy Coins into real-world benefits. Trade with other users or redeem for special offers.",
+    heroDesc: "Convert your accumulated Treeo Coins into real-world benefits. Trade with other users or redeem for special offers.",
     startExchanging: "Start Exchanging",
   },
   billing: {
@@ -806,18 +836,18 @@ export const en = {
     }
   },
   seo: {
-    homeTitle: "Findy — Armenia's Business Directory",
+    homeTitle: "Treeo — Armenia's Business Directory",
     homeDesc: "Discover, connect, and grow with Armenian entrepreneurs. Find B2B partners and services across every industry in Armenia.",
-    businessTitle: "{{name}} — {{category}} in {{city}} | Findy",
+    businessTitle: "{{name}} — {{category}} in {{city}} | Treeo",
     businessDesc: "{{description}}",
-    categoryTitle: "{{category}} in Armenia | Findy",
-    cityTitle: "Businesses in {{city}} | Findy",
-    searchTitle: "Search: {{query}} | Findy",
-    aboutTitle: "About Findy — Armenia's Business Platform",
-    aboutDesc: "Findy is Armenia's leading platform that unites all businesses in one place.",
-    discoverTitle: "Discover Businesses | Findy",
-    discoverDesc: "Search and discover businesses on Findy.",
-    categoryCityTitle: "{{category}} in {{city}} | Findy"
+    categoryTitle: "{{category}} in Armenia | Treeo",
+    cityTitle: "Businesses in {{city}} | Treeo",
+    searchTitle: "Search: {{query}} | Treeo",
+    aboutTitle: "About Treeo — Armenia's Business Platform",
+    aboutDesc: "Treeo is Armenia's leading platform that unites all businesses in one place.",
+    discoverTitle: "Discover Businesses | Treeo",
+    discoverDesc: "Search and discover businesses on Treeo.",
+    categoryCityTitle: "{{category}} in {{city}} | Treeo"
   }
 };
 

@@ -7,10 +7,10 @@ export interface EmailTemplateOptions {
 export function getResetPasswordTemplate({ name, link, lang = 'hy' }: EmailTemplateOptions) {
   const translations = {
     hy: {
-      subject: 'Վերականգնեք Ձեր գաղտնաբառը — Findy',
+      subject: 'Վերականգնեք Ձեր գաղտնաբառը — Treeo',
       heading: 'Վերականգնեք Ձեր գաղտնաբառը',
       greeting: `Բարև ${name},`,
-      body: 'Դուք ուղարկել եք Ձեր Findy հաշվի գաղտնաբառը վերականգնելու հարցում: Սեղմեք ստորև նշված կոճակը՝ նոր գաղտնաբառ սահմանելու համար:',
+      body: 'Դուք ուղարկել եք Ձեր Treeo հաշվի գաղտնաբառը վերականգնելու հարցում: Սեղմեք ստորև նշված կոճակը՝ նոր գաղտնաբառ սահմանելու համար:',
       buttonText: 'Վերականգնել Գաղտնաբառը',
       expiryNote: '⏳ Այս հղումը վավեր է <strong>1 ժամ</strong>:',
       fallbackText: 'Եթե կոճակը չի աշխատում, պատճենեք և տեղադրեք այս հղումը Ձեր կրկնօրինակի (browser) մեջ.',
@@ -18,10 +18,10 @@ export function getResetPasswordTemplate({ name, link, lang = 'hy' }: EmailTempl
       rights: 'Բոլոր իրավունքները պաշտպանված են:',
     },
     en: {
-      subject: 'Reset your password — Findy',
+      subject: 'Reset your password — Treeo',
       heading: 'Reset your password',
       greeting: `Hello ${name},`,
-      body: 'You requested a password reset for your Findy account. Click the button below to set a new password:',
+      body: 'You requested a password reset for your Treeo account. Click the button below to set a new password:',
       buttonText: 'Reset Password',
       expiryNote: '⏳ This password reset link will expire in <strong>1 hour</strong>.',
       fallbackText: "If the button above doesn't work, copy and paste this link into your browser:",
@@ -29,10 +29,10 @@ export function getResetPasswordTemplate({ name, link, lang = 'hy' }: EmailTempl
       rights: 'All rights reserved.',
     },
     ru: {
-      subject: 'Сброс пароля — Findy',
+      subject: 'Сброс пароля — Treeo',
       heading: 'Сброс пароля',
       greeting: `Здравствуйте, ${name}!`,
-      body: 'Вы запросили сброс пароля для вашего аккаунта Findy. Нажмите кнопку ниже, чтобы установить новый пароль:',
+      body: 'Вы запросили сброс пароля для вашего аккаунта Treeo. Нажмите кнопку ниже, чтобы установить новый пароль:',
       buttonText: 'Сбросить пароль',
       expiryNote: '⏳ Ссылка действительна в течение <strong>1 часа</strong>.',
       fallbackText: 'Если кнопка выше не работает, скопируйте и вставьте эту ссылку в браузер:',
@@ -121,7 +121,7 @@ export function getResetPasswordTemplate({ name, link, lang = 'hy' }: EmailTempl
           <!-- Footer -->
           <tr>
             <td align="center" style="padding: 20px 32px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8;">
-              © 2026 Findy. ${t.rights}
+              © 2026 Treeo. ${t.rights}
             </td>
           </tr>
         </table>

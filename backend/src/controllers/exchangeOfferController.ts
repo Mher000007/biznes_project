@@ -78,18 +78,8 @@ export const createExchangeOffer = async (req: AuthRequest, res: Response) => {
     if (userPlan === 'starter' || userPlan === 'start' || userPlan === 'free') {
       return res.status(403).json({
         success: false,
-        error: 'Findy Coin Offers feature is locked on the Start plan. Please upgrade to Pro or Premium.'
+        error: 'Treeo Coin Offers feature is locked on the Start plan. Please upgrade to Pro or Premium.'
       });
-    }
-
-    if (userPlan === 'pro') {
-      const existingOfferCount = await ExchangeOffer.countDocuments({ business: businessId });
-      if (existingOfferCount >= 3) {
-        return res.status(403).json({
-          success: false,
-          error: 'Pro փաթեթի դեպքում կարող եք հրապարակել առավելագույնը 3 առաջարկ: Անսահմանափակ առաջարկների համար թարմացրեք փաթեթը Premium-ի:'
-        });
-      }
     }
 
     const offer = await ExchangeOffer.create({
@@ -238,16 +228,16 @@ export const claimExchangeOffer = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ success: false, error: 'User not found' });
     }
 
-    const currentCoins = user.findyCoins || 0;
+    const currentCoins = user.treeoCoins || 0;
     if (currentCoins < offer.cost) {
       return res.status(400).json({
         success: false,
-        error: `Դուք չունեք բավարար Findy Coins (${offer.cost} Coins) այս առաջարկը ստանալու համար: Ձեր մնացորդը: ${currentCoins} Coins:`
+        error: `Դուք չունեք բավարար Treeo Coins (${offer.cost} Coins) այս առաջարկը ստանալու համար: Ձեր մնացորդը: ${currentCoins} Coins:`
       });
     }
 
     // Deduct coins and increment claimedQuantity
-    user.findyCoins = currentCoins - offer.cost;
+    user.treeoCoins = currentCoins - offer.cost;
     await user.save();
 
     offer.claimedQuantity += 1;
@@ -260,7 +250,7 @@ export const claimExchangeOffer = async (req: AuthRequest, res: Response) => {
         offerId: offer._id,
         claimedQuantity: offer.claimedQuantity,
         totalQuantity: offer.totalQuantity,
-        remainingCoins: user.findyCoins,
+        remainingCoins: user.treeoCoins,
       }
     });
   } catch (error) {

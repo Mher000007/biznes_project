@@ -18,7 +18,7 @@ export const getBusinesses = asyncHandler(async (req: Request, res: Response): P
   const filter: any = { active: true, verified: true };
 
   if (premiumOnly === 'true') {
-    const premiumSubs = await Subscription.find({ plan: 'premium', status: 'active' }).select('business');
+    const premiumSubs = await Subscription.find({ plan: { $in: ['premium', 'standard'] }, status: 'active' }).select('business');
     const premiumBizIds = premiumSubs.map(sub => sub.business);
     filter._id = { $in: premiumBizIds };
   }
@@ -123,6 +123,19 @@ export const getBusinesses = asyncHandler(async (req: Request, res: Response): P
           }
           return img;
         }).filter(Boolean);
+      }
+
+      if (typeof bizObj.logo === 'string' && bizObj.logo.startsWith('data:image') && bizObj.logo.length > 100000) {
+        bizObj.logo = '';
+      }
+
+      if (Array.isArray(bizObj.highlights)) {
+        bizObj.highlights = bizObj.highlights.map((h: any) => {
+          if (h && typeof h.imageUrl === 'string' && h.imageUrl.startsWith('data:image') && h.imageUrl.length > 100000) {
+            return { ...h, imageUrl: '' };
+          }
+          return h;
+        });
       }
 
       return bizObj;

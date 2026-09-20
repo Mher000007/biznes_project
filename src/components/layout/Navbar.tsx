@@ -14,8 +14,8 @@ import { getApiUrl } from "@/lib/utils";
 import { transliterateArmenian } from "@/lib/transliterate";
 import { FlyingBookmarkProvider } from "@/components/ui/FlyingBookmark";
 
-// Force Next.js compilation reload: 2
-
+import { useSelector } from "react-redux";
+import { RootState } from "@/store/store";
 import styles from "./Navbar.module.scss";
 
 export default function Navbar() {
@@ -98,7 +98,7 @@ export default function Navbar() {
               "";
             if (profileLogo) return profileLogo;
           }
-        } catch (e) {}
+        } catch (e) { }
       }
     }
     return "";
@@ -453,9 +453,13 @@ export default function Navbar() {
   const isTransparent = pathname === "/" && !scrolled && !isOpen;
   const isBusinessUser = currentUser?.role === "business_owner" || currentUser?.accountType === "business";
 
+  const isChatOpen = useSelector((state: RootState) => state.chat.isOpen);
+  const dimNavbarPages = ["/", "/discover", "/about", "/exchange"];
+  const isDimmed = isChatOpen && dimNavbarPages.some(page => page === "/" ? pathname === "/" : pathname.startsWith(page));
+
   return (
-    <header 
-      className={`${styles.header} ${isTransparent ? styles.transparentHeader : ""}`}
+    <header
+      className={`${styles.header} ${isTransparent ? styles.transparentHeader : ""} ${isDimmed ? styles.dimmed : ""}`}
       style={{ display: isStoryViewerOpen ? "none" : undefined }}
     >
       {/* Logo */}
@@ -467,7 +471,7 @@ export default function Navbar() {
         }}
         className={`${styles.logo} ${isMobileSearchOpen ? "!hidden md:!flex" : ""}`}
       >
-        <div role="img" aria-label="Findy Logo" className={styles.logoImage} />
+        <div role="img" aria-label="Treeo Logo" className={styles.logoImage} />
       </Link>
 
       {/* Search Form (always visible) */}
@@ -662,7 +666,7 @@ export default function Navbar() {
                     const uKey = currentUser?.username || currentUser?.email || (currentUser as any)?.id || "";
                     const savedCoins = uKey && typeof localStorage !== "undefined" ? localStorage.getItem(`armbiz_user_coins_${uKey}`) : null;
                     if (savedCoins !== null && !isNaN(Number(savedCoins))) return Number(savedCoins);
-                    return (currentUser as any)?.findyCoins || 0;
+                    return (currentUser as any)?.treeoCoins || 0;
                   })()} <span className="text-emerald-500 text-[10px] font-extrabold uppercase tracking-[0.15em] drop-shadow-sm">Coins</span>
                 </h3>
               </div>
@@ -702,8 +706,8 @@ export default function Navbar() {
               {!isBusinessUser && (
                 <div
                   className={`hidden xl:block absolute top-full right-0 pt-2 w-72 transition-all duration-200 z-50 ${isFavOpen
-                      ? "opacity-100 visible pointer-events-auto"
-                      : "opacity-0 invisible pointer-events-none group-hover/fav:opacity-100 group-hover/fav:visible group-hover/fav:pointer-events-auto"
+                    ? "opacity-100 visible pointer-events-auto"
+                    : "opacity-0 invisible pointer-events-none group-hover/fav:opacity-100 group-hover/fav:visible group-hover/fav:pointer-events-auto"
                     }`}
                 >
                   <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-lg p-2">
