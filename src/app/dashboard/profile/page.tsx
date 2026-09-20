@@ -77,6 +77,8 @@ export default function ProfilePage() {
   const { t, locale } = useI18n();
   const { showAlert } = useAlert();
   const router = useRouter();
+  const [isOffersPanelOpen, setIsOffersPanelOpen] = useState(false);
+  const [activeOffers, setActiveOffers] = useState<any[]>([]);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -338,6 +340,18 @@ export default function ProfilePage() {
             }
           } catch (err) {
             console.error("Failed to fetch story archive", err);
+          }
+          
+          // Fetch Offers
+          try {
+            const offersRes = await axios.get(`${apiURL}/offers/business/${biz._id}`, {
+              headers: token ? { Authorization: `Bearer ${token}` } : {}
+            });
+            if (offersRes.data?.success) {
+              setActiveOffers(offersRes.data.data);
+            }
+          } catch (err) {
+            console.error("Failed to fetch offers", err);
           }
           
           setHighlights(biz.highlights || []);
@@ -1095,9 +1109,10 @@ export default function ProfilePage() {
                 <div className="space-y-6 animate-scale-in">
                   <HighlightsBuilder 
                     business={{ _id: businessId }}
-                    highlights={highlights}
-                    setHighlights={setHighlights}
-                    storyArchive={storyArchive}
+                    highlights={highlights} 
+                    setHighlights={setHighlights} 
+                    storyArchive={storyArchive} 
+                    activeOffers={activeOffers}
                   />
                 </div>
               )}

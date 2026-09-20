@@ -1,8 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import L from "leaflet";
-import "../../styles/leaflet.css";
-import { Maximize2, Minimize2, Bookmark } from "lucide-react";
+import { Maximize2, Minimize2, Bookmark, Navigation, Utensils, X, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/i18n";
 import { useAuth } from "@/context/AuthContext";
@@ -16,6 +15,19 @@ if (typeof window !== "undefined") {
     iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
     shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
   });
+}
+
+// ─── Utility: Haversine distance ────────────────────────────────────────────
+function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c * 1000;
 }
 
 // ─── Icon builders ────────────────────────────────────────────────────────────
@@ -232,6 +244,26 @@ export default function LeafletMap({
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const markersGroupRef = useRef<L.LayerGroup | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showNearbyRestaurants, setShowNearbyRestaurants] = useState(false);
+  const [isSearchingNearby, setIsSearchingNearby] = useState(false);
+  const [hasSearchedNearby, setHasSearchedNearby] = useState(false);
+  const [searchRadius, setSearchRadius] = useState<number>(1000);
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const [activeNearbyId, setActiveNearbyId] = useState<string | number | null>(null);
+  const cardsContainerRef = useRef<HTMLDivElement>(null);
+  const blockFitBoundsRef = useRef(false);
+
+  // Manage global body class for nearby restaurants state to hide overlapping mobile UI
+  useEffect(() => {
+    if (showNearbyRestaurants) {
+      document.body.classList.add('nearby-restaurants-active');
+    } else {
+      document.body.classList.remove('nearby-restaurants-active');
+    }
+    return () => {
+      document.body.classList.remove('nearby-restaurants-active');
+    };
+  }, [showNearbyRestaurants]);
 
   // Update zoom button titles dynamically for English / Armenian / Russian
   useEffect(() => {
@@ -350,6 +382,120 @@ export default function LeafletMap({
     }).addTo(map);
   }, [tileLayerUrl, tileLayerAttribution]);
 
+  // ── 1c. User Location marker ──────────────────────────────────────────────
+  const userMarkerRef = useRef<L.Marker | null>(null);
+  const userRadiusCircleRef = useRef<L.Circle | null>(null);
+  const userRadiusWaveRef = useRef<L.Circle | null>(null);
+  
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !userLocation) return;
+
+    const buildUserIcon = (isScanning: boolean) => L.divIcon({
+      html: `
+        <div class="user-pulsing-marker">
+          <div class="user-pulsing-dot"></div>
+          <div class="user-pulsing-pulse"></div>
+          ${isScanning ? `
+            <div class="wifi-wave-container">
+               <div class="wifi-wave"></div>
+               <div class="wifi-wave"></div>
+               <div class="wifi-wave"></div>
+            </div>
+          ` : ''}
+        </div>
+      `,
+      className: "leaflet-user-marker",
+      iconSize: [24, 24],
+      iconAnchor: [12, 12]
+    });
+
+    if (userMarkerRef.current) {
+      userMarkerRef.current.setLatLng(userLocation);
+      userMarkerRef.current.setIcon(buildUserIcon(showNearbyRestaurants));
+    } else {
+      userMarkerRef.current = L.marker(userLocation, {
+        icon: buildUserIcon(showNearbyRestaurants),
+        zIndexOffset: 1000
+      }).addTo(map);
+    }
+
+    if (showNearbyRestaurants) {
+      // Static dashed boundary
+      if (!isSearchingNearby && !hasSearchedNearby) {
+        if (userRadiusCircleRef.current) {
+           userRadiusCircleRef.current.setLatLng(userLocation);
+           userRadiusCircleRef.current.setRadius(searchRadius);
+        } else {
+           userRadiusCircleRef.current = L.circle(userLocation, {
+             radius: searchRadius,
+             color: '#10b981',
+             fillColor: '#10b981',
+             fillOpacity: 0.05,
+             weight: 2,
+             dashArray: "4 4",
+             interactive: false
+           }).addTo(map);
+        }
+      } else {
+        if (userRadiusCircleRef.current) {
+           userRadiusCircleRef.current.remove();
+           userRadiusCircleRef.current = null;
+        }
+      }
+
+      // Animated expanding wave
+      if (isSearchingNearby) {
+         if (userRadiusWaveRef.current) {
+            userRadiusWaveRef.current.setLatLng(userLocation);
+            userRadiusWaveRef.current.setRadius(searchRadius);
+         } else {
+            userRadiusWaveRef.current = L.circle(userLocation, {
+              radius: searchRadius,
+              color: '#10b981',
+              fillColor: '#10b981',
+              fillOpacity: 0.1,
+              weight: 3,
+              className: 'radar-zone-wave',
+              interactive: false
+            }).addTo(map);
+         }
+      } else {
+         if (userRadiusWaveRef.current) {
+            userRadiusWaveRef.current.remove();
+            userRadiusWaveRef.current = null;
+         }
+      }
+    } else {
+      if (userRadiusCircleRef.current) {
+         userRadiusCircleRef.current.remove();
+         userRadiusCircleRef.current = null;
+      }
+      if (userRadiusWaveRef.current) {
+         userRadiusWaveRef.current.remove();
+         userRadiusWaveRef.current = null;
+      }
+    }
+  }, [userLocation, locale, showNearbyRestaurants, searchRadius, isSearchingNearby, hasSearchedNearby]);
+
+  const nearbyRestaurants = React.useMemo(() => {
+    let rests = markers.filter(
+      (m) => m.category?.toLowerCase() === 'horeca' || m.category?.toLowerCase() === 'restaurant'
+    );
+    if (userLocation) {
+      rests = rests.map(m => ({
+        ...m,
+        _distance: getDistance(userLocation[0], userLocation[1], m.lat, m.lng)
+      }))
+      .filter((m: any) => m._distance <= searchRadius)
+      .sort((a: any, b: any) => a._distance - b._distance)
+      .slice(0, 15);
+    } else {
+      rests = rests.slice(0, 10);
+    }
+    return rests;
+  }, [markers, userLocation, searchRadius]);
+
   // ── 2. Rebuild markers ONLY when marker data changes (NOT on hover) ───────
   useEffect(() => {
     const map = mapRef.current;
@@ -368,7 +514,16 @@ export default function LeafletMap({
     const closedText = t.business?.closed || (locale === 'hy' ? 'Փակ է' : locale === 'ru' ? 'Закрыто' : 'Closed');
 
     if (markers && markers.length > 0) {
-      markers.forEach((m) => {
+      let filteredMarkers = markers;
+      if (showNearbyRestaurants) {
+        if (!hasSearchedNearby) {
+          filteredMarkers = [];
+        } else {
+          filteredMarkers = nearbyRestaurants;
+        }
+      }
+      
+      filteredMarkers.forEach((m) => {
         const lat = Number(m.lat);
         const lng = Number(m.lng);
         if (!isFinite(lat) || !isFinite(lng)) return;
@@ -433,6 +588,7 @@ export default function LeafletMap({
     ];
 
     const doFitBounds = (animate: boolean) => {
+      if (blockFitBoundsRef.current) return;
       const m = mapRef.current;
       if (!m) return;
       const size = m.getSize();
@@ -470,7 +626,7 @@ export default function LeafletMap({
     return () => timers.forEach(clearTimeout);
     // hoveredLocationId intentionally excluded — handle it in a separate effect
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [markers, center, zoom, readonly, onMarkerDragEnd, fitAllBounds, router]);
+  }, [markers, center, zoom, readonly, onMarkerDragEnd, fitAllBounds, router, showNearbyRestaurants, hasSearchedNearby, nearbyRestaurants]);
 
   // ── 3. Handle hover: swap icons + flyTo (no marker rebuild) ──────────────
   useEffect(() => {
@@ -630,6 +786,49 @@ export default function LeafletMap({
   const openText = t.business?.openNow || (locale === 'hy' ? 'Բաց է' : locale === 'ru' ? 'Открыто' : 'Open Now');
   const closedText = t.business?.closed || (locale === 'hy' ? 'Փակ է' : locale === 'ru' ? 'Закрыто' : 'Closed');
 
+  useEffect(() => {
+    if (showNearbyRestaurants && userRadiusCircleRef.current) {
+      const map = mapRef.current;
+      if (map) {
+        const bounds = userRadiusCircleRef.current.getBounds();
+        const timer = setTimeout(() => {
+          map.flyToBounds(bounds, { animate: true, duration: 0.5, padding: [20, 20] });
+        }, 150);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [showNearbyRestaurants]);
+
+  const handleSliderScroll = () => {
+    if (!cardsContainerRef.current) return;
+    const container = cardsContainerRef.current;
+    const scrollLeft = container.scrollLeft;
+    const containerCenter = scrollLeft + container.clientWidth / 2;
+    
+    let minDistance = Infinity;
+    let closestIndex = 0;
+    
+    Array.from(container.children).forEach((child, index) => {
+      const childCenter = (child as HTMLElement).offsetLeft + (child as HTMLElement).clientWidth / 2;
+      const dist = Math.abs(containerCenter - childCenter);
+      if (dist < minDistance) {
+        minDistance = dist;
+        closestIndex = index;
+      }
+    });
+
+    if (nearbyRestaurants[closestIndex]) {
+      const activeRest = nearbyRestaurants[closestIndex];
+      if (activeNearbyId !== activeRest.id) {
+         setActiveNearbyId(activeRest.id);
+         const map = mapRef.current;
+         if (map) {
+           map.flyTo([activeRest.lat, activeRest.lng], 16, { animate: true, duration: 0.5 });
+         }
+      }
+    }
+  };
+
   return (
     <div
       className={`leaflet-map-outer-wrapper ${isFullscreen ? "fullscreen-mode" : ""} ${className}`}
@@ -641,7 +840,93 @@ export default function LeafletMap({
         className="leaflet-map-wrapper leaflet-container"
       />
 
-      {activeMarkerData && activeMarkerData.name && (
+      {/* Radius Selector */}
+      {showNearbyRestaurants && userLocation && (
+        <div className="radius-selector-panel" style={{
+          position: "absolute",
+          bottom: (hasSearchedNearby && nearbyRestaurants.length > 0) ? "160px" : "40px",
+          left: "50%",
+          transform: "translateX(-50%)",
+          zIndex: 1000,
+          background: "var(--bg-secondary, white)",
+          padding: "12px 20px",
+          borderRadius: "16px",
+          boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
+          display: "flex",
+          flexDirection: "column",
+          gap: "8px",
+          width: "300px",
+          border: "1px solid var(--border-light, rgba(0,0,0,0.1))",
+          pointerEvents: "auto",
+          transition: "bottom 0.4s cubic-bezier(0.16, 1, 0.3, 1)"
+        }}>
+           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+             <div style={{ display: "flex", justifyContent: "space-between", width: "100%", fontSize: "14px", fontWeight: "700", color: "var(--text-primary, #111)" }}>
+               <span>{locale === 'hy' ? 'Որոնման շառավիղ' : locale === 'ru' ? 'Радиус поиска' : 'Search Radius'}</span>
+               <span style={{ color: "#10b981" }}>{searchRadius < 1000 ? `${searchRadius} մ` : `${(searchRadius / 1000).toFixed(1)} կմ`}</span>
+             </div>
+           </div>
+           
+           <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+             <input 
+               type="range" 
+               min="100" 
+               max="10000" 
+               step="100" 
+               value={searchRadius}
+               onChange={(e) => {
+                 const newRadius = Number(e.target.value);
+                 setSearchRadius(newRadius);
+                 setHasSearchedNearby(false); // Hide results when radius changes
+                 
+                 const map = mapRef.current;
+                 if (map && userLocation) {
+                   blockFitBoundsRef.current = true;
+                   const tempCircle = L.circle(userLocation, { radius: newRadius }).addTo(map);
+                   map.fitBounds(tempCircle.getBounds(), { animate: false, padding: [20, 20] });
+                   tempCircle.remove();
+                   setTimeout(() => { blockFitBoundsRef.current = false; }, 100);
+                 }
+               }}
+               style={{ flex: 1, accentColor: "#10b981", cursor: "pointer" }}
+               onMouseDown={(e) => e.stopPropagation()}
+               onTouchStart={(e) => e.stopPropagation()}
+             />
+             <button
+               onClick={(e) => {
+                 e.stopPropagation();
+                 setIsSearchingNearby(true);
+                 setHasSearchedNearby(false);
+                 setTimeout(() => {
+                   setIsSearchingNearby(false);
+                   setHasSearchedNearby(true);
+                 }, 2000);
+               }}
+               disabled={isSearchingNearby}
+               style={{ 
+                 background: isSearchingNearby ? "#ccc" : "#10b981",
+                 color: "white",
+                 border: "none",
+                 borderRadius: "50%",
+                 width: "36px",
+                 height: "36px",
+                 display: "flex",
+                 alignItems: "center",
+                 justifyContent: "center",
+                 cursor: isSearchingNearby ? "not-allowed" : "pointer",
+                 boxShadow: "0 2px 8px rgba(16,185,129,0.3)",
+                 flexShrink: 0
+               }}
+               title={locale === 'hy' ? 'Որոնել' : locale === 'ru' ? 'Поиск' : 'Search'}
+             >
+               <Search size={16} />
+             </button>
+           </div>
+        </div>
+      )}
+
+      {/* Single Hovered Card */}
+      {activeMarkerData && activeMarkerData.name && !showNearbyRestaurants && (
         <div className="map-bottom-hover-card"
           onMouseEnter={() => {
             if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
@@ -681,6 +966,158 @@ export default function LeafletMap({
           </div>
         </div>
       )}
+
+      {/* Slider for nearby restaurants */}
+      {showNearbyRestaurants && hasSearchedNearby && nearbyRestaurants.length > 0 && (
+        <div className="map-bottom-hover-card-slider slider-slide-up" 
+             style={{
+                position: "absolute",
+                bottom: "20px",
+                left: "0",
+                right: "0",
+                zIndex: 1000,
+                display: "flex",
+                overflowX: "auto",
+                scrollSnapType: "x mandatory",
+                padding: "0 20px",
+                gap: "12px",
+                scrollbarWidth: "none"
+             }}
+             ref={cardsContainerRef}
+             onScroll={handleSliderScroll}>
+          {nearbyRestaurants.map((rest, index) => (
+             <div key={rest.id} className="map-bottom-hover-card" style={{ 
+                 position: "relative",
+                 bottom: "auto", left: "auto", right: "auto", transform: "none",
+                 flex: "0 0 85%", maxWidth: "320px", scrollSnapAlign: "center",
+                 padding: "0" 
+             }}>
+                <div className="map-bottom-hover-card-inner" 
+                     style={{ 
+                       pointerEvents: "auto", 
+                       border: activeNearbyId === rest.id ? "2px solid #10b981" : "2px solid transparent",
+                       transition: "border-color 0.2s ease"
+                     }}
+                     onClick={() => {
+                        const map = mapRef.current;
+                        if (map) map.flyTo([rest.lat, rest.lng], 16, { animate: true });
+                        if (rest.slug) router.push(`/business/${rest.slug}`);
+                     }}>
+                  <div className="image-container" style={{ cursor: 'pointer' }}>
+                    {rest.image ? (
+                      <img src={rest.image} alt={rest.name} />
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #f0f0f0, #e0e0e0)' }} />
+                    )}
+                  </div>
+                  <div className="info-container">
+                    <div className="header-row">
+                      <strong className="name" style={{ cursor: 'pointer' }}>
+                        {rest.name}
+                      </strong>
+                      <MapSaveButton business={rest} />
+                    </div>
+                    {rest.category && <span className="category">{rest.category}</span>}
+                    <div className="meta-row">
+                      {rest.rating ? (
+                        <span className="rating">
+                          &#9733; {(Math.round(rest.rating * 10) / 10).toFixed(1)}
+                          {rest.reviewCount && <span className="reviews">({rest.reviewCount})</span>}
+                        </span>
+                      ) : <span />}
+                      <span className={`status ${rest.isOpen === false ? 'is-closed' : 'is-open'}`}>
+                        {rest.isOpen === false ? closedText : openText}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+             </div>
+          ))}
+        </div>
+      )}
+
+      {/* Control Buttons */}
+      <div className="leaflet-custom-action-controls" style={{
+         position: "absolute", top: "70px", right: "10px", zIndex: 1000,
+         display: "flex", flexDirection: "column", gap: "8px"
+      }}>
+         <button
+           type="button"
+           onClick={(e) => {
+             e.stopPropagation();
+             if (!navigator.geolocation) {
+               alert(locale === 'hy' ? "Աշխարհագրական դիրքի որոշումը ապահովված չէ ձեր բրաուզերի կողմից" : "Geolocation is not supported by your browser");
+               return;
+             }
+             navigator.geolocation.getCurrentPosition(
+               (position) => {
+                 const { latitude, longitude } = position.coords;
+                 blockFitBoundsRef.current = true;
+                 setUserLocation([latitude, longitude]);
+                 const map = mapRef.current;
+                 if (map) {
+                   map.flyTo([latitude, longitude], 17, { animate: true, duration: 2.5, easeLinearity: 0.1 });
+                   setTimeout(() => {
+                     blockFitBoundsRef.current = false;
+                   }, 2600);
+                 }
+               },
+               () => {
+                 alert(locale === 'hy' ? "Չհաջողվեց ստանալ ձեր գտնվելու վայրը" : "Unable to retrieve your location");
+               }
+             );
+           }}
+           className="leaflet-bar"
+           style={{ background: 'white', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#444', border: 'none', borderRadius: '4px', boxShadow: '0 1px 5px rgba(0,0,0,0.65)' }}
+           title={locale === 'hy' ? 'Գտնել ինձ' : locale === 'ru' ? 'Мое местоположение' : 'Locate Me'}
+         >
+           <Navigation size={16} />
+         </button>
+
+         <button
+           type="button"
+           onClick={(e) => {
+             e.stopPropagation();
+             if (!showNearbyRestaurants) {
+                const enableNearby = (lat: number, lng: number) => {
+                   blockFitBoundsRef.current = true;
+                   setUserLocation([lat, lng]);
+                   setShowNearbyRestaurants(true);
+                   setHasSearchedNearby(false);
+                   const map = mapRef.current;
+                   if (map) {
+                     map.flyTo([lat, lng], 14, { animate: true, duration: 1.5, easeLinearity: 0.25 });
+                     setTimeout(() => { blockFitBoundsRef.current = false; }, 1600);
+                   }
+                };
+
+                if (userLocation) {
+                   enableNearby(userLocation[0], userLocation[1]);
+                } else {
+                   if (!navigator.geolocation) {
+                     alert(locale === 'hy' ? "Աշխարհագրական դիրքի որոշումը ապահովված չէ ձեր բրաուզերի կողմից" : "Geolocation is not supported by your browser");
+                     return;
+                   }
+                   navigator.geolocation.getCurrentPosition(
+                     (position) => {
+                       enableNearby(position.coords.latitude, position.coords.longitude);
+                     },
+                     () => {
+                       alert(locale === 'hy' ? "Չհաջողվեց ստանալ ձեր գտնվելու վայրը" : "Unable to retrieve your location");
+                     }
+                   );
+                }
+             } else {
+                setShowNearbyRestaurants(false);
+             }
+           }}
+           className="leaflet-bar"
+           style={{ background: showNearbyRestaurants ? '#10b981' : 'white', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: showNearbyRestaurants ? 'white' : '#444', border: 'none', borderRadius: '4px', boxShadow: '0 1px 5px rgba(0,0,0,0.65)' }}
+           title={locale === 'hy' ? 'Ռեստորաններ իմ կողքին' : locale === 'ru' ? 'Рестораны рядом' : 'Restaurants Near Me'}
+         >
+           {showNearbyRestaurants ? <X size={16} /> : <Utensils size={16} />}
+         </button>
+      </div>
 
       {!hideFullscreenControl && (
         <button

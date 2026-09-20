@@ -1,20 +1,22 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { X, ChevronLeft, ChevronRight, Pause, Play, BadgeCheck, Heart, Eye, MousePointerClick } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Pause, Play, BadgeCheck, Heart, Eye, MousePointerClick, Sparkles } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
 import { getApiUrl } from "@/lib/utils";
 import { useI18n } from "@/i18n";
+import { useAuth } from "@/context/AuthContext";
 
 const API = getApiUrl();
 
 interface StoryItem {
   _id: string;
   mediaUrl: string;
-  mediaType: "image" | "video";
+  mediaType: "image" | "video" | "offer";
   caption?: string;
   createdAt: string;
   views?: any[];
+  offerData?: any;
   stats?: {
     clicks: number;
     saves: number;
@@ -49,6 +51,7 @@ export default function StoryViewer({
   isOwner,
 }: StoryViewerProps) {
   const { t } = useI18n();
+  const { currentUser } = useAuth();
   const [groupIndex, setGroupIndex] = useState(initialGroupIndex);
   const [storyIndex, setStoryIndex] = useState(0);
   const [progress, setProgress] = useState(0);
@@ -70,6 +73,10 @@ export default function StoryViewer({
 
   const activeGroup = groups[groupIndex];
   const activeStory = activeGroup?.stories[storyIndex];
+
+  // If a prop is explicitly passed, use it. Otherwise, if logged in as a business user, show stats.
+  const isBusinessUser = currentUser?.accountType === "business" || currentUser?.role === "business_owner" || (currentUser as any)?.isBusiness;
+  const isActuallyOwner = isOwner || isBusinessUser;
 
   // Auto-set first unviewed story index on group change
   useEffect(() => {
@@ -361,16 +368,49 @@ export default function StoryViewer({
 
         {/* Media Content Body (Image or Video) */}
         <div className="flex-1 w-full h-full flex items-center justify-center bg-black relative overflow-hidden">
-          {activeStory.mediaType === "video" ? (
+          {activeStory.mediaType === "offer" ? (
+            <>
+              {/* Blurred background for offers */}
+              <img
+                src={activeStory.mediaUrl}
+                className="absolute inset-0 w-full h-full object-cover blur-xl opacity-30 scale-110 pointer-events-none"
+                alt=""
+              />
+              <div className="relative z-10 w-full px-6 flex flex-col items-center">
+                <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))]/50 rounded-3xl p-6 sm:p-8 shadow-2xl w-full max-w-sm flex flex-col items-center text-center">
+                  <div className="h-16 w-16 rounded-full bg-[hsl(var(--muted))] border-4 border-[hsl(var(--background))] shadow-sm overflow-hidden mb-4">
+                    <img src={activeGroup.business.logo} alt="Logo" className="w-full h-full object-cover" />
+                  </div>
+                  <h2 className="text-xl sm:text-2xl font-black text-[hsl(var(--foreground))] mb-2 tracking-tight">
+                    {activeStory.offerData?.packageName}
+                  </h2>
+                  <div className="text-3xl font-bold text-[hsl(var(--primary))] mb-4">
+                    ֏{activeStory.offerData?.price?.toLocaleString()}
+                  </div>
+                  <div className="bg-[hsl(var(--muted))]/50 rounded-2xl p-4 w-full text-sm text-[hsl(var(--muted-foreground))]">
+                    <p className="font-semibold text-[hsl(var(--foreground))] mb-2 flex items-center justify-center gap-1.5">
+                      <Sparkles className="w-4 h-4 text-amber-500" />
+                      For {activeStory.offerData?.pax} Persons
+                    </p>
+                    <p className="line-clamp-4 leading-relaxed">
+                      {activeStory.offerData?.dishes?.join(', ')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : activeStory.mediaType === "video" ? (
             <video
               ref={videoRef}
               src={activeStory.mediaUrl}
+              className="w-full h-full object-cover"
+              playsInline
+              webkit-playsinline="true"
+              loop={false}
               autoPlay
               muted
-              playsInline
-              className="w-full h-full object-cover pointer-events-none relative z-10"
-              onPlay={() => setIsPaused(false)}
-              onPlaying={() => setIsPaused(false)}
+              onEnded={handleNext}
+              onCanPlayThrough={() => setIsPaused(false)}
               onWaiting={() => setIsPaused(true)}
             />
           ) : (
@@ -404,7 +444,7 @@ export default function StoryViewer({
               {activeStory.caption}
             </p>
           )}
-          {isOwner ? (
+          {isActuallyOwner ? (
             <div className="flex items-center justify-center gap-3 text-sm text-white font-semibold mt-2 w-full">
               <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-3.5 py-2 rounded-full border border-white/20 shadow-md" title="Views">
                 <Eye className="w-4 h-4 text-emerald-400" />

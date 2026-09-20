@@ -36,6 +36,7 @@ export default function DashboardStoriesPage() {
   const [business, setBusiness] = useState<BusinessInfo | null>(null);
   const [activeStories, setActiveStories] = useState<Story[]>([]);
   const [archivedStories, setArchivedStories] = useState<Story[]>([]);
+  const [activeOffers, setActiveOffers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -107,7 +108,10 @@ export default function DashboardStoriesPage() {
       }
 
       // 2. Fetch business stories history
-      const storiesRes = await api.get("/stories/my-business");
+      const [storiesRes, offersRes] = await Promise.all([
+        api.get("/stories/my-business"),
+        api.get(`/offers/business/${biz._id}`)
+      ]);
       if (storiesRes.data?.success) {
         const allStories: Story[] = storiesRes.data.data;
         const now = new Date();
@@ -118,6 +122,10 @@ export default function DashboardStoriesPage() {
         
         setActiveStories(active);
         setArchivedStories(archive);
+      }
+      
+      if (offersRes.data?.success) {
+        setActiveOffers(offersRes.data.data);
       }
     } catch (err: any) {
       console.error("Failed to load stories dashboard:", err);
@@ -638,6 +646,7 @@ export default function DashboardStoriesPage() {
             highlights={highlights} 
             setHighlights={setHighlights} 
             storyArchive={archivedStories} 
+            activeOffers={activeOffers}
           />
 
         </div>

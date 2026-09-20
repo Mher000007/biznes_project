@@ -9,9 +9,10 @@ interface HighlightsBuilderProps {
   highlights: any[];
   setHighlights: (h: any[]) => void;
   storyArchive: any[];
+  activeOffers?: any[];
 }
 
-export default function HighlightsBuilder({ business, highlights, setHighlights, storyArchive }: HighlightsBuilderProps) {
+export default function HighlightsBuilder({ business, highlights, setHighlights, storyArchive, activeOffers = [] }: HighlightsBuilderProps) {
   const { t } = useI18n();
   const highlightInputRef = useRef<HTMLInputElement>(null);
   
@@ -23,7 +24,9 @@ export default function HighlightsBuilder({ business, highlights, setHighlights,
   const [croppingImage, setCroppingImage] = useState<string | null>(null);
   const [editingHighlightId, setEditingHighlightId] = useState<string | null>(null);
   const [isStoryArchiveModalOpen, setIsStoryArchiveModalOpen] = useState(false);
+  const [archiveModalTab, setArchiveModalTab] = useState<"stories" | "offers">("stories");
   const [selectedArchiveStories, setSelectedArchiveStories] = useState<string[]>([]);
+  const [selectedOffers, setSelectedOffers] = useState<string[]>([]);
   const [previewingHighlightGroup, setPreviewingHighlightGroup] = useState<any | null>(null);
 
   const [error, setError] = useState("");
@@ -56,7 +59,7 @@ export default function HighlightsBuilder({ business, highlights, setHighlights,
 
   const addHighlightItem = () => {
     if (!newHighlightTitle.trim()) {
-      setError("Please enter a highlight title.");
+      setError((t.builder as any)?.stories?.enterHighlightTitle || "Please enter a highlight title.");
       return;
     }
     const newHighlights = [...highlights];
@@ -68,6 +71,7 @@ export default function HighlightsBuilder({ business, highlights, setHighlights,
           title: newHighlightTitle,
           imageUrl: highlightCoverUrl,
           stories: selectedArchiveStories,
+          offers: selectedOffers,
           link: highlightLink,
           ringColor: highlightRingColor
         };
@@ -78,6 +82,7 @@ export default function HighlightsBuilder({ business, highlights, setHighlights,
         title: newHighlightTitle,
         imageUrl: highlightCoverUrl,
         stories: selectedArchiveStories,
+        offers: selectedOffers,
         link: highlightLink,
         ringColor: highlightRingColor,
         isActive: true
@@ -89,6 +94,7 @@ export default function HighlightsBuilder({ business, highlights, setHighlights,
     setHighlightLink("");
     setHighlightRingColor("");
     setSelectedArchiveStories([]);
+    setSelectedOffers([]);
     setEditingHighlightId(null);
     updateHighlightsBackend(newHighlights);
   };
@@ -145,6 +151,7 @@ export default function HighlightsBuilder({ business, highlights, setHighlights,
               setEditingHighlightId(null);
               setNewHighlightTitle("");
               setSelectedArchiveStories([]);
+              setSelectedOffers([]);
               setHighlightCoverUrl("");
               setHighlightLink("");
               setHighlightRingColor("");
@@ -196,7 +203,7 @@ export default function HighlightsBuilder({ business, highlights, setHighlights,
           <div className="flex-1 w-full space-y-2">
             <input
               type="text"
-              placeholder={(t.builder as any)?.stories?.highlightTitlePlaceholder || "e.g., Summer Menu, Interior..."}
+              placeholder={(t.builder as any)?.stories?.titlePlaceholder || "e.g., Summer Menu, Interior..."}
               value={newHighlightTitle}
               onChange={(e) => setNewHighlightTitle(e.target.value)}
               className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2 text-sm outline-none focus:border-[hsl(var(--primary))] bg-[hsl(var(--card))] text-[hsl(var(--foreground))]"
@@ -208,51 +215,14 @@ export default function HighlightsBuilder({ business, highlights, setHighlights,
                 className="flex-1 px-3 py-2 bg-[hsl(var(--muted))] hover:bg-[hsl(var(--muted))]/80 border border-[hsl(var(--border))] text-[hsl(var(--foreground))] rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-2"
               >
                 <ImageIcon className="h-3.5 w-3.5" />
-                {selectedArchiveStories.length > 0
-                  ? `${selectedArchiveStories.length} ${(t.builder as any)?.stories?.storiesSelected || "Stories Selected"}`
-                  : (t.builder as any)?.stories?.selectFromArchive || "Select stories from archive"}
+                {selectedArchiveStories.length > 0 || selectedOffers.length > 0
+                  ? `${selectedArchiveStories.length + selectedOffers.length} ${(t.builder as any)?.stories?.itemsSelected || "items selected"}`
+                  : (t.builder as any)?.stories?.selectContent || "Select Content"}
               </button>
             </div>
           </div>
         </div>
 
-        {/* Deep Link & Custom Ring Color section */}
-        <div className="pt-3 border-t border-[hsl(var(--border))]/50 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-[hsl(var(--muted-foreground))] flex items-center gap-1.5">
-              <LinkIcon className="h-3.5 w-3.5" />
-              Action URL (Optional)
-            </label>
-            <input
-              type="url"
-              placeholder="https://..."
-              value={highlightLink}
-              onChange={(e) => setHighlightLink(e.target.value)}
-              className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none focus:border-[hsl(var(--primary))] bg-[hsl(var(--card))] text-[hsl(var(--foreground))]"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-[hsl(var(--muted-foreground))]">Ring Color (Optional)</label>
-            <div className="flex items-center gap-2">
-              <div className="relative shrink-0 overflow-hidden rounded-lg w-8 h-8 border border-[hsl(var(--border))] cursor-pointer">
-                <input
-                  type="color"
-                  value={highlightRingColor || "#ffffff"}
-                  onChange={(e) => setHighlightRingColor(e.target.value)}
-                  className="absolute -top-2 -left-2 w-16 h-16 cursor-pointer"
-                />
-              </div>
-              <input
-                type="text"
-                placeholder="#HEX..."
-                value={highlightRingColor}
-                onChange={(e) => setHighlightRingColor(e.target.value)}
-                className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2 text-xs outline-none focus:border-[hsl(var(--primary))] bg-[hsl(var(--card))] text-[hsl(var(--foreground))]"
-              />
-            </div>
-          </div>
-        </div>
 
         <button
           type="button"
@@ -301,7 +271,9 @@ export default function HighlightsBuilder({ business, highlights, setHighlights,
 
                 <span className="text-xs font-bold text-[hsl(var(--foreground))] truncate w-full text-center mb-0.5">{h.title}</span>
                 <span className="text-[10px] font-medium text-[hsl(var(--muted-foreground))] flex items-center gap-1">
-                  {h.stories ? `${h.stories.length} stories` : "Highlight"}
+                  {((h.stories?.length || 0) + (h.offers?.length || 0)) > 0 
+                    ? `${(h.stories?.length || 0) + (h.offers?.length || 0)} ${(t.builder as any)?.stories?.itemsSelected ? (t.builder as any)?.stories?.itemsSelected.replace('selected', '').trim() : "items"}`
+                    : "Highlight"}
                   {h.link && <LinkIcon className="h-2.5 w-2.5" />}
                 </span>
 
@@ -322,6 +294,7 @@ export default function HighlightsBuilder({ business, highlights, setHighlights,
                       setNewHighlightTitle(h.title);
                       setHighlightCoverUrl(h.imageUrl || "");
                       setSelectedArchiveStories(h.stories || []);
+                      setSelectedOffers(h.offers || []);
                       setHighlightLink(h.link || "");
                       setHighlightRingColor(h.ringColor || "");
                     }}
@@ -374,53 +347,113 @@ export default function HighlightsBuilder({ business, highlights, setHighlights,
               </button>
             </div>
 
+            <div className="flex border-b border-[hsl(var(--border))]/50 px-4 sm:px-5">
+              <button
+                className={`py-3 px-4 text-sm font-semibold border-b-2 transition-colors ${archiveModalTab === 'stories' ? 'border-[hsl(var(--primary))] text-[hsl(var(--primary))]' : 'border-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'}`}
+                onClick={() => setArchiveModalTab('stories')}
+              >
+                Stories ({storyArchive.length})
+              </button>
+              <button
+                className={`py-3 px-4 text-sm font-semibold border-b-2 transition-colors ${archiveModalTab === 'offers' ? 'border-[hsl(var(--primary))] text-[hsl(var(--primary))]' : 'border-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'}`}
+                onClick={() => setArchiveModalTab('offers')}
+              >
+                Offers ({activeOffers.length})
+              </button>
+            </div>
+
             <div className="p-4 sm:p-5 overflow-y-auto flex-1">
-              {storyArchive.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="h-12 w-12 rounded-full bg-[hsl(var(--muted))] flex items-center justify-center mx-auto mb-3">
-                    <ImageIcon className="h-5 w-5 text-[hsl(var(--muted-foreground))]" />
+              {archiveModalTab === 'stories' ? (
+                storyArchive.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="h-12 w-12 rounded-full bg-[hsl(var(--muted))] flex items-center justify-center mx-auto mb-3">
+                      <ImageIcon className="h-5 w-5 text-[hsl(var(--muted-foreground))]" />
+                    </div>
+                    <p className="text-sm font-medium text-[hsl(var(--foreground))]">Your archive is empty</p>
+                    <p className="text-xs text-[hsl(var(--muted-foreground))]">Publish some stories first to add them to highlights.</p>
                   </div>
-                  <p className="text-sm font-medium text-[hsl(var(--foreground))]">Your archive is empty</p>
-                  <p className="text-xs text-[hsl(var(--muted-foreground))]">Publish some stories first to add them to highlights.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3">
-                  {storyArchive.map((s: any) => {
-                    const isSelected = selectedArchiveStories.includes(s._id);
-                    return (
-                      <div
-                        key={s._id}
-                        onClick={() => {
-                          setSelectedArchiveStories(prev => 
-                            prev.includes(s._id) 
-                              ? prev.filter(id => id !== s._id)
-                              : [...prev, s._id]
-                          );
-                        }}
-                        className={`group relative aspect-[9/16] rounded-xl overflow-hidden cursor-pointer bg-black ${
-                          isSelected ? "ring-2 ring-[hsl(var(--primary))] ring-offset-2 ring-offset-[hsl(var(--background))]" : "opacity-70 hover:opacity-100"
-                        } transition-all`}
-                      >
-                        {s.mediaType === "video" ? (
-                          <video src={s.mediaUrl} className="w-full h-full object-cover" muted />
-                        ) : (
-                          <img src={s.mediaUrl} alt="Story" className="w-full h-full object-cover" />
-                        )}
-                        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
-                        
-                        <div className="absolute top-2 right-2 h-5 w-5 rounded-full border-[1.5px] border-white flex items-center justify-center bg-black/30 backdrop-blur-sm">
-                          {isSelected && <div className="h-3 w-3 rounded-full bg-[hsl(var(--primary))]" />}
+                ) : (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3">
+                    {storyArchive.map((s: any) => {
+                      const isSelected = selectedArchiveStories.includes(s._id);
+                      return (
+                        <div
+                          key={s._id}
+                          onClick={() => {
+                            setSelectedArchiveStories(prev => 
+                              prev.includes(s._id) 
+                                ? prev.filter(id => id !== s._id)
+                                : [...prev, s._id]
+                            );
+                          }}
+                          className={`group relative aspect-[9/16] rounded-xl overflow-hidden cursor-pointer bg-black ${
+                            isSelected ? "ring-2 ring-[hsl(var(--primary))] ring-offset-2 ring-offset-[hsl(var(--background))]" : "opacity-70 hover:opacity-100"
+                          } transition-all`}
+                        >
+                          {s.mediaType === "video" ? (
+                            <video src={s.mediaUrl} className="w-full h-full object-cover" muted />
+                          ) : (
+                            <img src={s.mediaUrl} alt="Story" className="w-full h-full object-cover" />
+                          )}
+                          <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
+                          
+                          <div className="absolute top-2 right-2 h-5 w-5 rounded-full border-[1.5px] border-white flex items-center justify-center bg-black/30 backdrop-blur-sm">
+                            {isSelected && <div className="h-3 w-3 rounded-full bg-[hsl(var(--primary))]" />}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                )
+              ) : (
+                activeOffers.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="h-12 w-12 rounded-full bg-[hsl(var(--muted))] flex items-center justify-center mx-auto mb-3">
+                      <Sparkles className="h-5 w-5 text-[hsl(var(--muted-foreground))]" />
+                    </div>
+                    <p className="text-sm font-medium text-[hsl(var(--foreground))]">No active offers</p>
+                    <p className="text-xs text-[hsl(var(--muted-foreground))]">Create some offers first to add them to highlights.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {activeOffers.map((offer: any) => {
+                      const isSelected = selectedOffers.includes(offer._id);
+                      return (
+                        <div
+                          key={offer._id}
+                          onClick={() => {
+                            setSelectedOffers(prev => 
+                              prev.includes(offer._id) 
+                                ? prev.filter(id => id !== offer._id)
+                                : [...prev, offer._id]
+                            );
+                          }}
+                          className={`group relative p-4 rounded-xl border cursor-pointer transition-all ${
+                            isSelected 
+                              ? "bg-[hsl(var(--primary))]/10 border-[hsl(var(--primary))] ring-1 ring-[hsl(var(--primary))]" 
+                              : "bg-[hsl(var(--card))] border-[hsl(var(--border))] hover:border-[hsl(var(--primary))]/50"
+                          }`}
+                        >
+                          <h4 className="font-bold text-sm text-[hsl(var(--foreground))] line-clamp-2 mb-1">{offer.packageName}</h4>
+                          <p className="text-xs font-semibold text-[hsl(var(--primary))] mb-2">֏{offer.price.toLocaleString()}</p>
+                          <div className="text-[10px] text-[hsl(var(--muted-foreground))] line-clamp-3">
+                            {offer.dishes?.length > 0 ? offer.dishes.join(', ') : 'No dishes listed'}
+                          </div>
+                          
+                          <div className="absolute top-3 right-3 h-5 w-5 rounded-full border-[1.5px] border-[hsl(var(--border))] flex items-center justify-center bg-background">
+                            {isSelected && <div className="h-3 w-3 rounded-full bg-[hsl(var(--primary))]" />}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )
               )}
             </div>
 
             <div className="p-4 sm:p-5 border-t border-[hsl(var(--border))]/50 bg-[hsl(var(--muted))]/20 flex justify-between items-center shrink-0">
               <span className="text-sm font-medium text-[hsl(var(--foreground))]">
-                <span className="text-[hsl(var(--primary))] font-bold">{selectedArchiveStories.length}</span> selected
+                <span className="text-[hsl(var(--primary))] font-bold">{selectedArchiveStories.length + selectedOffers.length}</span> {(t.builder as any)?.stories?.itemsSelected || "items selected"}
               </span>
               <button
                 type="button"

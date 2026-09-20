@@ -1,0 +1,1146 @@
+Created At: 2026-09-20T21:33:12+04:00
+Completed At: 2026-09-20T21:33:12+04:00
+File Path: `file:///Users/martirosyan/Desktop/business%20app/biznes_project/src/components/map/LeafletMap.tsx`
+Total Lines: 1117
+Total Bytes: 44917
+Showing lines 1 to 800
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: "use client";
+2: import React, { useEffect, useRef, useState } from "react";
+3: import L from "leaflet";
+4: import { Maximize2, Minimize2, Bookmark, Navigation, Utensils, X, Search } from "lucide-react";
+5: import { useRouter } from "next/navigation";
+6: import { useI18n } from "@/i18n";
+7: import { useAuth } from "@/context/AuthContext";
+8: import { useToast } from "@/context/ToastContext";
+9: 
+10: // Resolve default marker icon asset path issues in Webpack/Vite bundlers
+11: if (typeof window !== "undefined") {
+12:   delete (L.Icon.Default.prototype as any)._getIconUrl;
+13:   L.Icon.Default.mergeOptions({
+14:     iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+15:     iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+16:     shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+17:   });
+18: }
+19: 
+20: // ─── Utility: Haversine distance ────────────────────────────────────────────
+21: function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
+22:   const R = 6371;
+23:   const dLat = (lat2 - lat1) * Math.PI / 180;
+24:   const dLon = (lon2 - lon1) * Math.PI / 180;
+25:   const a =
+26:     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+27:     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+28:     Math.sin(dLon / 2) * Math.sin(dLon / 2);
+29:   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+30:   return R * c * 1000;
+31: }
+32: 
+33: // ─── Icon builders ────────────────────────────────────────────────────────────
+34: 
+35: function buildDefaultIcon(plan?: string, isOpen: boolean = true): L.DivIcon {
+36:   const isPremium = plan === 'premium';
+37:   const fillColor = isPremium ? "#eab308" : "#10b981";
+38:   const innerFill = isPremium ? "#eab308" : "#10b981";
+39:   const opacityStyle = isOpen
+40:     ? "opacity: 1;"
+41:     : "opacity: 0.45; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15)) grayscale(0.4);";
+42: 
+43:   return L.divIcon({
+44:     html: `
+45:       <svg width="28" height="36" viewBox="0 0 28 36" fill="none" xmlns="http://www.w3.org/2000/svg"
+46:            style="filter:drop-shadow(0 3px 6px rgba(0,0,0,0.30));display:block;${opacityStyle}">
+47:         <path d="M14 0C6.268 0 0 6.268 0 14c0 9.5 14 22 14 22S28 23.5 28 14C28 6.268 21.732 0 14 0z"
+48:               fill="${fillColor}"/>
+49:         <circle cx="14" cy="14" r="6.5" fill="white" fill-opacity="0.95"/>
+50:         <rect x="10" y="10" width="8" height="8" rx="0.8" fill="${innerFill}"/>
+51:         <rect x="12" y="14" width="2" height="4" fill="white"/>
+52:         <rect x="11" y="11" width="2.2" height="2.2" fill="white" fill-opacity="0.75"/>
+53:         <rect x="14.8" y="11" width="2.2" height="2.2" fill="white" fill-opacity="0.75"/>
+54:       </svg>
+55:     `,
+56:     className: `leaflet-custom-pin-icon ${isOpen ? '' : 'is-closed-pin'}`,
+57:     iconSize: [28, 36],
+58:     iconAnchor: [14, 36],
+59:     popupAnchor: [0, -36],
+60:     tooltipAnchor: [16, -18],
+61:   });
+62: }
+63: 
+64: function buildHoveredIcon(): L.DivIcon {
+65:   return L.divIcon({
+66:     html: `
+67:       <div class="pulsing-marker-wrapper">
+68:         <div class="pulsing-marker-dot"></div>
+69:         <div class="pulsing-marker-pulse"></div>
+70:       </div>
+71:     `,
+72:     className: "leaflet-pulsing-marker-container",
+73:     iconSize: [24, 24],
+74:     iconAnchor: [12, 12],
+75:     tooltipAnchor: [14, 0],
+76:   });
+77: }
+78: 
+79: // ─── Types ───────────────────────────────────────────────────────────────────
+80: 
+81: export interface LeafletMarkerItem {
+82:   id: string | number;
+83:   companyId?: string | number;
+84:   lat: number;
+85:   lng: number;
+86:   popupContent?: string;
+87:   draggable?: boolean;
+88:   slug?: string;
+89:   name?: string;
+90:   category?: string;
+91:   rating?: number;
+92:   reviewCount?: number;
+93:   plan?: 'starter' | 'standard' | 'premium' | string;
+94:   isOpen?: boolean;
+95:   image?: string;
+96: }
+97: 
+98: export interface LeafletMapProps {
+99:   center: [number, number];
+100:   zoom: number;
+101:   markers?: LeafletMarkerItem[];
+102:   height?: string;
+103:   scrollWheelZoom?: boolean;
+104:   zoomControl?: boolean;
+105:   className?: string;
+106:   onMapClick?: (lat: number, lng: number) => void;
+107:   onMarkerDragEnd?: (id: string | number, lat: number, lng: number) => void;
+108:   tileLayerUrl?: string;
+109:   tileLayerAttribution?: string;
+110:   readonly?: boolean;
+111:   fitAllBounds?: boolean;
+112:   hoveredLocationId?: string | number | null;
+113:   hideFullscreenControl?: boolean;
+114: }
+115: 
+116: // ─── Subcomponents ──────────────────────────────────────────────────────────
+117: 
+118: function MapSaveButton({ business }: { business: LeafletMarkerItem }) {
+119:   const { currentUser } = useAuth();
+120:   const { showToast } = useToast();
+121:   const isBusinessUser = currentUser?.role === "business_owner" || currentUser?.accountType === "business";
+122: 
+123:   const [isFavorited, setIsFavorited] = useState(false);
+124: 
+125:   useEffect(() => {
+126:     if (!currentUser || isBusinessUser || !business) {
+127:       setIsFavorited(false);
+128:       return;
+129:     }
+130:     if (typeof window !== "undefined") {
+131:       try {
+132:         const uKey = currentUser.username || currentUser.email || (currentUser as any).id || (currentUser as any)._id || "";
+133:         const userFavsKey = `armbiz_favorites_${uKey}`;
+134:         const favsStr = localStorage.getItem(userFavsKey);
+135:         if (favsStr) {
+136:           const favs: string[] = JSON.parse(favsStr);
+137:           if (favs.includes(String(business.id)) || (business.slug && favs.includes(business.slug))) {
+138:             setIsFavorited(true);
+139:           } else {
+140:             setIsFavorited(false);
+141:           }
+142:         } else {
+143:           setIsFavorited(false);
+144:         }
+145:       } catch (e) { }
+146:     }
+147:   }, [business.id, business.slug, currentUser, isBusinessUser]);
+148: 
+149:   const toggleFavorite = (e: React.MouseEvent) => {
+150:     e.preventDefault();
+151:     e.stopPropagation();
+152: 
+153:     if (isBusinessUser) return;
+154: 
+155:     if (!currentUser) {
+156:       showToast();
+157:       return;
+158:     }
+159: 
+160:     if (typeof window === "undefined") return;
+161: 
+162:     try {
+163:       const uKey = currentUser.username || currentUser.email || (currentUser as any).id || (currentUser as any)._id || "";
+164:       if (!uKey) return;
+165:       const userFavsKey = `armbiz_favorites_${uKey}`;
+166:       const userItemsKey = `armbiz_favorites_items_${uKey}`;
+167: 
+168:       const favsStr = localStorage.getItem(userFavsKey);
+169:       const itemsStr = localStorage.getItem(userItemsKey);
+170: 
+171:       let favs: string[] = favsStr ? JSON.parse(favsStr) : [];
+172:       let itemsMap: Record<string, any> = itemsStr ? JSON.parse(itemsStr) : {};
+173: 
+174:       const key = business.slug || String(business.id);
+175:       const isCurrentlyFav = favs.includes(String(business.id)) || (business.slug && favs.includes(business.slug));
+176: 
+177:       if (isCurrentlyFav) {
+178:         favs = favs.filter((id) => id !== String(business.id) && id !== business.slug);
+179:         delete itemsMap[String(business.id)];
+180:         if (business.slug) delete itemsMap[business.slug];
+181:         setIsFavorited(false);
+182:       } else {
+183:         if (key && !favs.includes(key)) favs.push(key);
+184:         itemsMap[key] = {
+185:           id: String(business.id),
+186:           slug: business.slug || String(business.id),
+187:           name: business.name ? String(business.name).slice(0, 100) : "",
+188:           city: "Yerevan",
+189:           category: business.category,
+190:           ratingAvg: business.rating || 5.0,
+191:           logo: business.image || "",
+192:           logoUrl: business.image || ""
+193:         };
+194:         setIsFavorited(true);
+195: 
+196:         const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+197:         const startX = rect.left + rect.width / 2;
+198:         const startY = rect.top + rect.height / 2;
+199: 
+200:         const event = new CustomEvent("fly-to-bookmark", {
+201:           detail: { x: startX, y: startY },
+202:         });
+203:         window.dispatchEvent(event);
+204:       }
+205: 
+206:       localStorage.setItem(userFavsKey, JSON.stringify(favs));
+207:       localStorage.setItem(userItemsKey, JSON.stringify(itemsMap));
+208:       window.dispatchEvent(new Event("favoritesUpdated"));
+209:     } catch (e) {
+210:       console.error("Failed to update favorites:", e);
+211:     }
+212:   };
+213: 
+214:   return (
+215:     <button className={`save-btn ${isFavorited ? 'active' : ''}`} aria-label="Save" onClick={toggleFavorite}>
+216:       <Bookmark size={14} className={isFavorited ? 'fill-current text-[#111111]' : ''} color={isFavorited ? '#111111' : 'currentColor'} />
+217:     </button>
+218:   );
+219: }
+220: 
+221: // ─── Component ───────────────────────────────────────────────────────────────
+222: 
+223: export default function LeafletMap({
+224:   center = [40.1872, 44.5152],
+225:   zoom = 13,
+226:   markers = [],
+227:   height = "100%",
+228:   scrollWheelZoom = false,
+229:   zoomControl = true,
+230:   className = "",
+231:   onMapClick,
+232:   onMarkerDragEnd,
+233:   tileLayerUrl = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+234:   tileLayerAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+235:   readonly = false,
+236:   fitAllBounds = false,
+237:   hoveredLocationId = null,
+238:   hideFullscreenControl = false,
+239: }: LeafletMapProps) {
+240:   const router = useRouter();
+241:   const { locale, t } = useI18n();
+242:   const containerRef = useRef<HTMLDivElement>(null);
+243:   const mapRef = useRef<L.Map | null>(null);
+244:   const tileLayerRef = useRef<L.TileLayer | null>(null);
+245:   const markersGroupRef = useRef<L.LayerGroup | null>(null);
+246:   const [isFullscreen, setIsFullscreen] = useState(false);
+247:   const [showNearbyRestaurants, setShowNearbyRestaurants] = useState(false);
+248:   const [isSearchingNearby, setIsSearchingNearby] = useState(false);
+249:   const [hasSearchedNearby, setHasSearchedNearby] = useState(false);
+250:   const [searchRadius, setSearchRadius] = useState<number>(1000);
+251:   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+252:   const [activeNearbyId, setActiveNearbyId] = useState<string | number | null>(null);
+253:   const cardsContainerRef = useRef<HTMLDivElement>(null);
+254: 
+255:   // Manage global body class for nearby restaurants state to hide overlapping mobile UI
+256:   useEffect(() => {
+257:     if (showNearbyRestaurants) {
+258:       document.body.classList.add('nearby-restaurants-active');
+259:     } else {
+260:       document.body.classList.remove('nearby-restaurants-active');
+261:     }
+262:     return () => {
+263:       document.body.classList.remove('nearby-restaurants-active');
+264:     };
+265:   }, [showNearbyRestaurants]);
+266: 
+267:   // Update zoom button titles dynamically for English / Armenian / Russian
+268:   useEffect(() => {
+269:     const container = containerRef.current;
+270:     if (!container) return;
+271:     const zoomInTitle = locale === 'hy' ? 'Մոտեցնել' : locale === 'ru' ? 'Увеличить' : 'Zoom in';
+272:     const zoomOutTitle = locale === 'hy' ? 'Հեռացնել' : locale === 'ru' ? 'Уменьшить' : 'Zoom out';
+273: 
+274:     const inBtn = container.querySelector('.leaflet-control-zoom-in');
+275:     const outBtn = container.querySelector('.leaflet-control-zoom-out');
+276:     if (inBtn) {
+277:       inBtn.setAttribute('title', zoomInTitle);
+278:       inBtn.setAttribute('aria-label', zoomInTitle);
+279:     }
+280:     if (outBtn) {
+281:       outBtn.setAttribute('title', zoomOutTitle);
+282:       outBtn.setAttribute('aria-label', zoomOutTitle);
+283:     }
+284:   }, [locale]);
+285: 
+286:   // Registry: id → Leaflet marker instance (to swap icons without rebuilding)
+287:   const markerRegistryRef = useRef<Map<string | number, L.Marker>>(new Map());
+288:   const markerCompanyRegistryRef = useRef<Map<string | number, string | number>>(new Map());
+289: 
+290:   // Tracks the currently highlighted id so we can restore it on the next hover
+291:   const prevHoveredIdRef = useRef<string | number | null>(null);
+292:   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+293: 
+294:   const [internalHoveredCompanyId, setInternalHoveredCompanyId] = useState<string | number | null>(null);
+295: 
+296:   // Store latest bounds fn so ResizeObserver / fullscreen can call it
+297:   const fitBoundsFnRef = useRef<((animate: boolean) => void) | null>(null);
+298: 
+299:   // ── 1. Init map ────────────────────────────────────────────────────────────
+300:   useEffect(() => {
+301:     if (!containerRef.current || mapRef.current) return;
+302: 
+303:     // Clear any existing leaflet container property to prevent re-initialization error
+304:     const container = containerRef.current as any;
+305:     if (container._leaflet_id) {
+306:       container._leaflet_id = null;
+307:     }
+308: 
+309:     const safeCenter: [number, number] = [
+310:       !isFinite(Number(center[0])) ? 40.1872 : Number(center[0]),
+311:       !isFinite(Number(center[1])) ? 44.5152 : Number(center[1]),
+312:     ];
+313: 
+314:     const map = L.map(container, {
+315:       zoomControl: zoomControl && !readonly,
+316:       scrollWheelZoom,
+317:       dragging: !readonly,
+318:       attributionControl: false,
+319:       // smoother panning
+320:       inertia: true,
+321:       inertiaDeceleration: 2000,
+322:       inertiaMaxSpeed: 1200,
+323:     }).setView(safeCenter, zoom);
+324: 
+325:     const tileLayer = L.tileLayer(tileLayerUrl, {
+326:       attribution: tileLayerAttribution,
+327:       maxZoom: 19,
+328:       // preload adjacent tiles for smoother scroll
+329:       keepBuffer: 4,
+330:     }).addTo(map);
+331:     tileLayerRef.current = tileLayer;
+332: 
+333: 
+334:     if (!readonly) {
+335:       map.on("focus", () => map.scrollWheelZoom.enable());
+336:       map.on("click", () => {
+337:         map.scrollWheelZoom.enable();
+338:         setInternalHoveredCompanyId(null);
+339:       });
+340:       map.on("blur", () => map.scrollWheelZoom.disable());
+341:     }
+342: 
+343:     if (onMapClick && !readonly) {
+344:       map.on("click", (e: L.LeafletMouseEvent) => onMapClick(e.latlng.lat, e.latlng.lng));
+345:     }
+346: 
+347:     const markersGroup = L.layerGroup().addTo(map);
+348:     markersGroupRef.current = markersGroup;
+349:     mapRef.current = map;
+350: 
+351:     // Let the browser paint before we call invalidateSize
+352:     const sizeTimer = setTimeout(() => map.invalidateSize(), 100);
+353:     return () => {
+354:       clearTimeout(sizeTimer);
+355:       if (map) {
+356:         try {
+357:           map.stop();
+358:           map.off();
+359:           map.remove();
+360:         } catch (e) {
+361:           console.error("Leaflet cleanup error", e);
+362:         }
+363:       }
+364:       mapRef.current = null;
+365:       tileLayerRef.current = null;
+366:       markersGroupRef.current = null;
+367:       markerRegistryRef.current.clear();
+368:     };
+369:     // eslint-disable-next-line react-hooks/exhaustive-deps
+370:   }, []);
+371: 
+372:   // ── 1b. Tile layer swap (theme changes) ───────────────────────────────────
+373:   useEffect(() => {
+374:     const map = mapRef.current;
+375:     if (!map) return;
+376:     tileLayerRef.current?.remove();
+377:     tileLayerRef.current = L.tileLayer(tileLayerUrl, {
+378:       attribution: tileLayerAttribution,
+379:       maxZoom: 19,
+380:       keepBuffer: 4,
+381:     }).addTo(map);
+382:   }, [tileLayerUrl, tileLayerAttribution]);
+383: 
+384:   // ── 1c. User Location marker ──────────────────────────────────────────────
+385:   const userMarkerRef = useRef<L.Marker | null>(null);
+386:   const userRadiusCircleRef = useRef<L.Circle | null>(null);
+387:   const userRadiusWaveRef = useRef<L.Circle | null>(null);
+388:   
+389:   useEffect(() => {
+390:     const map = mapRef.current;
+391:     if (!map || !userLocation) return;
+392: 
+393:     const buildUserIcon = (isScanning: boolean) => L.divIcon({
+394:       html: `
+395:         <div class="user-pulsing-marker">
+396:           <div class="user-pulsing-dot"></div>
+397:           <div class="user-pulsing-pulse"></div>
+398:           ${isScanning ? `
+399:             <div class="wifi-wave-container">
+400:                <div class="wifi-wave"></div>
+401:                <div class="wifi-wave"></div>
+402:                <div class="wifi-wave"></div>
+403:             </div>
+404:           ` : ''}
+405:         </div>
+406:       `,
+407:       className: "leaflet-user-marker",
+408:       iconSize: [24, 24],
+409:       iconAnchor: [12, 12]
+410:     });
+411: 
+412:     if (userMarkerRef.current) {
+413:       userMarkerRef.current.setLatLng(userLocation);
+414:       userMarkerRef.current.setIcon(buildUserIcon(showNearbyRestaurants));
+415:     } else {
+416:       userMarkerRef.current = L.marker(userLocation, {
+417:         icon: buildUserIcon(showNearbyRestaurants),
+418:         zIndexOffset: 1000
+419:       }).addTo(map).bindPopup(locale === 'hy' ? 'Դուք այստեղ եք' : locale === 'ru' ? 'Вы здесь' : 'You are here');
+420:     }
+421: 
+422:     if (showNearbyRestaurants) {
+423:       // Static dashed boundary
+424:       if (!isSearchingNearby && !hasSearchedNearby) {
+425:         if (userRadiusCircleRef.current) {
+426:            userRadiusCircleRef.current.setLatLng(userLocation);
+427:            userRadiusCircleRef.current.setRadius(searchRadius);
+428:         } else {
+429:            userRadiusCircleRef.current = L.circle(userLocation, {
+430:              radius: searchRadius,
+431:              color: '#10b981',
+432:              fillColor: '#10b981',
+433:              fillOpacity: 0.05,
+434:              weight: 2,
+435:              dashArray: "4 4",
+436:              interactive: false
+437:            }).addTo(map);
+438:         }
+439:       } else {
+440:         if (userRadiusCircleRef.current) {
+441:            userRadiusCircleRef.current.remove();
+442:            userRadiusCircleRef.current = null;
+443:         }
+444:       }
+445: 
+446:       // Animated expanding wave
+447:       if (isSearchingNearby) {
+448:          if (userRadiusWaveRef.current) {
+449:             userRadiusWaveRef.current.setLatLng(userLocation);
+450:             userRadiusWaveRef.current.setRadius(searchRadius);
+451:          } else {
+452:             userRadiusWaveRef.current = L.circle(userLocation, {
+453:               radius: searchRadius,
+454:               color: '#10b981',
+455:               fillColor: '#10b981',
+456:               fillOpacity: 0.1,
+457:               weight: 3,
+458:               className: 'radar-zone-wave',
+459:               interactive: false
+460:             }).addTo(map);
+461:          }
+462:       } else {
+463:          if (userRadiusWaveRef.current) {
+464:             userRadiusWaveRef.current.remove();
+465:             userRadiusWaveRef.current = null;
+466:          }
+467:       }
+468:     } else {
+469:       if (userRadiusCircleRef.current) {
+470:          userRadiusCircleRef.current.remove();
+471:          userRadiusCircleRef.current = null;
+472:       }
+473:       if (userRadiusWaveRef.current) {
+474:          userRadiusWaveRef.current.remove();
+475:          userRadiusWaveRef.current = null;
+476:       }
+477:     }
+478:   }, [userLocation, locale, showNearbyRestaurants, searchRadius, isSearchingNearby, hasSearchedNearby]);
+479: 
+480:   const nearbyRestaurants = React.useMemo(() => {
+481:     let rests = markers.filter(
+482:       (m) => m.category?.toLowerCase() === 'horeca' || m.category?.toLowerCase() === 'restaurant'
+483:     );
+484:     if (userLocation) {
+485:       rests = rests.map(m => ({
+486:         ...m,
+487:         _distance: getDistance(userLocation[0], userLocation[1], m.lat, m.lng)
+488:       }))
+489:       .filter((m: any) => m._distance <= searchRadius)
+490:       .sort((a: any, b: any) => a._distance - b._distance)
+491:       .slice(0, 15);
+492:     } else {
+493:       rests = rests.slice(0, 10);
+494:     }
+495:     return rests;
+496:   }, [markers, userLocation, searchRadius]);
+497: 
+498:   // ── 2. Rebuild markers ONLY when marker data changes (NOT on hover) ───────
+499:   useEffect(() => {
+500:     const map = mapRef.current;
+501:     const markersGroup = markersGroupRef.current;
+502:     if (!map || !markersGroup) return;
+503: 
+504:     map.stop(); // Stop any ongoing flyTo/zoom animations before clearing layers
+505:     markersGroup.clearLayers();
+506:     markerRegistryRef.current.clear();
+507:     markerCompanyRegistryRef.current.clear();
+508: 
+509:     const bounds = L.latLngBounds([]);
+510:     const validList: [number, number][] = [];
+511: 
+512:     const openText = t.business?.openNow || (locale === 'hy' ? 'Բաց է' : locale === 'ru' ? 'Открыто' : 'Open Now');
+513:     const closedText = t.business?.closed || (locale === 'hy' ? 'Փակ է' : locale === 'ru' ? 'Закрыто' : 'Closed');
+514: 
+515:     if (markers && markers.length > 0) {
+516:       let filteredMarkers = markers;
+517:       if (showNearbyRestaurants) {
+518:         if (!hasSearchedNearby) {
+519:           filteredMarkers = [];
+520:         } else {
+521:           filteredMarkers = nearbyRestaurants;
+522:         }
+523:       }
+524:       
+525:       filteredMarkers.forEach((m) => {
+526:         const lat = Number(m.lat);
+527:         const lng = Number(m.lng);
+528:         if (!isFinite(lat) || !isFinite(lng)) return;
+529: 
+530:         const marker = L.marker([lat, lng], {
+531:           draggable: m.draggable && !readonly,
+532:           icon: buildDefaultIcon(m.plan, m.isOpen ?? true),
+533:         });
+534: 
+535:         if (!m.name && m.popupContent) {
+536:           marker.bindPopup(m.popupContent);
+537:         }
+538: 
+539:         if (m.slug && !readonly) {
+540:           marker.on("click", () => {
+541:             const isMobileOrTouch = typeof window !== "undefined" && (
+542:               window.innerWidth <= 768 ||
+543:               window.matchMedia("(hover: none)").matches ||
+544:               ('ontouchstart' in window) ||
+545:               navigator.maxTouchPoints > 0
+546:             );
+547:             if (isMobileOrTouch && m.companyId) {
+548:               if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+549:               setInternalHoveredCompanyId(m.companyId!);
+550:             } else {
+551:               router.push(`/business/${m.slug}`);
+552:             }
+553:           });
+554:         }
+555: 
+556:         if (m.draggable && !readonly && onMarkerDragEnd) {
+557:           marker.on("dragend", () => {
+558:             const pos = marker.getLatLng();
+559:             onMarkerDragEnd(m.id, pos.lat, pos.lng);
+560:           });
+561:         }
+562: 
+563:         if (!readonly && m.companyId) {
+564:           marker.on("mouseover", () => {
+565:             if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+566:             setInternalHoveredCompanyId(m.companyId!);
+567:           });
+568:           marker.on("mouseout", () => {
+569:             if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+570:             hoverTimeoutRef.current = setTimeout(() => {
+571:               setInternalHoveredCompanyId(null);
+572:             }, 300);
+573:           });
+574:         }
+575: 
+576:         marker.addTo(markersGroup);
+577:         markerRegistryRef.current.set(m.id, marker);
+578:         markerCompanyRegistryRef.current.set(m.id, m.companyId || m.id);
+579:         bounds.extend([lat, lng]);
+580:         validList.push([lat, lng]);
+581:       });
+582:     }
+583: 
+584:     const safeCenter: [number, number] = [
+585:       !isFinite(Number(center[0])) ? 40.1872 : Number(center[0]),
+586:       !isFinite(Number(center[1])) ? 44.5152 : Number(center[1]),
+587:     ];
+588: 
+589:     const doFitBounds = (animate: boolean) => {
+590:       const m = mapRef.current;
+591:       if (!m) return;
+592:       const size = m.getSize();
+593:       if (size.x === 0 || size.y === 0) return; // Prevent NaN errors if container is hidden
+594: 
+595:       m.invalidateSize({ animate: false });
+596:       if (fitAllBounds && validList.length > 1) {
+597:         m.fitBounds(bounds, { padding: [40, 40], maxZoom: 14, animate, duration: animate ? 0.6 : undefined });
+598:       } else if (fitAllBounds && validList.length === 1) {
+599:         m.setView(validList[0], 14, { animate });
+600:       } else {
+601:         m.setView(safeCenter, zoom, { animate });
+602:       }
+603:     };
+604: 
+605:     fitBoundsFnRef.current = doFitBounds;
+606: 
+607:     // Initial fit (only on first load — skip if a hover is already active)
+608:     if (!hoveredLocationId && !internalHoveredCompanyId) {
+609:       doFitBounds(true);
+610:     }
+611: 
+612:     // Stabilisation passes (no animation after first)
+613:     const timers = [200, 600, 1200].map((delay) =>
+614:       setTimeout(() => {
+615:         const m = mapRef.current;
+616:         if (!m) return;
+617:         const { x, y } = m.getSize();
+618:         if (x > 0 && y > 0 && !hoveredLocationId && !internalHoveredCompanyId) {
+619:           m.invalidateSize({ animate: false });
+620:         }
+621:       }, delay)
+622:     );
+623: 
+624:     return () => timers.forEach(clearTimeout);
+625:     // hoveredLocationId intentionally excluded — handle it in a separate effect
+626:     // eslint-disable-next-line react-hooks/exhaustive-deps
+627:   }, [markers, center, zoom, readonly, onMarkerDragEnd, fitAllBounds, router, showNearbyRestaurants, hasSearchedNearby, nearbyRestaurants]);
+628: 
+629:   // ── 3. Handle hover: swap icons + flyTo (no marker rebuild) ──────────────
+630:   useEffect(() => {
+631:     const map = mapRef.current;
+632:     const registry = markerRegistryRef.current;
+633:     const companyRegistry = markerCompanyRegistryRef.current;
+634: 
+635:     // Reset all markers to default
+636:     registry.forEach((marker, id) => {
+637:       const m = markers.find(m => m.id === id);
+638:       marker.setIcon(buildDefaultIcon(m?.plan));
+639:     });
+640: 
+641:     let activeCompanyId: string | number | null = null;
+642:     if (internalHoveredCompanyId) {
+643:       activeCompanyId = internalHoveredCompanyId;
+644:     } else if (hoveredLocationId) {
+645:       if (companyRegistry.has(hoveredLocationId)) {
+646:         activeCompanyId = companyRegistry.get(hoveredLocationId) || null;
+647:       } else {
+648:         const values = Array.from(companyRegistry.values());
+649:         if (values.includes(hoveredLocationId)) {
+650:           activeCompanyId = hoveredLocationId;
+651:         }
+652:       }
+653:     }
+654: 
+655:     if (activeCompanyId) {
+656:       let targetForFlyTo: L.Marker | null = null;
+657: 
+658:       registry.forEach((marker, id) => {
+659:         if (companyRegistry.get(id) === activeCompanyId) {
+660:           marker.setIcon(buildHoveredIcon());
+661:           marker.setOpacity(1); // Ensure it's visible
+662:           if (id === hoveredLocationId) {
+663:             targetForFlyTo = marker;
+664:           }
+665:         } else {
+666:           // Keep all other markers visible but slightly dimmed for focus
+667:           marker.setOpacity(0.6);
+668:         }
+669:       });
+670: 
+671:       // If triggered by external hover (list card), fly to the markers
+672:       if (hoveredLocationId && map) {
+673:         map.invalidateSize({ animate: false }); // Force size update immediately when hover activates
+674:         const size = map.getSize();
+675:         if (size.x > 0 && size.y > 0) {
+676:           // Collect all markers for the active company
+677:           const companyMarkersLatLng: [number, number][] = [];
+678:           registry.forEach((marker, id) => {
+679:             if (companyRegistry.get(id) === activeCompanyId) {
+680:               const { lat, lng } = marker.getLatLng();
+681:               if (isFinite(lat) && isFinite(lng)) {
+682:                 companyMarkersLatLng.push([lat, lng]);
+683:               }
+684:             }
+685:           });
+686: 
+687:           if (companyMarkersLatLng.length > 0) {
+688:             if (companyMarkersLatLng.length === 1) {
+689:               map.flyTo(companyMarkersLatLng[0], Math.max(map.getZoom(), 14), {
+690:                 animate: true,
+691:                 duration: 0.55,
+692:                 easeLinearity: 0.2,
+693:               });
+694:             } else {
+695:               // We need to use the Leaflet `latLngBounds` constructor directly. 
+696:               // Since L is global inside LeafletMap (imported from 'leaflet'), we can use it.
+697:               // Wait, L might not be directly available, we can just map to Leaflet latLngs and use map.flyToBounds.
+698:               const boundsObj = companyMarkersLatLng; // flyToBounds accepts LatLngBoundsExpression which is LatLngTuple[]
+699:               map.flyToBounds(boundsObj, {
+700:                 animate: true,
+701:                 duration: 0.55,
+702:                 padding: [50, 50],
+703:                 maxZoom: 14
+704:               });
+705:             }
+706:           }
+707:         }
+708:       }
+709:     } else {
+710:       // If no active hover, ensure all markers are visible
+711:       registry.forEach((marker) => {
+712:         marker.setOpacity(1);
+713:       });
+714:     }
+715:     // Track prev ID so we can optimize next render if needed
+716:     prevHoveredIdRef.current = hoveredLocationId ?? null;
+717:   }, [hoveredLocationId, internalHoveredCompanyId]);
+718: 
+719:   // ── 4. Fullscreen toggle ──────────────────────────────────────────────────
+720:   useEffect(() => {
+721:     const map = mapRef.current;
+722:     if (!map) return;
+723:     document.body.classList.toggle("map-fullscreen-active", isFullscreen);
+724:     const t = setTimeout(() => {
+725:       const size = map.getSize();
+726:       if (size.x > 0 && size.y > 0) {
+727:         map.invalidateSize({ animate: false });
+728:         if (fitBoundsFnRef.current) fitBoundsFnRef.current(false);
+729:       }
+730:     }, 150);
+731:     return () => {
+732:       document.body.classList.remove("map-fullscreen-active");
+733:       clearTimeout(t);
+734:     };
+735:   }, [isFullscreen]);
+736: 
+737:   // ── 5. Manage active marker popup body class ─────────────────────────────
+738: 
+739:   const activeHoveredId = internalHoveredCompanyId || hoveredLocationId;
+740:   const activeMarkerData = activeHoveredId
+741:     ? markers.find(m => m.companyId === activeHoveredId || m.id === activeHoveredId)
+742:     : null;
+743: 
+744:   useEffect(() => {
+745:     if (activeMarkerData) {
+746:       document.body.classList.add("map-hover-card-active");
+747:     } else {
+748:       document.body.classList.remove("map-hover-card-active");
+749:     }
+750:     return () => {
+751:       document.body.classList.remove("map-hover-card-active");
+752:     };
+753:   }, [activeMarkerData]);
+754: 
+755:   // ── 6. Cleanup on unmount ──────────────────────────────────────────────────
+756:   useEffect(() => {
+757:     return () => {
+758:       const map = mapRef.current;
+759:       if (map) {
+760:         map.remove();
+761:         mapRef.current = null;
+762:       }
+763:     };
+764:   }, []);
+765: 
+766:   // ── 5. ResizeObserver ─────────────────────────────────────────────────────
+767:   useEffect(() => {
+768:     const map = mapRef.current;
+769:     const container = containerRef.current;
+770:     if (!map || !container) return;
+771: 
+772:     const ro = new ResizeObserver((entries) => {
+773:       for (const e of entries) {
+774:         const { width, height: h } = e.contentRect;
+775:         if (width > 0 && h > 0) map.invalidateSize({ animate: false });
+776:       }
+777:     });
+778:     ro.observe(container);
+779:     return () => ro.disconnect();
+780:   }, []);
+781: 
+782:   // ─────────────────────────────────────────────────────────────────────────
+783: 
+784:   const openText = t.business?.openNow || (locale === 'hy' ? 'Բաց է' : locale === 'ru' ? 'Открыто' : 'Open Now');
+785:   const closedText = t.business?.closed || (locale === 'hy' ? 'Փակ է' : locale === 'ru' ? 'Закрыто' : 'Closed');
+786: 
+787:   useEffect(() => {
+788:     if (showNearbyRestaurants && userRadiusCircleRef.current) {
+789:       const map = mapRef.current;
+790:       if (map) {
+791:         const bounds = userRadiusCircleRef.current.getBounds();
+792:         const timer = setTimeout(() => {
+793:           map.flyToBounds(bounds, { animate: true, duration: 0.5, padding: [20, 20] });
+794:         }, 150);
+795:         return () => clearTimeout(timer);
+796:       }
+797:     }
+798:   }, [showNearbyRestaurants, searchRadius]);
+799: 
+800:   const handleSliderScroll = () => {
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+
+---CHUNK2---
+Created At: 2026-09-20T21:33:23+04:00
+Completed At: 2026-09-20T21:33:23+04:00
+File Path: `file:///Users/martirosyan/Desktop/business%20app/biznes_project/src/components/map/LeafletMap.tsx`
+Total Lines: 1117
+Total Bytes: 44917
+Showing lines 790 to 1117
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+790:       if (map) {
+791:         const bounds = userRadiusCircleRef.current.getBounds();
+792:         const timer = setTimeout(() => {
+793:           map.flyToBounds(bounds, { animate: true, duration: 0.5, padding: [20, 20] });
+794:         }, 150);
+795:         return () => clearTimeout(timer);
+796:       }
+797:     }
+798:   }, [showNearbyRestaurants, searchRadius]);
+799: 
+800:   const handleSliderScroll = () => {
+801:     if (!cardsContainerRef.current) return;
+802:     const container = cardsContainerRef.current;
+803:     const scrollLeft = container.scrollLeft;
+804:     const containerCenter = scrollLeft + container.clientWidth / 2;
+805:     
+806:     let minDistance = Infinity;
+807:     let closestIndex = 0;
+808:     
+809:     Array.from(container.children).forEach((child, index) => {
+810:       const childCenter = (child as HTMLElement).offsetLeft + (child as HTMLElement).clientWidth / 2;
+811:       const dist = Math.abs(containerCenter - childCenter);
+812:       if (dist < minDistance) {
+813:         minDistance = dist;
+814:         closestIndex = index;
+815:       }
+816:     });
+817: 
+818:     if (nearbyRestaurants[closestIndex]) {
+819:       const activeRest = nearbyRestaurants[closestIndex];
+820:       if (activeNearbyId !== activeRest.id) {
+821:          setActiveNearbyId(activeRest.id);
+822:          const map = mapRef.current;
+823:          if (map) {
+824:            map.flyTo([activeRest.lat, activeRest.lng], 16, { animate: true, duration: 0.5 });
+825:          }
+826:       }
+827:     }
+828:   };
+829: 
+830:   return (
+831:     <div
+832:       className={`leaflet-map-outer-wrapper ${isFullscreen ? "fullscreen-mode" : ""} ${className}`}
+833:       style={{ width: "100%", height: isFullscreen ? "100vh" : height, position: "relative" }}
+834:     >
+835:       <div
+836:         ref={containerRef}
+837:         style={{ width: "100%", height: "100%", position: "relative", zIndex: 1 }}
+838:         className="leaflet-map-wrapper leaflet-container"
+839:       />
+840: 
+841:       {/* Radius Selector */}
+842:       {showNearbyRestaurants && userLocation && (
+843:         <div className="radius-selector-panel" style={{
+844:           position: "absolute",
+845:           bottom: (hasSearchedNearby && nearbyRestaurants.length > 0) ? "160px" : "40px",
+846:           left: "50%",
+847:           transform: "translateX(-50%)",
+848:           zIndex: 1000,
+849:           background: "var(--bg-secondary, white)",
+850:           padding: "12px 20px",
+851:           borderRadius: "16px",
+852:           boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
+853:           display: "flex",
+854:           flexDirection: "column",
+855:           gap: "8px",
+856:           width: "300px",
+857:           border: "1px solid var(--border-light, rgba(0,0,0,0.1))",
+858:           pointerEvents: "auto",
+859:           transition: "bottom 0.4s cubic-bezier(0.16, 1, 0.3, 1)"
+860:         }}>
+861:            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+862:              <div style={{ display: "flex", justifyContent: "space-between", width: "100%", fontSize: "14px", fontWeight: "700", color: "var(--text-primary, #111)" }}>
+863:                <span>{locale === 'hy' ? 'Որոնման շառավիղ' : locale === 'ru' ? 'Радиус поиска' : 'Search Radius'}</span>
+864:                <span style={{ color: "#10b981" }}>{searchRadius < 1000 ? `${searchRadius} մ` : `${(searchRadius / 1000).toFixed(1)} կմ`}</span>
+865:              </div>
+866:            </div>
+867:            
+868:            <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+869:              <input 
+870:                type="range" 
+871:                min="100" 
+872:                max="10000" 
+873:                step="100" 
+874:                value={searchRadius}
+875:                onChange={(e) => {
+876:                  setSearchRadius(Number(e.target.value));
+877:                  setHasSearchedNearby(false); // Hide results when radius changes
+878:                }}
+879:                style={{ flex: 1, accentColor: "#10b981", cursor: "pointer" }}
+880:                onMouseDown={(e) => e.stopPropagation()}
+881:                onTouchStart={(e) => e.stopPropagation()}
+882:              />
+883:              <button
+884:                onClick={(e) => {
+885:                  e.stopPropagation();
+886:                  setIsSearchingNearby(true);
+887:                  setHasSearchedNearby(false);
+888:                  setTimeout(() => {
+889:                    setIsSearchingNearby(false);
+890:                    setHasSearchedNearby(true);
+891:                  }, 2000);
+892:                }}
+893:                disabled={isSearchingNearby}
+894:                style={{ 
+895:                  background: isSearchingNearby ? "#ccc" : "#10b981",
+896:                  color: "white",
+897:                  border: "none",
+898:                  borderRadius: "50%",
+899:                  width: "36px",
+900:                  height: "36px",
+901:                  display: "flex",
+902:                  alignItems: "center",
+903:                  justifyContent: "center",
+904:                  cursor: isSearchingNearby ? "not-allowed" : "pointer",
+905:                  boxShadow: "0 2px 8px rgba(16,185,129,0.3)",
+906:                  flexShrink: 0
+907:                }}
+908:                title={locale === 'hy' ? 'Որոնել' : locale === 'ru' ? 'Поиск' : 'Search'}
+909:              >
+910:                <Search size={16} />
+911:              </button>
+912:            </div>
+913:         </div>
+914:       )}
+915: 
+916:       {/* Single Hovered Card */}
+917:       {activeMarkerData && activeMarkerData.name && !showNearbyRestaurants && (
+918:         <div className="map-bottom-hover-card"
+919:           onMouseEnter={() => {
+920:             if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+921:             setInternalHoveredCompanyId(activeMarkerData.companyId || activeMarkerData.id);
+922:           }}
+923:           onMouseLeave={() => {
+924:             setInternalHoveredCompanyId(null);
+925:           }}>
+926:           <div className="map-bottom-hover-card-inner">
+927:             <div className="image-container" style={{ cursor: 'pointer' }} onClick={() => activeMarkerData.slug && router.push(`/business/${activeMarkerData.slug}`)}>
+928:               {activeMarkerData.image ? (
+929:                 <img src={activeMarkerData.image} alt={activeMarkerData.name} />
+930:               ) : (
+931:                 <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #f0f0f0, #e0e0e0)' }} />
+932:               )}
+933:             </div>
+934:             <div className="info-container">
+935:               <div className="header-row">
+936:                 <strong className="name" style={{ cursor: 'pointer' }} onClick={() => activeMarkerData.slug && router.push(`/business/${activeMarkerData.slug}`)}>
+937:                   {activeMarkerData.name}
+938:                 </strong>
+939:                 <MapSaveButton business={activeMarkerData} />
+940:               </div>
+941:               {activeMarkerData.category && <span className="category">{activeMarkerData.category}</span>}
+942:               <div className="meta-row">
+943:                 {activeMarkerData.rating ? (
+944:                   <span className="rating">
+945:                     &#9733; {(Math.round(activeMarkerData.rating * 10) / 10).toFixed(1)}
+946:                     {activeMarkerData.reviewCount && <span className="reviews">({activeMarkerData.reviewCount})</span>}
+947:                   </span>
+948:                 ) : <span />}
+949:                 <span className={`status ${activeMarkerData.isOpen === false ? 'is-closed' : 'is-open'}`}>
+950:                   {activeMarkerData.isOpen === false ? closedText : openText}
+951:                 </span>
+952:               </div>
+953:             </div>
+954:           </div>
+955:         </div>
+956:       )}
+957: 
+958:       {/* Slider for nearby restaurants */}
+959:       {showNearbyRestaurants && hasSearchedNearby && nearbyRestaurants.length > 0 && (
+960:         <div className="map-bottom-hover-card-slider slider-slide-up" 
+961:              style={{
+962:                 position: "absolute",
+963:                 bottom: "20px",
+964:                 left: "0",
+965:                 right: "0",
+966:                 zIndex: 1000,
+967:                 display: "flex",
+968:                 overflowX: "auto",
+969:                 scrollSnapType: "x mandatory",
+970:                 padding: "0 20px",
+971:                 gap: "12px",
+972:                 scrollbarWidth: "none"
+973:              }}
+974:              ref={cardsContainerRef}
+975:              onScroll={handleSliderScroll}>
+976:           {nearbyRestaurants.map((rest, index) => (
+977:              <div key={rest.id} className="map-bottom-hover-card" style={{ 
+978:                  position: "relative",
+979:                  bottom: "auto", left: "auto", right: "auto", transform: "none",
+980:                  flex: "0 0 85%", maxWidth: "320px", scrollSnapAlign: "center",
+981:                  padding: "0" 
+982:              }}>
+983:                 <div className="map-bottom-hover-card-inner" 
+984:                      style={{ 
+985:                        pointerEvents: "auto", 
+986:                        border: activeNearbyId === rest.id ? "2px solid #10b981" : "2px solid transparent",
+987:                        transition: "border-color 0.2s ease"
+988:                      }}
+989:                      onClick={() => {
+990:                         const map = mapRef.current;
+991:                         if (map) map.flyTo([rest.lat, rest.lng], 16, { animate: true });
+992:                         if (rest.slug) router.push(`/business/${rest.slug}`);
+993:                      }}>
+994:                   <div className="image-container" style={{ cursor: 'pointer' }}>
+995:                     {rest.image ? (
+996:                       <img src={rest.image} alt={rest.name} />
+997:                     ) : (
+998:                       <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #f0f0f0, #e0e0e0)' }} />
+999:                     )}
+1000:                   </div>
+1001:                   <div className="info-container">
+1002:                     <div className="header-row">
+1003:                       <strong className="name" style={{ cursor: 'pointer' }}>
+1004:                         {rest.name}
+1005:                       </strong>
+1006:                       <MapSaveButton business={rest} />
+1007:                     </div>
+1008:                     {rest.category && <span className="category">{rest.category}</span>}
+1009:                     <div className="meta-row">
+1010:                       {rest.rating ? (
+1011:                         <span className="rating">
+1012:                           &#9733; {(Math.round(rest.rating * 10) / 10).toFixed(1)}
+1013:                           {rest.reviewCount && <span className="reviews">({rest.reviewCount})</span>}
+1014:                         </span>
+1015:                       ) : <span />}
+1016:                       <span className={`status ${rest.isOpen === false ? 'is-closed' : 'is-open'}`}>
+1017:                         {rest.isOpen === false ? closedText : openText}
+1018:                       </span>
+1019:                     </div>
+1020:                   </div>
+1021:                 </div>
+1022:              </div>
+1023:           ))}
+1024:         </div>
+1025:       )}
+1026: 
+1027:       {/* Control Buttons */}
+1028:       <div className="leaflet-custom-action-controls" style={{
+1029:          position: "absolute", top: "70px", right: "10px", zIndex: 1000,
+1030:          display: "flex", flexDirection: "column", gap: "8px"
+1031:       }}>
+1032:          <button
+1033:            type="button"
+1034:            onClick={(e) => {
+1035:              e.stopPropagation();
+1036:              if (!navigator.geolocation) {
+1037:                alert(locale === 'hy' ? "Աշխարհագրական դիրքի որոշումը ապահովված չէ ձեր բրաուզերի կողմից" : "Geolocation is not supported by your browser");
+1038:                return;
+1039:              }
+1040:              navigator.geolocation.getCurrentPosition(
+1041:                (position) => {
+1042:                  const { latitude, longitude } = position.coords;
+1043:                  setUserLocation([latitude, longitude]);
+1044:                  const map = mapRef.current;
+1045:                  if (map) {
+1046:                    map.flyTo([latitude, longitude], 15, { animate: true, duration: 1.5, easeLinearity: 0.25 });
+1047:                  }
+1048:                },
+1049:                () => {
+1050:                  alert(locale === 'hy' ? "Չհաջողվեց ստանալ ձեր գտնվելու վայրը" : "Unable to retrieve your location");
+1051:                }
+1052:              );
+1053:            }}
+1054:            className="leaflet-bar"
+1055:            style={{ background: 'white', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#444', border: 'none', borderRadius: '4px', boxShadow: '0 1px 5px rgba(0,0,0,0.65)' }}
+1056:            title={locale === 'hy' ? 'Գտնել ինձ' : locale === 'ru' ? 'Мое местоположение' : 'Locate Me'}
+1057:          >
+1058:            <Navigation size={16} />
+1059:          </button>
+1060: 
+1061:          <button
+1062:            type="button"
+1063:            onClick={(e) => {
+1064:              e.stopPropagation();
+1065:              if (!showNearbyRestaurants) {
+1066:                 const enableNearby = (lat: number, lng: number) => {
+1067:                    setUserLocation([lat, lng]);
+1068:                    setShowNearbyRestaurants(true);
+1069:                    setHasSearchedNearby(false);
+1070:                    const map = mapRef.current;
+1071:                    if (map) {
+1072:                      map.flyTo([lat, lng], 14, { animate: true, duration: 1.5, easeLinearity: 0.25 });
+1073:                    }
+1074:                 };
+1075: 
+1076:                 if (userLocation) {
+1077:                    enableNearby(userLocation[0], userLocation[1]);
+1078:                 } else {
+1079:                    if (!navigator.geolocation) {
+1080:                      alert(locale === 'hy' ? "Աշխարհագրական դիրքի որոշումը ապահովված չէ ձեր բրաուզերի կողմից" : "Geolocation is not supported by your browser");
+1081:                      return;
+1082:                    }
+1083:                    navigator.geolocation.getCurrentPosition(
+1084:                      (position) => {
+1085:                        enableNearby(position.coords.latitude, position.coords.longitude);
+1086:                      },
+1087:                      () => {
+1088:                        alert(locale === 'hy' ? "Չհաջողվեց ստանալ ձեր գտնվելու վայրը" : "Unable to retrieve your location");
+1089:                      }
+1090:                    );
+1091:                 }
+1092:              } else {
+1093:                 setShowNearbyRestaurants(false);
+1094:              }
+1095:            }}
+1096:            className="leaflet-bar"
+1097:            style={{ background: showNearbyRestaurants ? '#10b981' : 'white', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: showNearbyRestaurants ? 'white' : '#444', border: 'none', borderRadius: '4px', boxShadow: '0 1px 5px rgba(0,0,0,0.65)' }}
+1098:            title={locale === 'hy' ? 'Ռեստորաններ իմ կողքին' : locale === 'ru' ? 'Рестораны рядом' : 'Restaurants Near Me'}
+1099:          >
+1100:            {showNearbyRestaurants ? <X size={16} /> : <Utensils size={16} />}
+1101:          </button>
+1102:       </div>
+1103: 
+1104:       {!hideFullscreenControl && (
+1105:         <button
+1106:           type="button"
+1107:           onClick={() => setIsFullscreen((prev) => !prev)}
+1108:           className="leaflet-fullscreen-toggle-btn"
+1109:           title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+1110:         >
+1111:           {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+1112:         </button>
+1113:       )}
+1114:     </div>
+1115:   );
+1116: }
+1117: 
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

@@ -43,6 +43,8 @@ export interface IBusiness extends Document {
     imageUrl: string;
     title: string;
     description?: string;
+    stories?: any[];
+    offers?: any[];
   }>;
   layoutConfig?: {
     themeColor?: string;
@@ -153,6 +155,7 @@ const businessSchema = new Schema<IBusiness>({
     title: { type: String, required: true },
     description: String,
     stories: [{ type: Schema.Types.ObjectId, ref: 'Story' }],
+    offers: [{ type: Schema.Types.ObjectId, ref: 'Offer' }],
     isActive: { type: Boolean, default: true },
     link: { type: String },
     ringColor: { type: String }

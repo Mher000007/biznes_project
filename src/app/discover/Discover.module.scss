@@ -302,6 +302,10 @@
     left: 50%;
     transform: translateX(-50%);
     z-index: 50;
+    
+    :global(body.nearby-restaurants-active) & {
+      display: none !important;
+    }
   }
 }
 

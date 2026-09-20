@@ -671,8 +671,19 @@ export default function BusinessProfilePage() {
 
   const openHighlight = (idx: number) => {
     const highlight = business.highlights[idx];
-    if (highlight.stories && highlight.stories.length > 0) {
-      // It's a collection of stories! Open StoryViewer.
+    const hasStories = highlight.stories && highlight.stories.length > 0;
+    const hasOffers = highlight.offers && highlight.offers.length > 0;
+    
+    if (hasStories || hasOffers) {
+      // It's a collection of stories/offers! Open StoryViewer.
+      const offerStories = (highlight.offers || []).map((offer: any) => ({
+        _id: offer._id || `offer-${Math.random()}`,
+        mediaType: 'offer',
+        mediaUrl: highlight.imageUrl || business.logo || business.logoUrl,
+        offerData: offer,
+        createdAt: offer.createdAt || new Date().toISOString()
+      }));
+
       const pseudoGroup = {
         business: {
           _id: business.id || business._id,
@@ -681,7 +692,7 @@ export default function BusinessProfilePage() {
           logo: highlight.imageUrl || business.logo || business.logoUrl,
           verified: business.isVerified || business.verified
         },
-        stories: highlight.stories
+        stories: [...(highlight.stories || []), ...offerStories]
       };
       setHighlightViewerGroups([pseudoGroup]);
       setShowHighlightViewer(true);
@@ -908,7 +919,7 @@ export default function BusinessProfilePage() {
                   ? styles.verifiedGold
                   : styles.verifiedStarter
                   }`}>
-                  <BadgeCheck className="h-3.5 w-3.5" /> Verified Partner
+                  <BadgeCheck className="h-3.5 w-3.5" />
                 </span>
               )}
             </h1>

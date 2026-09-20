@@ -195,7 +195,8 @@ export const getBusinessBySlug = asyncHandler(
     )
       .populate('category')
       .populate('owner', 'name email phone')
-      .populate('highlights.stories');
+      .populate('highlights.stories')
+      .populate('highlights.offers');
 
     if (!business && mongoose.Types.ObjectId.isValid(slugOrId)) {
       business = await Business.findByIdAndUpdate(
@@ -205,7 +206,8 @@ export const getBusinessBySlug = asyncHandler(
       )
         .populate('category')
         .populate('owner', 'name email phone')
-        .populate('highlights.stories');
+        .populate('highlights.stories')
+        .populate('highlights.offers');
     }
 
     if (!business) {
@@ -227,6 +229,20 @@ export const getBusinessBySlug = asyncHandler(
     bizObj.plan = plan;
     bizObj.locations = locations;
     bizObj.offers = offers;
+
+    if (Array.isArray(bizObj.highlights)) {
+      bizObj.highlights = bizObj.highlights.map((h: any) => {
+        if (h) {
+          if (Array.isArray(h.stories)) {
+            h.stories = h.stories.filter(Boolean);
+          }
+          if (Array.isArray(h.offers)) {
+            h.offers = h.offers.filter(Boolean);
+          }
+        }
+        return h;
+      });
+    }
 
     res.status(200).json({
       success: true,

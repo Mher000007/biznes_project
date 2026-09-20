@@ -81,9 +81,7 @@ export default function MapWorkspace({
     });
   }, [locations]);
 
-  const tileLayerUrl = theme === "dark"
-    ? "https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png"
-    : "https://{s}.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}{r}.png";
+  const tileLayerUrl = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 
   return (
     <div className="map-viewport-wrapper">
