@@ -650,9 +650,15 @@ export default function LeafletMap({
     });
 
     let activeCompanyId: string | number | null = null;
-    if (internalHoveredCompanyId) {
+    let explicitLocationId: string | number | null = null;
+
+    if (activeNearbyId) {
+      explicitLocationId = activeNearbyId;
+      activeCompanyId = companyRegistry.get(activeNearbyId) || activeNearbyId;
+    } else if (internalHoveredCompanyId) {
       activeCompanyId = internalHoveredCompanyId;
     } else if (hoveredLocationId) {
+      explicitLocationId = hoveredLocationId;
       if (companyRegistry.has(hoveredLocationId)) {
         activeCompanyId = companyRegistry.get(hoveredLocationId) || null;
       } else {
@@ -670,7 +676,7 @@ export default function LeafletMap({
         if (companyRegistry.get(id) === activeCompanyId) {
           marker.setIcon(buildHoveredIcon());
           marker.setOpacity(1); // Ensure it's visible
-          if (id === hoveredLocationId) {
+          if (id === explicitLocationId) {
             targetForFlyTo = marker;
           }
         } else {
@@ -679,8 +685,8 @@ export default function LeafletMap({
         }
       });
 
-      // If triggered by external hover (list card), fly to the markers
-      if (hoveredLocationId && map) {
+      // If triggered by external hover (list card or nearby slider), fly to the markers
+      if (explicitLocationId && map) {
         map.invalidateSize({ animate: false }); // Force size update immediately when hover activates
         const size = map.getSize();
         if (size.x > 0 && size.y > 0) {
@@ -725,7 +731,7 @@ export default function LeafletMap({
     }
     // Track prev ID so we can optimize next render if needed
     prevHoveredIdRef.current = hoveredLocationId ?? null;
-  }, [hoveredLocationId, internalHoveredCompanyId]);
+  }, [hoveredLocationId, internalHoveredCompanyId, activeNearbyId]);
 
   // ── 4. Fullscreen toggle ──────────────────────────────────────────────────
   useEffect(() => {
@@ -830,10 +836,6 @@ export default function LeafletMap({
       const activeRest = nearbyRestaurants[closestIndex];
       if (activeNearbyId !== activeRest.id) {
         setActiveNearbyId(activeRest.id);
-        const map = mapRef.current;
-        if (map) {
-          map.flyTo([activeRest.lat, activeRest.lng], 16, { animate: true, duration: 0.5 });
-        }
       }
     }
   };
@@ -853,7 +855,7 @@ export default function LeafletMap({
       {showNearbyRestaurants && userLocation && (
         <div className="radius-selector-panel" style={{
           position: "absolute",
-          bottom: (hasSearchedNearby && nearbyRestaurants.length > 0) ? "160px" : "40px",
+          bottom: (hasSearchedNearby && nearbyRestaurants.length > 0) ? "200px" : "40px",
           left: "50%",
           transform: "translateX(-50%)",
           zIndex: 1000,
@@ -988,24 +990,32 @@ export default function LeafletMap({
             display: "flex",
             overflowX: "auto",
             scrollSnapType: "x mandatory",
-            padding: "0 20px",
+            padding: "20px 0px 40px 0px",
             gap: "12px",
             scrollbarWidth: "none"
           }}
           ref={cardsContainerRef}
           onScroll={handleSliderScroll}>
-          {nearbyRestaurants.map((rest, index) => (
-            <div key={rest.id} className="map-bottom-hover-card" style={{
-              position: "relative",
-              bottom: "auto", left: "auto", right: "auto", transform: "none",
-              flex: "0 0 85%", maxWidth: "320px", scrollSnapAlign: "center",
-              padding: "0"
-            }}>
+          {nearbyRestaurants.map((rest, index) => {
+            const isFirst = index === 0;
+            const isLast = index === nearbyRestaurants.length - 1;
+            const isActive = activeNearbyId === rest.id || (activeNearbyId === null && index === 0);
+            return (
+              <div key={rest.id} className="map-bottom-hover-card" style={{
+                position: "relative",
+                bottom: "auto", left: "auto", right: "auto", transform: "none",
+                flex: "0 0 85%", maxWidth: "320px", scrollSnapAlign: "center",
+                padding: "0",
+                marginLeft: isFirst ? "calc(50vw - min(42.5vw, 160px))" : "0",
+                marginRight: isLast ? "calc(50vw - min(42.5vw, 160px))" : "0"
+              }}>
               <div className="map-bottom-hover-card-inner"
                 style={{
                   pointerEvents: "auto",
-                  border: activeNearbyId === rest.id ? "2px solid #10b981" : "2px solid transparent",
-                  transition: "border-color 0.2s ease"
+                  border: isActive ? "2px solid #10b981" : "2px solid transparent",
+                  opacity: isActive ? 1 : 0.4,
+                  transform: isActive ? "scale(1)" : "scale(0.95)",
+                  transition: "border-color 0.3s ease, opacity 0.3s ease, transform 0.3s ease"
                 }}
                 onClick={() => {
                   const map = mapRef.current;
@@ -1041,7 +1051,8 @@ export default function LeafletMap({
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
