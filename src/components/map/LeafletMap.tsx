@@ -418,6 +418,15 @@ export default function LeafletMap({
         icon: buildUserIcon(showNearbyRestaurants),
         zIndexOffset: 1000
       }).addTo(map);
+
+      userMarkerRef.current.on('click', () => {
+        const currentLatLng = userMarkerRef.current?.getLatLng();
+        if (currentLatLng) {
+          blockFitBoundsRef.current = true;
+          map.flyTo(currentLatLng, 17, { animate: true, duration: 1.5, easeLinearity: 0.1 });
+          setTimeout(() => { blockFitBoundsRef.current = false; }, 1600);
+        }
+      });
     }
 
     if (showNearbyRestaurants) {
@@ -1045,6 +1054,12 @@ export default function LeafletMap({
            type="button"
            onClick={(e) => {
              e.stopPropagation();
+             if (userLocation && mapRef.current) {
+                 blockFitBoundsRef.current = true;
+                 mapRef.current.flyTo(userLocation, 17, { animate: true, duration: 2.5, easeLinearity: 0.1 });
+                 setTimeout(() => { blockFitBoundsRef.current = false; }, 2600);
+                 return;
+             }
              if (!navigator.geolocation) {
                alert(locale === 'hy' ? "Աշխարհագրական դիրքի որոշումը ապահովված չէ ձեր բրաուզերի կողմից" : "Geolocation is not supported by your browser");
                return;
