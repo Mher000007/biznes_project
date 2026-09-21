@@ -524,7 +524,7 @@ export default function InstagramReviewFeed() {
                     ) : (
                       <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-[hsl(var(--muted))] to-[hsl(var(--background))] border border-[hsl(var(--border))]">
                         <img
-                          src="/logo.png"
+                          src="/logo1.png"
                           alt="Quote Mark"
                           className="opacity-40 mb-4 object-contain grayscale"
                           /* Դուք կարող եք կառավարել չափերը՝ փոխելով ներքևի 160px արժեքները */
