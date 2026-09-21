@@ -9,7 +9,7 @@ import {
   Mail, Phone, Trash2, CheckCircle2,
   X, Ban, RefreshCw, LogOut, CheckCircle, AlertOctagon,
   UserCircle2, Crown, Briefcase, Star, Eye, Tag, Award,
-  MessageSquare, Send, CheckSquare, Square, HeadphonesIcon, Coins, ImageIcon, PlusCircle, GripVertical
+  MessageSquare, Send, CheckSquare, Square, HeadphonesIcon, Coins, ImageIcon, PlusCircle, GripVertical, Sparkles
 } from "lucide-react";
 
 const API = getApiUrl();
@@ -90,6 +90,8 @@ interface Business {
   category?: { name: string };
   gallery?: string[];
   operatingHours?: Array<{ day: string; open: string; close: string; closed: boolean }>;
+  premiumSlider?: { active: boolean; expiresAt?: string; order?: number; };
+  featuredSlider?: { active: boolean; expiresAt?: string; order?: number; };
 }
 interface Booking {
   _id: string; customerName: string; customerPhone: string;
@@ -155,7 +157,7 @@ interface PromoCode {
   createdAt: string;
 }
 
-type TabKey = "overview" | "businesses" | "bookings" | "subscriptions" | "reviews" | "users" | "promocodes" | "messages" | "livechat" | "heroimages";
+type TabKey = "overview" | "businesses" | "bookings" | "subscriptions" | "reviews" | "users" | "promocodes" | "messages" | "livechat" | "heroimages" | "slider" | "featuredSlider";
 
 function getToken() {
   if (typeof window === "undefined") return null;
@@ -184,7 +186,7 @@ function AdminLogin({ onLogin }: { onLogin: (token: string) => void }) {
           const { email: savedEmail, password: savedPassword } = JSON.parse(saved);
           if (savedEmail) setEmail(savedEmail);
           if (savedPassword) setPassword(savedPassword);
-        } catch (e) {}
+        } catch (e) { }
       }
     }
   }, []);
@@ -372,7 +374,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const handleUsersMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     const rect = e.currentTarget.getBoundingClientRect();
-    setDropdownPos({ top: rect.bottom + 6, left: Math.max(12, rect.left) });
+    setDropdownPos({ top: rect.top, left: rect.right + 6 });
     setUsersHoverOpen(true);
   };
 
@@ -393,6 +395,28 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
   // Gifting subscription state
   const [giftModalOpen, setGiftModalOpen] = useState(false);
+
+  // Slider State
+  const [sliderModalOpen, setSliderModalOpen] = useState(false);
+  const [sliderSelectedBizId, setSliderSelectedBizId] = useState("");
+  const [sliderDuration, setSliderDuration] = useState(30);
+  const [sliderSaving, setSliderSaving] = useState(false);
+  const [sliderSearchTerm, setSliderSearchTerm] = useState("");
+  const [sliderReordering, setSliderReordering] = useState(false);
+  const [sliderDraggedId, setSliderDraggedId] = useState<string | null>(null);
+  const [sliderDragOverId, setSliderDragOverId] = useState<string | null>(null);
+  const [sliderToastState, setSliderToastState] = useState<"hidden" | "visible" | "hiding">("hidden");
+
+  // Featured Slider State
+  const [featuredModalOpen, setFeaturedModalOpen] = useState(false);
+  const [featuredSelectedBizId, setFeaturedSelectedBizId] = useState("");
+  const [featuredDuration, setFeaturedDuration] = useState(30);
+  const [featuredSaving, setFeaturedSaving] = useState(false);
+  const [featuredSearchTerm, setFeaturedSearchTerm] = useState("");
+  const [featuredReordering, setFeaturedReordering] = useState(false);
+  const [featuredDraggedId, setFeaturedDraggedId] = useState<string | null>(null);
+  const [featuredDragOverId, setFeaturedDragOverId] = useState<string | null>(null);
+  const [featuredToastState, setFeaturedToastState] = useState<"hidden" | "visible" | "hiding">("hidden");
   const [giftingBusiness, setGiftingBusiness] = useState<Business | null>(null);
   const [giftPlan, setGiftPlan] = useState<'starter' | 'standard' | 'premium'>('standard');
   const [giftDurationValue, setGiftDurationValue] = useState(1);
@@ -499,7 +523,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       try {
         const heroRes = await axios.get(`${API}/hero-images`);
         if (heroRes.data?.success) setHeroImages(heroRes.data.data || []);
-      } catch {}
+      } catch { }
 
     } catch (err) {
       console.error("Admin data load failed:", err);
@@ -717,7 +741,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const handleSendMsg = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!msgTitle.trim() || !msgContent.trim() || selectedMsgUsers.length === 0) return;
-    
+
     setSendingMsg(true);
     setMsgError("");
     setMsgSuccess("");
@@ -746,7 +770,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const toggleMsgUser = (id: string) => {
     setSelectedMsgUsers(prev => prev.includes(id) ? prev.filter(u => u !== id) : [...prev, id]);
   };
-  
+
   const toggleAllMsgUsers = () => {
     if (selectedMsgUsers.includes('all')) {
       setSelectedMsgUsers([]);
@@ -806,6 +830,8 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     { key: "messages", label: "Ծանուցումներ", Icon: MessageSquare },
     { key: "livechat", label: "Կենդանի Չաթ", Icon: HeadphonesIcon },
     { key: "heroimages", label: "Հերո Պատկերներ", Icon: ImageIcon },
+    { key: "slider", label: "Պրեմիում Սլայդեր", Icon: Star },
+    { key: "featuredSlider", label: "Առաջարկվող Բիզնեսներ", Icon: Sparkles },
   ];
 
   const tabBtn = (t: TabDef) => {
@@ -825,214 +851,218 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             onClick={() => setTab(t.key)}
             style={{
               position: "relative",
-              display: "flex", alignItems: "center", gap: 6,
-              padding: "10px 16px", borderRadius: 10, border: "none", cursor: "pointer",
-              fontSize: 13, fontWeight: active ? 800 : 600, whiteSpace: "nowrap", flexShrink: 0,
-              background: active ? "rgba(139, 92, 246, 0.15)" : "transparent",
-              color: active ? C.violet : C.muted,
-              transition: "all 0.2s ease"
-            }}
-            onMouseEnter={(e) => {
-              handleUsersMouseEnter(e);
-              if (!active) e.currentTarget.style.background = "rgba(255,255,255,0.05)";
-            }}
-            onMouseLeave={(e) => {
-              handleUsersMouseLeave();
-              if (!active) e.currentTarget.style.background = "transparent";
-            }}
-          >
-            <t.Icon size={14} />
-            {t.label}
-            {userRoleFilter !== "all" && (
-              <span style={{
-                fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 4,
-                background: "rgba(167,139,250,0.25)", color: C.violet,
-                textTransform: "uppercase"
-              }}>
-                {userRoleFilter === "user" ? "Օգտ․" : userRoleFilter === "business_owner" ? "Բիզ․ Տերեր" : "Ադմ․"}
-              </span>
-            )}
-            {allUsers.length > 0 ? (
-              <span style={{
-                background: active ? C.violet : "rgba(255,255,255,0.1)", color: "#fff", fontSize: 9, fontWeight: 800,
-                padding: "2px 6px", borderRadius: 99
-              }}>{allUsers.length}</span>
-            ) : null}
-            {active && (
-              <span style={{
-                position: "absolute", bottom: -9, left: "10%", right: "10%", height: 3,
-                background: C.violet, borderRadius: "3px 3px 0 0",
-                boxShadow: `0 -2px 10px ${C.violetDim}`
-              }} />
-            )}
-          </button>
-
-          {usersHoverOpen && (
-            <div
-              onMouseEnter={handleDropdownMouseEnter}
-              onMouseLeave={handleDropdownMouseLeave}
-              style={{
-                position: "fixed",
-                top: dropdownPos.top,
-                left: dropdownPos.left,
-                minWidth: 220,
-                background: "#252538",
-                border: `1px solid ${C.border}`,
-                borderRadius: 12,
-                padding: 6,
-                boxShadow: "0 20px 48px rgba(0,0,0,0.8)",
-                zIndex: 99999,
-                display: "flex",
-                flexDirection: "column",
-                gap: 2,
-                backdropFilter: "blur(16px)"
-              }}
-            >
-              <div style={{ padding: "6px 10px 6px", fontSize: 10, fontWeight: 800, color: C.faint, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                Ֆիլտրել ըստ Դերի
-              </div>
-              {[
-                { key: "all", label: "Բոլոր Օգտ․", count: userCounts.all, icon: Users, color: C.violet },
-                { key: "user", label: "Սովորական Օգտ․", count: userCounts.user, icon: UserCircle2, color: C.muted },
-                { key: "business_owner", label: "Բիզնես Տերեր", count: userCounts.business_owner, icon: Briefcase, color: C.sky },
-                { key: "admin", label: "Ադմինիստրատորներ", count: userCounts.admin, icon: Crown, color: C.violet },
-              ].map(item => {
-                const isSelected = active && userRoleFilter === item.key;
-                const ItemIcon = item.icon;
-                return (
-                  <button
-                    key={item.key}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setTab("users");
-                      setUserRoleFilter(item.key as any);
-                      setUsersHoverOpen(false);
-                    }}
-                    style={{
-                      display: "flex", alignItems: "center", justifyContent: "space-between",
-                      padding: "8px 10px", borderRadius: 8, border: "none",
-                      background: isSelected ? "rgba(167,139,250,0.18)" : "transparent",
-                      color: isSelected ? C.violet : C.text,
-                      cursor: "pointer", fontSize: 12, fontWeight: 600,
-                      transition: "background 0.15s", width: "100%", textAlign: "left"
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isSelected) e.currentTarget.style.background = "rgba(255,255,255,0.06)";
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isSelected) e.currentTarget.style.background = "transparent";
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <ItemIcon size={14} color={item.color} />
-                      <span>{item.label}</span>
-                    </div>
-                    <span style={{
-                      fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 99,
-                      background: isSelected ? C.violet : "rgba(255,255,255,0.08)",
-                      color: isSelected ? "#1e1e2e" : C.muted
-                    }}>
-                      {item.count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    return (
-      <button key={t.key} onClick={() => setTab(t.key)}
-        style={{
-          position: "relative",
-          display: "flex", alignItems: "center", gap: 6,
-          padding: "10px 16px", borderRadius: 10, border: "none", cursor: "pointer",
-          fontSize: 13, fontWeight: active ? 800 : 600, whiteSpace: "nowrap", flexShrink: 0,
+          display: "flex", alignItems: "center", gap: 8,
+          padding: "12px 16px", borderRadius: 10, border: "none", cursor: "pointer",
+          fontSize: 14, fontWeight: active ? 700 : 600, whiteSpace: "nowrap", flexShrink: 0,
           background: active ? "rgba(139, 92, 246, 0.15)" : "transparent",
           color: active ? C.violet : C.muted,
-          transition: "all 0.2s ease"
-        }}
-        onMouseEnter={(e) => {
-          if (!active) e.currentTarget.style.background = "rgba(255,255,255,0.05)";
-        }}
-        onMouseLeave={(e) => {
-          if (!active) e.currentTarget.style.background = "transparent";
-        }}>
-        <t.Icon size={14} />
-        {t.label}
-        {t.key === "businesses" && stats?.pendingBusinesses ? (
-          <span style={{
-            background: C.amber, color: "#1a1a1a", fontSize: 9, fontWeight: 800,
-            padding: "2px 6px", borderRadius: 99
-          }}>{stats.pendingBusinesses}</span>
-        ) : null}
-        {t.key === "reviews" && stats?.flaggedReviews ? (
-          <span style={{
-            background: C.red, color: "#fff", fontSize: 9, fontWeight: 800,
-            padding: "2px 6px", borderRadius: 99
-          }}>{stats.flaggedReviews}</span>
-        ) : null}
-        {active && (
-          <span style={{
-            position: "absolute", bottom: -9, left: "10%", right: "10%", height: 3,
-            background: C.violet, borderRadius: "3px 3px 0 0",
-            boxShadow: `0 -2px 10px ${C.violetDim}`
-          }} />
-        )}
-      </button>
-    );
+          transition: "all 0.2s ease",
+          width: "100%", justifyContent: "flex-start"
+            }}
+          onMouseEnter={(e) => {
+            handleUsersMouseEnter(e);
+            if (!active) e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+          }}
+          onMouseLeave={(e) => {
+            handleUsersMouseLeave();
+            if (!active) e.currentTarget.style.background = "transparent";
+          }}
+          >
+          <t.Icon size={16} />
+          <span style={{ flex: 1, textAlign: "left" }}>{t.label}</span>
+          {userRoleFilter !== "all" && (
+            <span style={{
+              fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 4,
+              background: "rgba(167,139,250,0.25)", color: C.violet,
+              textTransform: "uppercase"
+            }}>
+              {userRoleFilter === "user" ? "Օգտ․" : userRoleFilter === "business_owner" ? "Բիզ․ Տերեր" : "Ադմ․"}
+            </span>
+          )}
+          {allUsers.length > 0 ? (
+            <span style={{
+              background: active ? C.violet : "rgba(255,255,255,0.1)", color: "#fff", fontSize: 10, fontWeight: 800,
+              padding: "2px 6px", borderRadius: 99
+            }}>{allUsers.length}</span>
+          ) : null}
+          {active && (
+            <span style={{
+              position: "absolute", left: 0, top: "20%", bottom: "20%", width: 3,
+              background: C.violet, borderRadius: "0 3px 3px 0",
+              boxShadow: `2px 0 10px ${C.violetDim}`
+            }} />
+          )}
+        </button>
+
+          {
+        usersHoverOpen && (
+          <div
+            onMouseEnter={handleDropdownMouseEnter}
+            onMouseLeave={handleDropdownMouseLeave}
+            style={{
+              position: "fixed",
+              top: dropdownPos.top,
+              left: dropdownPos.left,
+              minWidth: 220,
+              background: "#252538",
+              border: `1px solid ${C.border}`,
+              borderRadius: 12,
+              padding: 6,
+              boxShadow: "0 20px 48px rgba(0,0,0,0.8)",
+              zIndex: 99999,
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+              backdropFilter: "blur(16px)"
+            }}
+          >
+            <div style={{ padding: "6px 10px 6px", fontSize: 10, fontWeight: 800, color: C.faint, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              Ֆիլտրել ըստ Դերի
+            </div>
+            {[
+              { key: "all", label: "Բոլոր Օգտ․", count: userCounts.all, icon: Users, color: C.violet },
+              { key: "user", label: "Սովորական Օգտ․", count: userCounts.user, icon: UserCircle2, color: C.muted },
+              { key: "business_owner", label: "Բիզնես Տերեր", count: userCounts.business_owner, icon: Briefcase, color: C.sky },
+              { key: "admin", label: "Ադմինիստրատորներ", count: userCounts.admin, icon: Crown, color: C.violet },
+            ].map(item => {
+              const isSelected = active && userRoleFilter === item.key;
+              const ItemIcon = item.icon;
+              return (
+                <button
+                  key={item.key}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setTab("users");
+                    setUserRoleFilter(item.key as any);
+                    setUsersHoverOpen(false);
+                  }}
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    padding: "8px 10px", borderRadius: 8, border: "none",
+                    background: isSelected ? "rgba(167,139,250,0.18)" : "transparent",
+                    color: isSelected ? C.violet : C.text,
+                    cursor: "pointer", fontSize: 12, fontWeight: 600,
+                    transition: "background 0.15s", width: "100%", textAlign: "left"
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isSelected) e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSelected) e.currentTarget.style.background = "transparent";
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <ItemIcon size={14} color={item.color} />
+                    <span>{item.label}</span>
+                  </div>
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 99,
+                    background: isSelected ? C.violet : "rgba(255,255,255,0.08)",
+                    color: isSelected ? "#1e1e2e" : C.muted
+                  }}>
+                    {item.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )
+      }
+        </div >
+      );
+}
+
+return (
+  <button key={t.key} onClick={() => setTab(t.key)}
+    style={{
+      position: "relative",
+      display: "flex", alignItems: "center", gap: 8,
+      padding: "12px 16px", borderRadius: 10, border: "none", cursor: "pointer",
+      fontSize: 14, fontWeight: active ? 700 : 600, whiteSpace: "nowrap", flexShrink: 0,
+      background: active ? "rgba(139, 92, 246, 0.15)" : "transparent",
+      color: active ? C.violet : C.muted,
+      transition: "all 0.2s ease",
+      width: "100%", justifyContent: "flex-start"
+    }}
+    onMouseEnter={(e) => {
+      if (!active) e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+    }}
+    onMouseLeave={(e) => {
+      if (!active) e.currentTarget.style.background = "transparent";
+    }}>
+    <t.Icon size={16} />
+    <span style={{ flex: 1, textAlign: "left" }}>{t.label}</span>
+    {t.key === "businesses" && stats?.pendingBusinesses ? (
+      <span style={{
+        background: C.amber, color: "#1a1a1a", fontSize: 10, fontWeight: 800,
+        padding: "2px 6px", borderRadius: 99
+      }}>{stats.pendingBusinesses}</span>
+    ) : null}
+    {t.key === "reviews" && stats?.flaggedReviews ? (
+      <span style={{
+        background: C.red, color: "#fff", fontSize: 10, fontWeight: 800,
+        padding: "2px 6px", borderRadius: 99
+      }}>{stats.flaggedReviews}</span>
+    ) : null}
+    {active && (
+      <span style={{
+        position: "absolute", left: 0, top: "20%", bottom: "20%", width: 3,
+        background: C.violet, borderRadius: "0 3px 3px 0",
+        boxShadow: `2px 0 10px ${C.violetDim}`
+      }} />
+    )}
+  </button>
+);
   };
 
-  const btnSm = (label: string, onClick: () => void, color: string, dim: string, icon?: React.ReactNode) => (
-    <button onClick={onClick}
-      style={{
-        display: "flex", alignItems: "center", gap: 6, padding: "7px 14px",
-        borderRadius: 8, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700,
-        background: color, color: "#fff", transition: "opacity 0.15s"
-      }}
-      onMouseEnter={e => (e.currentTarget.style.opacity = "0.85")}
-      onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
-      {icon}{label}
-    </button>
-  );
+const btnSm = (label: string, onClick: () => void, color: string, dim: string, icon?: React.ReactNode) => (
+  <button onClick={onClick}
+    style={{
+      display: "flex", alignItems: "center", gap: 6, padding: "7px 14px",
+      borderRadius: 8, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700,
+      background: color, color: "#fff", transition: "opacity 0.15s"
+    }}
+    onMouseEnter={e => (e.currentTarget.style.opacity = "0.85")}
+    onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
+    {icon}{label}
+  </button>
+);
 
-  const iconBtn = (onClick: () => void, icon: React.ReactNode, color: string, dim: string, title?: string) => (
-    <button onClick={onClick} title={title}
-      style={{
-        background: dim, border: "none", color, padding: 8, borderRadius: 8,
-        cursor: "pointer", display: "flex", transition: "opacity 0.15s"
-      }}
-      onMouseEnter={e => (e.currentTarget.style.opacity = "0.75")}
-      onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
-      {icon}
-    </button>
-  );
+const iconBtn = (onClick: () => void, icon: React.ReactNode, color: string, dim: string, title?: string) => (
+  <button onClick={onClick} title={title}
+    style={{
+      background: dim, border: "none", color, padding: 8, borderRadius: 8,
+      cursor: "pointer", display: "flex", transition: "opacity 0.15s"
+    }}
+    onMouseEnter={e => (e.currentTarget.style.opacity = "0.75")}
+    onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
+    {icon}
+  </button>
+);
 
-  const sectionHead = (title: string, sub: string) => (
-    <div style={{ marginBottom: 20 }}>
-      <h2 style={{ fontSize: 18, fontWeight: 800, color: C.text, margin: 0 }}>{title}</h2>
-      <p style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>{sub}</p>
-    </div>
-  );
+const sectionHead = (title: string, sub: string) => (
+  <div style={{ marginBottom: 20 }}>
+    <h2 style={{ fontSize: 18, fontWeight: 800, color: C.text, margin: 0 }}>{title}</h2>
+    <p style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>{sub}</p>
+  </div>
+);
 
-  const emptyState = (Icon: React.ElementType, msg: string) => (
-    <div style={{
-      textAlign: "center", padding: "64px 0", background: C.card,
-      borderRadius: 16, border: `1px solid ${C.border}`
-    }}>
-      <Icon size={40} color={C.faint} style={{ marginBottom: 12 }} />
-      <p style={{ fontSize: 14, fontWeight: 600, color: C.muted }}>{msg}</p>
-    </div>
-  );
+const emptyState = (Icon: React.ElementType, msg: string) => (
+  <div style={{
+    textAlign: "center", padding: "64px 0", background: C.card,
+    borderRadius: 16, border: `1px solid ${C.border}`
+  }}>
+    <Icon size={40} color={C.faint} style={{ marginBottom: 12 }} />
+    <p style={{ fontSize: 14, fontWeight: 600, color: C.muted }}>{msg}</p>
+  </div>
+);
 
-  return (
-    <div data-admin-panel="1" style={{
-      minHeight: "100vh", background: C.bg, color: C.text, display: "flex", flexDirection: "column",
-      colorScheme: "dark"
-    }}>
-      <style>{`
+return (
+  <div data-admin-panel="1" style={{
+    minHeight: "100vh", background: C.bg, color: C.text, display: "flex", flexDirection: "column",
+    colorScheme: "dark"
+  }}>
+    <style>{`
         html, body, main { background: ${C.bg} !important; color: ${C.text} !important; color-scheme: dark; }
         * { box-sizing: border-box; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -1044,62 +1074,65 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         body.admin-dark > main > *:not([data-admin-panel]) { display: none !important; }
       `}</style>
 
-      {/* ── TOP BAR ── */}
-      <header style={{
-        position: "sticky", top: 0, zIndex: 50,
-        background: C.bg, borderBottom: `1px solid ${C.border}`,
-        backdropFilter: "blur(12px)"
+    {/* ── TOP BAR ── */}
+    <header style={{
+      position: "sticky", top: 0, zIndex: 50,
+      background: C.bg, borderBottom: `1px solid ${C.border}`,
+      backdropFilter: "blur(12px)"
+    }}>
+      <div style={{
+        maxWidth: 1280, margin: "0 auto", padding: "0 24px",
+        display: "flex", alignItems: "center", justifyContent: "space-between", height: 52
       }}>
-        <div style={{
-          maxWidth: 1280, margin: "0 auto", padding: "0 24px",
-          display: "flex", alignItems: "center", justifyContent: "space-between", height: 52
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <img src="/logo.png" alt="Treeo Logo" style={{ height: "34px", objectFit: "contain" }} />
-            <span style={{ fontSize: 15, fontWeight: 800, color: "#00E676", letterSpacing: "1.5px", textTransform: "uppercase" }}>
-              Admin
-            </span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            {loadingData && <RefreshCw size={14} color={C.violet} style={{ animation: "spin 1s linear infinite" }} />}
-            <button onClick={load}
-              style={{
-                padding: 7, borderRadius: 8, background: "rgba(255,255,255,0.06)",
-                border: "none", color: C.muted, cursor: "pointer"
-              }}
-              title="Refresh">
-              <RefreshCw size={14} />
-            </button>
-            <button onClick={onLogout}
-              style={{
-                display: "flex", alignItems: "center", gap: 6, padding: "6px 12px",
-                borderRadius: 8, background: "none", border: "none", color: C.muted,
-                cursor: "pointer", fontSize: 12, fontWeight: 600
-              }}>
-              <LogOut size={14} /> Ելք
-            </button>
-          </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <img src="/logo.png" alt="Treeo Logo" style={{ height: "34px", objectFit: "contain" }} />
+          <span style={{ fontSize: 15, fontWeight: 800, color: "#00E676", letterSpacing: "1.5px", textTransform: "uppercase" }}>
+            Admin
+          </span>
         </div>
-      </header>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {loadingData && <RefreshCw size={14} color={C.violet} style={{ animation: "spin 1s linear infinite" }} />}
+          <button onClick={load}
+            style={{
+              padding: 7, borderRadius: 8, background: "rgba(255,255,255,0.06)",
+              border: "none", color: C.muted, cursor: "pointer"
+            }}
+            title="Refresh">
+            <RefreshCw size={14} />
+          </button>
+          <button onClick={onLogout}
+            style={{
+              display: "flex", alignItems: "center", gap: 6, padding: "6px 12px",
+              borderRadius: 8, background: "none", border: "none", color: C.muted,
+              cursor: "pointer", fontSize: 12, fontWeight: 600
+            }}>
+            <LogOut size={14} /> Ելք
+          </button>
+        </div>
+      </div>
+    </header>
 
-      {/* ── TAB NAV ── */}
+    {/* ── MAIN LAYOUT ── */}
+    <div style={{ display: "flex", flex: 1, alignItems: "flex-start", overflow: "hidden" }}>
+
+      {/* ── SIDEBAR NAV ── */}
       <nav style={{
         position: "sticky", top: 52, zIndex: 40,
-        background: C.surface, borderBottom: `1px solid ${C.border}`
+        width: 260, flexShrink: 0, height: "calc(100vh - 52px)",
+        background: C.surface, borderRight: `1px solid ${C.border}`,
+        overflowY: "auto"
       }}>
         <div style={{
-          maxWidth: 1280, margin: "0 auto", padding: "8px 16px",
-          display: "flex", gap: 4, overflowX: "auto",
-          scrollbarWidth: "none", msOverflowStyle: "none"
-        } as React.CSSProperties}>
+          display: "flex", flexDirection: "column", gap: 6, padding: "20px 16px",
+        }}>
           {tabs.map(tabBtn)}
         </div>
       </nav>
 
       {/* ── CONTENT ── */}
       <main style={{
-        flex: 1, maxWidth: 1280, width: "100%", margin: "0 auto",
-        padding: "24px 24px 64px"
+        flex: 1, width: "100%", padding: "24px 32px 64px",
+        height: "calc(100vh - 52px)", overflowY: "auto", minWidth: 0
       }}>
 
         {/* OVERVIEW */}
@@ -1148,7 +1181,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                     {m}
                     {m === "pending" && (stats?.pendingBusinesses || 0) > 0 && (
                       <span style={{
-                        display: "inline-block", width: 6, height: 6, 
+                        display: "inline-block", width: 6, height: 6,
                         borderRadius: "50%", background: C.red,
                         boxShadow: `0 0 4px ${C.red}`
                       }}></span>
@@ -1524,7 +1557,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               flexWrap: "wrap", gap: 16, marginBottom: 16
             }}>
               {sectionHead("Users & Accounts", `View and moderate registered accounts (${filteredUsers.length} shown).`)}
-              
+
               {/* Role filter subtabs */}
               <div style={{
                 display: "flex", background: "rgba(255,255,255,0.05)",
@@ -1681,25 +1714,25 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                     Select users below to send direct notifications. Broadcast system updates or targeted messages directly to their in-app inbox.
                   </p>
                 </div>
-                
+
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 12 }}>
                   <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                     <button type="button" onClick={toggleAllMsgUsers} style={{
-                      display: "flex", alignItems: "center", gap: 8, 
+                      display: "flex", alignItems: "center", gap: 8,
                       background: selectedMsgUsers.includes('all') ? "rgba(124, 58, 237, 0.15)" : "rgba(255,255,255,0.05)",
-                      border: `1px solid ${selectedMsgUsers.includes('all') ? C.violet : C.border}`, 
-                      borderRadius: 12, padding: "10px 16px", color: selectedMsgUsers.includes('all') ? C.violet : C.text, 
+                      border: `1px solid ${selectedMsgUsers.includes('all') ? C.violet : C.border}`,
+                      borderRadius: 12, padding: "10px 16px", color: selectedMsgUsers.includes('all') ? C.violet : C.text,
                       cursor: "pointer", transition: "all 0.2s", fontWeight: 700, fontSize: 13
                     }}>
                       {selectedMsgUsers.includes('all') ? <CheckSquare size={16} /> : <Square size={16} />}
                       Select All Users
                     </button>
 
-                    <button 
+                    <button
                       type="submit"
                       disabled={selectedMsgUsers.length === 0 || sendingMsg}
                       style={{
-                        padding: "10px 20px", borderRadius: 12, 
+                        padding: "10px 20px", borderRadius: 12,
                         background: selectedMsgUsers.length > 0 ? "linear-gradient(135deg, #7c3aed, #4f46e5)" : "rgba(255,255,255,0.1)",
                         border: "none", color: selectedMsgUsers.length > 0 ? "#fff" : C.muted,
                         cursor: selectedMsgUsers.length > 0 && !sendingMsg ? "pointer" : "not-allowed",
@@ -1712,7 +1745,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                       {sendingMsg ? "Ուղարկվում..." : "Ուղարկել"}
                     </button>
                   </div>
-                  
+
                   {selectedMsgUsers.length > 0 && (
                     <span style={{ fontSize: 12, color: C.green, fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
                       <CheckCircle2 size={14} />
@@ -1728,7 +1761,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 16 }}>
                 <div>
                   <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: C.faint, marginBottom: 6 }}>Notification Title</label>
-                  <input 
+                  <input
                     type="text" required value={msgTitle} onChange={e => setMsgTitle(e.target.value)}
                     style={{ width: "100%", background: "rgba(0,0,0,0.2)", border: `1px solid ${C.border}`, borderRadius: 10, padding: "12px 14px", color: C.text, fontSize: 14 }}
                     placeholder="E.g., System Update"
@@ -1736,7 +1769,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                 </div>
                 <div>
                   <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: C.faint, marginBottom: 6 }}>Message Content</label>
-                  <input 
+                  <input
                     type="text" required value={msgContent} onChange={e => setMsgContent(e.target.value)}
                     style={{ width: "100%", background: "rgba(0,0,0,0.2)", border: `1px solid ${C.border}`, borderRadius: 10, padding: "12px 14px", color: C.text, fontSize: 14 }}
                     placeholder="Type your message here..."
@@ -1753,31 +1786,31 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                   const Icon = u.role === "admin" ? Crown : u.role === "business_owner" ? Briefcase : UserCircle2;
                   const badgeColor = u.role === "admin" ? C.violet : u.role === "business_owner" ? C.sky : C.muted;
                   const badgeBg = u.role === "admin" ? C.violetDim : u.role === "business_owner" ? "rgba(56,189,248,0.12)" : "rgba(255,255,255,0.06)";
-                  
+
                   return (
-                    <div key={u._id} 
+                    <div key={u._id}
                       onClick={() => !selectedMsgUsers.includes('all') && toggleMsgUser(u._id)}
                       style={{
-                      background: isSelected ? "linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(124, 58, 237, 0.02))" : C.surface, 
-                      borderRadius: 16, padding: "16px 20px",
-                      border: `1px solid ${isSelected ? C.violet : C.border}`, display: "flex",
-                      alignItems: "center", gap: 16,
-                      cursor: selectedMsgUsers.includes('all') ? "default" : "pointer",
-                      boxShadow: isSelected ? "0 4px 20px rgba(124, 58, 237, 0.15)" : "0 2px 8px rgba(0,0,0,0.2)",
-                      transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                      transform: isSelected && !selectedMsgUsers.includes('all') ? "translateY(-2px)" : "none"
-                    }}>
-                      <div style={{ 
+                        background: isSelected ? "linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(124, 58, 237, 0.02))" : C.surface,
+                        borderRadius: 16, padding: "16px 20px",
+                        border: `1px solid ${isSelected ? C.violet : C.border}`, display: "flex",
+                        alignItems: "center", gap: 16,
+                        cursor: selectedMsgUsers.includes('all') ? "default" : "pointer",
+                        boxShadow: isSelected ? "0 4px 20px rgba(124, 58, 237, 0.15)" : "0 2px 8px rgba(0,0,0,0.2)",
+                        transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                        transform: isSelected && !selectedMsgUsers.includes('all') ? "translateY(-2px)" : "none"
+                      }}>
+                      <div style={{
                         display: "flex", alignItems: "center", justifyContent: "center",
                         transition: "all 0.2s transform"
                       }}>
-                         {isSelected ? <CheckSquare size={20} color={C.violet} /> : <Square size={20} color={C.muted} />}
+                        {isSelected ? <CheckSquare size={20} color={C.violet} /> : <Square size={20} color={C.muted} />}
                       </div>
 
                       <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 14 }}>
                         <div style={{
                           width: 40, height: 40, borderRadius: 12,
-                          background: isSelected ? C.violetDim : "rgba(255,255,255,0.06)", 
+                          background: isSelected ? C.violetDim : "rgba(255,255,255,0.06)",
                           display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
                           transition: "all 0.2s"
                         }}>
@@ -1966,14 +1999,14 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                       fontSize: 11, fontWeight: 700,
                       background: liveSlides[0]?.source === "admin"
                         ? "rgba(124,58,237,0.25)" : liveSlides[0]?.source === "business"
-                        ? "rgba(16,185,129,0.18)" : "rgba(255,255,255,0.07)",
+                          ? "rgba(16,185,129,0.18)" : "rgba(255,255,255,0.07)",
                       color: liveSlides[0]?.source === "admin"
                         ? C.violet : liveSlides[0]?.source === "business"
-                        ? "#10b981" : C.muted,
+                          ? "#10b981" : C.muted,
                       padding: "3px 9px", borderRadius: 99
                     }}>
                       {liveSlides[0]?.source === "admin" ? "Հատուկ Պատկերներ" :
-                       liveSlides[0]?.source === "business" ? "Պրեմիում Բիզնեսներ" : "Կանխ. Պատկերներ"}
+                        liveSlides[0]?.source === "business" ? "Պրեմիում Բիզնեսներ" : "Կանխ. Պատկերներ"}
                     </span>
                   )}
                 </div>
@@ -2366,639 +2399,1160 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           </div>
         )}
 
-      </main>
+        {tab === "slider" && (
+          <div>
+            {sectionHead("Պրեմիում Սլայդեր", "Կառավարեք, թե որ բիզնեսները ցուցադրվեն գլխավոր էջի լոգոների սլայդերում:")}
 
-
-      {/* ── GIFT SUBSCRIPTION MODAL ── */}
-      {giftModalOpen && giftingBusiness && (
-        <div style={{
-          position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 100,
-          background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20
-        }}>
-          <div style={{
-            background: C.surface, border: `1px solid ${C.border}`, borderRadius: 20,
-            width: "100%", maxWidth: 500, overflow: "hidden", boxShadow: "0 24px 64px rgba(0,0,0,0.6)"
-          }}>
-
-            {/* Modal Header */}
             <div style={{
-              padding: "18px 24px", borderBottom: `1px solid ${C.border}`,
-              display: "flex", alignItems: "center", justifyContent: "space-between"
+              background: C.card, borderRadius: 16, border: `1px solid ${C.border}`,
+              marginBottom: 24, padding: "20px"
             }}>
-              <h3 style={{ fontSize: 16, fontWeight: 800, color: C.text, margin: 0 }}>Gift Subscription Plan</h3>
-              <button onClick={() => { setGiftModalOpen(false); setGiftingBusiness(null); }}
-                style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", padding: 4 }}>
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <form onSubmit={handleGiftSubscriptionSubmit} style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
-              <div>
-                <p style={{ fontSize: 13, color: C.muted, margin: "0 0 4px" }}>Gifting subscription plan to:</p>
-                <p style={{ fontSize: 15, fontWeight: 700, color: C.violet, margin: 0 }}>{giftingBusiness.name} ({giftingBusiness.email})</p>
-              </div>
-
-              {/* Plan Selection */}
-              <div>
-                <label style={{
-                  display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
-                  textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
-                }}>Target Plan</label>
-                <select value={giftPlan} onChange={e => setGiftPlan(e.target.value as any)}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <h3 style={{ margin: 0, fontSize: 16, color: C.text }}>Ակտիվ Բիզնեսներ Սլայդերում</h3>
+                <button
+                  type="button"
+                  onClick={() => setSliderModalOpen(true)}
                   style={{
-                    width: "100%", background: C.card, border: `1px solid ${C.border}`,
-                    borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none"
-                  }}>
-                  <option value="starter">Start Plan (Freemium)</option>
-                  <option value="standard">Pro Plan (֏20,000 / mo)</option>
-                  <option value="premium">Premium Plan (֏50,000 / mo)</option>
-                </select>
+                    display: "flex", alignItems: "center", gap: 6,
+                    padding: "8px 16px", borderRadius: 8, border: "none",
+                    background: "linear-gradient(135deg,#10b981,#059669)", color: "#fff",
+                    fontWeight: 700, fontSize: 13, cursor: "pointer"
+                  }}
+                ><PlusCircle size={15} /> Ավելացնել Բիզնես Սլայդերում</button>
               </div>
 
-              {/* Duration selection */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div>
-                  <label style={{
-                    display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
-                    textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
-                  }}>Duration</label>
-                  <input type="number" min={1} disabled={giftDurationUnit === 'permanent'}
-                    value={giftDurationUnit === 'permanent' ? '' : giftDurationValue}
-                    onChange={e => setGiftDurationValue(Math.max(1, parseInt(e.target.value) || 1))}
-                    style={{
-                      width: "100%", background: C.card, border: `1px solid ${C.border}`,
-                      borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none", boxSizing: "border-box"
-                    }} />
-                </div>
-                <div>
-                  <label style={{
-                    display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
-                    textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
-                  }}>Unit</label>
-                  <select value={giftDurationUnit} onChange={e => setGiftDurationUnit(e.target.value as any)}
-                    style={{
-                      width: "100%", background: C.card, border: `1px solid ${C.border}`,
-                      borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none"
-                    }}>
-                    <option value="days">Days</option>
-                    <option value="months">Months</option>
-                    <option value="permanent">Permanent (Lifetime)</option>
-                  </select>
-                </div>
-              </div>
+              {(() => {
+                const activeSliderBusinesses = businesses
+                  .filter(b => b.premiumSlider?.active && (!b.premiumSlider.expiresAt || new Date(b.premiumSlider.expiresAt) > new Date()))
+                  .sort((a, b) => (a.premiumSlider?.order || 0) - (b.premiumSlider?.order || 0));
 
-              {/* Conflict Action Type */}
-              {subscriptions.some(s => s.business?._id === giftingBusiness._id && s.plan !== 'starter' && s.status === 'active' && new Date(s.endDate) > new Date()) && (
-                <div style={{ background: C.amberDim, border: "1px solid rgba(252,211,77,0.25)", borderRadius: 12, padding: 14 }}>
-                  <div style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 10 }}>
-                    <AlertOctagon size={16} color={C.amber} style={{ flexShrink: 0, marginTop: 1 }} />
-                    <p style={{ fontSize: 12, color: C.amber, fontWeight: 600, margin: 0 }}>
-                      This business already has an active paid subscription plan. Select action:
-                    </p>
-                  </div>
-                  <div style={{ display: "flex", gap: 16 }}>
-                    <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: C.text, cursor: "pointer" }}>
-                      <input type="radio" name="conflictAction" value="overwrite"
-                        checked={giftActionType === 'overwrite'} onChange={() => setGiftActionType('overwrite')} />
-                      Overwrite (Replace current plan)
-                    </label>
-                    <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: C.text, cursor: "pointer" }}>
-                      <input type="radio" name="conflictAction" value="extend"
-                        checked={giftActionType === 'extend'} onChange={() => setGiftActionType('extend')} />
-                      Extend (Add to end date)
-                    </label>
-                  </div>
-                </div>
-              )}
+                if (activeSliderBusinesses.length === 0) {
+                  return (
+                    <div style={{ textAlign: "center", padding: "30px 16px", borderRadius: 12, border: `1px dashed ${C.border}` }}>
+                      <Star size={32} style={{ color: C.muted, opacity: 0.5, marginBottom: 10 }} />
+                      <p style={{ margin: 0, color: C.text, fontSize: 14 }}>Այս պահին սլայդերում ակտիվ բիզնեսներ չկան</p>
+                    </div>
+                  );
+                }
 
-              {/* Internal Comment */}
-              <div>
-                <label style={{
-                  display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
-                  textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
-                }}>Internal Comment / Reason</label>
-                <textarea rows={3} value={giftReason} onChange={e => setGiftReason(e.target.value)} required
-                  placeholder="Partnership deal, compensation, etc. (min 5 chars)"
-                  style={{
-                    width: "100%", background: C.card, border: `1px solid ${C.border}`,
-                    borderRadius: 10, padding: 10, fontSize: 12, color: C.text, outline: "none", resize: "none", boxSizing: "border-box"
-                  }} />
-              </div>
-
-              {giftError && (
-                <div style={{ color: C.red, background: C.redDim, padding: 12, borderRadius: 10, fontSize: 12 }}>
-                  {giftError}
-                </div>
-              )}
-
-              {/* Actions */}
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, borderTop: `1px solid ${C.border}`, paddingTop: 16, marginTop: 4 }}>
-                <button type="button" onClick={() => { setGiftModalOpen(false); setGiftingBusiness(null); }}
-                  style={{
-                    padding: "10px 16px", borderRadius: 10, background: "rgba(255,255,255,0.06)",
-                    border: "none", color: C.text, cursor: "pointer", fontSize: 13, fontWeight: 600
-                  }}>
-                  Cancel
-                </button>
-                <button type="submit" disabled={giftingInProgress}
-                  style={{
-                    padding: "10px 18px", borderRadius: 10, background: "linear-gradient(90deg,#7c3aed,#4f46e5)",
-                    border: "none", color: "#fff", cursor: giftingInProgress ? "not-allowed" : "pointer",
-                    fontSize: 13, fontWeight: 700, opacity: giftingInProgress ? 0.7 : 1
-                  }}>
-                  {giftingInProgress ? "Նվիրվում..." : "Նվիրել Պլան"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ── CREATE PROMO CODE MODAL ── */}
-      {createPromoModalOpen && (
-        <div style={{
-          position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 100,
-          background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20
-        }}>
-          <div style={{
-            background: C.surface, border: `1px solid ${C.border}`, borderRadius: 20,
-            width: "100%", maxWidth: 540, overflow: "hidden", maxHeight: "90vh", display: "flex", flexDirection: "column",
-            boxShadow: "0 24px 64px rgba(0,0,0,0.6)"
-          }}>
-
-            {/* Modal Header */}
-            <div style={{
-              padding: "18px 24px", borderBottom: `1px solid ${C.border}`,
-              display: "flex", alignItems: "center", justifyContent: "space-between"
-            }}>
-              <h3 style={{ fontSize: 16, fontWeight: 800, color: C.text, margin: 0 }}>Create Promo Code</h3>
-              <button onClick={() => setCreatePromoModalOpen(false)}
-                style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", padding: 4 }}>
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <form onSubmit={handleCreatePromoSubmit} style={{ padding: 24, overflowY: "auto", display: "flex", flexDirection: "column", gap: 14 }}>
-
-              {/* Promo Code Code */}
-              <div>
-                <label style={{
-                  display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
-                  textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
-                }}>Promo Code</label>
-                <div style={{ display: "flex", gap: 10 }}>
-                  <input type="text" placeholder="SUMMER2026" required value={newPromoCode}
-                    onChange={e => setNewPromoCode(e.target.value.toUpperCase())}
-                    style={{
-                      flex: 1, background: C.card, border: `1px solid ${C.border}`,
-                      borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none"
-                    }} />
-                  <button type="button" onClick={generatePromoCode}
-                    style={{
-                      padding: "10px 14px", borderRadius: 10, background: "rgba(255,255,255,0.06)",
-                      border: "none", color: C.text, cursor: "pointer", fontSize: 12, fontWeight: 700
-                    }}>
-                    Generate
-                  </button>
-                </div>
-              </div>
-
-              {/* Plan Selection */}
-              <div>
-                <label style={{
-                  display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
-                  textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
-                }}>Target Plan</label>
-                <select value={newPromoPlan} onChange={e => setNewPromoPlan(e.target.value as any)}
-                  style={{
-                    width: "100%", background: C.card, border: `1px solid ${C.border}`,
-                    borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none"
-                  }}>
-                  <option value="starter">Start Plan (Freemium)</option>
-                  <option value="standard">Pro Plan</option>
-                  <option value="premium">Premium Plan</option>
-                </select>
-              </div>
-
-              {/* Discount Type */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div>
-                  <label style={{
-                    display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
-                    textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
-                  }}>Discount Type</label>
-                  <select value={newPromoDiscountType} onChange={e => setNewPromoDiscountType(e.target.value as any)}
-                    style={{
-                      width: "100%", background: C.card, border: `1px solid ${C.border}`,
-                      borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none"
-                    }}>
-                    <option value="free">100% Free Plan</option>
-                    <option value="percent">Percentage Discount (%)</option>
-                    <option value="amount">Fixed Amount Discount (AMD)</option>
-                  </select>
-                </div>
-                {newPromoDiscountType !== 'free' && (
+                return (
                   <div>
-                    <label style={{
-                      display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
-                      textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
-                    }}>Discount Value</label>
-                    <input type="number" min={0} required value={newPromoDiscountValue}
-                      onChange={e => setNewPromoDiscountValue(Math.max(0, parseInt(e.target.value) || 0))}
-                      placeholder={newPromoDiscountType === 'percent' ? "e.g. 20" : "e.g. 5000"}
-                      style={{
-                        width: "100%", background: C.card, border: `1px solid ${C.border}`,
-                        borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none", boxSizing: "border-box"
-                      }} />
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {activeSliderBusinesses.map((b, idx) => (
+                        <div
+                          key={b._id}
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.effectAllowed = "move";
+                            setSliderDraggedId(b._id);
+                          }}
+                          onDragEnter={(e) => { e.preventDefault(); setSliderDragOverId(b._id); }}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDragEnd={() => { setSliderDraggedId(null); setSliderDragOverId(null); }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            if (!sliderDraggedId || sliderDraggedId === b._id) {
+                              setSliderDraggedId(null); setSliderDragOverId(null);
+                              return;
+                            }
+                            const draggedIdx = activeSliderBusinesses.findIndex(x => x._id === sliderDraggedId);
+                            const dropIdx = activeSliderBusinesses.findIndex(x => x._id === b._id);
+                            if (draggedIdx === -1 || dropIdx === -1) return;
+
+                            const newList = [...activeSliderBusinesses];
+                            const [draggedItem] = newList.splice(draggedIdx, 1);
+                            newList.splice(dropIdx, 0, draggedItem);
+
+                            const updatedList = newList.map((biz, i) => ({
+                              ...biz,
+                              premiumSlider: { ...biz.premiumSlider, active: true, order: i }
+                            }));
+                            setBusinesses(businesses.map(biz => {
+                              const found = updatedList.find(u => u._id === biz._id);
+                              return found ? found : biz;
+                            }));
+                            setSliderDraggedId(null);
+                            setSliderDragOverId(null);
+                          }}
+                          style={{
+                            background: C.surface, padding: "12px 16px", borderRadius: 10,
+                            border: sliderDragOverId === b._id ? `2px dashed ${C.violet}` : `1px solid ${C.border}`,
+                            display: "flex", alignItems: "center", gap: 12,
+                            opacity: sliderDraggedId === b._id ? 0.5 : 1,
+                            transition: "all 0.2s",
+                            cursor: "grab"
+                          }}>
+                          {/* Drag handle */}
+                          <div style={{ color: C.muted, display: "flex", alignItems: "center", marginRight: 4 }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                          </div>
+
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 600, color: C.text, fontSize: 14 }}>{b.name}</div>
+                            <div style={{ fontSize: 12, color: C.muted }}>
+                              {b.premiumSlider?.expiresAt ? `Ակտիվ է մինչև ${new Date(b.premiumSlider.expiresAt).toLocaleDateString()}` : "Անժամկետ"}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              if (confirm("Հեռացնե՞լ սլայդերից:")) {
+                                try {
+                                  const res = await api.put(`/admin/businesses/${b._id}/premium-slider`, { active: false }, { headers: authHeaders() });
+                                  if (res.data?.success) {
+                                    setBusinesses(businesses.map(biz => biz._id === b._id ? { ...biz, premiumSlider: res.data.data.premiumSlider } : biz));
+                                  }
+                                } catch (err: any) { alert(err.message || "Error"); }
+                              }
+                            }}
+                            style={{
+                              background: "rgba(239,68,68,0.1)", border: "none", color: C.red,
+                              padding: "6px 12px", borderRadius: 6, fontWeight: 600, fontSize: 12, cursor: "pointer"
+                            }}
+                          >Հեռացնել</button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end" }}>
+                      <button
+                        type="button"
+                        disabled={sliderReordering}
+                        onClick={async () => {
+                          setSliderReordering(true);
+                          try {
+                            const orderedIds = activeSliderBusinesses.map(b => b._id);
+                            const res = await api.put(`/admin/businesses/premium-slider/reorder`, { orderedIds }, { headers: authHeaders() });
+                            if (res.data?.success) {
+                              setSliderToastState("visible");
+                              setTimeout(() => {
+                                setSliderToastState("hiding");
+                                setTimeout(() => setSliderToastState("hidden"), 300);
+                              }, 3000);
+                            }
+                          } catch (err: any) {
+                            alert(err.message || "Error");
+                          } finally {
+                            setSliderReordering(false);
+                          }
+                        }}
+                        style={{
+                          background: "linear-gradient(135deg,#7c3aed,#4f46e5)", color: "#fff",
+                          border: "none", padding: "10px 20px", borderRadius: 8, fontWeight: 700, fontSize: 13,
+                          cursor: sliderReordering ? "not-allowed" : "pointer", opacity: sliderReordering ? 0.7 : 1
+                        }}
+                      >
+                        {sliderReordering ? "Պահպանվում է..." : "Պահպանել Դիրքերը"}
+                      </button>
+                    </div>
                   </div>
-                )}
+                );
+              })()}
+            </div>
+          </div>
+        )}
+
+        {tab === "featuredSlider" && (
+          <div>
+            {sectionHead("Առաջարկվող Բիզնեսներ", "Կառավարեք, թե որ բիզնեսները ցուցադրվեն գլխավոր էջի «Առաջարկվող Բիզնեսներ» հատվածում:")}
+
+            <div style={{
+              background: C.card, borderRadius: 16, border: `1px solid ${C.border}`,
+              marginBottom: 24, padding: "20px"
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <h3 style={{ margin: 0, fontSize: 16, color: C.text }}>Ակտիվ Բիզնեսներ</h3>
+                <button
+                  type="button"
+                  onClick={() => setFeaturedModalOpen(true)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 6,
+                    padding: "8px 16px", borderRadius: 8, border: "none",
+                    background: "linear-gradient(135deg,#10b981,#059669)", color: "#fff",
+                    fontWeight: 700, fontSize: 13, cursor: "pointer"
+                  }}
+                ><PlusCircle size={15} /> Ավելացնել Բիզնես</button>
               </div>
 
-              {/* Gift/Promo Duration */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div>
-                  <label style={{
-                    display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
-                    textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
-                  }}>Validity Duration</label>
-                  <input type="number" min={1} disabled={newPromoDurationUnit === 'permanent'}
-                    value={newPromoDurationUnit === 'permanent' ? '' : newPromoDurationValue}
-                    onChange={e => setNewPromoDurationValue(Math.max(1, parseInt(e.target.value) || 1))}
-                    style={{
-                      width: "100%", background: C.card, border: `1px solid ${C.border}`,
-                      borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none", boxSizing: "border-box"
-                    }} />
-                </div>
-                <div>
-                  <label style={{
-                    display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
-                    textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
-                  }}>Duration Unit</label>
-                  <select value={newPromoDurationUnit} onChange={e => setNewPromoDurationUnit(e.target.value as any)}
-                    style={{
-                      width: "100%", background: C.card, border: `1px solid ${C.border}`,
-                      borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none"
-                    }}>
-                    <option value="days">Days</option>
-                    <option value="months">Months</option>
-                    <option value="permanent">Permanent (Lifetime)</option>
-                  </select>
-                </div>
-              </div>
+              {(() => {
+                const activeFeaturedBusinesses = businesses
+                  .filter(b => b.featuredSlider?.active && (!b.featuredSlider.expiresAt || new Date(b.featuredSlider.expiresAt) > new Date()))
+                  .sort((a, b) => (a.featuredSlider?.order || 0) - (b.featuredSlider?.order || 0));
 
-              {/* Max Uses */}
+                if (activeFeaturedBusinesses.length === 0) {
+                  return (
+                    <div style={{ textAlign: "center", padding: "30px 16px", borderRadius: 12, border: `1px dashed ${C.border}` }}>
+                      <Sparkles size={32} style={{ color: C.muted, opacity: 0.5, marginBottom: 10 }} />
+                      <p style={{ margin: 0, color: C.text, fontSize: 14 }}>Այս պահին ակտիվ բիզնեսներ չկան</p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {activeFeaturedBusinesses.map((b, idx) => (
+                        <div
+                          key={b._id}
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.effectAllowed = "move";
+                            setFeaturedDraggedId(b._id);
+                          }}
+                          onDragEnter={(e) => { e.preventDefault(); setFeaturedDragOverId(b._id); }}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDragEnd={() => { setFeaturedDraggedId(null); setFeaturedDragOverId(null); }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            if (!featuredDraggedId || featuredDraggedId === b._id) {
+                              setFeaturedDraggedId(null); setFeaturedDragOverId(null);
+                              return;
+                            }
+                            const draggedIdx = activeFeaturedBusinesses.findIndex(x => x._id === featuredDraggedId);
+                            const dropIdx = activeFeaturedBusinesses.findIndex(x => x._id === b._id);
+                            if (draggedIdx === -1 || dropIdx === -1) return;
+
+                            const newList = [...activeFeaturedBusinesses];
+                            const [draggedItem] = newList.splice(draggedIdx, 1);
+                            newList.splice(dropIdx, 0, draggedItem);
+
+                            const updatedList = newList.map((biz, i) => ({
+                              ...biz,
+                              featuredSlider: { ...biz.featuredSlider, active: true, order: i }
+                            }));
+                            setBusinesses(businesses.map(biz => {
+                              const found = updatedList.find(u => u._id === biz._id);
+                              return found ? found : biz;
+                            }));
+                            setFeaturedDraggedId(null);
+                            setFeaturedDragOverId(null);
+                          }}
+                          style={{
+                            background: C.surface, padding: "12px 16px", borderRadius: 10,
+                            border: featuredDragOverId === b._id ? `2px dashed ${C.violet}` : `1px solid ${C.border}`,
+                            display: "flex", alignItems: "center", gap: 12,
+                            opacity: featuredDraggedId === b._id ? 0.5 : 1,
+                            transition: "all 0.2s",
+                            cursor: "grab"
+                          }}>
+                          {/* Drag handle */}
+                          <div style={{ color: C.muted, display: "flex", alignItems: "center", marginRight: 4 }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                          </div>
+
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 600, color: C.text, fontSize: 14 }}>{b.name}</div>
+                            <div style={{ fontSize: 12, color: C.muted }}>
+                              {b.featuredSlider?.expiresAt ? `Ակտիվ է մինչև ${new Date(b.featuredSlider.expiresAt).toLocaleDateString()}` : "Անժամկետ"}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              if (confirm("Հեռացնե՞լ:")) {
+                                try {
+                                  const res = await api.put(`/admin/businesses/${b._id}/featured-slider`, { active: false }, { headers: authHeaders() });
+                                  if (res.data?.success) {
+                                    setBusinesses(businesses.map(biz => biz._id === b._id ? { ...biz, featuredSlider: res.data.data.featuredSlider } : biz));
+                                  }
+                                } catch (err: any) { alert(err.message || "Error"); }
+                              }
+                            }}
+                            style={{
+                              background: "rgba(239,68,68,0.1)", border: "none", color: C.red,
+                              padding: "6px 12px", borderRadius: 6, fontWeight: 600, fontSize: 12, cursor: "pointer"
+                            }}
+                          >Հեռացնել</button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end" }}>
+                      <button
+                        type="button"
+                        disabled={featuredReordering}
+                        onClick={async () => {
+                          setFeaturedReordering(true);
+                          try {
+                            const orderedIds = activeFeaturedBusinesses.map(b => b._id);
+                            const res = await api.put(`/admin/businesses/featured-slider/reorder`, { orderedIds }, { headers: authHeaders() });
+                            if (res.data?.success) {
+                              setFeaturedToastState("visible");
+                              setTimeout(() => {
+                                setFeaturedToastState("hiding");
+                                setTimeout(() => setFeaturedToastState("hidden"), 300);
+                              }, 3000);
+                            }
+                          } catch (err: any) {
+                            alert(err.message || "Error");
+                          } finally {
+                            setFeaturedReordering(false);
+                          }
+                        }}
+                        style={{
+                          background: "linear-gradient(135deg,#7c3aed,#4f46e5)", color: "#fff",
+                          border: "none", padding: "10px 20px", borderRadius: 8, fontWeight: 700, fontSize: 13,
+                          cursor: featuredReordering ? "not-allowed" : "pointer", opacity: featuredReordering ? 0.7 : 1
+                        }}
+                      >
+                        {featuredReordering ? "Պահպանվում է..." : "Պահպանել Դիրքերը"}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        )}
+
+      </main>
+    </div>
+
+
+    {/* ── GIFT SUBSCRIPTION MODAL ── */}
+    {giftModalOpen && giftingBusiness && (
+      <div style={{
+        position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 100,
+        background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20
+      }}>
+        <div style={{
+          background: C.surface, border: `1px solid ${C.border}`, borderRadius: 20,
+          width: "100%", maxWidth: 500, overflow: "hidden", boxShadow: "0 24px 64px rgba(0,0,0,0.6)"
+        }}>
+
+          {/* Modal Header */}
+          <div style={{
+            padding: "18px 24px", borderBottom: `1px solid ${C.border}`,
+            display: "flex", alignItems: "center", justifyContent: "space-between"
+          }}>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.text, margin: 0 }}>Gift Subscription Plan</h3>
+            <button onClick={() => { setGiftModalOpen(false); setGiftingBusiness(null); }}
+              style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", padding: 4 }}>
+              <X size={18} />
+            </button>
+          </div>
+
+          {/* Modal Body */}
+          <form onSubmit={handleGiftSubscriptionSubmit} style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+            <div>
+              <p style={{ fontSize: 13, color: C.muted, margin: "0 0 4px" }}>Gifting subscription plan to:</p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: C.violet, margin: 0 }}>{giftingBusiness.name} ({giftingBusiness.email})</p>
+            </div>
+
+            {/* Plan Selection */}
+            <div>
+              <label style={{
+                display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
+                textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
+              }}>Target Plan</label>
+              <select value={giftPlan} onChange={e => setGiftPlan(e.target.value as any)}
+                style={{
+                  width: "100%", background: C.card, border: `1px solid ${C.border}`,
+                  borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none"
+                }}>
+                <option value="starter">Start Plan (Freemium)</option>
+                <option value="standard">Pro Plan (֏20,000 / mo)</option>
+                <option value="premium">Premium Plan (֏50,000 / mo)</option>
+              </select>
+            </div>
+
+            {/* Duration selection */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <div>
                 <label style={{
                   display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
                   textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
-                }}>Usage Limit (Max Uses)</label>
-                <input type="number" min={1} placeholder="e.g. 10 (Leave blank for unlimited)"
-                  value={newPromoMaxUses} onChange={e => setNewPromoMaxUses(e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value) || 1))}
+                }}>Duration</label>
+                <input type="number" min={1} disabled={giftDurationUnit === 'permanent'}
+                  value={giftDurationUnit === 'permanent' ? '' : giftDurationValue}
+                  onChange={e => setGiftDurationValue(Math.max(1, parseInt(e.target.value) || 1))}
                   style={{
                     width: "100%", background: C.card, border: `1px solid ${C.border}`,
                     borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none", boxSizing: "border-box"
                   }} />
               </div>
-
-              {/* Dates */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div>
-                  <label style={{
-                    display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
-                    textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
-                  }}>Start Date</label>
-                  <input type="date" value={newPromoStartDate} onChange={e => setNewPromoStartDate(e.target.value)}
-                    style={{
-                      width: "100%", background: C.card, border: `1px solid ${C.border}`,
-                      borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none", boxSizing: "border-box"
-                    }} />
-                </div>
-                <div>
-                  <label style={{
-                    display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
-                    textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
-                  }}>Expiry Date</label>
-                  <input type="date" value={newPromoExpiryDate} onChange={e => setNewPromoExpiryDate(e.target.value)}
-                    style={{
-                      width: "100%", background: C.card, border: `1px solid ${C.border}`,
-                      borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none", boxSizing: "border-box"
-                    }} />
-                </div>
-              </div>
-
-              {/* Business Restrictions */}
               <div>
                 <label style={{
                   display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
                   textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
-                }}>Restrict to Specific Businesses</label>
-                <select multiple value={newPromoRestrictedBusinesses}
-                  onChange={e => {
-                    const opts = Array.from(e.target.selectedOptions, option => option.value);
-                    setNewPromoRestrictedBusinesses(opts);
-                  }}
+                }}>Unit</label>
+                <select value={giftDurationUnit} onChange={e => setGiftDurationUnit(e.target.value as any)}
                   style={{
                     width: "100%", background: C.card, border: `1px solid ${C.border}`,
-                    borderRadius: 10, padding: 8, fontSize: 12, color: C.text, outline: "none", height: 90
+                    borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none"
                   }}>
-                  {businesses.map(b => (
-                    <option key={b._id} value={b._id}>{b.name} ({b.city})</option>
-                  ))}
+                  <option value="days">Days</option>
+                  <option value="months">Months</option>
+                  <option value="permanent">Permanent (Lifetime)</option>
                 </select>
-                <span style={{ fontSize: 10, color: C.faint, marginTop: 4, display: "block" }}>
-                  Hold Ctrl (Windows) / Cmd (Mac) to select multiple specific businesses. If none selected, promo is open to all.
-                </span>
-              </div>
-
-              {promoError && (
-                <div style={{ color: C.red, background: C.redDim, padding: 12, borderRadius: 10, fontSize: 12 }}>
-                  {promoError}
-                </div>
-              )}
-
-              {promoSuccess && (
-                <div style={{ color: C.green, background: C.greenDim, padding: 12, borderRadius: 10, fontSize: 12 }}>
-                  {promoSuccess}
-                </div>
-              )}
-
-              {/* Actions */}
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, borderTop: `1px solid ${C.border}`, paddingTop: 16 }}>
-                <button type="button" onClick={() => setCreatePromoModalOpen(false)}
-                  style={{
-                    padding: "10px 16px", borderRadius: 10, background: "rgba(255,255,255,0.06)",
-                    border: "none", color: C.text, cursor: "pointer", fontSize: 13, fontWeight: 600
-                  }}>
-                  Cancel
-                </button>
-                <button type="submit" disabled={creatingPromo}
-                  style={{
-                    padding: "10px 18px", borderRadius: 10, background: "linear-gradient(90deg,#7c3aed,#4f46e5)",
-                    border: "none", color: "#fff", cursor: creatingPromo ? "not-allowed" : "pointer",
-                    fontSize: 13, fontWeight: 700, opacity: creatingPromo ? 0.7 : 1
-                  }}>
-                  {creatingPromo ? "Ստեղծվում..." : "Ստեղծել"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* BUSINESS DETAILS MODAL */}
-      {selectedBusiness && (
-        <div style={{
-          position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 99999,
-          background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)",
-          display: "flex", alignItems: "center", justifyContent: "center", padding: 20
-        }}>
-          <div style={{
-            background: C.surface, borderRadius: 20, width: "100%", maxWidth: 650,
-            maxHeight: "90vh", overflowY: "auto", border: `1px solid ${C.border}`,
-            boxShadow: "0 24px 64px rgba(0,0,0,0.5)", position: "relative"
-          }}>
-            <button onClick={() => setSelectedBusiness(null)}
-              style={{
-                position: "absolute", top: 20, right: 20, background: "rgba(255,255,255,0.1)",
-                border: "none", borderRadius: "50%", padding: 6, color: C.text, cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s"
-              }}>
-              <X size={18} />
-            </button>
-            <div style={{ padding: "32px 32px 24px", borderBottom: `1px solid ${C.border}` }}>
-              <h2 style={{ fontSize: 24, fontWeight: 800, margin: "0 0 8px", color: C.text }}>
-                {selectedBusiness.name}
-              </h2>
-              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-                <span style={{
-                  fontSize: 12, fontWeight: 700, padding: "4px 10px", borderRadius: 99,
-                  background: selectedBusiness.verified ? C.greenDim : C.amberDim,
-                  color: selectedBusiness.verified ? C.green : C.amber, textTransform: "uppercase"
-                }}>
-                  {selectedBusiness.verified ? "Հաստատված" : "Սպասում է"}
-                </span>
-                <span style={{ fontSize: 13, color: C.muted }}>
-                  {selectedBusiness.category?.name || "Uncategorized"}
-                </span>
               </div>
             </div>
 
-            <div style={{ padding: 32, display: "flex", flexDirection: "column", gap: 24 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
-                <div>
-                  <h3 style={{ fontSize: 12, textTransform: "uppercase", color: C.faint, marginBottom: 8, fontWeight: 700 }}>Contact Info</h3>
-                  <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><Mail size={14} /> {selectedBusiness.email || "N/A"}</p>
-                  <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><Phone size={14} /> {selectedBusiness.phone || "N/A"}</p>
-                  <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><Flag size={14} /> {selectedBusiness.city || "N/A"}</p>
-                </div>
-                <div>
-                  <h3 style={{ fontSize: 12, textTransform: "uppercase", color: C.faint, marginBottom: 8, fontWeight: 700 }}>Owner Info</h3>
-                  <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><UserCircle2 size={14} /> {selectedBusiness.owner?.name || "N/A"}</p>
-                  <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><Mail size={14} /> {selectedBusiness.owner?.email || "N/A"}</p>
-                  <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><Briefcase size={14} /> Username: <span style={{ color: C.emerald, fontWeight: 600 }}>{selectedBusiness.owner?.username || "N/A"}</span></p>
-                  <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><Ban size={14} /> Գաղ. բառ․: <span style={{ color: C.red, fontWeight: 600 }}>{selectedBusiness.owner?.plainPassword || "ԹԱՔՆՎԱԾ"}</span></p>
-                  <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><Phone size={14} /> Contact Phone: {selectedBusiness.owner?.phone || "N/A"}</p>
-                  <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><Mail size={14} /> Contact Email: {selectedBusiness.owner?.contactEmail || "N/A"}</p>
-                </div>
-              </div>
-
-              <div>
-                <h3 style={{ fontSize: 12, textTransform: "uppercase", color: C.faint, marginBottom: 8, fontWeight: 700 }}>Additional Data</h3>
-                <div style={{ background: C.card, padding: 16, borderRadius: 12, border: `1px solid ${C.border}`, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
-                  <div>
-                    <span style={{ fontSize: 11, color: C.muted, display: "block", marginBottom: 4 }}>RATING</span>
-                    <strong style={{ fontSize: 16, color: C.amber }}>{selectedBusiness.rating?.toFixed(1) || 0}</strong> ({selectedBusiness.reviewCount || 0})
-                  </div>
-                  <div>
-                    <span style={{ fontSize: 11, color: C.muted, display: "block", marginBottom: 4 }}>TOTAL VIEWS</span>
-                    <strong style={{ fontSize: 16, color: C.text }}>{selectedBusiness.views || 0}</strong>
-                  </div>
-                  <div>
-                    <span style={{ fontSize: 11, color: C.muted, display: "block", marginBottom: 4 }}>CREATED AT</span>
-                    <strong style={{ fontSize: 14, color: C.text }}>{new Date(selectedBusiness.createdAt).toLocaleDateString()}</strong>
-                  </div>
-                </div>
-              </div>
-
-              {selectedBusiness.description && (
-                <div>
-                  <h3 style={{ fontSize: 12, textTransform: "uppercase", color: C.faint, marginBottom: 8, fontWeight: 700 }}>Description</h3>
-                  <p style={{ fontSize: 14, color: C.muted, lineHeight: 1.5, margin: 0 }}>
-                    {selectedBusiness.description}
+            {/* Conflict Action Type */}
+            {subscriptions.some(s => s.business?._id === giftingBusiness._id && s.plan !== 'starter' && s.status === 'active' && new Date(s.endDate) > new Date()) && (
+              <div style={{ background: C.amberDim, border: "1px solid rgba(252,211,77,0.25)", borderRadius: 12, padding: 14 }}>
+                <div style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 10 }}>
+                  <AlertOctagon size={16} color={C.amber} style={{ flexShrink: 0, marginTop: 1 }} />
+                  <p style={{ fontSize: 12, color: C.amber, fontWeight: 600, margin: 0 }}>
+                    This business already has an active paid subscription plan. Select action:
                   </p>
                 </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* TOP UP COINS MODAL */}
-      {coinModalOpen && coinUser && (
-        <div style={{
-          position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)",
-          backdropFilter: "blur(6px)", zIndex: 100, display: "flex",
-          alignItems: "center", justifyContent: "center", padding: 20
-        }}>
-          <div style={{
-            background: C.surface, border: `1px solid ${C.border}`,
-            borderRadius: 24, width: "100%", maxWidth: 460, padding: 28,
-            boxShadow: "0 20px 50px rgba(0,0,0,0.5)"
-          }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(16,185,129,0.15)", color: "#10b981", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <Coins size={22} />
+                <div style={{ display: "flex", gap: 16 }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: C.text, cursor: "pointer" }}>
+                    <input type="radio" name="conflictAction" value="overwrite"
+                      checked={giftActionType === 'overwrite'} onChange={() => setGiftActionType('overwrite')} />
+                    Overwrite (Replace current plan)
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: C.text, cursor: "pointer" }}>
+                    <input type="radio" name="conflictAction" value="extend"
+                      checked={giftActionType === 'extend'} onChange={() => setGiftActionType('extend')} />
+                    Extend (Add to end date)
+                  </label>
                 </div>
-                <div>
-                  <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: C.text }}>Top Up Treeo Coins</h3>
-                  <span style={{ fontSize: 12, color: C.muted }}>Manage user's coin balance</span>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setCoinModalOpen(false)}
-                style={{ background: "transparent", border: "none", color: C.muted, cursor: "pointer", padding: 4 }}
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div style={{ background: C.card, borderRadius: 14, padding: 14, marginBottom: 20, border: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div>
-                <strong style={{ fontSize: 14, color: C.text, display: "block" }}>{coinUser.name}</strong>
-                <span style={{ fontSize: 12, color: C.muted }}>{coinUser.email}</span>
-              </div>
-              <div style={{ textAlign: "right" }}>
-                <span style={{ fontSize: 10, color: C.muted, display: "block", fontWeight: 700, textTransform: "uppercase" }}>Current Balance</span>
-                <strong style={{ fontSize: 16, color: "#10b981", display: "flex", alignItems: "center", gap: 4, justifyContent: "flex-end" }}>
-                  <Coins size={16} /> {(coinUser.treeoCoins || 0).toLocaleString()} Coins
-                </strong>
-              </div>
-            </div>
-
-            {coinSuccessMsg && (
-              <div style={{ background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.4)", color: "#6ee7b7", borderRadius: 12, padding: 12, fontSize: 13, fontWeight: 700, marginBottom: 16, textAlign: "center" }}>
-                ✓ {coinSuccessMsg}
               </div>
             )}
 
-            <form onSubmit={handleCoinSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 700, color: C.muted, display: "block", marginBottom: 8 }}>ACTION MODE</label>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-                  <button
-                    type="button"
-                    onClick={() => setCoinAction("add")}
-                    style={{
-                      padding: "10px 8px", borderRadius: 10, fontSize: 12, fontWeight: 800, cursor: "pointer",
-                      background: coinAction === "add" ? "rgba(16,185,129,0.2)" : C.card,
-                      color: coinAction === "add" ? "#6ee7b7" : C.text,
-                      border: `1px solid ${coinAction === "add" ? "#10b981" : C.border}`
-                    }}
-                  >
-                    + Add Coins
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCoinAction("set")}
-                    style={{
-                      padding: "10px 8px", borderRadius: 10, fontSize: 12, fontWeight: 800, cursor: "pointer",
-                      background: coinAction === "set" ? "rgba(167,139,250,0.2)" : C.card,
-                      color: coinAction === "set" ? C.violet : C.text,
-                      border: `1px solid ${coinAction === "set" ? C.violet : C.border}`
-                    }}
-                  >
-                    = Set Exact
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCoinAction("subtract")}
-                    style={{
-                      padding: "10px 8px", borderRadius: 10, fontSize: 12, fontWeight: 800, cursor: "pointer",
-                      background: coinAction === "subtract" ? "rgba(252,165,165,0.2)" : C.card,
-                      color: coinAction === "subtract" ? C.red : C.text,
-                      border: `1px solid ${coinAction === "subtract" ? C.red : C.border}`
-                    }}
-                  >
-                    - Deduct
-                  </button>
-                </div>
-              </div>
+            {/* Internal Comment */}
+            <div>
+              <label style={{
+                display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
+                textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
+              }}>Internal Comment / Reason</label>
+              <textarea rows={3} value={giftReason} onChange={e => setGiftReason(e.target.value)} required
+                placeholder="Partnership deal, compensation, etc. (min 5 chars)"
+                style={{
+                  width: "100%", background: C.card, border: `1px solid ${C.border}`,
+                  borderRadius: 10, padding: 10, fontSize: 12, color: C.text, outline: "none", resize: "none", boxSizing: "border-box"
+                }} />
+            </div>
 
+            {giftError && (
+              <div style={{ color: C.red, background: C.redDim, padding: 12, borderRadius: 10, fontSize: 12 }}>
+                {giftError}
+              </div>
+            )}
+
+            {/* Actions */}
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, borderTop: `1px solid ${C.border}`, paddingTop: 16, marginTop: 4 }}>
+              <button type="button" onClick={() => { setGiftModalOpen(false); setGiftingBusiness(null); }}
+                style={{
+                  padding: "10px 16px", borderRadius: 10, background: "rgba(255,255,255,0.06)",
+                  border: "none", color: C.text, cursor: "pointer", fontSize: 13, fontWeight: 600
+                }}>
+                Cancel
+              </button>
+              <button type="submit" disabled={giftingInProgress}
+                style={{
+                  padding: "10px 18px", borderRadius: 10, background: "linear-gradient(90deg,#7c3aed,#4f46e5)",
+                  border: "none", color: "#fff", cursor: giftingInProgress ? "not-allowed" : "pointer",
+                  fontSize: 13, fontWeight: 700, opacity: giftingInProgress ? 0.7 : 1
+                }}>
+                {giftingInProgress ? "Նվիրվում..." : "Նվիրել Պլան"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    )}
+
+    {/* ── CREATE PROMO CODE MODAL ── */}
+    {createPromoModalOpen && (
+      <div style={{
+        position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 100,
+        background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20
+      }}>
+        <div style={{
+          background: C.surface, border: `1px solid ${C.border}`, borderRadius: 20,
+          width: "100%", maxWidth: 540, overflow: "hidden", maxHeight: "90vh", display: "flex", flexDirection: "column",
+          boxShadow: "0 24px 64px rgba(0,0,0,0.6)"
+        }}>
+
+          {/* Modal Header */}
+          <div style={{
+            padding: "18px 24px", borderBottom: `1px solid ${C.border}`,
+            display: "flex", alignItems: "center", justifyContent: "space-between"
+          }}>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: C.text, margin: 0 }}>Create Promo Code</h3>
+            <button onClick={() => setCreatePromoModalOpen(false)}
+              style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", padding: 4 }}>
+              <X size={18} />
+            </button>
+          </div>
+
+          {/* Modal Body */}
+          <form onSubmit={handleCreatePromoSubmit} style={{ padding: 24, overflowY: "auto", display: "flex", flexDirection: "column", gap: 14 }}>
+
+            {/* Promo Code Code */}
+            <div>
+              <label style={{
+                display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
+                textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
+              }}>Promo Code</label>
+              <div style={{ display: "flex", gap: 10 }}>
+                <input type="text" placeholder="SUMMER2026" required value={newPromoCode}
+                  onChange={e => setNewPromoCode(e.target.value.toUpperCase())}
+                  style={{
+                    flex: 1, background: C.card, border: `1px solid ${C.border}`,
+                    borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none"
+                  }} />
+                <button type="button" onClick={generatePromoCode}
+                  style={{
+                    padding: "10px 14px", borderRadius: 10, background: "rgba(255,255,255,0.06)",
+                    border: "none", color: C.text, cursor: "pointer", fontSize: 12, fontWeight: 700
+                  }}>
+                  Generate
+                </button>
+              </div>
+            </div>
+
+            {/* Plan Selection */}
+            <div>
+              <label style={{
+                display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
+                textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
+              }}>Target Plan</label>
+              <select value={newPromoPlan} onChange={e => setNewPromoPlan(e.target.value as any)}
+                style={{
+                  width: "100%", background: C.card, border: `1px solid ${C.border}`,
+                  borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none"
+                }}>
+                <option value="starter">Start Plan (Freemium)</option>
+                <option value="standard">Pro Plan</option>
+                <option value="premium">Premium Plan</option>
+              </select>
+            </div>
+
+            {/* Discount Type */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <div>
-                <label style={{ fontSize: 12, fontWeight: 700, color: C.muted, display: "block", marginBottom: 8 }}>AMOUNT (COINS)</label>
-                <input
-                  type="number"
-                  min="1"
-                  required
-                  value={coinAmount}
-                  onChange={(e) => setCoinAmount(e.target.value)}
+                <label style={{
+                  display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
+                  textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
+                }}>Discount Type</label>
+                <select value={newPromoDiscountType} onChange={e => setNewPromoDiscountType(e.target.value as any)}
                   style={{
                     width: "100%", background: C.card, border: `1px solid ${C.border}`,
-                    borderRadius: 12, padding: "12px 16px", color: C.text, fontSize: 16,
-                    fontWeight: 800, outline: "none"
-                  }}
-                  placeholder="e.g. 500"
-                />
+                    borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none"
+                  }}>
+                  <option value="free">100% Free Plan</option>
+                  <option value="percent">Percentage Discount (%)</option>
+                  <option value="amount">Fixed Amount Discount (AMD)</option>
+                </select>
               </div>
+              {newPromoDiscountType !== 'free' && (
+                <div>
+                  <label style={{
+                    display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
+                    textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
+                  }}>Discount Value</label>
+                  <input type="number" min={0} required value={newPromoDiscountValue}
+                    onChange={e => setNewPromoDiscountValue(Math.max(0, parseInt(e.target.value) || 0))}
+                    placeholder={newPromoDiscountType === 'percent' ? "e.g. 20" : "e.g. 5000"}
+                    style={{
+                      width: "100%", background: C.card, border: `1px solid ${C.border}`,
+                      borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none", boxSizing: "border-box"
+                    }} />
+                </div>
+              )}
+            </div>
 
+            {/* Gift/Promo Duration */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <div>
-                <label style={{ fontSize: 11, fontWeight: 700, color: C.faint, display: "block", marginBottom: 6 }}>QUICK PRESETS</label>
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  {[100, 500, 1000, 2500, 5000].map((amt) => (
-                    <button
-                      key={amt}
-                      type="button"
-                      onClick={() => setCoinAmount(amt)}
-                      style={{
-                        padding: "6px 12px", borderRadius: 8, fontSize: 11, fontWeight: 700,
-                        background: "rgba(255,255,255,0.05)", border: `1px solid ${C.border}`,
-                        color: C.text, cursor: "pointer"
-                      }}
-                    >
-                      +{amt.toLocaleString()}
-                    </button>
-                  ))}
+                <label style={{
+                  display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
+                  textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
+                }}>Validity Duration</label>
+                <input type="number" min={1} disabled={newPromoDurationUnit === 'permanent'}
+                  value={newPromoDurationUnit === 'permanent' ? '' : newPromoDurationValue}
+                  onChange={e => setNewPromoDurationValue(Math.max(1, parseInt(e.target.value) || 1))}
+                  style={{
+                    width: "100%", background: C.card, border: `1px solid ${C.border}`,
+                    borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none", boxSizing: "border-box"
+                  }} />
+              </div>
+              <div>
+                <label style={{
+                  display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
+                  textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
+                }}>Duration Unit</label>
+                <select value={newPromoDurationUnit} onChange={e => setNewPromoDurationUnit(e.target.value as any)}
+                  style={{
+                    width: "100%", background: C.card, border: `1px solid ${C.border}`,
+                    borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none"
+                  }}>
+                  <option value="days">Days</option>
+                  <option value="months">Months</option>
+                  <option value="permanent">Permanent (Lifetime)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Max Uses */}
+            <div>
+              <label style={{
+                display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
+                textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
+              }}>Usage Limit (Max Uses)</label>
+              <input type="number" min={1} placeholder="e.g. 10 (Leave blank for unlimited)"
+                value={newPromoMaxUses} onChange={e => setNewPromoMaxUses(e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value) || 1))}
+                style={{
+                  width: "100%", background: C.card, border: `1px solid ${C.border}`,
+                  borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none", boxSizing: "border-box"
+                }} />
+            </div>
+
+            {/* Dates */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div>
+                <label style={{
+                  display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
+                  textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
+                }}>Start Date</label>
+                <input type="date" value={newPromoStartDate} onChange={e => setNewPromoStartDate(e.target.value)}
+                  style={{
+                    width: "100%", background: C.card, border: `1px solid ${C.border}`,
+                    borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none", boxSizing: "border-box"
+                  }} />
+              </div>
+              <div>
+                <label style={{
+                  display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
+                  textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
+                }}>Expiry Date</label>
+                <input type="date" value={newPromoExpiryDate} onChange={e => setNewPromoExpiryDate(e.target.value)}
+                  style={{
+                    width: "100%", background: C.card, border: `1px solid ${C.border}`,
+                    borderRadius: 10, padding: 10, fontSize: 13, color: C.text, outline: "none", boxSizing: "border-box"
+                  }} />
+              </div>
+            </div>
+
+            {/* Business Restrictions */}
+            <div>
+              <label style={{
+                display: "block", fontSize: 11, fontWeight: 700, color: C.muted,
+                textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
+              }}>Restrict to Specific Businesses</label>
+              <select multiple value={newPromoRestrictedBusinesses}
+                onChange={e => {
+                  const opts = Array.from(e.target.selectedOptions, option => option.value);
+                  setNewPromoRestrictedBusinesses(opts);
+                }}
+                style={{
+                  width: "100%", background: C.card, border: `1px solid ${C.border}`,
+                  borderRadius: 10, padding: 8, fontSize: 12, color: C.text, outline: "none", height: 90
+                }}>
+                {businesses.map(b => (
+                  <option key={b._id} value={b._id}>{b.name} ({b.city})</option>
+                ))}
+              </select>
+              <span style={{ fontSize: 10, color: C.faint, marginTop: 4, display: "block" }}>
+                Hold Ctrl (Windows) / Cmd (Mac) to select multiple specific businesses. If none selected, promo is open to all.
+              </span>
+            </div>
+
+            {promoError && (
+              <div style={{ color: C.red, background: C.redDim, padding: 12, borderRadius: 10, fontSize: 12 }}>
+                {promoError}
+              </div>
+            )}
+
+            {promoSuccess && (
+              <div style={{ color: C.green, background: C.greenDim, padding: 12, borderRadius: 10, fontSize: 12 }}>
+                {promoSuccess}
+              </div>
+            )}
+
+            {/* Actions */}
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, borderTop: `1px solid ${C.border}`, paddingTop: 16 }}>
+              <button type="button" onClick={() => setCreatePromoModalOpen(false)}
+                style={{
+                  padding: "10px 16px", borderRadius: 10, background: "rgba(255,255,255,0.06)",
+                  border: "none", color: C.text, cursor: "pointer", fontSize: 13, fontWeight: 600
+                }}>
+                Cancel
+              </button>
+              <button type="submit" disabled={creatingPromo}
+                style={{
+                  padding: "10px 18px", borderRadius: 10, background: "linear-gradient(90deg,#7c3aed,#4f46e5)",
+                  border: "none", color: "#fff", cursor: creatingPromo ? "not-allowed" : "pointer",
+                  fontSize: 13, fontWeight: 700, opacity: creatingPromo ? 0.7 : 1
+                }}>
+                {creatingPromo ? "Ստեղծվում..." : "Ստեղծել"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    )}
+
+    {/* BUSINESS DETAILS MODAL */}
+    {selectedBusiness && (
+      <div style={{
+        position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 99999,
+        background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)",
+        display: "flex", alignItems: "center", justifyContent: "center", padding: 20
+      }}>
+        <div style={{
+          background: C.surface, borderRadius: 20, width: "100%", maxWidth: 650,
+          maxHeight: "90vh", overflowY: "auto", border: `1px solid ${C.border}`,
+          boxShadow: "0 24px 64px rgba(0,0,0,0.5)", position: "relative"
+        }}>
+          <button onClick={() => setSelectedBusiness(null)}
+            style={{
+              position: "absolute", top: 20, right: 20, background: "rgba(255,255,255,0.1)",
+              border: "none", borderRadius: "50%", padding: 6, color: C.text, cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s"
+            }}>
+            <X size={18} />
+          </button>
+          <div style={{ padding: "32px 32px 24px", borderBottom: `1px solid ${C.border}` }}>
+            <h2 style={{ fontSize: 24, fontWeight: 800, margin: "0 0 8px", color: C.text }}>
+              {selectedBusiness.name}
+            </h2>
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+              <span style={{
+                fontSize: 12, fontWeight: 700, padding: "4px 10px", borderRadius: 99,
+                background: selectedBusiness.verified ? C.greenDim : C.amberDim,
+                color: selectedBusiness.verified ? C.green : C.amber, textTransform: "uppercase"
+              }}>
+                {selectedBusiness.verified ? "Հաստատված" : "Սպասում է"}
+              </span>
+              <span style={{ fontSize: 13, color: C.muted }}>
+                {selectedBusiness.category?.name || "Uncategorized"}
+              </span>
+            </div>
+          </div>
+
+          <div style={{ padding: 32, display: "flex", flexDirection: "column", gap: 24 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+              <div>
+                <h3 style={{ fontSize: 12, textTransform: "uppercase", color: C.faint, marginBottom: 8, fontWeight: 700 }}>Contact Info</h3>
+                <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><Mail size={14} /> {selectedBusiness.email || "N/A"}</p>
+                <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><Phone size={14} /> {selectedBusiness.phone || "N/A"}</p>
+                <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><Flag size={14} /> {selectedBusiness.city || "N/A"}</p>
+              </div>
+              <div>
+                <h3 style={{ fontSize: 12, textTransform: "uppercase", color: C.faint, marginBottom: 8, fontWeight: 700 }}>Owner Info</h3>
+                <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><UserCircle2 size={14} /> {selectedBusiness.owner?.name || "N/A"}</p>
+                <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><Mail size={14} /> {selectedBusiness.owner?.email || "N/A"}</p>
+                <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><Briefcase size={14} /> Username: <span style={{ color: C.emerald, fontWeight: 600 }}>{selectedBusiness.owner?.username || "N/A"}</span></p>
+                <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><Ban size={14} /> Գաղ. բառ․: <span style={{ color: C.red, fontWeight: 600 }}>{selectedBusiness.owner?.plainPassword || "ԹԱՔՆՎԱԾ"}</span></p>
+                <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><Phone size={14} /> Contact Phone: {selectedBusiness.owner?.phone || "N/A"}</p>
+                <p style={{ margin: "4px 0", fontSize: 14, color: C.text, display: "flex", alignItems: "center", gap: 6 }}><Mail size={14} /> Contact Email: {selectedBusiness.owner?.contactEmail || "N/A"}</p>
+              </div>
+            </div>
+
+            <div>
+              <h3 style={{ fontSize: 12, textTransform: "uppercase", color: C.faint, marginBottom: 8, fontWeight: 700 }}>Additional Data</h3>
+              <div style={{ background: C.card, padding: 16, borderRadius: 12, border: `1px solid ${C.border}`, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+                <div>
+                  <span style={{ fontSize: 11, color: C.muted, display: "block", marginBottom: 4 }}>RATING</span>
+                  <strong style={{ fontSize: 16, color: C.amber }}>{selectedBusiness.rating?.toFixed(1) || 0}</strong> ({selectedBusiness.reviewCount || 0})
+                </div>
+                <div>
+                  <span style={{ fontSize: 11, color: C.muted, display: "block", marginBottom: 4 }}>TOTAL VIEWS</span>
+                  <strong style={{ fontSize: 16, color: C.text }}>{selectedBusiness.views || 0}</strong>
+                </div>
+                <div>
+                  <span style={{ fontSize: 11, color: C.muted, display: "block", marginBottom: 4 }}>CREATED AT</span>
+                  <strong style={{ fontSize: 14, color: C.text }}>{new Date(selectedBusiness.createdAt).toLocaleDateString()}</strong>
                 </div>
               </div>
+            </div>
 
-              <div style={{ display: "flex", gap: 12, marginTop: 10 }}>
-                <button
-                  type="button"
-                  onClick={() => setCoinModalOpen(false)}
-                  style={{
-                    flex: 1, padding: 12, borderRadius: 12, background: "transparent",
-                    border: `1px solid ${C.border}`, color: C.text, fontSize: 13,
-                    fontWeight: 700, cursor: "pointer"
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={coinSubmitting}
-                  style={{
-                    flex: 1, padding: 12, borderRadius: 12, background: "#10b981",
-                    border: "none", color: "#fff", fontSize: 13, fontWeight: 800,
-                    cursor: "pointer", opacity: coinSubmitting ? 0.6 : 1,
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6
-                  }}
-                >
-                  <Coins size={16} />
-                  {coinSubmitting ? "Թարմ. է..." : "Պահ. Մետ."}
-                </button>
+            {selectedBusiness.description && (
+              <div>
+                <h3 style={{ fontSize: 12, textTransform: "uppercase", color: C.faint, marginBottom: 8, fontWeight: 700 }}>Description</h3>
+                <p style={{ fontSize: 14, color: C.muted, lineHeight: 1.5, margin: 0 }}>
+                  {selectedBusiness.description}
+                </p>
               </div>
-            </form>
+            )}
           </div>
         </div>
-      )}
+      </div>
+    )}
 
-      <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
-    </div>
-  );
+    {/* TOP UP COINS MODAL */}
+    {coinModalOpen && coinUser && (
+      <div style={{
+        position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)",
+        backdropFilter: "blur(6px)", zIndex: 100, display: "flex",
+        alignItems: "center", justifyContent: "center", padding: 20
+      }}>
+        <div style={{
+          background: C.surface, border: `1px solid ${C.border}`,
+          borderRadius: 24, width: "100%", maxWidth: 460, padding: 28,
+          boxShadow: "0 20px 50px rgba(0,0,0,0.5)"
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(16,185,129,0.15)", color: "#10b981", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Coins size={22} />
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: C.text }}>Top Up Treeo Coins</h3>
+                <span style={{ fontSize: 12, color: C.muted }}>Manage user's coin balance</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setCoinModalOpen(false)}
+              style={{ background: "transparent", border: "none", color: C.muted, cursor: "pointer", padding: 4 }}
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          <div style={{ background: C.card, borderRadius: 14, padding: 14, marginBottom: 20, border: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <strong style={{ fontSize: 14, color: C.text, display: "block" }}>{coinUser.name}</strong>
+              <span style={{ fontSize: 12, color: C.muted }}>{coinUser.email}</span>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <span style={{ fontSize: 10, color: C.muted, display: "block", fontWeight: 700, textTransform: "uppercase" }}>Current Balance</span>
+              <strong style={{ fontSize: 16, color: "#10b981", display: "flex", alignItems: "center", gap: 4, justifyContent: "flex-end" }}>
+                <Coins size={16} /> {(coinUser.treeoCoins || 0).toLocaleString()} Coins
+              </strong>
+            </div>
+          </div>
+
+          {coinSuccessMsg && (
+            <div style={{ background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.4)", color: "#6ee7b7", borderRadius: 12, padding: 12, fontSize: 13, fontWeight: 700, marginBottom: 16, textAlign: "center" }}>
+              ✓ {coinSuccessMsg}
+            </div>
+          )}
+
+          <form onSubmit={handleCoinSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 700, color: C.muted, display: "block", marginBottom: 8 }}>ACTION MODE</label>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => setCoinAction("add")}
+                  style={{
+                    padding: "10px 8px", borderRadius: 10, fontSize: 12, fontWeight: 800, cursor: "pointer",
+                    background: coinAction === "add" ? "rgba(16,185,129,0.2)" : C.card,
+                    color: coinAction === "add" ? "#6ee7b7" : C.text,
+                    border: `1px solid ${coinAction === "add" ? "#10b981" : C.border}`
+                  }}
+                >
+                  + Add Coins
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCoinAction("set")}
+                  style={{
+                    padding: "10px 8px", borderRadius: 10, fontSize: 12, fontWeight: 800, cursor: "pointer",
+                    background: coinAction === "set" ? "rgba(167,139,250,0.2)" : C.card,
+                    color: coinAction === "set" ? C.violet : C.text,
+                    border: `1px solid ${coinAction === "set" ? C.violet : C.border}`
+                  }}
+                >
+                  = Set Exact
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCoinAction("subtract")}
+                  style={{
+                    padding: "10px 8px", borderRadius: 10, fontSize: 12, fontWeight: 800, cursor: "pointer",
+                    background: coinAction === "subtract" ? "rgba(252,165,165,0.2)" : C.card,
+                    color: coinAction === "subtract" ? C.red : C.text,
+                    border: `1px solid ${coinAction === "subtract" ? C.red : C.border}`
+                  }}
+                >
+                  - Deduct
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 700, color: C.muted, display: "block", marginBottom: 8 }}>AMOUNT (COINS)</label>
+              <input
+                type="number"
+                min="1"
+                required
+                value={coinAmount}
+                onChange={(e) => setCoinAmount(e.target.value)}
+                style={{
+                  width: "100%", background: C.card, border: `1px solid ${C.border}`,
+                  borderRadius: 12, padding: "12px 16px", color: C.text, fontSize: 16,
+                  fontWeight: 800, outline: "none"
+                }}
+                placeholder="e.g. 500"
+              />
+            </div>
+
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 700, color: C.faint, display: "block", marginBottom: 6 }}>QUICK PRESETS</label>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {[100, 500, 1000, 2500, 5000].map((amt) => (
+                  <button
+                    key={amt}
+                    type="button"
+                    onClick={() => setCoinAmount(amt)}
+                    style={{
+                      padding: "6px 12px", borderRadius: 8, fontSize: 11, fontWeight: 700,
+                      background: "rgba(255,255,255,0.05)", border: `1px solid ${C.border}`,
+                      color: C.text, cursor: "pointer"
+                    }}
+                  >
+                    +{amt.toLocaleString()}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: 12, marginTop: 10 }}>
+              <button
+                type="button"
+                onClick={() => setCoinModalOpen(false)}
+                style={{
+                  flex: 1, padding: 12, borderRadius: 12, background: "transparent",
+                  border: `1px solid ${C.border}`, color: C.text, fontSize: 13,
+                  fontWeight: 700, cursor: "pointer"
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={coinSubmitting}
+                style={{
+                  flex: 1, padding: 12, borderRadius: 12, background: "#10b981",
+                  border: "none", color: "#fff", fontSize: 13, fontWeight: 800,
+                  cursor: "pointer", opacity: coinSubmitting ? 0.6 : 1,
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6
+                }}
+              >
+                <Coins size={16} />
+                {coinSubmitting ? "Թարմ. է..." : "Պահ. Մետ."}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    )}
+
+    {/* ── PREMIUM SLIDER MODAL ── */}
+    {sliderModalOpen && (
+      <div style={{
+        position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 100,
+        background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20
+      }}>
+        <div style={{
+          background: C.surface, border: `1px solid ${C.border}`, borderRadius: 20,
+          width: "100%", maxWidth: 500, overflow: "hidden", boxShadow: "0 20px 40px rgba(0,0,0,0.5)"
+        }}>
+          <div style={{
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+            padding: "16px 24px", borderBottom: `1px solid ${C.border}`, background: "rgba(0,0,0,0.2)"
+          }}>
+            <h3 style={{ margin: 0, fontSize: 16, color: C.text, display: "flex", alignItems: "center", gap: 8 }}>
+              <Star size={18} style={{ color: C.violet }} /> Ավելացնել Բիզնես Սլայդերում
+            </h3>
+            <button onClick={() => setSliderModalOpen(false)} style={{ background: "transparent", border: "none", color: C.muted, cursor: "pointer" }}><X size={18} /></button>
+          </div>
+          <div style={{ padding: 24 }}>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: C.faint, display: "block", marginBottom: 6 }}>Փնտրել Բիզնես</label>
+              <input
+                type="text"
+                placeholder="Բիզնեսի անունը..."
+                value={sliderSearchTerm}
+                onChange={e => setSliderSearchTerm(e.target.value)}
+                style={{ width: "100%", padding: 12, borderRadius: 10, background: "rgba(0,0,0,0.2)", border: `1px solid ${C.border}`, color: C.text, outline: "none", fontSize: 13 }}
+              />
+            </div>
+            <div style={{ maxHeight: 200, overflowY: "auto", marginBottom: 16, background: "rgba(0,0,0,0.1)", borderRadius: 10, border: `1px solid ${C.border}` }}>
+              {businesses.filter(b => (b.name || "").toLowerCase().includes(sliderSearchTerm.toLowerCase())).slice(0, 50).map(b => (
+                <div key={b._id} onClick={() => setSliderSelectedBizId(b._id)} style={{
+                  padding: "10px 14px", cursor: "pointer", fontSize: 13, color: C.text,
+                  background: sliderSelectedBizId === b._id ? "rgba(124,58,237,0.2)" : "transparent",
+                  borderBottom: `1px solid ${C.border}`
+                }}>
+                  {b.name}
+                </div>
+              ))}
+              {businesses.filter(b => (b.name || "").toLowerCase().includes(sliderSearchTerm.toLowerCase())).length === 0 && (
+                <div style={{ padding: "20px", textAlign: "center", color: C.muted, fontSize: 13 }}>Ոչինչ չգտնվեց</div>
+              )}
+            </div>
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: C.faint, display: "block", marginBottom: 6 }}>Տևողություն (օրեր)</label>
+              <select
+                value={sliderDuration}
+                onChange={e => setSliderDuration(Number(e.target.value))}
+                style={{ width: "100%", padding: 12, borderRadius: 10, background: "rgba(0,0,0,0.2)", border: `1px solid ${C.border}`, color: C.text, outline: "none", fontSize: 13 }}
+              >
+                <option value={7}>7 օր</option>
+                <option value={15}>15 օր</option>
+                <option value={30}>1 ամիս (30 օր)</option>
+                <option value={90}>3 ամիս (90 օր)</option>
+                <option value={180}>6 ամիս (180 օր)</option>
+                <option value={365}>1 տարի (365 օր)</option>
+                <option value={-1}>Անժամկետ</option>
+              </select>
+            </div>
+            <button
+              type="button"
+              disabled={sliderSaving || !sliderSelectedBizId}
+              onClick={async () => {
+                setSliderSaving(true);
+                try {
+                  const res = await api.put(`/admin/businesses/${sliderSelectedBizId}/premium-slider`, { active: true, durationInDays: sliderDuration }, { headers: authHeaders() });
+                  if (res.data?.success) {
+                    setBusinesses(businesses.map(b => b._id === sliderSelectedBizId ? { ...b, premiumSlider: res.data.data.premiumSlider } : b));
+                    setSliderModalOpen(false);
+                    setSliderSelectedBizId("");
+                  }
+                } catch (err: any) { alert(err.message || "Error"); } finally { setSliderSaving(false); }
+              }}
+              style={{ width: "100%", padding: 14, borderRadius: 10, background: "linear-gradient(135deg,#7c3aed,#4f46e5)", color: "#fff", border: "none", fontWeight: 700, fontSize: 14, cursor: (sliderSaving || !sliderSelectedBizId) ? "not-allowed" : "pointer", opacity: (sliderSaving || !sliderSelectedBizId) ? 0.6 : 1 }}
+            >
+              {sliderSaving ? "Ավելացվում է..." : "Հաստատել և Ավելացնել"}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* ── PREMIUM SLIDER TOAST ── */}
+    {sliderToastState !== "hidden" && (
+      <div className="fixed bottom-6 left-4 right-4 sm:right-auto sm:left-6 z-[99999] max-w-md" style={{ animation: sliderToastState === "hiding" ? "toast-out 0.3s ease-in forwards" : "toast-in 0.3s ease-out forwards" }}>
+        <div className="bg-[hsl(var(--card))]/95 text-[hsl(var(--card-foreground))] backdrop-blur-xl border border-[hsl(var(--border))] rounded-2xl p-4 shadow-[0_12px_35px_rgba(0,0,0,0.12)] dark:shadow-[0_12px_40px_rgba(0,0,0,0.55)] flex items-center justify-between gap-3.5 ring-1 ring-[hsl(var(--border))]/50">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center shrink-0 text-emerald-600 dark:text-emerald-400 shadow-inner transition-transform duration-300 hover:scale-105">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check w-5 h-5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <p className="text-xs sm:text-sm font-semibold leading-snug text-[hsl(var(--foreground))]">Դիրքերը պահպանված են!</p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button onClick={() => {
+              setSliderToastState("hiding");
+              setTimeout(() => setSliderToastState("hidden"), 300);
+            }} aria-label="Close notification" className="p-1.5 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] rounded-lg hover:bg-[hsl(var(--muted))] transition-colors cursor-pointer">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x w-4 h-4"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* ── FEATURED SLIDER MODAL ── */}
+    {featuredModalOpen && (
+      <div style={{
+        position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 100,
+        background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20
+      }}>
+        <div style={{
+          background: C.surface, border: `1px solid ${C.border}`, borderRadius: 20,
+          width: "100%", maxWidth: 500, overflow: "hidden", boxShadow: "0 20px 40px rgba(0,0,0,0.5)"
+        }}>
+          <div style={{
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+            padding: "16px 24px", borderBottom: `1px solid ${C.border}`, background: "rgba(0,0,0,0.2)"
+          }}>
+            <h3 style={{ margin: 0, fontSize: 16, color: C.text, display: "flex", alignItems: "center", gap: 8 }}>
+              <Sparkles size={18} style={{ color: C.violet }} /> Ավելացնել Առաջարկվող Բիզնեսներում
+            </h3>
+            <button onClick={() => setFeaturedModalOpen(false)} style={{ background: "transparent", border: "none", color: C.muted, cursor: "pointer" }}><X size={18} /></button>
+          </div>
+          <div style={{ padding: 24 }}>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: C.faint, display: "block", marginBottom: 6 }}>Փնտրել Բիզնես</label>
+              <input
+                type="text"
+                placeholder="Բիզնեսի անունը..."
+                value={featuredSearchTerm}
+                onChange={e => setFeaturedSearchTerm(e.target.value)}
+                style={{ width: "100%", padding: 12, borderRadius: 10, background: "rgba(0,0,0,0.2)", border: `1px solid ${C.border}`, color: C.text, outline: "none", fontSize: 13 }}
+              />
+            </div>
+            <div style={{ maxHeight: 200, overflowY: "auto", marginBottom: 16, background: "rgba(0,0,0,0.1)", borderRadius: 10, border: `1px solid ${C.border}` }}>
+              {businesses.filter(b => (b.name || "").toLowerCase().includes(featuredSearchTerm.toLowerCase())).slice(0, 50).map(b => (
+                <div key={b._id} onClick={() => setFeaturedSelectedBizId(b._id)} style={{
+                  padding: "10px 14px", cursor: "pointer", fontSize: 13, color: C.text,
+                  background: featuredSelectedBizId === b._id ? "rgba(124,58,237,0.2)" : "transparent",
+                  borderBottom: `1px solid ${C.border}`
+                }}>
+                  {b.name}
+                </div>
+              ))}
+              {businesses.filter(b => (b.name || "").toLowerCase().includes(featuredSearchTerm.toLowerCase())).length === 0 && (
+                <div style={{ padding: "20px", textAlign: "center", color: C.muted, fontSize: 13 }}>Ոչինչ չգտնվեց</div>
+              )}
+            </div>
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: C.faint, display: "block", marginBottom: 6 }}>Տևողություն (օրեր)</label>
+              <select
+                value={featuredDuration}
+                onChange={e => setFeaturedDuration(Number(e.target.value))}
+                style={{ width: "100%", padding: 12, borderRadius: 10, background: "rgba(0,0,0,0.2)", border: `1px solid ${C.border}`, color: C.text, outline: "none", fontSize: 13 }}
+              >
+                <option value={7}>7 օր</option>
+                <option value={15}>15 օր</option>
+                <option value={30}>1 ամիս (30 օր)</option>
+                <option value={90}>3 ամիս (90 օր)</option>
+                <option value={180}>6 ամիս (180 օր)</option>
+                <option value={365}>1 տարի (365 օր)</option>
+                <option value={-1}>Անժամկետ</option>
+              </select>
+            </div>
+            <button
+              type="button"
+              disabled={featuredSaving || !featuredSelectedBizId}
+              onClick={async () => {
+                setFeaturedSaving(true);
+                try {
+                  const res = await api.put(`/admin/businesses/${featuredSelectedBizId}/featured-slider`, { active: true, durationInDays: featuredDuration }, { headers: authHeaders() });
+                  if (res.data?.success) {
+                    setBusinesses(businesses.map(b => b._id === featuredSelectedBizId ? { ...b, featuredSlider: res.data.data.featuredSlider } : b));
+                    setFeaturedModalOpen(false);
+                    setFeaturedSelectedBizId("");
+                  }
+                } catch (err: any) { alert(err.message || "Error"); } finally { setFeaturedSaving(false); }
+              }}
+              style={{ width: "100%", padding: 14, borderRadius: 10, background: "linear-gradient(135deg,#7c3aed,#4f46e5)", color: "#fff", border: "none", fontWeight: 700, fontSize: 14, cursor: (featuredSaving || !featuredSelectedBizId) ? "not-allowed" : "pointer", opacity: (featuredSaving || !featuredSelectedBizId) ? 0.6 : 1 }}
+            >
+              {featuredSaving ? "Ավելացվում է..." : "Հաստատել և Ավելացնել"}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* ── FEATURED SLIDER TOAST ── */}
+    {featuredToastState !== "hidden" && (
+      <div className="fixed bottom-6 left-4 right-4 sm:right-auto sm:left-6 z-[99999] max-w-md" style={{ animation: featuredToastState === "hiding" ? "toast-out 0.3s ease-in forwards" : "toast-in 0.3s ease-out forwards" }}>
+        <div className="bg-[hsl(var(--card))]/95 text-[hsl(var(--card-foreground))] backdrop-blur-xl border border-[hsl(var(--border))] rounded-2xl p-4 shadow-[0_12px_35px_rgba(0,0,0,0.12)] dark:shadow-[0_12px_40px_rgba(0,0,0,0.55)] flex items-center justify-between gap-3.5 ring-1 ring-[hsl(var(--border))]/50">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center shrink-0 text-emerald-600 dark:text-emerald-400 shadow-inner transition-transform duration-300 hover:scale-105">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check w-5 h-5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <p className="text-xs sm:text-sm font-semibold leading-snug text-[hsl(var(--foreground))]">Դիրքերը պահպանված են!</p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button onClick={() => {
+              setFeaturedToastState("hiding");
+              setTimeout(() => setFeaturedToastState("hidden"), 300);
+            }} aria-label="Close notification" className="p-1.5 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] rounded-lg hover:bg-[hsl(var(--muted))] transition-colors cursor-pointer">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x w-4 h-4"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    <style>{`
+        @keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
+        @keyframes toast-in { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes toast-out { from { transform: translateY(0); opacity: 1; } to { transform: translateY(20px); opacity: 0; } }
+      `}</style>
+  </div>
+);
 }
 
 /* ─────────────── ROOT PAGE ─────────────── */

@@ -13,6 +13,7 @@ import {
   updateDailySummary,
   checkBusinessDateStatus,
   toggleSaveBusiness,
+  getPremiumSliderBusinesses,
 } from '../controllers/businessController.js';
 import {
   getLocations,
@@ -30,6 +31,7 @@ router.get('/me/all', authenticate, requireVerified, getMyBusinesses);
 router.post('/onboard', authenticate, createBusiness);
 
 // ── Public routes ────────────────────────────────────────────────────────────
+router.get('/slider-businesses', getPremiumSliderBusinesses);
 router.get('/', getBusinesses);
 router.get('/slug/:slug', getBusinessBySlug);
 router.get('/:id/calendar/check-date', checkBusinessDateStatus);

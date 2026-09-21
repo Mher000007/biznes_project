@@ -13,7 +13,7 @@ import { isValidCity } from '../utils/locationValidator.js';
 
 // Get all businesses
 export const getBusinesses = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const { category, city, search, featured, maxPrice, premiumOnly, sort, page = 1, limit = 10 } = req.query;
+  const { category, city, search, featured, featuredSliderOnly, maxPrice, premiumOnly, sort, page = 1, limit = 10 } = req.query;
 
   const filter: any = { active: true, verified: true };
 
@@ -21,6 +21,11 @@ export const getBusinesses = asyncHandler(async (req: Request, res: Response): P
     const premiumSubs = await Subscription.find({ plan: { $in: ['premium', 'standard'] }, status: 'active' }).select('business');
     const premiumBizIds = premiumSubs.map(sub => sub.business);
     filter._id = { $in: premiumBizIds };
+  }
+
+  if (featuredSliderOnly === 'true') {
+    filter['featuredSlider.active'] = true;
+    filter['featuredSlider.expiresAt'] = { $gt: new Date() };
   }
 
   if (category) {
@@ -98,6 +103,8 @@ export const getBusinesses = asyncHandler(async (req: Request, res: Response): P
 
   if (sort === '-rating') {
     businessesQuery = businessesQuery.sort({ rating: -1, reviewCount: -1, featured: -1 });
+  } else if (sort === 'featuredSliderOrder') {
+    businessesQuery = businessesQuery.sort({ 'featuredSlider.order': 1 });
   } else {
     businessesQuery = businessesQuery.sort({ featured: -1, createdAt: -1 });
   }
@@ -755,4 +762,20 @@ export const toggleSaveBusiness = asyncHandler(async (req: Request, res: Respons
   }
 
   res.status(200).json({ success: true, savedCount: updated.savedCount });
+});
+
+// @desc    Get businesses for premium slider
+// @route   GET /api/businesses/slider-businesses
+// @access  Public
+export const getPremiumSliderBusinesses = asyncHandler(async (req: Request, res: Response) => {
+  const businesses = await Business.find({
+    'premiumSlider.active': true,
+    $or: [
+      { 'premiumSlider.expiresAt': { $gt: new Date() } },
+      { 'premiumSlider.expiresAt': { $exists: false } },
+      { 'premiumSlider.expiresAt': null }
+    ]
+  }).select('id name slug logo').sort({ 'premiumSlider.order': 1 });
+
+  res.status(200).json({ success: true, count: businesses.length, data: businesses });
 });

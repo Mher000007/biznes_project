@@ -54,6 +54,16 @@ export interface IBusiness extends Document {
   };
   metadata?: Record<string, any>;
   embedding?: number[];
+  premiumSlider?: {
+    active: boolean;
+    expiresAt?: Date;
+    order?: number;
+  };
+  featuredSlider?: {
+    active: boolean;
+    expiresAt?: Date;
+    order?: number;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -170,6 +180,16 @@ const businessSchema = new Schema<IBusiness>({
   embedding: {
     type: [Number],
     index: false,
+  },
+  premiumSlider: {
+    active: { type: Boolean, default: false },
+    expiresAt: { type: Date },
+    order: { type: Number, default: 0 }
+  },
+  featuredSlider: {
+    active: { type: Boolean, default: false },
+    expiresAt: { type: Date },
+    order: { type: Number, default: 0 }
   },
   createdAt: {
     type: Date,

@@ -23,6 +23,10 @@ import {
   sendNotification,
   getHeroImages,
   updateHeroImages,
+  updatePremiumSlider,
+  reorderPremiumSlider,
+  updateFeaturedSlider,
+  reorderFeaturedSlider,
 } from '../controllers/adminController.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 
@@ -38,6 +42,10 @@ router.get('/stats', getAdminStats);
 router.get('/businesses', getBusinesses);
 router.put('/businesses/:id/approve', approveBusiness);
 router.put('/businesses/:id/reject', rejectBusiness);
+router.put('/businesses/premium-slider/reorder', reorderPremiumSlider);
+router.put('/businesses/:id/premium-slider', updatePremiumSlider);
+router.put('/businesses/featured-slider/reorder', reorderFeaturedSlider);
+router.put('/businesses/:id/featured-slider', updateFeaturedSlider);
 router.delete('/businesses/:id', deleteBusiness);
 
 // Bookings

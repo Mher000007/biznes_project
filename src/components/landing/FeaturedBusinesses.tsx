@@ -146,36 +146,16 @@ export default function FeaturedBusinesses() {
         setBusinesses(horeca);
       }
 
-      // 2. Load Premium Businesses only (must have valid images/photos)
+      // 2. Load Featured Businesses for the Slider
       try {
-        const pRes = await axios.get(`${api}/businesses?limit=50`);
-        let premList: Business[] = [];
+        const pRes = await axios.get(`${api}/businesses?featuredSliderOnly=true&sort=featuredSliderOrder&limit=50`);
+        let featuredList: Business[] = [];
         if (pRes.data?.success && pRes.data.data?.length > 0) {
-          const filteredPrem = pRes.data.data.filter(
-            (b: any) => (b.verified || b.plan === "premium" || b.featured) && (b.logo || b.logoUrl || b.metadata?.coverUrl || (b.images && b.images.length > 0))
-          );
-          premList = filteredPrem.map(normalizeBusiness).filter((b: Business) => !!(b.logoUrl || b.coverImageUrl || b.logo));
+          featuredList = pRes.data.data.map(normalizeBusiness);
         }
-
-        if (premList.length < 3) {
-          const mockPrem = MOCK_BUSINESSES.filter(
-            (b) => (b.isVerified || b.plan === "premium" || b.isFeatured) && !!(b.logoUrl || b.coverImageUrl)
-          );
-          const combined = [...premList];
-          for (const mb of mockPrem) {
-            if (!combined.some((b) => b.slug === mb.slug)) {
-              combined.push(mb as Business);
-            }
-          }
-          premList = combined.filter((b: Business) => !!(b.logoUrl || b.coverImageUrl || b.logo));
-        }
-
-        setPremiumBusinesses(premList);
+        setPremiumBusinesses(featuredList);
       } catch (err) {
-        const mockPrem = MOCK_BUSINESSES.filter(
-          (b) => (b.isVerified || b.plan === "premium" || b.isFeatured) && !!(b.logoUrl || b.coverImageUrl)
-        ).filter((b) => !!(b.logoUrl || b.coverImageUrl));
-        setPremiumBusinesses(mockPrem as Business[]);
+        setPremiumBusinesses([]);
       }
 
       setLoading(false);

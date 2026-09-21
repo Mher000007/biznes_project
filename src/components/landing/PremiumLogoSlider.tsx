@@ -3,7 +3,6 @@ import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { getApiUrl } from "@/lib/utils";
 import axios from "axios";
-import { MOCK_BUSINESSES } from "@/data/mock-businesses";
 import styles from "./PremiumLogoSlider.module.scss";
 
 interface PremiumBrand {
@@ -27,42 +26,17 @@ export default function PremiumLogoSlider() {
     async function fetchPremiumBrands() {
       let premiumBrands: PremiumBrand[] = [];
       try {
-        const res = await axios.get(`${getApiUrl()}/businesses?limit=20`);
+        const res = await axios.get(`${getApiUrl()}/businesses/slider-businesses`);
         if (res.data?.success && res.data.data?.length > 0) {
-          const premium = res.data.data.filter(
-            (b: any) => b.verified || b.plan === "premium" || b.featured
-          );
-          if (premium.length > 0) {
-            premiumBrands = premium.map((b: any) => ({
-              id: b._id || b.id,
-              name: b.name,
-              slug: b.slug,
-              logo: b.logo || "",
-            }));
-          }
+          premiumBrands = res.data.data.map((b: any) => ({
+            id: b._id || b.id,
+            name: b.name,
+            slug: b.slug,
+            logo: b.logo || "",
+          }));
         }
       } catch (err: any) {
         console.log("Failed to fetch premium brands from backend", err?.message || "Error");
-      }
-
-      if (premiumBrands.length < 5) {
-        const mockPremium = MOCK_BUSINESSES.filter(
-          (b) => b.isVerified || b.plan === "premium" || b.isFeatured
-        );
-        const mappedMock = mockPremium.map((b) => ({
-          id: b.id,
-          name: b.name,
-          slug: b.slug,
-          logo: b.logoUrl || "",
-        }));
-
-        const combined = [...premiumBrands];
-        for (const mb of mappedMock) {
-          if (!combined.some((b) => b.slug === mb.slug)) {
-            combined.push(mb);
-          }
-        }
-        premiumBrands = combined;
       }
 
       setBrands(premiumBrands);
@@ -80,7 +54,7 @@ export default function PremiumLogoSlider() {
     if (!track) return;
 
     const tick = () => {
-      if (!isHoveredRef.current && track) {
+      if (track) {
         track.scrollLeft += SCROLL_SPEED;
         const halfWidth = track.scrollWidth / 2;
         if (track.scrollLeft >= halfWidth) {
@@ -98,7 +72,11 @@ export default function PremiumLogoSlider() {
 
   if (loading || brands.length === 0) return null;
 
-  const displayBrands = [...brands, ...brands, ...brands];
+  let baseBrands = [...brands];
+  while (baseBrands.length > 0 && baseBrands.length < 15) {
+    baseBrands = [...baseBrands, ...brands];
+  }
+  const displayBrands = [...baseBrands, ...baseBrands];
 
   const renderBrandItem = (brand: PremiumBrand, key: string) => (
     <Link
@@ -137,8 +115,6 @@ export default function PremiumLogoSlider() {
           msOverflowStyle: "none",
           cursor: "default",
         }}
-        onMouseEnter={() => { isHoveredRef.current = true; }}
-        onMouseLeave={() => { isHoveredRef.current = false; }}
       >
         <div
           className={styles.marqueeContent}

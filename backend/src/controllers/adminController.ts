@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Response, NextFunction } from 'express';
 import Review from '../models/Review.js';
 import Business from '../models/Business.js';
 import Booking from '../models/Booking.js';
@@ -693,5 +693,121 @@ export const updateHeroImages = asyncHandler(
       { upsert: true, new: true }
     );
     res.status(200).json({ success: true, data: capped });
+  }
+);
+
+// @desc    Update premium slider status for a business
+// @route   PUT /api/admin/businesses/:id/premium-slider
+// @access  Private/Admin
+export const updatePremiumSlider = asyncHandler(
+  async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    const { id } = req.params;
+    const { active, durationInDays } = req.body;
+
+    const business = await Business.findById(id);
+    if (!business) {
+      res.status(404).json({ success: false, message: 'Business not found' });
+      return;
+    }
+
+    let expiresAt = undefined;
+    if (active) {
+      expiresAt = new Date();
+      if (durationInDays && durationInDays !== -1) {
+        expiresAt.setDate(expiresAt.getDate() + durationInDays);
+      } else {
+        // permanent
+        expiresAt.setFullYear(expiresAt.getFullYear() + 100);
+      }
+    }
+
+    business.premiumSlider = { active, expiresAt };
+    await business.save();
+
+    res.status(200).json({ success: true, data: business });
+  }
+);
+
+// @desc    Reorder premium slider businesses
+// @route   PUT /api/admin/businesses/premium-slider/reorder
+// @access  Private/Admin
+export const reorderPremiumSlider = asyncHandler(
+  async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    const { orderedIds } = req.body;
+    if (!Array.isArray(orderedIds)) {
+      res.status(400).json({ success: false, message: 'orderedIds must be an array' });
+      return;
+    }
+
+    const bulkOps = orderedIds.map((id: string, index: number) => ({
+      updateOne: {
+        filter: { _id: id },
+        update: { $set: { 'premiumSlider.order': index } }
+      }
+    }));
+
+    if (bulkOps.length > 0) {
+      await Business.bulkWrite(bulkOps);
+    }
+
+    res.status(200).json({ success: true });
+  }
+);
+
+// @desc    Update featured slider for a business
+// @route   PUT /api/admin/businesses/:id/featured-slider
+// @access  Private/Admin
+export const updateFeaturedSlider = asyncHandler(
+  async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    const { id } = req.params;
+    const { active, durationInDays } = req.body;
+
+    const business = await Business.findById(id);
+    if (!business) {
+      res.status(404).json({ success: false, message: 'Business not found' });
+      return;
+    }
+
+    let expiresAt = undefined;
+    if (active) {
+      expiresAt = new Date();
+      if (durationInDays && durationInDays !== -1) {
+        expiresAt.setDate(expiresAt.getDate() + durationInDays);
+      } else {
+        // permanent
+        expiresAt.setFullYear(expiresAt.getFullYear() + 100);
+      }
+    }
+
+    business.featuredSlider = { active, expiresAt };
+    await business.save();
+
+    res.status(200).json({ success: true, data: business });
+  }
+);
+
+// @desc    Reorder featured slider businesses
+// @route   PUT /api/admin/businesses/featured-slider/reorder
+// @access  Private/Admin
+export const reorderFeaturedSlider = asyncHandler(
+  async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    const { orderedIds } = req.body;
+    if (!Array.isArray(orderedIds)) {
+      res.status(400).json({ success: false, message: 'orderedIds must be an array' });
+      return;
+    }
+
+    const bulkOps = orderedIds.map((id: string, index: number) => ({
+      updateOne: {
+        filter: { _id: id },
+        update: { $set: { 'featuredSlider.order': index } }
+      }
+    }));
+
+    if (bulkOps.length > 0) {
+      await Business.bulkWrite(bulkOps);
+    }
+
+    res.status(200).json({ success: true });
   }
 );
