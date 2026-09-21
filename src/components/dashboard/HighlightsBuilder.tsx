@@ -203,7 +203,7 @@ export default function HighlightsBuilder({ business, highlights, setHighlights,
           <div className="flex-1 w-full space-y-2">
             <input
               type="text"
-              placeholder={(t.builder as any)?.stories?.titlePlaceholder || "e.g., Summer Menu, Interior..."}
+              placeholder={(t.builder as any)?.stories?.highlightTitlePlaceholder || "e.g., Summer Menu, Interior..."}
               value={newHighlightTitle}
               onChange={(e) => setNewHighlightTitle(e.target.value)}
               className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2 text-sm outline-none focus:border-[hsl(var(--primary))] bg-[hsl(var(--card))] text-[hsl(var(--foreground))]"

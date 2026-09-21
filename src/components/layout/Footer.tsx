@@ -19,7 +19,7 @@ export default function Footer() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 py-12">
           <div className="col-span-2 sm:col-span-1">
             <Link href="/" className="mb-3 block">
-              <img src="/logo.png" alt="Treeo Logo" style={{ height: '7rem' }} className="w-auto object-contain [filter:brightness(0)_saturate(100%)_invert(55%)_sepia(70%)_saturate(1473%)_hue-rotate(101deg)_brightness(93%)_contrast(101%)]" />
+              <img src="/logo1.png" alt="Treeo Logo" style={{ height: '7rem' }} className="w-auto object-contain" />
             </Link>
             <p className="text-xs text-[hsl(var(--muted-foreground))] leading-relaxed">
               {t.footer.tagline}

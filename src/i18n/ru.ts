@@ -68,6 +68,19 @@ export const ru: Translations = {
   },
   dashboard: {
     title: "Панель управления",
+    review: "отзыв",
+    reviews: "отзывов",
+    signOut: "Выйти",
+    periods: {
+      "1d": "Сегодня",
+      "7d": "7 дней",
+      "14d": "14 дней",
+      "1m": "1 месяц",
+      "3m": "3 месяца",
+      "6m": "6 месяцев",
+      "1y": "1 год",
+      all: "За все время",
+    },
     welcome: "С возвращением! Обзор вашего бизнеса.",
     publish: "Опубликовать",
     publishing: "Публикация...",
@@ -364,7 +377,7 @@ export const ru: Translations = {
       enterHighlightTitle: "Пожалуйста, введите название актуального.",
       itemsSelected: "выбрано элементов",
       selectContent: "Выбрать контент",
-      titlePlaceholder: "напр., Летнее меню, Интерьер...",
+      highlightTitlePlaceholder: "напр., Летнее меню, Интерьер...",
     },
     gallery: {
       title: "Сетка фотогалереи",

@@ -312,11 +312,11 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             >
               <LogOut className="h-4 w-4 shrink-0" />
               <div className={`overflow-hidden transition-all duration-300 whitespace-nowrap ${isSidebarCollapsed ? "max-w-[200px] opacity-100 lg:max-w-0 lg:opacity-0 ml-3 text-left" : "max-w-[200px] opacity-100 ml-3 text-left"}`}>
-                Sign Out
+                {t.dashboard?.signOut || "Sign Out"}
               </div>
               {isSidebarCollapsed && (
                 <div className="hidden lg:block absolute left-full top-1/2 -translate-y-1/2 ml-4 px-2.5 py-1.5 bg-[hsl(var(--foreground))] text-[hsl(var(--background))] text-xs font-semibold rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50 shadow-md">
-                  Sign Out
+                  {t.dashboard?.signOut || "Sign Out"}
                 </div>
               )}
             </button>

@@ -42,15 +42,10 @@
   height: 7rem;
   width: 100%;
   min-width: 120px;
-  background-color: var(--color-green-600);
-  mask-image: url('/logo.png');
-  -webkit-mask-image: url('/logo.png');
-  mask-size: contain;
-  -webkit-mask-size: contain;
-  mask-repeat: no-repeat;
-  -webkit-mask-repeat: no-repeat;
-  mask-position: left center;
-  -webkit-mask-position: left center;
+  background-image: url('/logo1.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: left center;
   transition: filter 0.3s ease;
   flex-shrink: 0;
 }

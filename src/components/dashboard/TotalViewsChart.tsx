@@ -23,7 +23,7 @@ const PERIODS = [
 ];
 
 export default function TotalViewsChart({ totalViews, businessId }: TotalViewsChartProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [period, setPeriod] = useState<string>('7d');
   const [chartData, setChartData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -46,7 +46,7 @@ export default function TotalViewsChart({ totalViews, businessId }: TotalViewsCh
             for (let i = 23; i >= 0; i--) {
               const d = new Date(now);
               d.setHours(d.getHours() - i);
-              const dateStr = d.toLocaleTimeString("hy-AM", { hour: "2-digit", minute: "2-digit" });
+              const dateStr = d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
               const matchStr = d.toISOString().substring(0, 13).replace('T', ' ') + ':00'; // matching backend '%Y-%m-%d %H:00'
               const found = rawData.find((r: any) => r.date === matchStr);
               filledData.push({ date: dateStr, views: found ? found.views : 0 });
@@ -56,7 +56,7 @@ export default function TotalViewsChart({ totalViews, businessId }: TotalViewsCh
             for (let i = months - 1; i >= 0; i--) {
               const d = new Date(now);
               d.setMonth(d.getMonth() - i);
-              const dateStr = d.toLocaleDateString("hy-AM", { month: "short", year: "numeric" });
+              const dateStr = d.toLocaleDateString(locale, { month: "short", year: "numeric" });
               const matchStr = d.toISOString().substring(0, 7); // '%Y-%m'
               const found = rawData.find((r: any) => r.date === matchStr);
               filledData.push({ date: dateStr, views: found ? found.views : 0 });
@@ -71,7 +71,7 @@ export default function TotalViewsChart({ totalViews, businessId }: TotalViewsCh
             for (let i = days - 1; i >= 0; i--) {
               const d = new Date(now);
               d.setDate(d.getDate() - i);
-              const dateStr = d.toLocaleDateString("hy-AM", { month: "short", day: "numeric" });
+              const dateStr = d.toLocaleDateString(locale, { month: "short", day: "numeric" });
               const matchStr = d.toISOString().substring(0, 10); // '%Y-%m-%d'
               const found = rawData.find((r: any) => r.date === matchStr);
               filledData.push({ date: dateStr, views: found ? found.views : 0 });
@@ -106,7 +106,7 @@ export default function TotalViewsChart({ totalViews, businessId }: TotalViewsCh
         {/* Time Period Filter */}
         <details className="relative group">
           <summary className="list-none cursor-pointer flex items-center justify-between gap-2 px-4 py-2 bg-[hsl(var(--muted))] rounded-xl text-sm font-medium text-[hsl(var(--foreground))] select-none border border-transparent hover:border-[hsl(var(--border))] transition-colors">
-            {PERIODS.find(p => p.id === period)?.label || 'Ընտրել'}
+            {(t.dashboard.periods as any)?.[period] || PERIODS.find(p => p.id === period)?.label || 'Ընտրել'}
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-180 opacity-50"><path d="m6 9 6 6 6-6"/></svg>
           </summary>
           <div className="absolute right-0 top-full mt-2 w-40 flex flex-col gap-1 p-2 bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl z-50 shadow-lg">
@@ -124,7 +124,7 @@ export default function TotalViewsChart({ totalViews, businessId }: TotalViewsCh
                     : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]"
                 }`}
               >
-                {p.label}
+                {(t.dashboard.periods as any)?.[p.id] || p.label}
               </button>
             ))}
           </div>

@@ -127,6 +127,19 @@ export const hy: Translations = {
   },
   dashboard: {
     title: "Վահանակ",
+    review: "կարծիք",
+    reviews: "կարծիք",
+    signOut: "Ելք",
+    periods: {
+      "1d": "Այսօր",
+      "7d": "7 օր",
+      "14d": "14 օր",
+      "1m": "1 ամիս",
+      "3m": "3 ամիս",
+      "6m": "6 ամիս",
+      "1y": "1 տարի",
+      all: "Ամբողջը",
+    },
     welcome: "Բարի գալուստ: Ահա ձեր բիզնեսի ակնարկը:",
     publish: "Հրապարակել համաշխարհային",
     publishing: "Հրապարակում...",
@@ -515,7 +528,7 @@ export const hy: Translations = {
       enterHighlightTitle: "Խնդրում ենք մուտքագրել ակնարկի վերնագիր:",
       itemsSelected: "տարր ընտրված է",
       selectContent: "Ընտրել բովանդակություն",
-      titlePlaceholder: "օր․՝ Ամառային Ճաշացանկ, Ինտերիեր...",
+      highlightTitlePlaceholder: "օր․՝ Ամառային Ճաշացանկ, Ինտերիեր...",
     },
     gallery: {
       title: "Լուսանկարների պատկերասրահ",

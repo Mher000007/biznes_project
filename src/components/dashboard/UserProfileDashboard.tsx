@@ -276,6 +276,7 @@ export default function UserProfileDashboard() {
 
   const [selectedFriendUsername, setSelectedFriendUsername] = useState("");
   const [transferAmount, setTransferAmount] = useState("");
+  const [isShaking, setIsShaking] = useState(false);
   const [transferMsg, setTransferMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   interface TransferRecord {
@@ -437,32 +438,26 @@ export default function UserProfileDashboard() {
       return;
     }
 
-    // 2. Check 200 Coins max limit
-    if (amount > 200) {
-      setTransferMsg({
-        type: "error",
-        text: locale === "hy"
-          ? "Օրական առավելագույն փոխանցման չափը 200 TreeoCoins է:"
-          : "Maximum transfer amount is 200 TreeoCoins per day."
-      });
-      return;
-    }
+    const fee = amount * 0.01;
+    const totalDeduction = amount + fee;
 
     const savedCoinsStr = uKey ? localStorage.getItem(`armbiz_user_coins_${uKey}`) : null;
     const currentCoins = savedCoinsStr !== null && !isNaN(Number(savedCoinsStr))
       ? Number(savedCoinsStr)
       : ((currentUser as any).treeoCoins || 0);
 
-    if (amount > currentCoins) {
+    if (totalDeduction > currentCoins) {
       setTransferMsg({
         type: "error",
-        text: locale === "hy" ? "Դուք չունեք բավարար Treeo Coins փոխանցելու համար" : "You don't have enough Treeo Coins"
+        text: locale === "hy" 
+          ? `Դուք չունեք բավարար Treeo Coins (Պահանջվում է ${totalDeduction.toFixed(2)})` 
+          : `You don't have enough Treeo Coins (Required ${totalDeduction.toFixed(2)})`
       });
       return;
     }
 
     try {
-      const newSenderCoins = currentCoins - amount;
+      const newSenderCoins = currentCoins - totalDeduction;
       if (uKey) localStorage.setItem(`armbiz_user_coins_${uKey}`, String(newSenderCoins));
       (currentUser as any).treeoCoins = newSenderCoins;
 
@@ -491,7 +486,7 @@ export default function UserProfileDashboard() {
         id: "tr_" + Date.now(),
         recipientUsername: selectedFriendUsername,
         recipientDisplayName: recipientFriend?.displayName || selectedFriendUsername,
-        amount: amount,
+        amount: Number(totalDeduction.toFixed(2)),
         dateStr: now.toLocaleDateString(locale === "hy" ? "hy-AM" : "en-US", { day: "2-digit", month: "long", year: "numeric" }),
         timeStr: now.toLocaleTimeString(locale === "hy" ? "hy-AM" : "en-US", { hour: "2-digit", minute: "2-digit" }),
         createdAt: now.toISOString(),
@@ -778,8 +773,12 @@ export default function UserProfileDashboard() {
         setUserBookings(apiBookings.filter((b) => !hiddenBookings.includes(b.id) && b.status !== "completed"));
         return;
       }
-    } catch (err) {
-      console.error("Error loading user bookings from API:", err);
+    } catch (err: any) {
+      if (err.response?.status === 401 || err.response?.status === 404) {
+        console.warn("User session invalid or user not found. Bookings could not be loaded.");
+      } else {
+        console.error("Error loading user bookings from API:", err);
+      }
     }
     
     // Fallback to local storage
@@ -1233,7 +1232,7 @@ export default function UserProfileDashboard() {
     : (currentUser?.treeoCoins !== undefined ? currentUser.treeoCoins : Math.floor(userBookings.reduce((sum, b) => sum + ((Number(b.totalPrice) || 0) * 0.01), 0)));
 
   return (
-    <div className="min-h-screen bg-[hsl(var(--background))] text-[hsl(var(--foreground))] py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[hsl(var(--background))] text-[hsl(var(--foreground))] py-8 px-4 sm:px-6 lg:px-8 overflow-x-hidden">
       <div className="max-w-6xl mx-auto space-y-6">
 
         {/* ── Top Header Banner Card ── */}
@@ -1408,11 +1407,13 @@ export default function UserProfileDashboard() {
           </div>
         </div>
 
-        {/* ── Navigation Tabs ── */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar border-b border-[hsl(var(--border))]">
+        {/* ── Main Layout: Sidebar + Content ── */}
+        <div className="flex flex-col md:flex-row gap-6 lg:gap-8 items-start mt-8 w-full max-w-full">
+          {/* ── Sidebar (Navigation Tabs) ── */}
+          <div className="flex md:flex-col items-stretch gap-2 overflow-x-auto md:overflow-visible pb-2 md:pb-0 custom-scrollbar w-full max-w-full md:w-64 shrink-0 border-b md:border-b-0 border-[hsl(var(--border))]">
           <button
             onClick={() => setActiveTab("profile")}
-            className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${activeTab === "profile"
+            className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center md:justify-start gap-2 md:gap-3 shrink-0 border cursor-pointer w-auto md:w-full text-center md:text-left ${activeTab === "profile"
               ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
               : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
               }`}
@@ -1423,7 +1424,7 @@ export default function UserProfileDashboard() {
 
           <button
             onClick={() => setActiveTab("favorites")}
-            className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${activeTab === "favorites"
+            className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center md:justify-start gap-2 md:gap-3 shrink-0 border cursor-pointer w-auto md:w-full text-center md:text-left ${activeTab === "favorites"
               ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
               : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
               }`}
@@ -1440,7 +1441,7 @@ export default function UserProfileDashboard() {
 
           <button
             onClick={() => setActiveTab("bookings")}
-            className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${activeTab === "bookings"
+            className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center md:justify-start gap-2 md:gap-3 shrink-0 border cursor-pointer w-auto md:w-full text-center md:text-left ${activeTab === "bookings"
               ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
               : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
               }`}
@@ -1457,7 +1458,7 @@ export default function UserProfileDashboard() {
 
           <button
             onClick={() => setActiveTab("reviews")}
-            className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${activeTab === "reviews"
+            className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center md:justify-start gap-2 md:gap-3 shrink-0 border cursor-pointer w-auto md:w-full text-center md:text-left ${activeTab === "reviews"
               ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
               : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
               }`}
@@ -1474,7 +1475,7 @@ export default function UserProfileDashboard() {
 
           <button
             onClick={() => setActiveTab("offers")}
-            className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${activeTab === "offers"
+            className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center md:justify-start gap-2 md:gap-3 shrink-0 border cursor-pointer w-auto md:w-full text-center md:text-left ${activeTab === "offers"
               ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
               : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
               }`}
@@ -1492,7 +1493,7 @@ export default function UserProfileDashboard() {
 
           <button
             onClick={() => setActiveTab("transfer")}
-            className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${activeTab === "transfer"
+            className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center md:justify-start gap-2 md:gap-3 shrink-0 border cursor-pointer w-auto md:w-full text-center md:text-left ${activeTab === "transfer"
               ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
               : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
               }`}
@@ -1503,7 +1504,7 @@ export default function UserProfileDashboard() {
 
           <button
             onClick={() => setActiveTab("invite")}
-            className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${activeTab === "invite"
+            className={`px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center md:justify-start gap-2 md:gap-3 shrink-0 border cursor-pointer w-auto md:w-full text-center md:text-left ${activeTab === "invite"
               ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white shadow-md"
               : "bg-[hsl(var(--card))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
               }`}
@@ -1511,9 +1512,10 @@ export default function UserProfileDashboard() {
             <UserPlus className="w-3.5 h-3.5" />
             {locale === "hy" ? "Հրավիրել Ընկերներ" : locale === "ru" ? "Пригласить друзей" : "Invite Friends"}
           </button>
-        </div>
+          </div>
 
-        {/* ── TAB CONTENT: Profile Info ── */}
+          {/* ── Tab Content ── */}
+          <div className="flex-1 w-full min-w-0">
         {activeTab === "profile" && (
           <div className="space-y-6">
             {/* Treeo Coin Balance Card */}
@@ -1524,7 +1526,7 @@ export default function UserProfileDashboard() {
                 </div>
                 <div>
                   <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
-                    {locale === "hy" ? "Դուք վաստակում եք 1% ամեն ամրագրումից" : locale === "ru" ? "Вы зарабатываете 1% с каждого бронирования" : "You earn 1% back from all your bookings"}
+                    {locale === "hy" ? "Դուք վաստակում եք Treeo coins ամեն ամրագրումից" : locale === "ru" ? "Вы зарабатываете Treeo coins с каждого бронирования" : "You earn Treeo coins back from all your bookings"}
                   </p>
                 </div>
               </div>
@@ -1772,7 +1774,7 @@ export default function UserProfileDashboard() {
                 {locale === "hy" ? "Իմ Ամրագրումները" : "My Reservations"}
               </h2>
               <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
-                {locale === "hy" ? "Ստացեք 1% քեշբեք Treeo Coins-ով ձեր բոլոր ամրագրումներից" : locale === "ru" ? "Вы получаете 1% кэшбэка от всех ваших бронирований" : "You earn 1% back from all your bookings"}
+                {locale === "hy" ? "Ստացեք Treeo coins քեշբեք ձեր բոլոր ամրագրումներից" : locale === "ru" ? "Вы получаете Treeo coins кэшбэка от всех ваших бронирований" : "You earn Treeo coins back from all your bookings"}
               </p>
             </div>
 
@@ -1818,35 +1820,35 @@ export default function UserProfileDashboard() {
                         <button
                           type="button"
                           onClick={() => setSelectedBookingQR({ id: b.id, qrToken: b.qrToken })}
-                          className="h-9 px-4 rounded-xl border border-blue-500/20 bg-blue-500/10 text-blue-600 hover:bg-blue-500 hover:text-white transition-all text-xs font-semibold flex items-center gap-1.5 cursor-pointer shrink-0"
+                          className="flex-1 sm:flex-initial justify-center h-9 px-2 sm:px-4 rounded-xl border border-blue-500/20 bg-blue-500/10 text-blue-600 hover:bg-blue-500 hover:text-white transition-all text-[11px] sm:text-xs font-semibold flex items-center gap-1.5 cursor-pointer shrink-0"
                         >
-                          <QrCode className="w-4 h-4" />
-                          <span>{locale === "hy" ? "QR Կոդ" : "QR Code"}</span>
+                          <QrCode className="w-4 h-4 shrink-0" />
+                          <span className="truncate">{locale === "hy" ? "QR Կոդ" : "QR Code"}</span>
                         </button>
                       )}
                       {b.businessSlug ? (
                         <Link
                           href={`/business/${b.businessSlug}`}
-                          className="flex-1 sm:flex-initial h-9 px-4 rounded-xl border border-[hsl(var(--border))] text-[hsl(var(--foreground))] text-xs font-semibold hover:bg-[hsl(var(--muted))] flex items-center justify-center transition-colors"
+                          className="flex-1 sm:flex-initial justify-center h-9 px-2 sm:px-4 rounded-xl border border-[hsl(var(--border))] text-[hsl(var(--foreground))] text-[11px] sm:text-xs font-semibold hover:bg-[hsl(var(--muted))] flex items-center transition-colors"
                         >
-                          {locale === "hy" ? "Մանրամասն" : "Details"}
+                          <span className="truncate">{locale === "hy" ? "Մանրամասն" : "Details"}</span>
                         </Link>
                       ) : (
                         <Link
                           href="/discover"
-                          className="flex-1 sm:flex-initial h-9 px-4 rounded-xl border border-[hsl(var(--border))] text-[hsl(var(--foreground))] text-xs font-semibold hover:bg-[hsl(var(--muted))] flex items-center justify-center transition-colors"
+                          className="flex-1 sm:flex-initial justify-center h-9 px-2 sm:px-4 rounded-xl border border-[hsl(var(--border))] text-[hsl(var(--foreground))] text-[11px] sm:text-xs font-semibold hover:bg-[hsl(var(--muted))] flex items-center transition-colors"
                         >
-                          {locale === "hy" ? "Մանրամասն" : "Details"}
+                          <span className="truncate">{locale === "hy" ? "Մանրամասն" : "Details"}</span>
                         </Link>
                       )}
                       <button
                         type="button"
                         onClick={() => removeBooking(b.id)}
-                        className="h-9 px-3.5 rounded-xl border border-red-500/20 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all text-xs font-semibold flex items-center gap-1.5 cursor-pointer shrink-0"
+                        className="flex-1 sm:flex-initial justify-center h-9 px-2 sm:px-4 rounded-xl border border-red-500/20 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all text-[11px] sm:text-xs font-semibold flex items-center gap-1.5 cursor-pointer shrink-0"
                         title={locale === "hy" ? "Հեռացնել ամրագրումը" : "Remove reservation"}
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span>{locale === "hy" ? "Հեռացնել" : "Remove"}</span>
+                        <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">{locale === "hy" ? "Հեռացնել" : "Remove"}</span>
                       </button>
                     </div>
                   </div>
@@ -2420,35 +2422,50 @@ export default function UserProfileDashboard() {
                     <div className="flex items-center justify-between mb-2">
                       <label className="text-sm font-bold text-[hsl(var(--muted-foreground))]">{locale === "hy" ? "Քանակը" : "Amount to send"}</label>
                       <span className="text-[11px] font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
-                        {locale === "hy" ? "Առավելագույնը 200 Coin" : "Max 200 Coins"}
+                        {locale === "hy" ? `Հասանելի: ${treeoCoins} Coin` : `Available: ${treeoCoins} Coins`}
                       </span>
                     </div>
                     <div className="relative">
                       <Coins className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-500" />
                       <input
-                        type="number"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         placeholder="0"
-                        max={200}
                         disabled={cooldownRemainingSec > 0}
-                        value={transferAmount}
+                        value={transferAmount ? Number(transferAmount).toLocaleString('en-US') : ""}
+                        onWheel={(e) => (e.target as HTMLElement).blur()}
                         onChange={(e) => {
-                          const val = e.target.value;
+                          const val = e.target.value.replace(/,/g, "");
                           if (val === "") {
                             setTransferAmount("");
                             return;
                           }
                           const num = Number(val);
                           if (!isNaN(num)) {
-                            if (num > 200) {
-                              setTransferAmount("200");
-                            } else {
-                              setTransferAmount(val);
+                            if (num > treeoCoins) {
+                               setIsShaking(true);
+                               setTimeout(() => setIsShaking(false), 400);
+                               return;
                             }
+                            setTransferAmount(val);
                           }
                         }}
-                        className={`w-full bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-xl pl-12 pr-4 py-3.5 outline-none focus:border-blue-500 transition-colors font-bold text-lg ${cooldownRemainingSec > 0 ? "opacity-60 cursor-not-allowed" : ""}`}
+                        className={`w-full bg-[hsl(var(--background))] border rounded-xl pl-12 pr-4 py-3.5 outline-none transition-all font-bold text-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${cooldownRemainingSec > 0 ? "opacity-60 cursor-not-allowed" : ""} ${isShaking ? "animate-shake border-red-500 bg-red-500/5 text-red-500 shadow-md shadow-red-500/10" : "border-[hsl(var(--border))] focus:border-blue-500 text-[hsl(var(--foreground))]"}`}
                       />
                     </div>
+                    {transferAmount && !isNaN(Number(transferAmount)) && Number(transferAmount) > 0 && (
+                      <div className="flex flex-col gap-1 mt-2 px-1 bg-[hsl(var(--muted))]/30 p-2.5 rounded-xl border border-[hsl(var(--border))]/50">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-[hsl(var(--muted-foreground))]">{locale === "hy" ? "Միջնորդավճար (1%)" : "Fee (1%)"}:</span>
+                          <span className="font-bold text-[hsl(var(--foreground))]">+{(Number(transferAmount) * 0.01).toFixed(2)} Coins</span>
+                        </div>
+                        <div className="flex justify-between items-center text-[13px]">
+                          <span className="text-[hsl(var(--muted-foreground))] font-bold">{locale === "hy" ? "Ընդհանուր կգանձվի" : "Total deduction"}:</span>
+                          <span className="font-black text-amber-500">{(Number(transferAmount) * 1.01).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} Coins</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   {transferMsg && (
                     <p className={`text-xs font-semibold px-1 ${transferMsg.type === "success" ? "text-emerald-500" : "text-red-500"}`}>
@@ -2459,7 +2476,7 @@ export default function UserProfileDashboard() {
                     type="button"
                     disabled={cooldownRemainingSec > 0}
                     onClick={handleTransferCoins}
-                    className={`w-full py-4 bg-blue-600 hover:bg-blue-700 !text-white rounded-xl font-bold shadow-md shadow-blue-500/20 transition-all hover:scale-[1.01] active:scale-95 mt-2 cursor-pointer flex items-center justify-center gap-2 ${cooldownRemainingSec > 0 ? "opacity-50 cursor-not-allowed hover:scale-100 hover:bg-blue-600" : ""}`}
+                    className={`w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md shadow-blue-500/20 transition-all hover:scale-[1.01] active:scale-95 mt-2 cursor-pointer flex items-center justify-center gap-2 ${cooldownRemainingSec > 0 ? "opacity-50 cursor-not-allowed hover:scale-100 hover:bg-blue-600" : ""}`}
                   >
                     <Send className="w-4 h-4" />
                     <span>{locale === "hy" ? "Հաստատել" : "Confirm Transfer"}</span>
@@ -2570,8 +2587,8 @@ export default function UserProfileDashboard() {
                         type="button"
                         onClick={() => handleCopyInviteCode(currentUser?.username ? currentUser.username.toUpperCase() : "USER100")}
                         className={`w-full sm:w-auto px-5 py-2.5 rounded-xl font-bold text-xs transition-all flex justify-center items-center gap-2 cursor-pointer active:scale-95 ${copiedInviteCode
-                          ? "bg-emerald-500 !text-white shadow-lg shadow-emerald-500/30 scale-105"
-                          : "bg-[hsl(var(--foreground))] !text-[hsl(var(--background))] hover:scale-105"
+                          ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 scale-105"
+                          : "bg-[hsl(var(--foreground))] text-[hsl(var(--background))] hover:scale-105"
                           }`}
                       >
                         {copiedInviteCode ? (
@@ -2624,7 +2641,7 @@ export default function UserProfileDashboard() {
                           <button
                             type="button"
                             onClick={handleApplyInviteCode}
-                            className="w-full sm:w-auto justify-center px-5 py-2.5 rounded-xl font-bold text-xs bg-emerald-500 hover:bg-emerald-600 !text-white transition-all flex items-center gap-1.5 cursor-pointer shadow-md shadow-emerald-500/20 active:scale-95 shrink-0"
+                            className="w-full sm:w-auto justify-center px-5 py-2.5 rounded-xl font-bold text-xs bg-emerald-500 hover:bg-emerald-600 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-slate-900 transition-all flex items-center gap-1.5 cursor-pointer shadow-md shadow-emerald-500/20 dark:shadow-none active:scale-95 shrink-0"
                           >
                             <Sparkles className="w-3.5 h-3.5" />
                             <span>{locale === "hy" ? "Ստանալ 100 Coin" : "Get 100 Coins"}</span>
@@ -2715,6 +2732,9 @@ export default function UserProfileDashboard() {
             </div>
           </div>
         )}
+
+          </div>
+        </div>
 
       </div>
 

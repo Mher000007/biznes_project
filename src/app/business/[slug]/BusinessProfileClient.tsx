@@ -1389,7 +1389,7 @@ export default function BusinessProfilePage() {
                           <div className="flex items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400">
                             <Coins className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                             <span>
-                              +{Math.floor(Number(selectedService.price) * 0.01).toLocaleString()} {locale === 'hy' ? "Coins (1% քեշբեք)" : locale === 'ru' ? "Coins (1% кэшбэк)" : "Coins (1% cashback)"}
+                              +{Math.floor(Number(selectedService.price) * 0.01).toLocaleString()} {locale === 'hy' ? "Coins (քեշբեք)" : locale === 'ru' ? "Coins (кэшбэк)" : "Coins (cashback)"}
                             </span>
                           </div>
                           <span className="text-[10px] text-[hsl(var(--muted-foreground))]">

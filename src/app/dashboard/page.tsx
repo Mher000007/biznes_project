@@ -15,6 +15,7 @@ import TopBusinesses from "@/components/dashboard/TopBusinesses";
 const LeafletMap = dynamic(() => import("@/components/map/LeafletMap"), { ssr: false });
 
 interface StatItem {
+  id: "totalViews" | "inquiries" | "avgRating" | "profileRank" | "saves";
   label: string;
   value: string;
   change: string;
@@ -26,11 +27,11 @@ interface StatItem {
 }
 
 const DEFAULT_STATS: StatItem[] = [
-  { label: "Total Views", value: "0", change: "+0%", icon: Eye, iconColor: "text-cyan-500 fill-cyan-500", iconBg: "bg-cyan-500/10", iconAnimate: "animate-eye-glow" },
-  { label: "Inquiries", value: "0", change: "+0%", icon: MessageSquare, iconColor: "text-blue-500 fill-blue-500", iconBg: "bg-blue-500/10", iconAnimate: "animate-message-pop" },
-  { label: "Avg. Rating", value: "0.0", change: "", icon: Star, iconColor: "text-amber-400 fill-amber-400", iconBg: "bg-amber-400/10", iconAnimate: "animate-gold-twinkle" },
-  { label: "Profile Rank", value: "#–", change: "", icon: TrendingUp },
-  { label: "Saves", value: "0", change: "+0", icon: Bookmark, iconColor: "text-purple-500 fill-purple-500", iconBg: "bg-purple-500/10", iconAnimate: "animate-pulse" },
+  { id: "totalViews", label: "Total Views", value: "0", change: "+0%", icon: Eye, iconColor: "text-cyan-500 fill-cyan-500", iconBg: "bg-cyan-500/10", iconAnimate: "animate-eye-glow" },
+  { id: "inquiries", label: "Inquiries", value: "0", change: "+0%", icon: MessageSquare, iconColor: "text-blue-500 fill-blue-500", iconBg: "bg-blue-500/10", iconAnimate: "animate-message-pop" },
+  { id: "avgRating", label: "Avg. Rating", value: "0.0", change: "", icon: Star, iconColor: "text-amber-400 fill-amber-400", iconBg: "bg-amber-400/10", iconAnimate: "animate-gold-twinkle" },
+  { id: "profileRank", label: "Profile Rank", value: "#–", change: "", icon: TrendingUp },
+  { id: "saves", label: "Saves", value: "0", change: "+0", icon: Bookmark, iconColor: "text-purple-500 fill-purple-500", iconBg: "bg-purple-500/10", iconAnimate: "animate-pulse" },
 ];
 
 interface DashboardInquiry {
@@ -50,9 +51,11 @@ interface DashboardInquiry {
   adminReply?: string;
 }
 
+import { useI18n } from "@/i18n";
 import UserProfileDashboard from "@/components/dashboard/UserProfileDashboard";
 
 export default function DashboardPage() {
+  const { t, locale } = useI18n();
   const { currentUser } = useAuth();
   const router = useRouter();
   const displayName = currentUser?.name || currentUser?.username || "User";
@@ -233,11 +236,11 @@ export default function DashboardPage() {
         const isTop5 = biz.rank && biz.rank <= 5;
 
         setStats([
-          { label: "Total Views", value: views.toLocaleString(), change: views > 0 ? `+${(views * 0.125).toFixed(1)}%` : "+0%", icon: Eye, iconColor: "text-cyan-500 fill-cyan-500", iconBg: "bg-cyan-500/10", iconAnimate: "animate-eye-glow" },
-          { label: "Inquiries", value: bookingCount.toLocaleString(), change: "+0%", icon: MessageSquare, iconColor: "text-blue-500 fill-blue-500", iconBg: "bg-blue-500/10", iconAnimate: "animate-message-pop" },
-          { label: "Avg. Rating", value: `${rating.toFixed(1)} (${reviewCount} review${reviewCount !== 1 ? "s" : ""})`, change: "", icon: Star, iconColor: "text-amber-400 fill-amber-400", iconBg: "bg-amber-400/10", iconAnimate: "animate-gold-twinkle" },
-          { label: "Profile Rank", value: rankVal, change: "", icon: rankIcon, iconColor: rankIconColor, iconBg: rankIconBg, iconAnimate: rankAnimate, badge: isTop5 ? "Top 5 in Armenia" : undefined },
-          { label: "Saves", value: saves.toLocaleString(), change: saves > 0 ? `+${saves}` : "+0", icon: Bookmark, iconColor: "text-purple-500 fill-purple-500", iconBg: "bg-purple-500/10", iconAnimate: "animate-pulse" },
+          { id: "totalViews", label: "Total Views", value: views.toLocaleString(), change: views > 0 ? `+${(views * 0.125).toFixed(1)}%` : "+0%", icon: Eye, iconColor: "text-cyan-500 fill-cyan-500", iconBg: "bg-cyan-500/10", iconAnimate: "animate-eye-glow" },
+          { id: "inquiries", label: "Inquiries", value: bookingCount.toLocaleString(), change: "+0%", icon: MessageSquare, iconColor: "text-blue-500 fill-blue-500", iconBg: "bg-blue-500/10", iconAnimate: "animate-message-pop" },
+          { id: "avgRating", label: "Avg. Rating", value: `${rating.toFixed(1)} (${reviewCount} ${reviewCount === 1 ? (t.dashboard?.review || "review") : (t.dashboard?.reviews || "reviews")})`, change: "", icon: Star, iconColor: "text-amber-400 fill-amber-400", iconBg: "bg-amber-400/10", iconAnimate: "animate-gold-twinkle" },
+          { id: "profileRank", label: "Profile Rank", value: rankVal, change: "", icon: rankIcon, iconColor: rankIconColor, iconBg: rankIconBg, iconAnimate: rankAnimate, badge: isTop5 ? "Top 5 in Armenia" : undefined },
+          { id: "saves", label: "Saves", value: saves.toLocaleString(), change: saves > 0 ? `+${saves}` : "+0", icon: Bookmark, iconColor: "text-purple-500 fill-purple-500", iconBg: "bg-purple-500/10", iconAnimate: "animate-pulse" },
         ]);
       } catch (err) {
         console.warn("Dashboard data load failed", err);
@@ -269,12 +272,12 @@ export default function DashboardPage() {
               <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
               {activePlan === "premium" && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-200 to-yellow-400 px-2 py-0.5 text-[0.65rem] font-bold text-amber-950 shadow-sm border border-amber-300 uppercase tracking-wide">
-                  <BadgeCheck className="h-3 w-3" /> Premium Partner
+                  <BadgeCheck className="h-3 w-3" />  Partner
                 </span>
               )}
               {activePlan === "standard" && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-slate-200 to-gray-300 px-2 py-0.5 text-[0.65rem] font-bold text-slate-800 shadow-sm border border-slate-400 uppercase tracking-wide">
-                  <BadgeCheck className="h-3 w-3" /> Pro Partner
+                <span className="inline-flex items-center gap-1 text-[0.65rem] font-bold text-emerald-500 uppercase tracking-wide">
+                  <BadgeCheck className="h-3 w-3" /> Partner
                 </span>
               )}
               {activePlan === "starter" && (
@@ -283,7 +286,9 @@ export default function DashboardPage() {
                 </span>
               )}
             </div>
-            <p className="text-sm text-[hsl(var(--muted-foreground))]">Welcome back, {displayName}! Here&apos;s your business overview.</p>
+            <p className="text-sm text-[hsl(var(--muted-foreground))]">
+              {t.dashboard.welcome ? t.dashboard.welcome.replace("{name}", displayName) : `Welcome back, ${displayName}! Here's your business overview.`}
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <DashboardPublish />
@@ -292,20 +297,17 @@ export default function DashboardPage() {
 
         <div className={`grid grid-cols-1 sm:grid-cols-2 ${activePlan === "starter" ? "xl:grid-cols-2" : "xl:grid-cols-5"} gap-4 mb-8`}>
           {stats
-            .filter((stat) => {
+            .filter(stat => {
               if (activePlan === "starter") {
-                return stat.label !== "Inquiries" && stat.label !== "Avg. Rating" && stat.label !== "Saves";
+                return stat.id !== "inquiries" && stat.id !== "avgRating" && stat.id !== "saves";
               }
-              if (activePlan === "standard" || activePlan === "premium") {
-                return true;
-              }
-              return stat.label !== "Saves";
+              return true;
             })
-            .map((stat) => (
+            .map((stat, idx) => (
               <div
-                key={stat.label}
-                className={`rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-5 relative ${stat.label === "Inquiries" ? "cursor-pointer hover:border-[hsl(var(--primary))] transition-colors" : ""}`}
-                onClick={() => { if (stat.label === "Inquiries") setShowInquiriesPopover(!showInquiriesPopover); }}
+                key={stat.id}
+                className={`rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-5 relative ${stat.id === "inquiries" ? "cursor-pointer hover:border-[hsl(var(--primary))] transition-colors" : ""}`}
+                onClick={() => { if (stat.id === "inquiries") setShowInquiriesPopover(!showInquiriesPopover); }}
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${stat.iconBg || 'bg-[hsl(var(--primary))]/10'} ${stat.iconColor || 'text-[hsl(var(--primary))]'} ${(stat as any).iconAnimate || ''}`}>
@@ -318,10 +320,12 @@ export default function DashboardPage() {
                   )}
                 </div>
                 <div className="text-2xl font-bold">{stat.value}</div>
-                <div className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">{stat.label}</div>
+                <div className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
+                  {t.dashboard[stat.id] || stat.label}
+                </div>
 
                 {/* Click Popover for Inquiries Breakdown */}
-                {stat.label === "Inquiries" && bookingBreakdown.length > 0 && showInquiriesPopover && (
+                {stat.id === "inquiries" && bookingBreakdown.length > 0 && showInquiriesPopover && (
                   <div className="absolute left-1/2 -translate-x-1/2 bottom-[105%] mb-2 w-max min-w-[220px] max-w-[300px] p-3 bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl shadow-xl z-50 animate-in fade-in slide-in-from-bottom-2">
                     <h4 className="text-xs font-bold text-[hsl(var(--foreground))] mb-2 border-b border-[hsl(var(--border))] pb-2">Ամրագրումներ ըստ հասցեի</h4>
                     <ul className="flex flex-col gap-2">

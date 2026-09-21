@@ -135,6 +135,19 @@ export const en = {
   // Dashboard
   dashboard: {
     title: "Dashboard",
+    review: "review",
+    reviews: "reviews",
+    signOut: "Sign Out",
+    periods: {
+      "1d": "Today",
+      "7d": "7 days",
+      "14d": "14 days",
+      "1m": "1 month",
+      "3m": "3 months",
+      "6m": "6 months",
+      "1y": "1 year",
+      all: "All Time",
+    },
     welcome: "Welcome back! Here's your business overview.",
     publish: "Publish to Global",
     publishing: "Publishing...",
@@ -529,7 +542,7 @@ export const en = {
       enterHighlightTitle: "Please enter a highlight title.",
       itemsSelected: "items selected",
       selectContent: "Select Content",
-      titlePlaceholder: "e.g., Summer Menu, Interior...",
+      highlightTitlePlaceholder: "e.g., Summer Menu, Interior...",
     },
     gallery: {
       title: "Image Gallery Grid",

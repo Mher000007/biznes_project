@@ -146,7 +146,9 @@ export default function TopBusinesses() {
                   <div className={styles.ratingBlock}>
                     <div className={styles.ratingScore}>{biz.rating > 0 ? biz.rating.toFixed(1) : "0.0"}</div>
                     <div className={styles.starsRow}>{renderStars(biz.rating || 0)}</div>
-                    <div className={styles.reviewCount}>{biz.reviewCount || 0} կարծիք</div>
+                    <div className={styles.reviewCount}>
+                      {biz.reviewCount || 0} {biz.reviewCount === 1 ? (t.dashboard?.review || "review") : (t.dashboard?.reviews || "reviews")}
+                    </div>
                   </div>
                 </div>
               );

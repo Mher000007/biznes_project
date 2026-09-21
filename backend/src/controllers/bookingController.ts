@@ -172,7 +172,7 @@ export const getUserBookings = asyncHandler(async (req: Request & { user?: any }
 
   const user = await User.findById(userId);
   if (!user) {
-    res.status(404).json({ success: false, message: 'User not found' });
+    res.status(401).json({ success: false, message: 'User not found or deleted' });
     return;
   }
 
