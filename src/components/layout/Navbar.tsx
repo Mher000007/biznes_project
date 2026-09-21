@@ -697,7 +697,7 @@ export default function Navbar() {
                   <Bookmark id="navbar-bookmark-icon" className="hidden xl:block w-3.5 h-3.5 text-amber-500 fill-amber-500/20 shrink-0" />
                 )}
                 <User className="w-5 h-5 xl:hidden" />
-                <span className="hidden xl:block truncate">
+                <span className="hidden xl:block truncate" style={{ color: "#e2dfdf" }}>
                   {t.nav.hello}{currentUser.name || currentUser.username}
                 </span>
               </Link>
@@ -771,7 +771,7 @@ export default function Navbar() {
               aria-label="Log Out"
               className="hidden lg:flex h-8 w-8 items-center justify-center rounded-lg bg-transparent border-0 text-[hsl(var(--muted-foreground))] hover:text-red-500 hover:bg-red-500/10 transition-all hover:scale-105 active:scale-95 cursor-pointer ml-1"
             >
-              <LogOut className="h-4 w-4 transition-colors" />
+              <LogOut className="h-4 w-4 transition-colors" style={{ color: "#e2dfdf" }} />
             </button>
           </div>
         ) : (
