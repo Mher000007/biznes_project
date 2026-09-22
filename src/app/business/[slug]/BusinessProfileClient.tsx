@@ -101,6 +101,62 @@ export default function BusinessProfilePage() {
   const [activeHighlight, setActiveHighlight] = useState<Highlight | null>(null);
   const [activeHighlightIdx, setActiveHighlightIdx] = useState<number>(-1);
   const [activeGalleryIdx, setActiveGalleryIdx] = useState<number | null>(null);
+  const [activeCoverIdx, setActiveCoverIdx] = useState(0);
+
+  // Extract cover URLs
+  const coverUrls: string[] = (() => {
+    if (business) {
+      if (business.coverImageUrl) {
+        if (Array.isArray(business.coverImageUrl)) {
+          if (business.coverImageUrl.length > 0) return business.coverImageUrl;
+        } else {
+          return [business.coverImageUrl];
+        }
+      }
+      const metadataCover = business.metadata?.coverUrl;
+      if (metadataCover) {
+        if (Array.isArray(metadataCover)) {
+          if (metadataCover.length > 0) return metadataCover;
+        } else {
+          return [metadataCover];
+        }
+      }
+      const fallback = (business as any).coverUrl;
+      if (fallback) {
+        if (Array.isArray(fallback)) {
+          if (fallback.length > 0) return fallback;
+        } else {
+          return [fallback];
+        }
+      }
+      // Fallback to first gallery image if no cover image
+      if (business.images && business.images.length > 0) {
+        return [business.images[0]];
+      }
+      // Fallback to logo
+      if (business.logo || business.logoUrl) {
+        return [business.logo || business.logoUrl];
+      }
+    }
+    return [];
+  })();
+
+  // Auto-scroll cover images
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (coverUrls && coverUrls.length > 1) {
+      interval = setInterval(() => {
+        setActiveCoverIdx((prev) => (prev + 1) % coverUrls.length);
+      }, 5000);
+    }
+    return () => clearInterval(interval);
+  }, [coverUrls, activeCoverIdx]);
+
+  useEffect(() => {
+    if (coverUrls && coverUrls.length > 0 && activeCoverIdx >= coverUrls.length) {
+      setActiveCoverIdx(0);
+    }
+  }, [coverUrls, activeCoverIdx]);
 
   // Extract gallery images
   const galleryImages: string[] = (() => {
@@ -673,7 +729,7 @@ export default function BusinessProfilePage() {
     const highlight = business.highlights[idx];
     const hasStories = highlight.stories && highlight.stories.length > 0;
     const hasOffers = highlight.offers && highlight.offers.length > 0;
-    
+
     if (hasStories || hasOffers) {
       // It's a collection of stories/offers! Open StoryViewer.
       const offerStories = (highlight.offers || []).map((offer: any) => ({
@@ -827,33 +883,6 @@ export default function BusinessProfilePage() {
   };
 
 
-  // Extract cover image
-  const coverImage = (() => {
-    if (business) {
-      if (business.coverImageUrl) {
-        if (Array.isArray(business.coverImageUrl)) {
-          if (business.coverImageUrl.length > 0) return business.coverImageUrl[0];
-        } else {
-          return business.coverImageUrl;
-        }
-      }
-      const metadataCover = business.metadata?.coverUrl;
-      if (metadataCover) {
-        if (Array.isArray(metadataCover)) {
-          if (metadataCover.length > 0) return metadataCover[0];
-        } else {
-          return metadataCover;
-        }
-      }
-      // Fallback to first gallery image if no cover image
-      if (business.images && business.images.length > 0) {
-        return business.images[0];
-      }
-      // Fallback to logo
-      return business.logo || business.logoUrl || "";
-    }
-    return "";
-  })();
 
   return (
     <div className={styles.profileContainer}>
@@ -864,14 +893,67 @@ export default function BusinessProfilePage() {
 
       {/* Cover / Media Gallery */}
       <div className={styles.coverGallery}>
-        {coverImage ? (
-          <img
-            src={coverImage}
-            alt={`${business.name} Cover`}
-            className={styles.sliderImage}
-          />
+        {coverUrls && coverUrls.length > 0 ? (
+          <>
+            {coverUrls.map((url, idx) => (
+              <img
+                key={idx}
+                src={url}
+                alt={`${business?.name || "Business"} Cover ${idx + 1}`}
+                className={styles.sliderImage}
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  opacity: activeCoverIdx === idx ? 1 : 0,
+                  transition: "opacity 0.8s ease-in-out",
+                  zIndex: activeCoverIdx === idx ? 1 : 0
+                }}
+              />
+            ))}
+            {coverUrls.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveCoverIdx((prev) => (prev === 0 ? coverUrls.length - 1 : prev - 1));
+                  }}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-white mix-blend-difference hover:opacity-75 transition-opacity z-20 p-2"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveCoverIdx((prev) => (prev + 1) % coverUrls.length);
+                  }}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white mix-blend-difference hover:opacity-75 transition-opacity z-20 p-2"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20 mix-blend-difference">
+                  {coverUrls.map((_, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveCoverIdx(idx);
+                      }}
+                      className={`h-1.5 rounded-full transition-all bg-white ${activeCoverIdx === idx ? "w-8 opacity-100" : "w-4 opacity-50 hover:opacity-75"
+                        }`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </>
         ) : (
-          <span className={styles.initialLogo}>{business.name ? business.name[0] : "B"}</span>
+          <span className={styles.initialLogo}>{business?.name ? business.name[0] : "B"}</span>
         )}
         <div className={styles.coverOverlay} />
       </div>
@@ -1436,11 +1518,10 @@ export default function BusinessProfilePage() {
                     placeholder={locale === 'hy' ? "Մուտքագրեք ձեր անունը" : locale === 'ru' ? "Введите ваше имя" : "Enter your name"}
                     disabled={Boolean(currentUser)}
                     readOnly={Boolean(currentUser)}
-                    className={`w-full border rounded-lg px-3 py-2 text-sm bg-transparent outline-none focus:border-[hsl(var(--primary))] ${
-                      bookingSubmitAttempted && !customerName.trim()
-                        ? "border-red-500 bg-red-500/5"
-                        : "border-[hsl(var(--border))]"
-                    } ${currentUser ? "opacity-80 cursor-not-allowed bg-[hsl(var(--muted))]/50" : ""}`}
+                    className={`w-full border rounded-lg px-3 py-2 text-sm bg-transparent outline-none focus:border-[hsl(var(--primary))] ${bookingSubmitAttempted && !customerName.trim()
+                      ? "border-red-500 bg-red-500/5"
+                      : "border-[hsl(var(--border))]"
+                      } ${currentUser ? "opacity-80 cursor-not-allowed bg-[hsl(var(--muted))]/50" : ""}`}
                   />
                   {bookingSubmitAttempted && !customerName.trim() && (
                     <p className="text-red-500 text-[10px] mt-1 font-medium">{locale === 'hy' ? "Այս դաշտը պարտադիր է" : locale === 'ru' ? "Это поле обязательно" : "This field is required"}</p>
@@ -1456,11 +1537,10 @@ export default function BusinessProfilePage() {
                       </span>
                     )}
                   </label>
-                  <div className={`flex w-full border rounded-lg overflow-hidden transition-all ${
-                    bookingSubmitAttempted && !customerPhone.trim()
-                      ? "border-red-500 bg-red-500/5"
-                      : "border-[hsl(var(--border))]"
-                  } ${currentUser ? "opacity-80 cursor-not-allowed bg-[hsl(var(--muted))]/50" : "bg-transparent focus-within:border-[hsl(var(--primary))] focus-within:ring-1 focus-within:ring-[hsl(var(--primary))]"
+                  <div className={`flex w-full border rounded-lg overflow-hidden transition-all ${bookingSubmitAttempted && !customerPhone.trim()
+                    ? "border-red-500 bg-red-500/5"
+                    : "border-[hsl(var(--border))]"
+                    } ${currentUser ? "opacity-80 cursor-not-allowed bg-[hsl(var(--muted))]/50" : "bg-transparent focus-within:border-[hsl(var(--primary))] focus-within:ring-1 focus-within:ring-[hsl(var(--primary))]"
                     }`}>
                     <div className="px-3 py-2 bg-[hsl(var(--muted))]/50 text-sm font-medium border-r border-[hsl(var(--border))] flex items-center justify-center text-[hsl(var(--foreground))] select-none shrink-0">
                       +374
@@ -1494,11 +1574,10 @@ export default function BusinessProfilePage() {
                     <button
                       type="button"
                       onClick={() => setIsLocDropdownOpen(!isLocDropdownOpen)}
-                      className={`w-full flex items-center justify-between border rounded-lg px-3 py-2.5 text-sm bg-[hsl(var(--muted))]/20 hover:bg-[hsl(var(--muted))]/40 transition-all focus:border-[hsl(var(--primary))] outline-none ${
-                        bookingSubmitAttempted && !bookingLocation
-                          ? "border-red-500 bg-red-500/5"
-                          : "border-[hsl(var(--border))]"
-                      }`}
+                      className={`w-full flex items-center justify-between border rounded-lg px-3 py-2.5 text-sm bg-[hsl(var(--muted))]/20 hover:bg-[hsl(var(--muted))]/40 transition-all focus:border-[hsl(var(--primary))] outline-none ${bookingSubmitAttempted && !bookingLocation
+                        ? "border-red-500 bg-red-500/5"
+                        : "border-[hsl(var(--border))]"
+                        }`}
                     >
                       <div className="flex items-center gap-2 overflow-hidden">
                         <MapPin className="h-4 w-4 shrink-0 text-[hsl(var(--primary))]" />
@@ -1549,11 +1628,10 @@ export default function BusinessProfilePage() {
                         setBookingTime(""); // Reset time if date changes
                       }}
                       min={new Date().toISOString().split('T')[0]}
-                      className={`w-full border rounded-lg px-3 py-2 text-sm bg-transparent outline-none focus:border-[hsl(var(--primary))] ${
-                        bookingSubmitAttempted && !bookingDate
-                          ? "border-red-500 bg-red-500/5"
-                          : "border-[hsl(var(--border))]"
-                      }`}
+                      className={`w-full border rounded-lg px-3 py-2 text-sm bg-transparent outline-none focus:border-[hsl(var(--primary))] ${bookingSubmitAttempted && !bookingDate
+                        ? "border-red-500 bg-red-500/5"
+                        : "border-[hsl(var(--border))]"
+                        }`}
                     />
                     {bookingSubmitAttempted && !bookingDate && (
                       <p className="text-red-500 text-[10px] mt-1 font-medium">{locale === 'hy' ? "Այս դաշտը պարտադիր է" : locale === 'ru' ? "Это поле обязательно" : "This field is required"}</p>
@@ -1569,11 +1647,10 @@ export default function BusinessProfilePage() {
                       )}
                     </div>
                     {!bookingDate ? (
-                      <div className={`w-full flex items-center gap-2 border rounded-lg px-3 py-2.5 text-[13px] bg-[hsl(var(--muted))]/10 opacity-80 cursor-not-allowed ${
-                        bookingSubmitAttempted
-                          ? "border-red-500 text-red-500 bg-red-500/5"
-                          : "border-dashed border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))]"
-                      }`}>
+                      <div className={`w-full flex items-center gap-2 border rounded-lg px-3 py-2.5 text-[13px] bg-[hsl(var(--muted))]/10 opacity-80 cursor-not-allowed ${bookingSubmitAttempted
+                        ? "border-red-500 text-red-500 bg-red-500/5"
+                        : "border-dashed border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))]"
+                        }`}>
                         <Clock className="h-4 w-4 shrink-0" />
                         <span>{locale === 'hy' ? "Խնդրում ենք նախ ընտրել ամսաթիվ" : locale === 'ru' ? "Пожалуйста, сначала выберите дату" : "Please select a date first"}</span>
                       </div>
@@ -1593,11 +1670,10 @@ export default function BusinessProfilePage() {
                             max={todayOperatingHours.close}
                             value={bookingTime}
                             onChange={e => setBookingTime(e.target.value)}
-                            className={`w-full border rounded-lg pl-9 pr-3 py-2.5 text-[13px] bg-transparent outline-none focus:border-[hsl(var(--primary))] focus:ring-1 focus:ring-[hsl(var(--primary))]/30 transition-all ${
-                              bookingSubmitAttempted && !bookingTime
-                                ? "border-red-500 bg-red-500/5"
-                                : "border-[hsl(var(--border))]"
-                            }`}
+                            className={`w-full border rounded-lg pl-9 pr-3 py-2.5 text-[13px] bg-transparent outline-none focus:border-[hsl(var(--primary))] focus:ring-1 focus:ring-[hsl(var(--primary))]/30 transition-all ${bookingSubmitAttempted && !bookingTime
+                              ? "border-red-500 bg-red-500/5"
+                              : "border-[hsl(var(--border))]"
+                              }`}
                           />
                         </div>
                         {bookingSubmitAttempted && bookingDate && !bookingTime && (
@@ -1705,6 +1781,8 @@ export default function BusinessProfilePage() {
           </div>
         </div>
       )}
+
+
 
       {/* ── Reviews Section ── */}
       <div id="reviews-section">

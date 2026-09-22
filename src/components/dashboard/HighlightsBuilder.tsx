@@ -1,4 +1,5 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Eye, EyeOff, Camera, X, Image as ImageIcon, Link as LinkIcon, Trash2 } from 'lucide-react';
 import ImageCropper from '@/components/ui/ImageCropper';
 import api from '@/lib/api';
@@ -31,6 +32,17 @@ export default function HighlightsBuilder({ business, highlights, setHighlights,
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    if (isStoryArchiveModalOpen || previewingHighlightGroup || croppingImage) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isStoryArchiveModalOpen, previewingHighlightGroup, croppingImage]);
 
   const handleHighlightCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -330,13 +342,20 @@ export default function HighlightsBuilder({ business, highlights, setHighlights,
         />
       )}
 
-      {isStoryArchiveModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[hsl(var(--card))] w-full max-w-3xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] border border-[hsl(var(--border))]">
+      <AnimatePresence>
+        {isStoryArchiveModalOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} transition={{ duration: 0.2 }}
+              className="bg-[hsl(var(--card))] w-full max-w-3xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] border border-[hsl(var(--border))]"
+            >
             <div className="p-4 sm:p-5 border-b border-[hsl(var(--border))]/50 flex justify-between items-center shrink-0">
               <div>
-                <h3 className="font-bold text-base sm:text-lg text-[hsl(var(--foreground))]">Select from Archive</h3>
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">Pick the stories you want to include in this highlight</p>
+                <h3 className="font-bold text-base sm:text-lg text-[hsl(var(--foreground))]">{(t.builder as any)?.stories?.archiveModalTitle || "Select from Archive"}</h3>
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">{(t.builder as any)?.stories?.archiveModalSubtitle || "Pick the stories you want to include in this highlight"}</p>
               </div>
               <button
                 type="button"
@@ -347,24 +366,8 @@ export default function HighlightsBuilder({ business, highlights, setHighlights,
               </button>
             </div>
 
-            <div className="flex border-b border-[hsl(var(--border))]/50 px-4 sm:px-5">
-              <button
-                className={`py-3 px-4 text-sm font-semibold border-b-2 transition-colors ${archiveModalTab === 'stories' ? 'border-[hsl(var(--primary))] text-[hsl(var(--primary))]' : 'border-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'}`}
-                onClick={() => setArchiveModalTab('stories')}
-              >
-                Stories ({storyArchive.length})
-              </button>
-              <button
-                className={`py-3 px-4 text-sm font-semibold border-b-2 transition-colors ${archiveModalTab === 'offers' ? 'border-[hsl(var(--primary))] text-[hsl(var(--primary))]' : 'border-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'}`}
-                onClick={() => setArchiveModalTab('offers')}
-              >
-                Offers ({activeOffers.length})
-              </button>
-            </div>
-
             <div className="p-4 sm:p-5 overflow-y-auto flex-1">
-              {archiveModalTab === 'stories' ? (
-                storyArchive.length === 0 ? (
+              {storyArchive.length === 0 ? (
                   <div className="text-center py-12">
                     <div className="h-12 w-12 rounded-full bg-[hsl(var(--muted))] flex items-center justify-center mx-auto mb-3">
                       <ImageIcon className="h-5 w-5 text-[hsl(var(--muted-foreground))]" />
@@ -376,6 +379,7 @@ export default function HighlightsBuilder({ business, highlights, setHighlights,
                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3">
                     {storyArchive.map((s: any) => {
                       const isSelected = selectedArchiveStories.includes(s._id);
+                      const selectionIndex = isSelected ? selectedArchiveStories.indexOf(s._id) + 1 : null;
                       return (
                         <div
                           key={s._id}
@@ -397,75 +401,57 @@ export default function HighlightsBuilder({ business, highlights, setHighlights,
                           )}
                           <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
                           
-                          <div className="absolute top-2 right-2 h-5 w-5 rounded-full border-[1.5px] border-white flex items-center justify-center bg-black/30 backdrop-blur-sm">
-                            {isSelected && <div className="h-3 w-3 rounded-full bg-[hsl(var(--primary))]" />}
+                          <div className={`absolute top-2 right-2 h-6 w-6 rounded-full border-[1.5px] flex items-center justify-center backdrop-blur-sm transition-colors ${
+                            isSelected ? "bg-[hsl(var(--primary))] border-[hsl(var(--primary))]" : "bg-black/30 border-white"
+                          }`}>
+                            {isSelected && <span className="text-xs font-bold text-[hsl(var(--primary-foreground))]">{selectionIndex}</span>}
                           </div>
                         </div>
                       );
                     })}
                   </div>
                 )
-              ) : (
-                activeOffers.length === 0 ? (
-                  <div className="text-center py-12">
-                    <div className="h-12 w-12 rounded-full bg-[hsl(var(--muted))] flex items-center justify-center mx-auto mb-3">
-                      <Sparkles className="h-5 w-5 text-[hsl(var(--muted-foreground))]" />
-                    </div>
-                    <p className="text-sm font-medium text-[hsl(var(--foreground))]">No active offers</p>
-                    <p className="text-xs text-[hsl(var(--muted-foreground))]">Create some offers first to add them to highlights.</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {activeOffers.map((offer: any) => {
-                      const isSelected = selectedOffers.includes(offer._id);
-                      return (
-                        <div
-                          key={offer._id}
-                          onClick={() => {
-                            setSelectedOffers(prev => 
-                              prev.includes(offer._id) 
-                                ? prev.filter(id => id !== offer._id)
-                                : [...prev, offer._id]
-                            );
-                          }}
-                          className={`group relative p-4 rounded-xl border cursor-pointer transition-all ${
-                            isSelected 
-                              ? "bg-[hsl(var(--primary))]/10 border-[hsl(var(--primary))] ring-1 ring-[hsl(var(--primary))]" 
-                              : "bg-[hsl(var(--card))] border-[hsl(var(--border))] hover:border-[hsl(var(--primary))]/50"
-                          }`}
-                        >
-                          <h4 className="font-bold text-sm text-[hsl(var(--foreground))] line-clamp-2 mb-1">{offer.packageName}</h4>
-                          <p className="text-xs font-semibold text-[hsl(var(--primary))] mb-2">֏{offer.price.toLocaleString()}</p>
-                          <div className="text-[10px] text-[hsl(var(--muted-foreground))] line-clamp-3">
-                            {offer.dishes?.length > 0 ? offer.dishes.join(', ') : 'No dishes listed'}
-                          </div>
-                          
-                          <div className="absolute top-3 right-3 h-5 w-5 rounded-full border-[1.5px] border-[hsl(var(--border))] flex items-center justify-center bg-background">
-                            {isSelected && <div className="h-3 w-3 rounded-full bg-[hsl(var(--primary))]" />}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )
-              )}
+              }
             </div>
 
-            <div className="p-4 sm:p-5 border-t border-[hsl(var(--border))]/50 bg-[hsl(var(--muted))]/20 flex justify-between items-center shrink-0">
-              <span className="text-sm font-medium text-[hsl(var(--foreground))]">
-                <span className="text-[hsl(var(--primary))] font-bold">{selectedArchiveStories.length + selectedOffers.length}</span> {(t.builder as any)?.stories?.itemsSelected || "items selected"}
-              </span>
-              <button
-                type="button"
-                onClick={() => setIsStoryArchiveModalOpen(false)}
-                className="px-5 py-2.5 bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary))]/90 text-[hsl(var(--primary-foreground))] rounded-xl text-sm font-semibold transition-colors shadow-sm"
-              >
-                Done
-              </button>
+            <div className="flex flex-col border-t border-[hsl(var(--border))]/50 bg-[hsl(var(--muted))]/20 shrink-0">
+              {selectedArchiveStories.length > 0 && (
+                <div className="px-4 sm:px-5 py-3 border-b border-[hsl(var(--border))]/30 flex items-center gap-2.5 overflow-x-auto [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:bg-[hsl(var(--border))] [&::-webkit-scrollbar-thumb]:rounded-full">
+                  {selectedArchiveStories.map((id, index) => {
+                    const story = storyArchive.find(s => s._id === id);
+                    if (!story) return null;
+                    return (
+                      <div key={id} className="relative w-11 sm:w-12 shrink-0 aspect-[9/16] rounded-md overflow-hidden ring-2 ring-[hsl(var(--primary))] ring-offset-1 ring-offset-[hsl(var(--muted))/20]">
+                        {story.mediaType === 'video' ? (
+                          <video src={story.mediaUrl} className="w-full h-full object-cover" />
+                        ) : (
+                          <img src={story.mediaUrl} className="w-full h-full object-cover" />
+                        )}
+                        <div className="absolute top-1 right-1 bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] text-[10px] h-4 w-4 rounded-full flex items-center justify-center font-bold shadow-sm z-10">
+                          {index + 1}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+              <div className="p-4 sm:p-5 flex justify-between items-center">
+                <span className="text-sm font-medium text-[hsl(var(--foreground))]">
+                  <span className="text-[hsl(var(--primary))] font-bold">{selectedArchiveStories.length}</span> {(t.builder as any)?.stories?.itemsSelected || "items selected"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsStoryArchiveModalOpen(false)}
+                  className="px-5 py-2.5 bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary))]/90 text-[hsl(var(--primary-foreground))] rounded-xl text-sm font-semibold transition-colors shadow-sm"
+                >
+                  {(t.builder as any)?.stories?.archiveModalDone || "Done"}
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </div>
   );

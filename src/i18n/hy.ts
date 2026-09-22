@@ -529,6 +529,9 @@ export const hy: Translations = {
       itemsSelected: "տարր ընտրված է",
       selectContent: "Ընտրել բովանդակություն",
       highlightTitlePlaceholder: "օր․՝ Ամառային Ճաշացանկ, Ինտերիեր...",
+      archiveModalTitle: "Ընտրել Արխիվից",
+      archiveModalSubtitle: "Ընտրեք այն պատմությունները, որոնք ցանկանում եք ներառել այս հավաքածուում",
+      archiveModalDone: "Պատրաստ է",
     },
     gallery: {
       title: "Լուսանկարների պատկերասրահ",

@@ -209,9 +209,9 @@ export default function BusinessCard({ business, viewMode = "list", onShowMap }:
       {/* Image container */}
       <div className="relative shrink-0 group">
         <Link href={`/business/${business.slug}`} className={styles.imageContainer}>
-          {business.logoUrl || business.coverImageUrl ? (
+          {business.logo || business.logoUrl || business.coverImageUrl ? (
             <img
-              src={business.logoUrl || business.coverImageUrl}
+              src={business.logo || business.logoUrl || business.coverImageUrl}
               alt={business.name}
               className={styles.image}
             />

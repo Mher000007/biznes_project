@@ -153,7 +153,7 @@ export default function ProfilePage() {
         return;
       }
       const imageUrl = URL.createObjectURL(file);
-      
+
       // Reset input value so same file can be selected again
       if (e.target) {
         e.target.value = '';
@@ -341,7 +341,7 @@ export default function ProfilePage() {
           } catch (err) {
             console.error("Failed to fetch story archive", err);
           }
-          
+
           // Fetch Offers
           try {
             const offersRes = await axios.get(`${apiURL}/offers/business/${biz._id}`, {
@@ -353,7 +353,7 @@ export default function ProfilePage() {
           } catch (err) {
             console.error("Failed to fetch offers", err);
           }
-          
+
           setHighlights(biz.highlights || []);
           if (biz.metadata?.operatingHours) setOperatingHours(biz.metadata.operatingHours);
           setNoteText(biz.metadata?.noteText || "");
@@ -1049,7 +1049,7 @@ export default function ProfilePage() {
                                     onChange={() => toggleDay24h(index)}
                                     className="rounded border-amber-500 text-amber-500 focus:ring-amber-500 h-3.5 w-3.5"
                                   />
-                                  <span>24/7 (Շուրջօրյա)</span>
+                                  <span>24/7</span>
                                 </label>
                               )}
 
@@ -1107,11 +1107,11 @@ export default function ProfilePage() {
               {/* TAB 3: HIGHLIGHTS */}
               {activeFormTab === "stories" && (
                 <div className="space-y-6 animate-scale-in">
-                  <HighlightsBuilder 
+                  <HighlightsBuilder
                     business={{ _id: businessId }}
-                    highlights={highlights} 
-                    setHighlights={setHighlights} 
-                    storyArchive={storyArchive} 
+                    highlights={highlights}
+                    setHighlights={setHighlights}
+                    storyArchive={storyArchive}
                     activeOffers={activeOffers}
                   />
                 </div>
@@ -1144,275 +1144,274 @@ export default function ProfilePage() {
               <p className="mt-4 text-sm text-[hsl(var(--muted-foreground))] font-medium">{t.builder.mockup.loadingPreview}</p>
             </div>
           ) : (
-          <div className="w-full relative flex flex-col bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-2xl p-4 md:p-6 shadow-sm overflow-hidden animate-scale-in">
-            <div className={profileStyles.profileContainer} style={{ padding: "0", maxWidth: "100%" }}>
+            <div className="w-full relative flex flex-col bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-2xl p-4 md:p-6 shadow-sm overflow-hidden animate-scale-in">
+              <div className={profileStyles.profileContainer} style={{ padding: "0", maxWidth: "100%" }}>
 
-              {/* Cover / Media Gallery */}
-              <div className={profileStyles.coverGallery} style={{ height: "180px", borderRadius: "1rem", marginBottom: "1.5rem", position: "relative" }}>
-                {coverUrls && coverUrls.length > 0 ? (
-                  <>
-                    {coverUrls.map((url, idx) => (
-                      <img
-                        key={idx}
-                        src={url}
-                        className={profileStyles.sliderImage}
-                        alt=""
-                        style={{
-                          position: "absolute",
-                          inset: 0,
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                          opacity: activeCoverIdx === idx ? 1 : 0,
-                          transition: "opacity 0.8s ease-in-out",
-                          zIndex: activeCoverIdx === idx ? 1 : 0
-                        }}
-                      />
-                    ))}
-                    {coverUrls.length > 1 && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveCoverIdx((prev) => (prev === 0 ? coverUrls.length - 1 : prev - 1));
-                          }}
-                          className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white rounded-full p-1.5 transition-colors z-20"
-                        >
-                          <ChevronLeft className="h-5 w-5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveCoverIdx((prev) => (prev + 1) % coverUrls.length);
-                          }}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white rounded-full p-1.5 transition-colors z-20"
-                        >
-                          <ChevronRight className="h-5 w-5" />
-                        </button>
-                        <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-20">
-                          {coverUrls.map((_, idx) => (
-                            <button
-                              key={idx}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setActiveCoverIdx(idx);
-                              }}
-                              className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                                activeCoverIdx === idx ? 'w-4 bg-white' : 'w-1.5 bg-white/50 hover:bg-white/80'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </>
-                ) : previewCoverImage ? (
-                  <img
-                    src={previewCoverImage}
-                    className={profileStyles.sliderImage}
-                    alt=""
-                    style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-                  />
-                ) : (
-                  <span className={profileStyles.initialLogo} style={{ fontSize: "3rem" }}>{name ? name[0] : "A"}</span>
-                )}
-                <div className={profileStyles.coverOverlay} />
-              </div>
-
-              {/* Profile Header Details */}
-              <div className={profileStyles.profileHeader} style={{ gap: "1rem", marginBottom: "1.5rem" }}>
-                {/* Logo Avatar preview */}
-                <div className="flex items-center justify-center shrink-0">
-                  <div className="w-16 h-16 rounded-full shrink-0 flex items-center justify-center overflow-hidden border border-[hsl(var(--border))]/60 p-[2px]">
-                    <div className="w-full h-full rounded-full bg-[hsl(var(--background))] p-[2px] overflow-hidden relative">
-                      {logoUrl ? (
+                {/* Cover / Media Gallery */}
+                <div className={profileStyles.coverGallery} style={{ height: "180px", borderRadius: "1rem", marginBottom: "1.5rem", position: "relative" }}>
+                  {coverUrls && coverUrls.length > 0 ? (
+                    <>
+                      {coverUrls.map((url, idx) => (
                         <img
-                          src={logoUrl}
-                          className="w-full h-full rounded-full object-cover"
-                          alt={name}
+                          key={idx}
+                          src={url}
+                          className={profileStyles.sliderImage}
+                          alt=""
+                          style={{
+                            position: "absolute",
+                            inset: 0,
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            opacity: activeCoverIdx === idx ? 1 : 0,
+                            transition: "opacity 0.8s ease-in-out",
+                            zIndex: activeCoverIdx === idx ? 1 : 0
+                          }}
                         />
-                      ) : (
-                        <div className="w-full h-full rounded-full bg-violet-600 flex items-center justify-center text-white text-lg font-bold uppercase">
-                          {name ? name[0] : "B"}
-                        </div>
+                      ))}
+                      {coverUrls.length > 1 && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveCoverIdx((prev) => (prev === 0 ? coverUrls.length - 1 : prev - 1));
+                            }}
+                            className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white rounded-full p-1.5 transition-colors z-20"
+                          >
+                            <ChevronLeft className="h-5 w-5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveCoverIdx((prev) => (prev + 1) % coverUrls.length);
+                            }}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white rounded-full p-1.5 transition-colors z-20"
+                          >
+                            <ChevronRight className="h-5 w-5" />
+                          </button>
+                          <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-20">
+                            {coverUrls.map((_, idx) => (
+                              <button
+                                key={idx}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveCoverIdx(idx);
+                                }}
+                                className={`h-1.5 rounded-full transition-all cursor-pointer ${activeCoverIdx === idx ? 'w-4 bg-white' : 'w-1.5 bg-white/50 hover:bg-white/80'
+                                  }`}
+                              />
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </>
+                  ) : previewCoverImage ? (
+                    <img
+                      src={previewCoverImage}
+                      className={profileStyles.sliderImage}
+                      alt=""
+                      style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+                    />
+                  ) : (
+                    <span className={profileStyles.initialLogo} style={{ fontSize: "3rem" }}>{name ? name[0] : "A"}</span>
+                  )}
+                  <div className={profileStyles.coverOverlay} />
+                </div>
+
+                {/* Profile Header Details */}
+                <div className={profileStyles.profileHeader} style={{ gap: "1rem", marginBottom: "1.5rem" }}>
+                  {/* Logo Avatar preview */}
+                  <div className="flex items-center justify-center shrink-0">
+                    <div className="w-16 h-16 rounded-full shrink-0 flex items-center justify-center overflow-hidden border border-[hsl(var(--border))]/60 p-[2px]">
+                      <div className="w-full h-full rounded-full bg-[hsl(var(--background))] p-[2px] overflow-hidden relative">
+                        {logoUrl ? (
+                          <img
+                            src={logoUrl}
+                            className="w-full h-full rounded-full object-cover"
+                            alt={name}
+                          />
+                        ) : (
+                          <div className="w-full h-full rounded-full bg-violet-600 flex items-center justify-center text-white text-lg font-bold uppercase">
+                            {name ? name[0] : "B"}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className={profileStyles.titleBlock}>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h1 style={{ fontSize: "1.5rem", fontWeight: 800, marginBottom: "0.25rem", display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
+                        {name || "Business Name"}
+                        <span className={`${profileStyles.verifiedBadge} ${activePlan === "premium" || activePlan === "standard"
+                          ? profileStyles.verifiedGold
+                          : profileStyles.verifiedStarter
+                          }`} style={{ fontSize: "0.65rem", padding: "0.15rem 0.45rem" }}>
+                          <BadgeCheck className="h-3 w-3" />
+                        </span>
+                      </h1>
+                    </div>
+                    {foundedYear && <p className="text-[hsl(var(--muted-foreground))] mt-0.5 text-xs">Since {foundedYear}</p>}
+                    <div className="flex items-center gap-3 flex-wrap text-xs text-[hsl(var(--muted-foreground))] mt-2">
+                      <span className="flex items-center gap-1">
+                        <MapPin className="h-3.5 w-3.5 text-[hsl(var(--primary))]" /> {address ? `${address}, ${city}` : `${city}, Armenia`}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />{' '}
+                        {rating.toFixed(1)} ({reviewCount} {reviewCount !== 1 ? t.builder.mockup.reviews : t.builder.mockup.review})
+                      </span>
+                      {foundedYear && (
+                        <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> Est. {foundedYear}</span>
                       )}
                     </div>
                   </div>
+
+                  <button
+                    type="button"
+                    className="btn-primary py-2 px-4 rounded-xl text-xs font-semibold shadow-md shrink-0 cursor-default"
+                  >
+                    {t.builder.mockup.bookAppointment}
+                  </button>
                 </div>
 
-                <div className={profileStyles.titleBlock}>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h1 style={{ fontSize: "1.5rem", fontWeight: 800, marginBottom: "0.25rem", display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
-                      {name || "Business Name"}
-                      <span className={`${profileStyles.verifiedBadge} ${activePlan === "premium" || activePlan === "standard"
-                        ? profileStyles.verifiedGold
-                        : profileStyles.verifiedStarter
-                        }`} style={{ fontSize: "0.65rem", padding: "0.15rem 0.45rem" }}>
-                        <BadgeCheck className="h-3 w-3" />
+                {/* Highlights Section */}
+                {(() => {
+                  const activeHighlights = highlights.filter((h: any) => h.isActive !== false);
+                  const listToRender = (activeHighlights.length > 0) ? activeHighlights : [
+                    { id: '1', title: 'Մենյու', icon: '🍔' },
+                    { id: '2', title: 'Լուսանկարներ', icon: '📸' },
+                    { id: '3', title: 'Կարծիքներ', icon: '⭐' },
+                    { id: '4', title: 'Ժամեր', icon: '🕒' },
+                    { id: '5', title: 'Տեղադրություն', icon: '📍' },
+                  ];
+                  if (activeHighlights.length === 0 && highlights.length > 0) return null; // All hidden
+                  return (
+                    <div className={profileStyles.highlightsContainer} style={{ marginBottom: "1.5rem" }}>
+                      <div className={profileStyles.highlightsHeader}>
+                        <h2>{t.builder.mockup.highlights}</h2>
+                      </div>
+                      <div className={profileStyles.highlightsWrapper}>
+                        {listToRender.map((h: any, i: number) => {
+                          const content = (
+                            <div key={h.id || i} className={profileStyles.highlightTile} style={{ minWidth: "64px" }}>
+                              <div className={profileStyles.storyRing} style={{ height: "54px", width: "54px", borderColor: h.ringColor || undefined }}>
+                                {h.imageUrl ? (
+                                  <img src={h.imageUrl} className={profileStyles.storyThumb} alt={h.title} style={{ borderRadius: "50%" }} />
+                                ) : (
+                                  <div className={profileStyles.storyThumb}>{h.icon || "✨"}</div>
+                                )}
+                              </div>
+                              <span style={{ fontSize: "0.65rem" }}>{h.title}</span>
+                            </div>
+                          );
+                          return h.link ? (
+                            <a key={h.id || i} href={h.link} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
+                              {content}
+                            </a>
+                          ) : content;
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Showcase Gallery Section */}
+                {gallery && gallery.length > 0 && (
+                  <section className={profileStyles.gallerySection} style={{ marginBottom: "1.5rem" }}>
+                    <div className={profileStyles.galleryHeader}>
+                      <h2 style={{ fontSize: "0.95rem", fontWeight: 700 }}>{t.builder.mockup.gallery}</h2>
+                      <span className={profileStyles.photoCount} style={{ fontSize: "0.75rem" }}>
+                        {gallery.length} {gallery.length === 1 ? t.builder.mockup.photo : t.builder.mockup.photos}
                       </span>
-                    </h1>
-                  </div>
-                  {foundedYear && <p className="text-[hsl(var(--muted-foreground))] mt-0.5 text-xs">Since {foundedYear}</p>}
-                  <div className="flex items-center gap-3 flex-wrap text-xs text-[hsl(var(--muted-foreground))] mt-2">
-                    <span className="flex items-center gap-1">
-                      <MapPin className="h-3.5 w-3.5 text-[hsl(var(--primary))]" /> {address ? `${address}, ${city}` : `${city}, Armenia`}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />{' '}
-                      {rating.toFixed(1)} ({reviewCount} {reviewCount !== 1 ? t.builder.mockup.reviews : t.builder.mockup.review})
-                    </span>
-                    {foundedYear && (
-                      <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> Est. {foundedYear}</span>
-                    )}
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  className="btn-primary py-2 px-4 rounded-xl text-xs font-semibold shadow-md shrink-0 cursor-default"
-                >
-                  {t.builder.mockup.bookAppointment}
-                </button>
-              </div>
-
-              {/* Highlights Section */}
-              {(() => {
-                const activeHighlights = highlights.filter((h: any) => h.isActive !== false);
-                const listToRender = (activeHighlights.length > 0) ? activeHighlights : [
-                  { id: '1', title: 'Մենյու', icon: '🍔' },
-                  { id: '2', title: 'Լուսանկարներ', icon: '📸' },
-                  { id: '3', title: 'Կարծիքներ', icon: '⭐' },
-                  { id: '4', title: 'Ժամեր', icon: '🕒' },
-                  { id: '5', title: 'Տեղադրություն', icon: '📍' },
-                ];
-                if (activeHighlights.length === 0 && highlights.length > 0) return null; // All hidden
-                return (
-                  <div className={profileStyles.highlightsContainer} style={{ marginBottom: "1.5rem" }}>
-                    <div className={profileStyles.highlightsHeader}>
-                      <h2>{t.builder.mockup.highlights}</h2>
                     </div>
-                    <div className={profileStyles.highlightsWrapper}>
-                      {listToRender.map((h: any, i: number) => {
-                        const content = (
-                          <div key={h.id || i} className={profileStyles.highlightTile} style={{ minWidth: "64px" }}>
-                            <div className={profileStyles.storyRing} style={{ height: "54px", width: "54px", borderColor: h.ringColor || undefined }}>
-                              {h.imageUrl ? (
-                                <img src={h.imageUrl} className={profileStyles.storyThumb} alt={h.title} style={{ borderRadius: "50%" }} />
-                              ) : (
-                                <div className={profileStyles.storyThumb}>{h.icon || "✨"}</div>
-                              )}
-                            </div>
-                            <span style={{ fontSize: "0.65rem" }}>{h.title}</span>
-                          </div>
-                        );
-                        return h.link ? (
-                          <a key={h.id || i} href={h.link} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
-                            {content}
-                          </a>
-                        ) : content;
-                      })}
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Showcase Gallery Section */}
-              {gallery && gallery.length > 0 && (
-                <section className={profileStyles.gallerySection} style={{ marginBottom: "1.5rem" }}>
-                  <div className={profileStyles.galleryHeader}>
-                    <h2 style={{ fontSize: "0.95rem", fontWeight: 700 }}>{t.builder.mockup.gallery}</h2>
-                    <span className={profileStyles.photoCount} style={{ fontSize: "0.75rem" }}>
-                      {gallery.length} {gallery.length === 1 ? t.builder.mockup.photo : t.builder.mockup.photos}
-                    </span>
-                  </div>
-                  <div className={`${profileStyles.bentoGrid} ${gallery.length === 1 ? profileStyles.grid1 :
-                    gallery.length === 2 ? profileStyles.grid2 :
-                      gallery.length === 3 ? profileStyles.grid3 :
-                        gallery.length === 4 ? profileStyles.grid4 :
-                          profileStyles.grid5
-                    }`}>
-                    {gallery.slice(0, 5).map((url: string, index: number) => {
-                      const isLastAndMore = index === 4 && gallery.length > 5;
-                      return (
-                        <div
-                          key={index}
-                          className={profileStyles.galleryItem}
-                          onClick={() => setZoomImageIdx(index)}
-                          style={{ cursor: "zoom-in" }}
-                        >
-                          <img src={url} alt={`Gallery ${index + 1}`} />
-                          {isLastAndMore && (
-                            <div className={profileStyles.moreOverlay}>
-                              <span className={profileStyles.moreCount}>+{gallery.length - 4}</span>
-                              <span className={profileStyles.moreText} style={{ fontSize: "0.65rem" }}>view all</span>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </section>
-              )}
-
-              {/* Main Grid Content */}
-              <div className="grid grid-cols-1 gap-6 w-full">
-                <div>
-
-                  {/* Operating hours */}
-                  <section className="mb-6">
-                    <h2 className="text-sm font-bold mb-2">{t.builder.mockup.operatingHours}</h2>
-                    <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] divide-y divide-[hsl(var(--border))]">
-                      {operatingHours.map((h) => {
-                        const dayLabel = t.business?.days?.[h.day.toLowerCase() as keyof typeof t.business.days] || h.day;
+                    <div className={`${profileStyles.bentoGrid} ${gallery.length === 1 ? profileStyles.grid1 :
+                      gallery.length === 2 ? profileStyles.grid2 :
+                        gallery.length === 3 ? profileStyles.grid3 :
+                          gallery.length === 4 ? profileStyles.grid4 :
+                            profileStyles.grid5
+                      }`}>
+                      {gallery.slice(0, 5).map((url: string, index: number) => {
+                        const isLastAndMore = index === 4 && gallery.length > 5;
                         return (
-                          <div key={h.day} className="flex items-center justify-between px-3 py-2 text-xs">
-                            <span className="font-medium">{dayLabel}</span>
-                            <span className="text-[hsl(var(--muted-foreground))]">
-                              {h.closed ? (t.business?.closed || "Closed") : `${h.open} — ${h.close}`}
-                            </span>
+                          <div
+                            key={index}
+                            className={profileStyles.galleryItem}
+                            onClick={() => setZoomImageIdx(index)}
+                            style={{ cursor: "zoom-in" }}
+                          >
+                            <img src={url} alt={`Gallery ${index + 1}`} />
+                            {isLastAndMore && (
+                              <div className={profileStyles.moreOverlay}>
+                                <span className={profileStyles.moreCount}>+{gallery.length - 4}</span>
+                                <span className={profileStyles.moreText} style={{ fontSize: "0.65rem" }}>view all</span>
+                              </div>
+                            )}
                           </div>
                         );
                       })}
                     </div>
                   </section>
-                </div>
+                )}
 
-                {/* Sidebar area */}
-                <div className="space-y-4">
+                {/* Main Grid Content */}
+                <div className="grid grid-cols-1 gap-6 w-full">
+                  <div>
 
-
-                  <div className="mb-4">
-                    <BusinessMap
-                      lat={lat}
-                      lng={lng}
-                      name={name || "Your Business"}
-                      address={address || ""}
-                    />
+                    {/* Operating hours */}
+                    <section className="mb-6">
+                      <h2 className="text-sm font-bold mb-2">{t.builder.mockup.operatingHours}</h2>
+                      <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] divide-y divide-[hsl(var(--border))]">
+                        {operatingHours.map((h) => {
+                          const dayLabel = t.business?.days?.[h.day.toLowerCase() as keyof typeof t.business.days] || h.day;
+                          return (
+                            <div key={h.day} className="flex items-center justify-between px-3 py-2 text-xs">
+                              <span className="font-medium">{dayLabel}</span>
+                              <span className="text-[hsl(var(--muted-foreground))]">
+                                {h.closed ? (t.business?.closed || "Closed") : `${h.open} — ${h.close}`}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </section>
                   </div>
 
-                  {/* Contact Details */}
-                  <div className={profileStyles.contactCard} style={{ padding: "1rem", borderRadius: "1rem" }}>
-                    <h3 style={{ fontSize: "0.85rem", fontWeight: 700, marginBottom: "0.75rem" }}>{t.business?.contact || "Information"}</h3>
-                    <div className="space-y-2">
-                      <a href={`tel:${phone}`} className={profileStyles.contactItem} style={{ fontSize: "0.75rem" }}>
-                        <Phone className="h-3.5 w-3.5 text-[hsl(var(--primary))]" /> {phone}
-                      </a>
-                      <a href={`mailto:${email}`} className={profileStyles.contactItem} style={{ fontSize: "0.75rem" }}>
-                        <Mail className="h-3.5 w-3.5 text-[hsl(var(--primary))]" /> {email}
-                      </a>
-                      {website && (
-                        <a href={website} target="_blank" rel="noreferrer" className={profileStyles.contactItem} style={{ fontSize: "0.75rem" }}>
-                          <Globe className="h-3.5 w-3.5 text-[hsl(var(--primary))]" /> Visit Website
+                  {/* Sidebar area */}
+                  <div className="space-y-4">
+
+
+                    <div className="mb-4">
+                      <BusinessMap
+                        lat={lat}
+                        lng={lng}
+                        name={name || "Your Business"}
+                        address={address || ""}
+                      />
+                    </div>
+
+                    {/* Contact Details */}
+                    <div className={profileStyles.contactCard} style={{ padding: "1rem", borderRadius: "1rem" }}>
+                      <h3 style={{ fontSize: "0.85rem", fontWeight: 700, marginBottom: "0.75rem" }}>{t.business?.contact || "Information"}</h3>
+                      <div className="space-y-2">
+                        <a href={`tel:${phone}`} className={profileStyles.contactItem} style={{ fontSize: "0.75rem" }}>
+                          <Phone className="h-3.5 w-3.5 text-[hsl(var(--primary))]" /> {phone}
                         </a>
-                      )}
+                        <a href={`mailto:${email}`} className={profileStyles.contactItem} style={{ fontSize: "0.75rem" }}>
+                          <Mail className="h-3.5 w-3.5 text-[hsl(var(--primary))]" /> {email}
+                        </a>
+                        {website && (
+                          <a href={website} target="_blank" rel="noreferrer" className={profileStyles.contactItem} style={{ fontSize: "0.75rem" }}>
+                            <Globe className="h-3.5 w-3.5 text-[hsl(var(--primary))]" /> Visit Website
+                          </a>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
           )}
         </div>
       </div>
@@ -1488,9 +1487,8 @@ export default function ProfilePage() {
                                 e.stopPropagation();
                                 setActiveCoverIdx(idx);
                               }}
-                              className={`h-2 rounded-full transition-all cursor-pointer ${
-                                activeCoverIdx === idx ? 'w-6 bg-white' : 'w-2 bg-white/50 hover:bg-white/80'
-                              }`}
+                              className={`h-2 rounded-full transition-all cursor-pointer ${activeCoverIdx === idx ? 'w-6 bg-white' : 'w-2 bg-white/50 hover:bg-white/80'
+                                }`}
                             />
                           ))}
                         </div>

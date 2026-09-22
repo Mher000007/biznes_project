@@ -543,6 +543,9 @@ export const en = {
       itemsSelected: "items selected",
       selectContent: "Select Content",
       highlightTitlePlaceholder: "e.g., Summer Menu, Interior...",
+      archiveModalTitle: "Select from Archive",
+      archiveModalSubtitle: "Pick the stories you want to include in this highlight",
+      archiveModalDone: "Done",
     },
     gallery: {
       title: "Image Gallery Grid",

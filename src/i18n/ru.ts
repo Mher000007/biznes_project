@@ -378,6 +378,9 @@ export const ru: Translations = {
       itemsSelected: "выбрано элементов",
       selectContent: "Выбрать контент",
       highlightTitlePlaceholder: "напр., Летнее меню, Интерьер...",
+      archiveModalTitle: "Выбрать из архива",
+      archiveModalSubtitle: "Выберите истории, которые вы хотите включить в это актуальное",
+      archiveModalDone: "Готово",
     },
     gallery: {
       title: "Сетка фотогалереи",

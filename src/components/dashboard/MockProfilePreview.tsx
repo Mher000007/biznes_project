@@ -25,9 +25,9 @@ export default function MockProfilePreview({ plan }: MockProfilePreviewProps) {
           <img className={styles.sliderImage} alt="Cover" src={coverImage} />
           <div className={styles.coverOverlay} />
           {!isPro && (
-             <div className="absolute inset-0 backdrop-grayscale flex items-center justify-center bg-black/40">
-                <span className="text-white font-bold text-sm tracking-widest uppercase bg-black/50 px-4 py-2 rounded-lg backdrop-blur-md">Cover Photo Disabled</span>
-             </div>
+            <div className="absolute inset-0 backdrop-grayscale flex items-center justify-center bg-black/40">
+              <span className="text-white font-bold text-sm tracking-widest uppercase bg-black/50 px-4 py-2 rounded-lg backdrop-blur-md">Cover Photo Disabled</span>
+            </div>
           )}
         </div>
 
