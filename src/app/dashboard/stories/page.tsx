@@ -472,7 +472,7 @@ export default function DashboardStoriesPage() {
 
             {/* Schedule Post */}
             <div className="space-y-1.5 relative">
-              <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))]">Schedule Post (Optional)</label>
+              <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))]">{t.stories.schedulePost}</label>
               <div className="flex items-center gap-2 px-3.5 py-2.5 bg-[hsl(var(--input))] border border-[hsl(var(--border))]/50 rounded-xl">
                 <Calendar className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
                 <input 

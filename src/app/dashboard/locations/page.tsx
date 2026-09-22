@@ -192,6 +192,7 @@ export default function DashboardLocations() {
                 height="300px"
                 readonly={true}
                 fitAllBounds={true}
+                hideRadarControl={true}
                 markers={locations.map(loc => ({
                   id: loc._id,
                   lat: loc.coordinates?.latitude || 40.1872,
@@ -247,45 +248,45 @@ export default function DashboardLocations() {
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 z-[9999] animate-in fade-in duration-200">
           <div className="bg-[hsl(var(--background))] border border-[hsl(var(--border))] w-full max-w-4xl rounded-2xl p-6 relative shadow-2xl animate-in zoom-in-95 duration-200">
-            <h2 className="text-xl font-bold mb-6">{editingId ? "Edit Branch" : "Add New Branch"}</h2>
+            <h2 className="text-xl font-bold mb-6">{editingId ? "Edit Branch" : t.dashboard.locations.addNewBranch}</h2>
             <form onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Left Column: Form Fields */}
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium mb-1">Branch Name / Label *</label>
+                    <label className="block text-sm font-medium mb-1">{t.dashboard.locations.branchNameLabel} *</label>
                     <input
                       type="text"
                       className="w-full form-input"
-                      placeholder="e.g. Downtown Branch"
+                      placeholder={t.dashboard.locations.branchNamePlaceholder}
                       value={formData.name}
                       onChange={e => setFormData({ ...formData, name: e.target.value })}
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">City / Region *</label>
+                    <label className="block text-sm font-medium mb-1">{t.dashboard.locations.cityRegion} *</label>
                     <LocationSelect
                       required
                       className="w-full form-input"
                       value={formData.city}
                       onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                      placeholder="Select City"
+                      placeholder={t.dashboard.locations.selectCity}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">Street Address *</label>
+                    <label className="block text-sm font-medium mb-1">{t.dashboard.locations.streetAddress} *</label>
                     <input
                       type="text"
                       className="w-full form-input"
-                      placeholder="e.g. 15 Tumanyan St"
+                      placeholder={t.dashboard.locations.streetAddressPlaceholder}
                       value={formData.address}
                       onChange={e => setFormData({ ...formData, address: e.target.value })}
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">Phone</label>
+                    <label className="block text-sm font-medium mb-1">{t.dashboard.locations.phone}</label>
                     <div className="flex w-full border border-[hsl(var(--border))] rounded-lg bg-transparent overflow-hidden focus-within:border-[hsl(var(--primary))] focus-within:ring-1 focus-within:ring-[hsl(var(--primary))] transition-all">
                       <div className="px-3 py-2 bg-[hsl(var(--muted))]/50 text-sm font-medium border-r border-[hsl(var(--border))] flex items-center justify-center text-[hsl(var(--foreground))] select-none">
                         +374
@@ -309,14 +310,14 @@ export default function DashboardLocations() {
                       checked={formData.isPrimary}
                       onChange={e => setFormData({ ...formData, isPrimary: e.target.checked })}
                     />
-                    <label htmlFor="isPrimary" className="text-sm">Set as Primary Location</label>
+                    <label htmlFor="isPrimary" className="text-sm">{t.dashboard.locations.setPrimary}</label>
                   </div>
                 </div>
 
                 {/* Right Column: Map */}
                 <div className="flex flex-col h-full">
-                  <label className="block text-sm font-medium mb-1">Pin on Map *</label>
-                  <div className="flex-1 min-h-[250px]">
+                  <label className="block text-sm font-medium mb-1">{t.dashboard.locations.pinOnMap} *</label>
+                  <div className="flex-1">
                     <LocationPicker
                       lat={formData.coordinates.latitude}
                       lng={formData.coordinates.longitude}
@@ -335,8 +336,8 @@ export default function DashboardLocations() {
               </div>
 
               <div className="flex justify-end gap-3 mt-8 pt-4 border-t border-[hsl(var(--border))]">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-sm font-medium rounded-lg hover:bg-[hsl(var(--muted))] transition-colors">Cancel</button>
-                <button type="submit" className="btn-primary px-6 py-2 text-sm font-medium">Save Branch</button>
+                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-sm font-medium rounded-lg hover:bg-[hsl(var(--muted))] transition-colors">{t.dashboard.locations.cancel}</button>
+                <button type="submit" className="btn-primary px-6 py-2 text-sm font-medium">{t.dashboard.locations.saveBranch}</button>
               </div>
             </form>
           </div>

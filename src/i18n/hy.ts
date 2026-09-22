@@ -1,6 +1,16 @@
 import type { Translations } from "./en";
 
 export const hy: Translations = {
+  locationPicker: {
+    setLocation: "Ընտրել տեղադիրքը",
+    searchAddress: "Որոնել հասցե Հայաստանում...",
+    cancel: "Չեղարկել",
+    confirmLocation: "Հաստատել տեղադիրքը",
+    moveMapHint: "Տեղաշարժեք քարտեզը և սեղմեք ճշգրիտ վայրի վրա։",
+    detecting: "Հասցեն որոշվում է...",
+    clickToSet: "Սեղմեք քարտեզի վրա՝ տեղադիրքը նշելու համար",
+    openMap: "Բացել քարտեզը",
+  },
   nav: {
     home: "Գլխավոր",
     discover: "Ցուցակ",
@@ -177,6 +187,36 @@ export const hy: Translations = {
       manageBranches: "Կառավարեք ձեր բիզնեսի մասնաճյուղերը և հասցեները:",
       addBranch: "Ավելացնել մասնաճյուղ",
       primary: "Գլխավոր",
+      addNewBranch: "Ավելացնել նոր մասնաճյուղ",
+      branchNameLabel: "Մասնաճյուղի անվանումը / Պիտակ",
+      branchNamePlaceholder: "օր․՝ Կենտրոնի մասնաճյուղ",
+      cityRegion: "Քաղաք / Մարզ",
+      selectCity: "Ընտրել քաղաք",
+      streetAddress: "Փողոցի հասցե",
+      streetAddressPlaceholder: "օր․՝ Թումանյան փ․ 15",
+      phone: "Հեռախոս",
+      setPrimary: "Սահմանել որպես հիմնական վայր",
+      pinOnMap: "Նշել քարտեզի վրա",
+      searchAddress: "Որոնել հասցե Հայաստանում...",
+      clickMapToSet: "Սեղմեք քարտեզի վրա տեղադիրքը նշելու համար",
+      cancel: "Չեղարկել",
+      saveBranch: "Պահպանել մասնաճյուղը",
+    },
+    appointments: {
+      confirmed: "հաստատված է",
+      appointment: "Ամրագրում",
+      phone: "Հեռախոս",
+      price: "Գին",
+      timeSlot: "Ժամանակահատված",
+      notes: "Նշումներ",
+    },
+    settingsPage: {
+      systemNotification: "Համակարգի ծանուցում",
+      settingsPreferences: "Կարգավորումներ և նախընտրություններ",
+      settingsPreferencesDesc: "Կառավարեք աշխատանքային տարածքի նախընտրությունները, մշակողի API-ի ընտրանքները, անվտանգության տվյալները և ներկառուցումները",
+      settingsSection: "Կարգավորումների բաժին",
+      accountProfile: "Հաշվի պրոֆիլ",
+      accountProfileDesc: "Թարմացրեք ձեր պրոֆիլի պարամետրերը, որոնք տեսանելի են բոլոր ցանկերում:",
     },
     inquiriesPage: {
       title: "Հարցումներ",
@@ -190,6 +230,9 @@ export const hy: Translations = {
       cancel: "Չեղարկել",
       delete: "Ջնջել",
       report: "Բողոքարկել",
+      notification: "Ծանուցում",
+      review: "Կարծիք",
+      comment: "Մեկնաբանություն",
     },
     exchangeOffers: {
       title: "Treeo Coin Առաջարկներ",
@@ -641,6 +684,7 @@ export const hy: Translations = {
     expired: "(Ժամկետանց)",
     historyEmpty: "Պատմությունների պատմությունը դատարկ է:",
     expiresAt: "Մարում է",
+    schedulePost: "Պլանավորել հրապարակումը (Ընտրովի)",
   },
   about: {
     metaTitle: "Մասին Treeo — Հայաստանի HoReCa Հարթակ",

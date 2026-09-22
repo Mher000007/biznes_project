@@ -217,8 +217,8 @@ export default function SettingsPage() {
     <ProtectedRoute>
       <div>
         <div className="mb-8">
-          <h1 className="text-2xl font-bold tracking-tight mb-1">Settings & Preferences</h1>
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">Manage workspace preferences, developer API options, security credentials, and embeds.</p>
+          <h1 className="text-2xl font-bold tracking-tight mb-1">{(t.dashboard as any).settingsPage?.settingsPreferences || "Settings & Preferences"}</h1>
+          <p className="text-sm text-[hsl(var(--muted-foreground))]">{(t.dashboard as any).settingsPage?.settingsPreferencesDesc || "Manage workspace preferences, developer API options, security credentials, and embeds."}</p>
         </div>
 
         {/* Outer Split-Screen Settings Layout */}
@@ -226,7 +226,7 @@ export default function SettingsPage() {
 
           {/* LEFT PANEL: Nav Subtabs */}
           <div className="lg:col-span-3 flex flex-col gap-1.5 bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl p-4 shadow-sm">
-            <span className="text-[10px] uppercase font-bold text-[hsl(var(--muted-foreground))] tracking-wider px-3 mb-2">Settings Section</span>
+            <span className="text-[10px] uppercase font-bold text-[hsl(var(--muted-foreground))] tracking-wider px-3 mb-2">{(t.dashboard as any).settingsPage?.settingsSection || "Settings Section"}</span>
             {tabsList.map((t) => {
               const Icon = t.icon;
               const isActive = activeSettingsTab === t.id;
@@ -253,8 +253,8 @@ export default function SettingsPage() {
             {activeSettingsTab === "account" && (
               <form onSubmit={handleUpdateProfile} className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl p-6 shadow-sm space-y-6 animate-scale-in">
                 <div>
-                  <h3 className="text-base font-bold text-[hsl(var(--foreground))]">Account Profile</h3>
-                  <p className="text-xs text-[hsl(var(--muted-foreground))]">Update your profile parameters visible across listings.</p>
+                  <h3 className="text-base font-bold text-[hsl(var(--foreground))]">{(t.dashboard as any).settingsPage?.accountProfile || "Account Profile"}</h3>
+                  <p className="text-xs text-[hsl(var(--muted-foreground))]">{(t.dashboard as any).settingsPage?.accountProfileDesc || "Update your profile parameters visible across listings."}</p>
                 </div>
 
                 {/* Profile Picture Mock Wrapper */}

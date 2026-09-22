@@ -146,7 +146,7 @@ export default function InquiriesPage() {
                 return {
                   id: b._id,
                   name: b.customerName,
-                  subject: `Appointment — ${b.serviceName}`,
+                  subject: `${(t.dashboard as any).appointments?.appointment || "Appointment"} — ${b.serviceName}`,
                   time: new Date(b.date || b.createdAt).toLocaleDateString(),
                   status: b.status || "pending",
                   phone: b.customerPhone,
@@ -171,7 +171,7 @@ export default function InquiriesPage() {
               ...revs.map((r: any) => ({
                 id: r._id,
                 name: r.authorName || r.author?.name || "Anonymous",
-                subject: `Review — "${(r.comment || "").substring(0, 60)}"`,
+                subject: `${(t.dashboard as any).inquiriesPage.review} — "${(r.comment || "").substring(0, 60)}"`,
                 time: new Date(r.createdAt).toLocaleDateString(),
                 status: r.reported ? "reported" : "approved",
                 notes: r.comment,
@@ -192,7 +192,7 @@ export default function InquiriesPage() {
             const notifs = notifRes.data.data || [];
             allItems.push(...notifs.map((n: any) => ({
               id: n._id,
-              name: "System Notification",
+              name: (t.dashboard as any).settingsPage?.systemNotification || "System Notification",
               subject: n.title,
               time: new Date(n.createdAt).toLocaleDateString(),
               status: n.readBy?.includes(currentUser?.id) ? "read" : "unread",
@@ -326,7 +326,7 @@ export default function InquiriesPage() {
                             : inq.status === "cancelled" ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300"
                               : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
                       }`}>
-                      {inq.type === "review" ? `Review${inq.status && inq.status !== "approved" && inq.status !== "read" ? ` (${inq.status})` : ""}` : inq.type === "notification" ? "Notification" : inq.status}
+                      {inq.type === "review" ? `${(t.dashboard as any).inquiriesPage.review}${inq.status && inq.status !== "approved" && inq.status !== "read" ? ` (${inq.status})` : ""}` : inq.type === "notification" ? (t.dashboard as any).inquiriesPage.notification : inq.status === "confirmed" ? (t.dashboard as any).appointments?.confirmed || "confirmed" : inq.status}
                     </span>
                     {inq.type === "review" && inq.rating && (
                       <span className="flex gap-0.5 ml-1 text-amber-500">
@@ -340,13 +340,13 @@ export default function InquiriesPage() {
 
                   {inq.type === "booking" && (inq.phone || inq.timeSlot || inq.price || inq.notes || inq.locationAddress) && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-[11px] text-[hsl(var(--muted-foreground))] bg-[hsl(var(--muted))]/30 p-2.5 rounded-xl border border-[hsl(var(--border))]/40 max-w-xl">
-                      {inq.phone && <div className="flex items-center gap-1"><span className="font-semibold text-[hsl(var(--foreground))]">Phone:</span><span>{inq.phone}</span></div>}
-                      {inq.timeSlot && <div className="flex items-center gap-1"><span className="font-semibold text-[hsl(var(--foreground))]">Time Slot:</span><span>{inq.timeSlot}</span></div>}
+                      {inq.phone && <div className="flex items-center gap-1"><span className="font-semibold text-[hsl(var(--foreground))]">{(t.dashboard as any).appointments?.phone || "Phone"}:</span><span>{inq.phone}</span></div>}
+                      {inq.timeSlot && <div className="flex items-center gap-1"><span className="font-semibold text-[hsl(var(--foreground))]">{(t.dashboard as any).appointments?.timeSlot || "Time Slot"}:</span><span>{inq.timeSlot}</span></div>}
                       {inq.locationAddress && <div className="flex items-center gap-1 sm:col-span-2"><span className="font-semibold text-[hsl(var(--foreground))]">Location:</span><span className="truncate" title={inq.locationAddress}>{inq.locationAddress}</span></div>}
-                      {inq.price !== undefined && inq.price > 0 && <div className="flex items-center gap-1"><span className="font-semibold text-[hsl(var(--foreground))]">Price:</span><span className="text-emerald-600 font-medium">{inq.price.toLocaleString()} AMD</span></div>}
+                      {inq.price !== undefined && inq.price > 0 && <div className="flex items-center gap-1"><span className="font-semibold text-[hsl(var(--foreground))]">{(t.dashboard as any).appointments?.price || "Price"}:</span><span className="text-emerald-600 font-medium">{inq.price.toLocaleString()} AMD</span></div>}
                       {inq.notes && (
                         <div className="sm:col-span-2 border-t border-[hsl(var(--border))]/20 pt-1.5 mt-0.5">
-                          <span className="font-semibold text-[hsl(var(--foreground))]">Notes:</span>
+                          <span className="font-semibold text-[hsl(var(--foreground))]">{(t.dashboard as any).appointments?.notes || "Notes"}:</span>
                           <p className="mt-0.5 text-xs italic bg-[hsl(var(--card))]/50 p-1.5 rounded border border-[hsl(var(--border))]/20">&ldquo;{inq.notes}&rdquo;</p>
                         </div>
                       )}
@@ -355,7 +355,7 @@ export default function InquiriesPage() {
 
                   {inq.type === "review" && inq.notes && (
                     <div className="text-[11px] text-[hsl(var(--muted-foreground))] bg-[hsl(var(--muted))]/30 p-2.5 rounded-xl border border-[hsl(var(--border))]/40 max-w-xl">
-                      <span className="font-semibold text-[hsl(var(--foreground))]">Comment:</span>
+                      <span className="font-semibold text-[hsl(var(--foreground))]">{(t.dashboard as any).inquiriesPage.comment}:</span>
                       <p className="mt-0.5 text-xs italic bg-[hsl(var(--card))]/50 p-1.5 rounded border border-[hsl(var(--border))]/20">&ldquo;{inq.notes}&rdquo;</p>
                       {inq.status === "reported" && (
                         <div className="mt-2 text-[10px] text-amber-600 bg-amber-500/10 px-2.5 py-1.5 rounded-lg border border-amber-200/30 flex items-center gap-1.5">

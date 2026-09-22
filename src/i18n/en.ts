@@ -1,4 +1,14 @@
 export const en = {
+  locationPicker: {
+    setLocation: "Set Location",
+    searchAddress: "Search address in Armenia...",
+    cancel: "Cancel",
+    confirmLocation: "Confirm Location",
+    moveMapHint: "Move the map and tap on the exact location.",
+    detecting: "Detecting address...",
+    clickToSet: "Click on the map to set location",
+    openMap: "Open Map",
+  },
   // Navbar
   nav: {
     home: "Home",
@@ -185,6 +195,36 @@ export const en = {
       manageBranches: "Manage your business branches and addresses.",
       addBranch: "Add Branch",
       primary: "Primary",
+      addNewBranch: "Add New Branch",
+      branchNameLabel: "Branch Name / Label",
+      branchNamePlaceholder: "e.g. Downtown Branch",
+      cityRegion: "City / Region",
+      selectCity: "Select City",
+      streetAddress: "Street Address",
+      streetAddressPlaceholder: "e.g. 15 Tumanyan St",
+      phone: "Phone",
+      setPrimary: "Set as Primary Location",
+      pinOnMap: "Pin on Map",
+      searchAddress: "Search address in Armenia...",
+      clickMapToSet: "Click on the map to set location",
+      cancel: "Cancel",
+      saveBranch: "Save Branch",
+    },
+    appointments: {
+      confirmed: "confirmed",
+      appointment: "Appointment",
+      phone: "Phone",
+      price: "Price",
+      timeSlot: "Time Slot",
+      notes: "Notes",
+    },
+    settingsPage: {
+      systemNotification: "System Notification",
+      settingsPreferences: "Settings & Preferences",
+      settingsPreferencesDesc: "Manage workspace preferences, developer API options, security credentials, and embeds",
+      settingsSection: "Settings Section",
+      accountProfile: "Account Profile",
+      accountProfileDesc: "Update your profile parameters visible across listings.",
     },
     inquiriesPage: {
       title: "Inquiries",
@@ -198,6 +238,9 @@ export const en = {
       cancel: "Cancel",
       delete: "Delete",
       report: "Report",
+      notification: "Notification",
+      review: "Review",
+      comment: "Comment",
     },
     exchangeOffers: {
       title: "Treeo Coin Offers",
@@ -655,6 +698,7 @@ export const en = {
     expired: "(Expired)",
     historyEmpty: "Story history is empty.",
     expiresAt: "Expires",
+    schedulePost: "Schedule Post (Optional)",
   },
   // About
   about: {

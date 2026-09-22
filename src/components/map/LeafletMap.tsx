@@ -111,6 +111,9 @@ export interface LeafletMapProps {
   fitAllBounds?: boolean;
   hoveredLocationId?: string | number | null;
   hideFullscreenControl?: boolean;
+  onMapMoveEnd?: (lat: number, lng: number) => void;
+  fixedCenterMarker?: boolean;
+  hideRadarControl?: boolean;
 }
 
 // ─── Subcomponents ──────────────────────────────────────────────────────────
@@ -236,6 +239,9 @@ export default function LeafletMap({
   fitAllBounds = false,
   hoveredLocationId = null,
   hideFullscreenControl = false,
+  onMapMoveEnd,
+  fixedCenterMarker = false,
+  hideRadarControl = false,
 }: LeafletMapProps) {
   const router = useRouter();
   const { locale, t } = useI18n();
@@ -299,6 +305,9 @@ export default function LeafletMap({
   // Store latest bounds fn so ResizeObserver / fullscreen can call it
   const fitBoundsFnRef = useRef<((animate: boolean) => void) | null>(null);
 
+  const onMapMoveEndRef = useRef(onMapMoveEnd);
+  useEffect(() => { onMapMoveEndRef.current = onMapMoveEnd; }, [onMapMoveEnd]);
+
   // ── 1. Init map ────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -345,6 +354,15 @@ export default function LeafletMap({
 
     if (onMapClick && !readonly) {
       map.on("click", (e: L.LeafletMouseEvent) => onMapClick(e.latlng.lat, e.latlng.lng));
+    }
+
+    if (!readonly) {
+      map.on("moveend", () => {
+        if (onMapMoveEndRef.current) {
+          const center = map.getCenter();
+          onMapMoveEndRef.current(center.lat, center.lng);
+        }
+      });
     }
 
     const markersGroup = L.layerGroup().addTo(map);
@@ -854,6 +872,27 @@ export default function LeafletMap({
         className="leaflet-map-wrapper leaflet-container"
       />
 
+      {fixedCenterMarker && (
+        <div style={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -100%)",
+          zIndex: 400,
+          pointerEvents: "none",
+          marginTop: "-18px" // half of icon height adjustment
+        }}>
+          <svg width="28" height="36" viewBox="0 0 28 36" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.30))', display: 'block' }}>
+            <path d="M14 0C6.268 0 0 6.268 0 14c0 9.5 14 22 14 22S28 23.5 28 14C28 6.268 21.732 0 14 0z" fill="#10b981"></path>
+            <circle cx="14" cy="14" r="6.5" fill="white" fillOpacity="0.95"></circle>
+            <rect x="10" y="10" width="8" height="8" rx="0.8" fill="#10b981"></rect>
+            <rect x="12" y="14" width="2" height="4" fill="white"></rect>
+            <rect x="11" y="11" width="2.2" height="2.2" fill="white" fillOpacity="0.75"></rect>
+            <rect x="14.8" y="11" width="2.2" height="2.2" fill="white" fillOpacity="0.75"></rect>
+          </svg>
+        </div>
+      )}
+
       {/* Radius Selector */}
       {showNearbyRestaurants && userLocation && (
         <div className="radius-selector-panel" style={{
@@ -876,22 +915,22 @@ export default function LeafletMap({
           overflow: "hidden"
         }}>
           {/* Toggle Button / Handle */}
-          <div 
-             style={{ 
-               display: "flex", 
-               justifyContent: "center", 
-               alignItems: "center", 
-               cursor: "pointer",
-               padding: "4px 0",
-               width: "100%"
-             }}
-             onClick={() => setIsRadiusPanelExpanded(!isRadiusPanelExpanded)}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              cursor: "pointer",
+              padding: "4px 0",
+              width: "100%"
+            }}
+            onClick={() => setIsRadiusPanelExpanded(!isRadiusPanelExpanded)}
           >
-             <ChevronDown size={20} style={{ 
-               transform: isRadiusPanelExpanded ? "rotate(0deg)" : "rotate(180deg)", 
-               transition: "transform 0.3s ease",
-               color: "var(--text-secondary, #999)"
-             }} />
+            <ChevronDown size={20} style={{
+              transform: isRadiusPanelExpanded ? "rotate(0deg)" : "rotate(180deg)",
+              transition: "transform 0.3s ease",
+              color: "var(--text-secondary, #999)"
+            }} />
           </div>
 
           <div style={{
@@ -1041,48 +1080,48 @@ export default function LeafletMap({
                 marginLeft: isFirst ? "calc(50vw - min(42.5vw, 160px))" : "0",
                 marginRight: isLast ? "calc(50vw - min(42.5vw, 160px))" : "0"
               }}>
-              <div className="map-bottom-hover-card-inner"
-                style={{
-                  pointerEvents: "auto",
-                  border: isActive ? "2px solid #10b981" : "2px solid transparent",
-                  opacity: isActive ? 1 : 0.4,
-                  transform: isActive ? "scale(1)" : "scale(0.95)",
-                  transition: "border-color 0.3s ease, opacity 0.3s ease, transform 0.3s ease"
-                }}
-                onClick={() => {
-                  const map = mapRef.current;
-                  if (map) map.flyTo([rest.lat, rest.lng], 16, { animate: true });
-                  if (rest.slug) router.push(`/business/${rest.slug}`);
-                }}>
-                <div className="image-container" style={{ cursor: 'pointer' }}>
-                  {rest.image ? (
-                    <img src={rest.image} alt={rest.name} />
-                  ) : (
-                    <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #f0f0f0, #e0e0e0)' }} />
-                  )}
-                </div>
-                <div className="info-container">
-                  <div className="header-row">
-                    <strong className="name" style={{ cursor: 'pointer' }}>
-                      {rest.name}
-                    </strong>
-                    <MapSaveButton business={rest} />
+                <div className="map-bottom-hover-card-inner"
+                  style={{
+                    pointerEvents: "auto",
+                    border: isActive ? "2px solid #10b981" : "2px solid transparent",
+                    opacity: isActive ? 1 : 0.4,
+                    transform: isActive ? "scale(1)" : "scale(0.95)",
+                    transition: "border-color 0.3s ease, opacity 0.3s ease, transform 0.3s ease"
+                  }}
+                  onClick={() => {
+                    const map = mapRef.current;
+                    if (map) map.flyTo([rest.lat, rest.lng], 16, { animate: true });
+                    if (rest.slug) router.push(`/business/${rest.slug}`);
+                  }}>
+                  <div className="image-container" style={{ cursor: 'pointer' }}>
+                    {rest.image ? (
+                      <img src={rest.image} alt={rest.name} />
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #f0f0f0, #e0e0e0)' }} />
+                    )}
                   </div>
-                  {rest.category && <span className="category">{rest.category}</span>}
-                  <div className="meta-row">
-                    {rest.rating ? (
-                      <span className="rating">
-                        &#9733; {(Math.round(rest.rating * 10) / 10).toFixed(1)}
-                        {rest.reviewCount && <span className="reviews">({rest.reviewCount})</span>}
+                  <div className="info-container">
+                    <div className="header-row">
+                      <strong className="name" style={{ cursor: 'pointer' }}>
+                        {rest.name}
+                      </strong>
+                      <MapSaveButton business={rest} />
+                    </div>
+                    {rest.category && <span className="category">{rest.category}</span>}
+                    <div className="meta-row">
+                      {rest.rating ? (
+                        <span className="rating">
+                          &#9733; {(Math.round(rest.rating * 10) / 10).toFixed(1)}
+                          {rest.reviewCount && <span className="reviews">({rest.reviewCount})</span>}
+                        </span>
+                      ) : <span />}
+                      <span className={`status ${rest.isOpen === false ? 'is-closed' : 'is-open'}`}>
+                        {rest.isOpen === false ? closedText : openText}
                       </span>
-                    ) : <span />}
-                    <span className={`status ${rest.isOpen === false ? 'is-closed' : 'is-open'}`}>
-                      {rest.isOpen === false ? closedText : openText}
-                    </span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
             );
           })}
         </div>
@@ -1093,6 +1132,21 @@ export default function LeafletMap({
         position: "absolute", top: "70px", right: "10px", zIndex: 1000,
         display: "flex", flexDirection: "column", gap: "8px"
       }}>
+        {!hideFullscreenControl && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsFullscreen((prev) => !prev);
+            }}
+            className="leaflet-bar hover:bg-[hsl(var(--accent))] transition-colors"
+            style={{ background: 'hsl(var(--card))', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'hsl(var(--primary))', border: '1px solid hsl(var(--border))', borderRadius: '6px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}
+            title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+          >
+            {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+          </button>
+        )}
+
         <button
           type="button"
           onClick={(e) => {
@@ -1125,68 +1179,59 @@ export default function LeafletMap({
               }
             );
           }}
-          className="leaflet-bar"
-          style={{ background: 'white', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#10b981', border: 'none', borderRadius: '4px', boxShadow: '0 1px 5px rgba(0,0,0,0.65)' }}
+          className="leaflet-bar hover:bg-[hsl(var(--accent))] transition-colors"
+          style={{ background: 'hsl(var(--card))', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'hsl(var(--primary))', border: '1px solid hsl(var(--border))', borderRadius: '6px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}
           title={locale === 'hy' ? 'Գտնել ինձ' : locale === 'ru' ? 'Мое местоположение' : 'Locate Me'}
         >
-          <Navigation size={16} />
+          <Navigation size={18} />
         </button>
 
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (!showNearbyRestaurants) {
-              const enableNearby = (lat: number, lng: number) => {
-                blockFitBoundsRef.current = true;
-                setUserLocation([lat, lng]);
-                setShowNearbyRestaurants(true);
-                setHasSearchedNearby(false);
-                const map = mapRef.current;
-                if (map) {
-                  map.flyTo([lat, lng], 14, { animate: true, duration: 1.5, easeLinearity: 0.25 });
-                  setTimeout(() => { blockFitBoundsRef.current = false; }, 1600);
-                }
-              };
-
-              if (userLocation) {
-                enableNearby(userLocation[0], userLocation[1]);
-              } else {
-                if (!navigator.geolocation) {
-                  alert(locale === 'hy' ? "Աշխարհագրական դիրքի որոշումը ապահովված չէ ձեր բրաուզերի կողմից" : "Geolocation is not supported by your browser");
-                  return;
-                }
-                navigator.geolocation.getCurrentPosition(
-                  (position) => {
-                    enableNearby(position.coords.latitude, position.coords.longitude);
-                  },
-                  () => {
-                    alert(locale === 'hy' ? "Չհաջողվեց ստանալ ձեր գտնվելու վայրը" : "Unable to retrieve your location");
+        {!hideRadarControl && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!showNearbyRestaurants) {
+                const enableNearby = (lat: number, lng: number) => {
+                  blockFitBoundsRef.current = true;
+                  setUserLocation([lat, lng]);
+                  setShowNearbyRestaurants(true);
+                  setHasSearchedNearby(false);
+                  const map = mapRef.current;
+                  if (map) {
+                    map.flyTo([lat, lng], 14, { animate: true, duration: 1.5, easeLinearity: 0.25 });
+                    setTimeout(() => { blockFitBoundsRef.current = false; }, 1600);
                   }
-                );
-              }
-            } else {
-              setShowNearbyRestaurants(false);
-            }
-          }}
-          className="leaflet-bar"
-          style={{ background: showNearbyRestaurants ? '#10b981' : 'white', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: showNearbyRestaurants ? 'white' : '#10b981', border: 'none', borderRadius: '4px', boxShadow: '0 1px 5px rgba(0,0,0,0.65)' }}
-          title={locale === 'hy' ? 'Ռեստորաններ իմ կողքին' : locale === 'ru' ? 'Рестораны рядом' : 'Restaurants Near Me'}
-        >
-          {showNearbyRestaurants ? <X size={16} /> : <Radar size={16} />}
-        </button>
-      </div>
+                };
 
-      {!hideFullscreenControl && (
-        <button
-          type="button"
-          onClick={() => setIsFullscreen((prev) => !prev)}
-          className="leaflet-fullscreen-toggle-btn"
-          title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-        >
-          {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-        </button>
-      )}
+                if (userLocation) {
+                  enableNearby(userLocation[0], userLocation[1]);
+                } else {
+                  if (!navigator.geolocation) {
+                    alert(locale === 'hy' ? "Աշխարհագրական դիրքի որոշումը ապահովված չէ ձեր բրաուզերի կողմից" : "Geolocation is not supported by your browser");
+                    return;
+                  }
+                  navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                      enableNearby(position.coords.latitude, position.coords.longitude);
+                    },
+                    () => {
+                      alert(locale === 'hy' ? "Չհաջողվեց ստանալ ձեր գտնվելու վայրը" : "Unable to retrieve your location");
+                    }
+                  );
+                }
+              } else {
+                setShowNearbyRestaurants(false);
+              }
+            }}
+            className="leaflet-bar hover:bg-[hsl(var(--accent))] transition-colors"
+            style={{ background: showNearbyRestaurants ? 'hsl(var(--primary))' : 'hsl(var(--card))', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: showNearbyRestaurants ? 'white' : 'hsl(var(--primary))', border: '1px solid hsl(var(--border))', borderRadius: '6px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}
+            title={locale === 'hy' ? 'Ռեստորաններ իմ կողքին' : locale === 'ru' ? 'Рестораны рядом' : 'Restaurants Near Me'}
+          >
+            {showNearbyRestaurants ? <X size={18} /> : <Radar size={18} />}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
