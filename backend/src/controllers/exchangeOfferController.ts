@@ -71,16 +71,7 @@ export const createExchangeOffer = async (req: AuthRequest, res: Response) => {
       return res.status(401).json({ success: false, error: 'Not authorized to add an exchange offer to this business' });
     }
 
-    // Check Plan Limits (Pro: max 3 offers, Premium: unlimited)
-    const sub = await Subscription.findOne({ business: businessId, status: 'active' });
-    const userPlan = sub?.plan || (business as any).plan || 'starter';
-
-    if (userPlan === 'starter' || userPlan === 'start' || userPlan === 'free') {
-      return res.status(403).json({
-        success: false,
-        error: 'Treeo Coin Offers feature is locked on the Start plan. Please upgrade to Pro or Premium.'
-      });
-    }
+    // Plan limits have been removed, making offer creation unlimited.
 
     const offer = await ExchangeOffer.create({
       business: businessId,

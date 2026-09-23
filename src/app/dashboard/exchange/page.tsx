@@ -142,17 +142,11 @@ export default function DashboardExchange() {
 
   const isProPlan = activePlan === "pro" || activePlan === "standard";
   const isPremiumPlan = activePlan === "premium" || activePlan === "vip" || activePlan === "standard" || activePlan === "pro";
-  const isLimitReached = false; // !editingId && isProPlan && offers.length >= 3;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!businessId) {
       showAlert({ message: "Business context missing.", type: "error" });
-      return;
-    }
-
-    if (isLimitReached) {
-      showAlert({ message: "Pro փաթեթի դեպքում կարող եք հրապարակել առավելագույնը 3 առաջարկ: Անսահմանափակ առաջարկների համար թարմացրեք փաթեթը Premium-ի:", type: "warning" });
       return;
     }
 
@@ -214,10 +208,6 @@ export default function DashboardExchange() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const handleOpenAddModal = () => {
-    if (isProPlan && offers.length >= 3) {
-      showAlert({ message: "Pro փաթեթի դեպքում կարող եք հրապարակել առավելագույնը 3 առաջարկ: Անսահմանափակ առաջարկներ հրապարակելու համար թարմացրեք փաթեթը Premium-ի:", type: "warning" });
-      return;
-    }
     resetForm();
     setEditingId(null);
     setIsModalOpen(true);
@@ -235,25 +225,6 @@ export default function DashboardExchange() {
 
   const isStarterPlan = activePlan === "starter" || activePlan === "start" || activePlan === "free";
 
-  if (isStarterPlan) {
-    return (
-      <div className="p-6 max-w-lg mx-auto mt-12">
-        <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-3xl p-8 text-center shadow-xl">
-          <div className="w-16 h-16 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 text-amber-500 shadow-inner">
-            <Lock className="w-8 h-8" />
-          </div>
-          <h2 className="text-xl font-bold text-[hsl(var(--foreground))] mb-2">Exchange Feature Locked</h2>
-          <p className="text-xs sm:text-sm text-[hsl(var(--muted-foreground))] mb-6 leading-relaxed">
-            The Treeo Coin Exchange feature is not available on the Start plan. Upgrade your plan to Pro or Premium to manage exchange offers.
-          </p>
-          <Link href="/dashboard/settings" className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-sm transition-all inline-block shadow-lg shadow-emerald-500/20 hover:scale-105">
-            Upgrade Plan
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="p-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -265,7 +236,6 @@ export default function DashboardExchange() {
         </div>
         <button
           onClick={handleOpenAddModal}
-          disabled={isProPlan && offers.length >= 3}
           className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors cursor-pointer"
         >
           <Plus className="w-5 h-5" />
@@ -390,7 +360,7 @@ export default function DashboardExchange() {
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200">
           <div className="bg-[hsl(var(--card))] w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
             <div className="p-6 border-b border-[hsl(var(--border))] flex justify-between items-center bg-[hsl(var(--muted))]">
               <h2 className="text-xl font-bold text-[hsl(var(--foreground))]">
@@ -419,19 +389,75 @@ export default function DashboardExchange() {
                   />
                 </div>
 
+                {/* Image Upload */}
+                <div>
+                  <label className="block text-sm font-semibold text-[hsl(var(--foreground))] mb-1.5">
+                    {locale === "hy" ? "Առաջարկի նկարը" : locale === "ru" ? "Изображение предложения" : "Offer Image"}
+                  </label>
+                  <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageUpload}
+                  />
+                  {formData.imageUrl ? (
+                    <div className="relative group rounded-xl overflow-hidden border border-[hsl(var(--border))] bg-[hsl(var(--background))]">
+                      <img
+                        src={formData.imageUrl}
+                        alt="Offer preview"
+                        className="w-full h-48 object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => imageInputRef.current?.click()}
+                          className="p-2.5 bg-white/90 rounded-full text-gray-700 hover:bg-white transition-colors shadow-lg"
+                          title={locale === "hy" ? "Փոխել նկարը" : locale === "ru" ? "Изменить изображение" : "Change image"}
+                        >
+                          <Camera size={18} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, imageUrl: "" })}
+                          className="p-2.5 bg-red-500/90 rounded-full text-white hover:bg-red-600 transition-colors shadow-lg"
+                          title={locale === "hy" ? "Հեռացնել" : locale === "ru" ? "Удалить" : "Remove"}
+                        >
+                          <X size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => imageInputRef.current?.click()}
+                      className="w-full h-36 border-2 border-dashed border-[hsl(var(--border))] rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all group"
+                    >
+                      <div className="p-3 rounded-full bg-[hsl(var(--muted))] group-hover:bg-emerald-500/10 transition-colors">
+                        <Upload size={22} className="text-[hsl(var(--muted-foreground))] group-hover:text-emerald-500 transition-colors" />
+                      </div>
+                      <p className="text-sm font-medium text-[hsl(var(--muted-foreground))] group-hover:text-emerald-600 transition-colors">
+                        {locale === "hy" ? "Սեղմեք նկար վերբեռնելու համար" : locale === "ru" ? "Нажмите для загрузки изображения" : "Click to upload image"}
+                      </p>
+                      <p className="text-[11px] text-[hsl(var(--muted-foreground))]">
+                        {locale === "hy" ? "PNG, JPG, WEBP (մաքս. 5MB)" : locale === "ru" ? "PNG, JPG, WEBP (макс. 5МБ)" : "PNG, JPG, WEBP (max 5MB)"}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
                 <div className="relative">
                   <label className="block text-sm font-semibold text-[hsl(var(--foreground))] mb-1.5">{t.dashboard.exchangeOffers.category}</label>
                   <div 
                     onClick={() => setIsCategoryOpen(!isCategoryOpen)}
                     className="w-full bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg px-4 py-2.5 text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer flex justify-between items-center group transition-all"
                   >
-                    <span className="font-medium">{formData.category}</span>
+                    <span className="font-medium">{(t.dashboard.exchangeOffers as any).categories?.[formData.category] || formData.category}</span>
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`text-[hsl(var(--muted-foreground))] transition-transform duration-300 ${isCategoryOpen ? 'rotate-180' : ''}`}><path d="m6 9 6 6 6-6"/></svg>
                   </div>
                   
                   {isCategoryOpen && (
-                    <div className="absolute z-50 w-full mt-2 bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                      {["Food", "Drink", "Hookah"].map((cat) => (
+                    <div className="absolute z-50 w-full mt-2 bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 max-h-64 overflow-y-auto">
+                      {["Food", "Drink", "Hookah", "Alcohol / Bar", "Coffee & Tea", "Desserts / Pastry", "Snacks / Finger Food", "Cigars & Tobacco", "Board Games / Gaming"].map((cat) => (
                         <div 
                           key={cat}
                           onClick={() => {
@@ -440,7 +466,7 @@ export default function DashboardExchange() {
                           }}
                           className="px-4 py-3 hover:bg-[hsl(var(--muted))] cursor-pointer text-sm font-medium transition-colors flex items-center justify-between"
                         >
-                          {cat}
+                          {(t.dashboard.exchangeOffers as any).categories?.[cat] || cat}
                           {formData.category === cat && <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500"><path d="M20 6 9 17l-5-5"/></svg>}
                         </div>
                       ))}
@@ -513,14 +539,14 @@ export default function DashboardExchange() {
                 onClick={() => setIsModalOpen(false)}
                 className="px-5 py-2.5 rounded-lg text-sm font-medium bg-[hsl(var(--background))] border border-[hsl(var(--border))] hover:bg-[hsl(var(--accent))] text-[hsl(var(--foreground))] transition-colors"
               >
-                Cancel
+                {(t.dashboard.exchangeOffers as any).cancel || "Cancel"}
               </button>
               <button
                 type="submit"
                 form="offerForm"
                 className="px-5 py-2.5 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-colors flex items-center gap-2"
               >
-                {editingId ? "Save Changes" : "Create Offer"}
+                {editingId ? t.dashboard.exchangeOffers.saveChanges : ((t.dashboard.exchangeOffers as any).createOffer || "Create Offer")}
               </button>
             </div>
           </div>

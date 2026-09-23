@@ -76,6 +76,7 @@ export default function ExchangePage() {
 
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
   const sortDropdownRef = useRef<HTMLDivElement>(null);
+  const [showBusinessQrError, setShowBusinessQrError] = useState(false);
 
   useEffect(() => {
     if (isQrModalOpen) {
@@ -117,6 +118,19 @@ export default function ExchangePage() {
     }
     return list;
   }, [offers, offerCategory, savedOffers, sortOrder]);
+
+  const availableCategories = useMemo(() => {
+    const ALL_CATEGORIES = ['Food', 'Drink', 'Hookah', 'Alcohol / Bar', 'Coffee & Tea', 'Desserts / Pastry', 'Snacks / Finger Food', 'Cigars & Tobacco', 'Board Games / Gaming'];
+    const offerCats = new Set<string>(offers.map(o => o.category).filter(Boolean));
+    const filtered = ALL_CATEGORIES.filter(cat => offerCats.has(cat));
+    // Add any dynamically discovered categories to the end
+    offerCats.forEach(cat => {
+      if (!ALL_CATEGORIES.includes(cat)) {
+        filtered.push(cat);
+      }
+    });
+    return filtered;
+  }, [offers]);
 
   const handleConfirmExchange = async () => {
     if (!currentUser) {
@@ -251,6 +265,7 @@ export default function ExchangePage() {
               title: o.title,
               business: o.business?.name || "Unknown Business",
               businessLogo: o.business?.logo || null,
+              offerImage: o.imageUrl || o.image || null,
               cost: o.cost,
               category: o.category || "Food",
               description: o.description,
@@ -472,8 +487,8 @@ export default function ExchangePage() {
                         }
                       }}
                       className={`relative px-6 py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-all duration-300 flex items-center gap-1.5 cursor-pointer ${offerCategory === 'All'
-                          ? 'bg-emerald-500 !text-white text-white shadow-lg shadow-emerald-500/30'
-                          : 'bg-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/80'
+                        ? 'bg-emerald-500 !text-white text-white shadow-lg shadow-emerald-500/30'
+                        : 'bg-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/80'
                         }`}
                     >
                       <span className={offerCategory === 'All' ? '!text-white text-white' : ''}>
@@ -493,8 +508,8 @@ export default function ExchangePage() {
                               setIsSortDropdownOpen(false);
                             }}
                             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 flex items-center gap-1.5 cursor-pointer ${sortOrder === 'highToLow'
-                                ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/25'
-                                : 'bg-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/60'
+                              ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/25'
+                              : 'bg-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/60'
                               }`}
                           >
                             <span>{locale === "hy" ? "Թանկից էժան" : locale === "ru" ? "От дорогих к дешевым" : "Expensive to Cheap"}</span>
@@ -506,8 +521,8 @@ export default function ExchangePage() {
                               setIsSortDropdownOpen(false);
                             }}
                             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 flex items-center gap-1.5 cursor-pointer ${sortOrder === 'lowToHigh'
-                                ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/25'
-                                : 'bg-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/60'
+                              ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/25'
+                              : 'bg-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/60'
                               }`}
                           >
                             <span>{locale === "hy" ? "Էժանից թանկ" : locale === "ru" ? "От дешевых к дорогим" : "Cheap to Expensive"}</span>
@@ -521,8 +536,8 @@ export default function ExchangePage() {
                   <button
                     onClick={() => setOfferCategory('Saved')}
                     className={`relative px-6 py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-all duration-300 cursor-pointer ${offerCategory === 'Saved'
-                        ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
-                        : 'bg-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/80'
+                      ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
+                      : 'bg-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/80'
                       }`}
                   >
                     {locale === "hy" ? "Պահպանված" : locale === "ru" ? "Сохраненные" : "Saved"}
@@ -532,19 +547,19 @@ export default function ExchangePage() {
                 <div className="w-px h-8 bg-[hsl(var(--border))] shrink-0"></div>
 
                 {/* Categories */}
-                <div className="inline-flex items-center p-1.5 bg-[hsl(var(--muted))]/30 border border-[hsl(var(--border))]/50 rounded-full shadow-inner backdrop-blur-md shrink-0">
-                  {['Food', 'Drink', 'Hookah'].map(cat => {
+                <div className="inline-flex items-center p-1.5 bg-[hsl(var(--muted))]/30 border border-[hsl(var(--border))]/50 rounded-full shadow-inner backdrop-blur-md shrink-0 flex-wrap gap-1">
+                  {availableCategories.map(cat => {
                     const isActive = offerCategory === cat;
                     return (
                       <button
                         key={cat}
                         onClick={() => setOfferCategory(cat)}
-                        className={`relative px-6 py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-all duration-300 ${isActive
-                            ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
-                            : 'bg-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/80'
+                        className={`relative px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-300 ${isActive
+                          ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
+                          : 'bg-transparent text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/80'
                           }`}
                       >
-                        {locale === "hy" ? (cat === "Food" ? "Սնունդ" : cat === "Drink" ? "Խմիչք" : "Նարգիլե") : locale === "ru" ? (cat === "Food" ? "Еда" : cat === "Drink" ? "Напитки" : "Кальян") : cat}
+                        {(t.dashboard?.exchangeOffers as any)?.categories?.[cat] || cat}
                       </button>
                     );
                   })}
@@ -552,7 +567,7 @@ export default function ExchangePage() {
               </div>
 
               {/* Offers Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 ${sortedOffers.length > 6 ? 'max-h-[700px] overflow-y-auto custom-scrollbar pr-2' : ''}`}>
                 {sortedOffers.map((offer) => (
                   <div
                     key={offer.id}
@@ -562,12 +577,14 @@ export default function ExchangePage() {
                     <div className={`absolute top-0 right-0 w-32 h-32 ${offer.bgClass} rounded-bl-full -mr-16 -mt-16 transition-transform group-hover:scale-110`} />
 
                     {/* Save Offer Button */}
-                    <button
-                      onClick={(e) => toggleSavedOffer(e, offer.id)}
-                      className="absolute top-4 right-4 z-10 p-2.5 rounded-full bg-[hsl(var(--background))]/50 backdrop-blur-md border border-[hsl(var(--border))]/50 hover:bg-[hsl(var(--card))] hover:shadow-md transition-all duration-200 group/btn"
-                    >
-                      <Heart className={`w-5 h-5 transition-colors ${savedOffers.includes(offer.id) ? 'fill-red-500 text-red-500' : 'text-[hsl(var(--muted-foreground))] group-hover/btn:text-[hsl(var(--foreground))]'}`} />
-                    </button>
+                    {!isBusinessUser && (
+                      <button
+                        onClick={(e) => toggleSavedOffer(e, offer.id)}
+                        className="absolute top-4 right-4 z-10 p-2.5 rounded-full bg-[hsl(var(--background))]/50 backdrop-blur-md border border-[hsl(var(--border))]/50 hover:bg-[hsl(var(--card))] hover:shadow-md transition-all duration-200 group/btn"
+                      >
+                        <Heart className={`w-5 h-5 transition-colors ${savedOffers.includes(offer.id) ? 'fill-red-500 text-red-500' : 'text-[hsl(var(--muted-foreground))] group-hover/btn:text-[hsl(var(--foreground))]'}`} />
+                      </button>
+                    )}
 
                     <div className="flex items-center gap-3 mb-5">
                       <div className={`w-10 h-10 rounded-xl ${offer.bgClass} ${offer.textClass} flex items-center justify-center overflow-hidden shrink-0`}>
@@ -609,7 +626,7 @@ export default function ExchangePage() {
 
                 {sortedOffers.length === 0 && (
                   <div className="col-span-full py-12 text-center text-[hsl(var(--muted-foreground))]">
-                    {offerCategory === 'Saved' 
+                    {offerCategory === 'Saved'
                       ? (locale === "hy" ? "Դուք դեռ չունեք պահպանված առաջարկներ:" : locale === "ru" ? "У вас пока нет сохраненных предложений." : "You haven't saved any offers yet.")
                       : (locale === "hy" ? "Այս կատեգորիայում առաջարկներ չեն գտնվել:" : locale === "ru" ? "В этой категории предложений не найдено." : "No offers found in this category.")}
                   </div>
@@ -640,17 +657,19 @@ export default function ExchangePage() {
                 <X className="w-4 h-4" />
               </button>
 
-              <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
-                <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[hsl(var(--card))] shadow-sm ${selectedOffer.textClass} flex items-center justify-center overflow-hidden shrink-0`}>
-                  {selectedOffer.businessLogo ? (
-                    <img src={selectedOffer.businessLogo.startsWith('data:') || selectedOffer.businessLogo.startsWith('http') ? selectedOffer.businessLogo : getApiUrl().replace('/api', '') + selectedOffer.businessLogo} alt={selectedOffer.business} className="w-full h-full object-cover" />
+              <div className="flex items-center gap-4 sm:gap-6">
+                <div className={`w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-[hsl(var(--card))] shadow-sm ${selectedOffer.textClass} flex items-center justify-center overflow-hidden shrink-0`}>
+                  {(selectedOffer.offerImage || selectedOffer.businessLogo) ? (
+                    <img src={(() => { const imgSrc = selectedOffer.offerImage || selectedOffer.businessLogo; return imgSrc.startsWith('data:') || imgSrc.startsWith('http') ? imgSrc : getApiUrl().replace('/api', '') + imgSrc; })()} alt={selectedOffer.title} className="w-full h-full object-cover" />
                   ) : (
-                    <selectedOffer.icon className="w-6 h-6 sm:w-7 sm:h-7" />
+                    <selectedOffer.icon className="w-10 h-10 sm:w-12 sm:h-12" />
                   )}
                 </div>
-                <span className="font-bold text-base sm:text-lg text-[hsl(var(--foreground))]">{selectedOffer.business}</span>
+                <div className="flex flex-col gap-1">
+                  <span className="font-bold text-base sm:text-lg text-[hsl(var(--foreground))]">{selectedOffer.business}</span>
+                  <h2 className="text-2xl sm:text-3xl font-black text-[hsl(var(--foreground))] leading-tight">{selectedOffer.title}</h2>
+                </div>
               </div>
-              <h2 className="text-2xl sm:text-3xl font-black text-[hsl(var(--foreground))] leading-tight">{selectedOffer.title}</h2>
             </div>
 
             {/* Modal Body */}
@@ -678,8 +697,8 @@ export default function ExchangePage() {
                     disabled={submittingExchange}
                     className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-3.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed !text-white text-white rounded-xl font-bold shadow-md shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2"
                   >
-                    {submittingExchange 
-                      ? (locale === "hy" ? "Ընթացքի մեջ է..." : locale === "ru" ? "Обработка..." : "Processing...") 
+                    {submittingExchange
+                      ? (locale === "hy" ? "Ընթացքի մեջ է..." : locale === "ru" ? "Обработка..." : "Processing...")
                       : (locale === "hy" ? "Հաստատել Փոխանակումը" : locale === "ru" ? "Подтвердить Обмен" : "Confirm Exchange")}
                   </button>
                 ) : (
@@ -766,7 +785,7 @@ export default function ExchangePage() {
       {isQrModalOpen && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden relative">
-            <button 
+            <button
               onClick={() => { setIsQrModalOpen(false); setQrAmount(""); }}
               className="absolute top-4 right-4 p-2 rounded-full hover:bg-[hsl(var(--muted))] transition-colors z-10"
             >
@@ -803,29 +822,47 @@ export default function ExchangePage() {
                     inputMode="numeric"
                     pattern="[0-9]*"
                     value={qrAmount}
-                    onChange={(e) => setQrAmount(e.target.value.replace(/[^0-9]/g, ''))}
+                    readOnly={isBusinessUser}
+                    onClick={() => {
+                      if (isBusinessUser) {
+                        setShowBusinessQrError(true);
+                        setTimeout(() => setShowBusinessQrError(false), 400);
+                      }
+                    }}
+                    onChange={(e) => {
+                      if (!isBusinessUser) {
+                        setQrAmount(e.target.value.replace(/[^0-9]/g, ''));
+                      }
+                    }}
                     placeholder="0"
-                    className={`w-full bg-[hsl(var(--muted))]/50 border rounded-xl px-4 py-3 text-2xl font-bold text-center focus:outline-none focus:ring-2 transition-all ${
-                      Number(qrAmount) > ((currentUser as any)?.treeoCoins || 0)
-                        ? 'border-red-500 focus:ring-red-500/50 text-red-500 animate-error-shake'
-                        : 'border-[hsl(var(--border))] focus:ring-emerald-500/50 text-[hsl(var(--foreground))]'
-                    }`}
+                    className={`w-full bg-[hsl(var(--muted))]/50 border rounded-xl px-4 py-3 text-2xl font-bold text-center focus:outline-none focus:ring-2 transition-all ${showBusinessQrError 
+                        ? 'border-red-500 focus:ring-red-500/50 text-red-500 animate-error-shake' 
+                        : Number(qrAmount) > ((currentUser as any)?.treeoCoins || 0)
+                          ? 'border-red-500 focus:ring-red-500/50 text-red-500 animate-error-shake'
+                          : 'border-[hsl(var(--border))] focus:ring-emerald-500/50 text-[hsl(var(--foreground))]'
+                      }`}
                   />
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col text-right">
-                     <span className={`text-xs font-bold uppercase tracking-wider ${Number(qrAmount) > ((currentUser as any)?.treeoCoins || 0) ? 'text-red-500' : 'text-emerald-500'}`}>Coins</span>
+                    <span className={`text-xs font-bold uppercase tracking-wider ${Number(qrAmount) > ((currentUser as any)?.treeoCoins || 0) ? 'text-red-500' : 'text-emerald-500'}`}>Coins</span>
                   </div>
                 </div>
-                
+
                 <div className="flex justify-between items-center mt-2 px-1">
                   <span className="text-xs font-medium text-[hsl(var(--muted-foreground))]">
-                    {locale === 'hy' ? 'Ձեր բալանսը:' : locale === 'ru' ? 'Ваш баланс:' : 'Your Balance:'} 
+                    {locale === 'hy' ? 'Ձեր բալանսը:' : locale === 'ru' ? 'Ваш баланс:' : 'Your Balance:'}
                   </span>
                   <span className={`text-sm font-bold ${Number(qrAmount) > ((currentUser as any)?.treeoCoins || 0) ? 'text-red-500' : 'text-emerald-500'}`}>
                     {(currentUser as any)?.treeoCoins || 0}
                   </span>
                 </div>
-                
-                {Number(qrAmount) > ((currentUser as any)?.treeoCoins || 0) && (
+
+                {showBusinessQrError && (
+                  <p className="text-xs font-semibold text-red-500 mt-2 animate-error-shake text-center">
+                    {locale === 'hy' ? 'Բիզնես օգտատերերը չեն կարող սա օգտագործել' : locale === 'ru' ? 'Бизнес-пользователи не могут использовать это' : 'Business users cannot use this'}
+                  </p>
+                )}
+
+                {!showBusinessQrError && Number(qrAmount) > ((currentUser as any)?.treeoCoins || 0) && (
                   <p className="text-xs font-semibold text-red-500 mt-2 animate-error-shake text-center">
                     {locale === 'hy' ? 'Անբավարար միջոցներ' : locale === 'ru' ? 'Недостаточно средств' : 'Insufficient funds'}
                   </p>
@@ -834,13 +871,13 @@ export default function ExchangePage() {
 
               {Number(qrAmount) > 0 && Number(qrAmount) <= ((currentUser as any)?.treeoCoins || 0) ? (
                 <div className="p-4 bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center">
-                  <QRCodeSVG 
-                    value={JSON.stringify({ 
-                      action: "PAYMENT", 
-                      userId: currentUser?.id, 
+                  <QRCodeSVG
+                    value={JSON.stringify({
+                      action: "PAYMENT",
+                      userId: currentUser?.id,
                       amount: Number(qrAmount),
                       timestamp: Date.now()
-                    })} 
+                    })}
                     size={200}
                     level="H"
                     includeMargin={false}
@@ -853,7 +890,7 @@ export default function ExchangePage() {
               ) : (
                 <div className="w-full aspect-square max-w-[200px] border-2 border-dashed border-[hsl(var(--muted))] rounded-2xl flex items-center justify-center">
                   <p className="text-sm text-[hsl(var(--muted-foreground))] px-4">
-                    {Number(qrAmount) > ((currentUser as any)?.treeoCoins || 0) 
+                    {Number(qrAmount) > ((currentUser as any)?.treeoCoins || 0)
                       ? (locale === 'hy' ? 'Անբավարար միջոցներ' : locale === 'ru' ? 'Недостаточно средств' : 'Insufficient funds')
                       : (locale === 'hy' ? 'Մուտքագրեք վավեր գումար' : locale === 'ru' ? 'Введите правильную сумму' : 'Enter a valid amount')}
                   </p>
