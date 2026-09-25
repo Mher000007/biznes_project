@@ -691,13 +691,13 @@ export default function Navbar() {
             >
               <Link
                 href={isBusinessUser ? "/dashboard" : "/profile"}
-                className={`hidden lg:flex items-center gap-1.5 text-[13px] font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors cursor-pointer xl:max-w-[220px] ${styles.authText}`}
+                className={`hidden lg:flex items-center gap-1.5 text-[13px] font-medium transition-colors cursor-pointer xl:max-w-[220px] ${styles.authText} ${isTransparent ? 'text-white hover:text-white' : 'text-[#5a626a] hover:text-[hsl(var(--foreground))]'}`}
               >
                 {!isBusinessUser && (
                   <Bookmark id="navbar-bookmark-icon" className="hidden xl:block w-3.5 h-3.5 text-amber-500 fill-amber-500/20 shrink-0" />
                 )}
-                <User className="w-5 h-5 xl:hidden" />
-                <span className="hidden xl:block truncate" style={{ color: "#5a626a" }}>
+                <User className={`w-5 h-5 xl:hidden ${isTransparent ? 'text-white' : ''}`} />
+                <span className="hidden xl:block truncate" style={{ color: isTransparent ? "#FFFFFF" : "#5a626a" }}>
                   {t.nav.hello}{currentUser.name || currentUser.username}
                 </span>
               </Link>
@@ -769,9 +769,9 @@ export default function Navbar() {
               }}
               title="Ելք (Log out)"
               aria-label="Log Out"
-              className="hidden lg:flex h-8 w-8 items-center justify-center rounded-lg bg-transparent border-0 text-[hsl(var(--muted-foreground))] hover:text-red-500 hover:bg-red-500/10 transition-all hover:scale-105 active:scale-95 cursor-pointer ml-1"
+              className={`hidden lg:flex h-8 w-8 items-center justify-center rounded-lg bg-transparent border-0 ${isTransparent ? 'text-white hover:text-red-400 hover:bg-white/10' : 'text-[#5a626a] hover:text-red-500 hover:bg-red-500/10'} transition-all hover:scale-105 active:scale-95 cursor-pointer ml-1`}
             >
-              <LogOut className="h-4 w-4 transition-colors" style={{ color: "#5a626a" }} />
+              <LogOut className="h-4 w-4 transition-colors" style={{ color: isTransparent ? "#FFFFFF" : "#5a626a" }} />
             </button>
           </div>
         ) : (

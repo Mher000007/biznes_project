@@ -545,6 +545,27 @@
       background-color: rgba(255, 255, 255, 0.08) !important;
     }
   }
+
+  // User greeting and logout in transparent header
+  .authText {
+    color: #FFFFFF !important;
+
+    span {
+      color: #FFFFFF !important;
+    }
+
+    svg {
+      color: #FFFFFF !important;
+    }
+  }
+
+  button[aria-label="Log Out"] {
+    color: #FFFFFF !important;
+
+    svg {
+      color: #FFFFFF !important;
+    }
+  }
 }
 
 :global(body.hide-navbar-mobile) .header {

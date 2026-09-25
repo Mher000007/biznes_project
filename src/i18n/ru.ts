@@ -216,6 +216,8 @@ export const ru: Translations = {
       noMessagesYet: "Пока нет сообщений. Отправьте сообщение, чтобы начать разговор.",
       typeYourMessage: "Введите ваше сообщение...",
       send: "Отправить",
+      takePhoto: "Сделать фото сейчас",
+      uploadFromComputer: "Загрузить с компьютера",
     },
     nav: { overview: "Обзор", businessProfile: "Профиль компании", billing: "Биллинг и Тарифы", plans: "Тарифы и Подписки", cards: "Сохраненные Карты", receipts: "Квитанции и Счета", branding: "Брендинг", credentials: "Документы", storiesHighlights: "Сториз и Хайлайтс", operatingHours: "Часы работы", menusOffers: "Меню и предложения", myLocations: "Мои локации", stories: "Сториз", inquiries: "Запросы", exchange: "Обмен", qrScanner: "QR Сканер", supportChat: "Чат поддержки", settings: "Настройки" },
     offers: {

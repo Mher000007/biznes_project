@@ -6,7 +6,6 @@ import { useI18n } from "@/i18n";
 import Link from "next/link";
 import { Sparkles, Trash2, Eye, Calendar, Upload, Link as LinkIcon, AlertCircle, CheckCircle, Lock, Clock, ChevronDown, Check, MousePointerClick, Bookmark, Heart } from "lucide-react";
 import { compressImageFile } from "@/lib/imageUtils";
-import HighlightsBuilder from "@/components/dashboard/HighlightsBuilder";
 
 interface Story {
   _id: string;
@@ -70,7 +69,7 @@ export default function DashboardStoriesPage() {
       // 1. Fetch user's business
       const bizRes = await api.get("/businesses/me/all");
       const biz = bizRes.data?.data?.[0]; // Get first business
-      
+
       if (!biz) {
         setBusiness(null);
         setLoading(false);
@@ -115,15 +114,15 @@ export default function DashboardStoriesPage() {
       if (storiesRes.data?.success) {
         const allStories: Story[] = storiesRes.data.data;
         const now = new Date();
-        
+
         const active = allStories.filter(s => new Date(s.expiresAt) > now);
         // The user requested that active stories also appear in the archive
         const archive = allStories;
-        
+
         setActiveStories(active);
         setArchivedStories(archive);
       }
-      
+
       if (offersRes.data?.success) {
         setActiveOffers(offersRes.data.data);
       }
@@ -227,7 +226,7 @@ export default function DashboardStoriesPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm(t.stories.deleteConfirm)) return;
-    
+
     try {
       await api.delete(`/stories/${id}`);
       setSuccess(t.stories.successDelete);
@@ -315,7 +314,7 @@ export default function DashboardStoriesPage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      
+
       {/* Title */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-[hsl(var(--primary))]/10 flex items-center justify-center text-[hsl(var(--primary))]">
@@ -328,11 +327,11 @@ export default function DashboardStoriesPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Publish Story Form Card */}
         <div className="lg:col-span-1 bg-[hsl(var(--card))] rounded-2xl p-5 shadow-sm space-y-4 h-fit border-0">
           <h2 className="text-sm font-bold tracking-wide">{t.stories.newStory}</h2>
-          
+
           {error && (
             <div className="bg-red-500/10 text-red-500 text-xs px-3.5 py-2.5 rounded-xl flex items-center gap-2 border-0">
               <AlertCircle className="w-4 h-4 shrink-0" />
@@ -348,13 +347,13 @@ export default function DashboardStoriesPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            
+
             {/* File Upload Zone */}
             <div className="space-y-2">
               <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))]">{t.stories.mediaContent}</label>
-              
+
               <div className="relative group">
-                <div 
+                <div
                   onClick={() => fileInputRef.current?.click()}
                   className="group relative h-40 sm:h-56 rounded-xl bg-[hsl(var(--muted))]/30 flex flex-col items-center justify-center border-0 cursor-pointer overflow-hidden transition-all hover:bg-[hsl(var(--muted))]/50"
                 >
@@ -369,18 +368,17 @@ export default function DashboardStoriesPage() {
                       <div className="absolute inset-0 pointer-events-none p-4 flex flex-col justify-between">
                         <div className="flex justify-end">
                           {overlayBadge !== "none" && (
-                            <span className={`px-2 py-1 text-[10px] font-bold rounded-lg uppercase tracking-wider ${
-                              overlayBadge === 'sale' ? 'bg-red-500 text-white' : 
-                              overlayBadge === 'new' ? 'bg-blue-500 text-white' : 'bg-amber-500 text-white'
-                            }`}>
+                            <span className={`px-2 py-1 text-[10px] font-bold rounded-lg uppercase tracking-wider ${overlayBadge === 'sale' ? 'bg-red-500 text-white' :
+                                overlayBadge === 'new' ? 'bg-blue-500 text-white' : 'bg-amber-500 text-white'
+                              }`}>
                               {overlayBadge}
                             </span>
                           )}
                         </div>
                         <div className="text-center">
                           {overlayText && (
-                            <h3 
-                              style={{ color: overlayColor, textShadow: '0 2px 10px rgba(0,0,0,0.8)' }} 
+                            <h3
+                              style={{ color: overlayColor, textShadow: '0 2px 10px rgba(0,0,0,0.8)' }}
                               className="font-black text-2xl"
                             >
                               {overlayText}
@@ -397,27 +395,27 @@ export default function DashboardStoriesPage() {
                     </div>
                   )}
 
-                {mediaUrl && (
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-xs font-medium">
-                    {t.stories.changeMedia}
-                  </div>
-                )}
+                  {mediaUrl && (
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-xs font-medium">
+                      {t.stories.changeMedia}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
 
-            <input 
-              type="file" 
-                ref={fileInputRef} 
-                onChange={handleFileUpload} 
-                accept="image/*,video/*" 
-                className="hidden" 
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                accept="image/*,video/*"
+                className="hidden"
               />
             </div>
 
             {/* Duration Select (Custom details/summary list design) */}
             <div className="space-y-1.5 relative">
               <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))]">{t.stories.duration}</label>
-              
+
               {(() => {
                 const durationOptions = [
                   { value: 24, label: `${t.stories.durations?.hours24 || "24 Hours"} ${(activePlan !== "premium" && activePlan !== "standard") ? "(Pro)" : ""}` },
@@ -437,7 +435,7 @@ export default function DashboardStoriesPage() {
                       </div>
                       <ChevronDown className="w-4 h-4 opacity-60 transition-transform group-open:rotate-180 duration-200" />
                     </summary>
-                    
+
                     <div className="absolute left-0 right-0 top-full mt-1.5 p-1.5 bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl z-50 shadow-xl backdrop-blur-lg flex flex-col gap-0.5 animate-in fade-in zoom-in-95 duration-150">
                       {durationOptions.map((opt) => (
                         <button
@@ -448,11 +446,10 @@ export default function DashboardStoriesPage() {
                             const details = e.currentTarget.closest('details');
                             if (details) details.removeAttribute('open');
                           }}
-                          className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-lg transition-all text-left font-medium ${
-                            duration === opt.value
+                          className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-lg transition-all text-left font-medium ${duration === opt.value
                               ? "bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))] font-semibold"
                               : "text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]"
-                          }`}
+                            }`}
                         >
                           <span className="flex items-center gap-2">
                             {opt.label}
@@ -475,8 +472,8 @@ export default function DashboardStoriesPage() {
               <label className="block text-xs font-semibold text-[hsl(var(--muted-foreground))]">{t.stories.schedulePost}</label>
               <div className="flex items-center gap-2 px-3.5 py-2.5 bg-[hsl(var(--input))] border border-[hsl(var(--border))]/50 rounded-xl">
                 <Calendar className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
-                <input 
-                  type="datetime-local" 
+                <input
+                  type="datetime-local"
                   value={scheduledFor}
                   onChange={(e) => setScheduledFor(e.target.value)}
                   className="bg-transparent border-0 outline-none text-xs text-[hsl(var(--foreground))] w-full cursor-pointer"
@@ -516,11 +513,11 @@ export default function DashboardStoriesPage() {
 
         {/* Stories Listing Grid (Active and Archive) */}
         <div className="lg:col-span-2 space-y-6">
-          
+
           {/* Active Stories */}
           <div className="bg-[hsl(var(--card))] rounded-2xl p-5 shadow-sm space-y-4 border-0">
             <h2 className="text-sm font-bold tracking-wide">{t.stories.activeStories} <span className="text-xs font-normal text-[hsl(var(--muted-foreground))] ml-1">{t.stories.activeFor24}</span></h2>
-            
+
             {activeStories.length === 0 ? (
               <div className="py-12 text-center text-xs text-[hsl(var(--muted-foreground))]/70">
                 {t.stories.noActive}
@@ -543,7 +540,7 @@ export default function DashboardStoriesPage() {
                       <span className="text-[9px] text-white/80 bg-black/40 px-2 py-0.5 rounded-full backdrop-blur font-medium">
                         {t.stories.expiresAt}: {new Date(story.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
-                      <button 
+                      <button
                         onClick={() => handleDelete(story._id)}
                         className="p-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors cursor-pointer border-0"
                         title={t.stories.deleteConfirm}
@@ -641,11 +638,11 @@ export default function DashboardStoriesPage() {
           </div>
 
           {/* Highlights Builder Component */}
-          <HighlightsBuilder 
-            business={business} 
-            highlights={highlights} 
-            setHighlights={setHighlights} 
-            storyArchive={archivedStories} 
+          <HighlightsBuilder
+            business={business}
+            highlights={highlights}
+            setHighlights={setHighlights}
+            storyArchive={archivedStories}
             activeOffers={activeOffers}
           />
 

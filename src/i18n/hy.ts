@@ -275,6 +275,8 @@ export const hy: Translations = {
       noMessagesYet: "Դեռևս հաղորդագրություններ չկան: Ուղարկեք հաղորդագրություն՝ զրույցը սկսելու համար:",
       typeYourMessage: "Գրեք Ձեր հաղորդագրությունը...",
       send: "Ուղարկել",
+      takePhoto: "Հիմա նկարել",
+      uploadFromComputer: "Համակարգչից ներբեռնել",
     },
     nav: {
       overview: "Ակնարկ",

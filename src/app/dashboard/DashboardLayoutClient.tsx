@@ -45,10 +45,14 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  // 1. Unverified route guard effect
+  // 1. Auth & Unverified route guard effect
   useEffect(() => {
-    if (!isLoading && currentUser && currentUser.verified === false) {
-      router.push("/verify-pending");
+    if (!isLoading) {
+      if (!currentUser) {
+        router.push("/signin");
+      } else if (currentUser.verified === false) {
+        router.push("/verify-pending");
+      }
     }
   }, [currentUser, isLoading, router]);
 

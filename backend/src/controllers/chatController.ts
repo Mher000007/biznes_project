@@ -9,10 +9,10 @@ import mongoose from 'mongoose';
  */
 export const sendMessage = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { message, conversationId } = req.body;
+    const { message, conversationId, attachments } = req.body;
 
-    if (!message) {
-      res.status(400).json({ success: false, message: 'Message text is required' });
+    if (!message && (!attachments || attachments.length === 0)) {
+      res.status(400).json({ success: false, message: 'Message text or attachments are required' });
       return;
     }
 
@@ -33,7 +33,8 @@ export const sendMessage = async (req: AuthRequest, res: Response): Promise<void
       conversationId: targetConversationId,
       sender: req.user.id,
       senderName: isAdmin ? 'Admin' : req.user.name,
-      message,
+      message: message || '',
+      attachments: attachments || [],
       read: false,
     });
 
@@ -75,7 +76,7 @@ export const getMessages = async (req: AuthRequest, res: Response): Promise<void
       read: false,
       sender: { $ne: req.user.id }
     };
-    
+
     // We update the read status asynchronously
     ChatMessage.updateMany(filter, { $set: { read: true } }).exec().catch(err => console.error(err));
 

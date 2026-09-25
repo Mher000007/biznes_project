@@ -283,6 +283,8 @@ export const en = {
       noMessagesYet: "No messages yet. Send a message to start the conversation.",
       typeYourMessage: "Type your message...",
       send: "Send",
+      takePhoto: "Take a photo now",
+      uploadFromComputer: "Upload from computer",
     },
     nav: {
       overview: "Overview",

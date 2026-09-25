@@ -5,7 +5,7 @@ import { getApiUrl } from "@/lib/utils";
 import { useI18n } from "@/i18n";
 import axios from "axios";
 import Link from "next/link";
-import { Plus, Trash2, Edit2, Utensils, Users, MapPin, Tag, Lock, Loader2, Languages, AlertCircle, Globe, ChevronDown, Sparkles, Check } from "lucide-react";
+import { Plus, Trash2, Edit2, Utensils, Users, MapPin, Tag, Lock, Loader2, AlertCircle, ChevronDown, Sparkles, Check } from "lucide-react";
 import { LocationSelect } from "@/components/ui/LocationSelect";
 
 interface Offer {
@@ -221,9 +221,8 @@ export default function DashboardOffers() {
   const [hasInclusions, setHasInclusions] = useState<boolean>(false);
   const [isTranslating, setIsTranslating] = useState<boolean>(false);
 
-  // Selectable primary language state & collapsible translations
+  // Selectable primary language state
   const [primaryLang, setPrimaryLang] = useState<LangKey>('hy');
-  const [showTranslations, setShowTranslations] = useState<boolean>(false);
 
   // Custom dropdown open states & refs
   const [isLocationOpen, setIsLocationOpen] = useState(false);
@@ -925,17 +924,13 @@ export default function DashboardOffers() {
                   </div>
                 </div>
 
-                {/* DISHES SECTION WITH SELECTABLE PRIMARY LANGUAGE AND COLLAPSIBLE TRANSLATIONS */}
+                {/* DISHES SECTION */}
                 <div className="space-y-3 pt-3 border-t border-[hsl(var(--border))]/60">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1">
                     <div>
-                      <h4 className="text-sm font-bold flex items-center gap-2 text-[hsl(var(--foreground))]">
-                        <Languages className="w-4 h-4 text-[hsl(var(--primary))]" />
-                        <span>{offersT.dishesLabel || "Dishes Included"}</span>
+                      <h4 className="text-sm font-bold text-[hsl(var(--foreground))]">
+                        {offersT.dishesLabel || "Dishes Included"}
                       </h4>
-                      <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
-                        {offersT.dishesHelpText || "Մուտքագրեք ուտեստները հիմնական լեզվով (մյուս լեզուները կթարգմանվեն ավտոմատ):"}
-                      </p>
                     </div>
                     {isTranslating && (
                       <span className="flex items-center gap-1.5 text-xs text-amber-500 animate-pulse font-semibold bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20 self-start sm:self-auto">
@@ -1013,108 +1008,6 @@ export default function DashboardOffers() {
                         </div>
                       );
                     })}
-
-                  {/* Toggle button to show/hide non-primary translations */}
-                  <button
-                    type="button"
-                    onClick={() => setShowTranslations(!showTranslations)}
-                    className="w-full flex items-center justify-between p-3 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--muted))]/30 hover:bg-[hsl(var(--muted))]/60 text-xs font-semibold transition-all cursor-pointer select-none"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-[hsl(var(--primary))]" />
-                      <span>{offersT.otherLangTranslations || "Այլ լեզուների թարգմանություններ"} (🇬🇧 English & 🇷🇺 Русский)</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold">
-                        {offersT.autoTranslatedBadge || "Auto-translated"}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-[hsl(var(--muted-foreground))]">
-                      <span>{showTranslations ? (offersT.hideText || "Թաքցնել") : (offersT.showText || "Տեսնել")}</span>
-                      <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showTranslations ? "rotate-180" : ""}`} />
-                    </div>
-                  </button>
-
-                  {/* Collapsible non-primary language cards */}
-                  {showTranslations && (
-                    <div className="space-y-3 animate-fade-in pt-1">
-                      {(['hy', 'en', 'ru'] as LangKey[])
-                        .filter(langKey => langKey !== primaryLang)
-                        .map((langKey) => {
-                          let flag = "";
-                          let langTitle = "";
-                          let placeholderText = "";
-                          let value = "";
-                          let borderAccent = "";
-
-                          if (langKey === 'hy') {
-                            flag = "🇦🇲";
-                            langTitle = "Հայերեն";
-                            placeholderText = "օր․ Խոզի խորոված, Խաչապուրի, Գինի";
-                            value = formData.dishesString;
-                            borderAccent = "border-blue-500/20 hover:border-blue-500/40";
-                          } else if (langKey === 'en') {
-                            flag = "🇬🇧";
-                            langTitle = "English / Անգլերեն";
-                            placeholderText = "e.g. Pork Khorovats, Khachapuri, Wine";
-                            value = formData.dishesEnString;
-                            borderAccent = "border-emerald-500/20 hover:border-emerald-500/40";
-                          } else {
-                            flag = "🇷🇺";
-                            langTitle = "Russian / Ռուսերեն";
-                            placeholderText = "напр. Шашлык из свинины, Хачапури, Вино";
-                            value = formData.dishesRuString;
-                            borderAccent = "border-purple-500/20 hover:border-purple-500/40";
-                          }
-
-                          const scriptError = validateLanguageScript(langKey, value);
-
-                          return (
-                            <div
-                              key={langKey}
-                              className={`relative rounded-xl border-2 p-3.5 transition-all duration-200 bg-[hsl(var(--card))] ${borderAccent}`}
-                            >
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                  <label className="text-xs font-bold flex items-center gap-2 select-none">
-                                    <span>{flag} {langTitle}</span>
-                                  </label>
-                                </div>
-
-                                <button
-                                  type="button"
-                                  onClick={() => setPrimaryLang(langKey)}
-                                  className="text-[11px] px-2.5 py-1 rounded-full font-semibold transition-all cursor-pointer bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]/80 hover:text-[hsl(var(--foreground))]"
-                                >
-                                  {offersT.setAsPrimaryBtn || "◯ Ընտրել որպես հիմնական"}
-                                </button>
-                              </div>
-
-                              <textarea
-                                rows={2}
-                                value={value}
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  if (langKey === 'hy') setFormData({ ...formData, dishesString: val });
-                                  else if (langKey === 'en') setFormData({ ...formData, dishesEnString: val });
-                                  else if (langKey === 'ru') setFormData({ ...formData, dishesRuString: val });
-                                }}
-                                placeholder={placeholderText}
-                                className={`w-full rounded-xl border bg-[hsl(var(--background))] px-3.5 py-2 text-xs outline-none transition-colors resize-none ${scriptError
-                                  ? "border-red-500 focus:border-red-600 bg-red-500/5 text-red-900 dark:text-red-200"
-                                  : "border-[hsl(var(--border))] focus:border-[hsl(var(--primary))]"
-                                  }`}
-                              />
-
-                              {scriptError && (
-                                <div className="flex items-center gap-1.5 text-[11px] text-red-500 dark:text-red-400 font-medium pt-1.5 animate-fade-in">
-                                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                                  <span>{scriptError}</span>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                    </div>
-                  )}
                 </div>
 
                 <div className="pt-3 border-t border-[hsl(var(--border))]/60">
