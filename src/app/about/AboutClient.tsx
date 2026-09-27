@@ -4,8 +4,7 @@ import styles from "./About.module.scss";
 import { useI18n } from "@/i18n";
 import { useEffect, useState } from "react";
 import { getApiUrl } from "@/lib/utils";
-import { ChevronDown } from "lucide-react";
-
+import { ChevronDown, Utensils, Coffee, Hotel, Wine, Star, MapPin, Search, CalendarCheck, Map, BadgeCheck } from "lucide-react";
 const FAQ_DATA = {
   hy: [
     { q: "Ի՞նչ է Treeo-ն և ինչպե՞ս է այն աշխատում:", a: "Treeo-ն միասնական հարթակ է, որը թույլ է տալիս գտնել և ամրագրել սեղաններ ռեստորաններում, սենյակներ հյուրանոցներում և այլ ծառայություններ HoReCa ոլորտում։" },
@@ -31,10 +30,10 @@ const FAQ_DATA = {
 };
 
 const MOCK_CARDS = [
-  { icon: "🍕", title: "Lavash Restaurant", sub: "★ 4.9 · Yerevan", color: "hsla(145,65%,45%,0.12)" },
-  { icon: "☕", title: "Cascade Lounge", sub: "★ 4.7 · Yerevan", color: "hsla(145,65%,45%,0.12)" },
-  { icon: "🏨", title: "Dilijan Resort", sub: "★ 4.9 · Dilijan", color: "hsla(145,65%,45%,0.12)" },
-  { icon: "🍷", title: "Dolmama", sub: "★ 4.8 · Yerevan", color: "hsla(145,65%,45%,0.12)" },
+  { icon: <Utensils />, title: "Lavash Restaurant", rating: 4.9, location: "Yerevan", color: "linear-gradient(135deg, #FF6B6B, #FF8E53)" },
+  { icon: <Coffee />, title: "Cascade Lounge", rating: 4.7, location: "Yerevan", color: "linear-gradient(135deg, #4D96FF, #6BCB77)" },
+  { icon: <Hotel />, title: "Dilijan Resort", rating: 4.9, location: "Dilijan", color: "linear-gradient(135deg, #9D4EDD, #C77DFF)" },
+  { icon: <Wine />, title: "Dolmama", rating: 4.8, location: "Yerevan", color: "linear-gradient(135deg, #FF9F1C, #FFBF69)" },
 ];
 
 function formatBusinessCount(count: number): string {
@@ -104,14 +103,28 @@ export default function AboutClient() {
           </div>
 
           <div className={styles.storyVisualInner}>
-            {MOCK_CARDS.map((c) => (
-              <div key={c.title} className={styles.miniCard}>
-                <div className={styles.miniCardIcon} style={{ background: c.color }}>
-                  {c.icon}
+            <div className={styles.cardsStack}>
+              {MOCK_CARDS.map((c) => (
+                <div key={c.title} className={styles.floatingCard}>
+                  <div className={styles.cardHeader}>
+                    <div className={styles.iconWrapper} style={{ background: c.color, color: "#fff" }}>
+                      {c.icon}
+                    </div>
+                    <div className={styles.cardTitle}>{c.title}</div>
+                  </div>
+                  <div className={styles.cardMeta}>
+                    <div className={styles.cardRating}>
+                      <Star fill="currentColor" stroke="none" />
+                      {c.rating}
+                    </div>
+                    <div className={styles.cardLocation}>
+                      <MapPin />
+                      {c.location}
+                    </div>
+                  </div>
                 </div>
-                <div className={styles.miniCardSub}>{c.sub}</div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -130,12 +143,37 @@ export default function AboutClient() {
 
         <div className={styles.featuresGrid}>
           {t.about.userFeatures.items.map((f, i) => {
-            const icons = ["🔍", "📅", "🍽️", "🗺️", "⭐", "✅"];
-            const bgs = ["hsla(220,85%,60%,0.12)", "hsla(145,65%,45%,0.12)", "hsla(30,90%,55%,0.12)", "hsla(260,75%,60%,0.12)", "hsla(45,95%,55%,0.12)", "hsla(165,65%,45%,0.12)"];
+            const icons = [
+              <Search size={22} />,
+              <CalendarCheck size={22} />,
+              <Utensils size={22} />,
+              <Map size={22} />,
+              <Star size={22} />,
+              <BadgeCheck size={22} />
+            ];
+            const colors = [
+              "220, 85%, 60%", // Blue
+              "145, 65%, 45%", // Green
+              "30, 90%, 55%",  // Orange
+              "260, 75%, 60%", // Purple
+              "45, 95%, 55%",  // Yellow
+              "165, 65%, 45%"  // Teal
+            ];
+            
             return (
-              <div key={f.title} className={styles.featureCard}>
-                <div className={styles.featureIconWrap} style={{ background: bgs[i] }}>
-                  <span className={styles.featureIcon}>{icons[i]}</span>
+              <div 
+                key={f.title} 
+                className={styles.featureCard}
+                style={{ "--hover-glow": `hsla(${colors[i]}, 0.08)` } as React.CSSProperties}
+              >
+                <div 
+                  className={styles.featureIconWrap} 
+                  style={{ 
+                    background: `hsla(${colors[i]}, 0.12)`,
+                    color: `hsl(${colors[i]})`
+                  }}
+                >
+                  <div className={styles.featureIcon}>{icons[i]}</div>
                 </div>
                 <h3 className={styles.featureTitle}>{f.title}</h3>
                 <p className={styles.featureDesc}>{f.desc}</p>
