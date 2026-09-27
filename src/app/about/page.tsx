@@ -15,7 +15,21 @@ export async function generateMetadata(): Promise<Metadata> {
         ru: "https://treeo.am/ru/about",
         "x-default": "https://treeo.am/about",
       },
-    }
+    },
+    openGraph: {
+      title: t.seo.aboutTitle,
+      description: t.seo.aboutDesc,
+      url: "https://treeo.am/about",
+      siteName: "Treeo",
+      images: [{ url: "/og-default.jpg", width: 1200, height: 630 }],
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: t.seo.aboutTitle,
+      description: t.seo.aboutDesc,
+      images: ["/og-default.jpg"],
+    },
   };
 }
 

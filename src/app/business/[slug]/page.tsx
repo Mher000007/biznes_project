@@ -19,7 +19,7 @@ export async function generateMetadata(
   
   // Try to fetch business from backend
   try {
-    const apiURL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:5001/api";
+    const apiURL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_API_URL || "http://127.0.0.1:5001/api";
     const res = await fetch(`${apiURL}/businesses/slug/${slug}`, {
       next: { revalidate: 3600 }, // Cache for 1 hour
     });
@@ -37,6 +37,20 @@ export async function generateMetadata(
     return {
       title: `${nameFromSlug} | Treeo`,
       description: t.seo.businessDesc.replace("{{description}}", nameFromSlug),
+      openGraph: {
+        title: `${nameFromSlug} | Treeo`,
+        description: t.seo.businessDesc.replace("{{description}}", nameFromSlug),
+        url: `https://treeo.am/business/${slug}`,
+        siteName: "Treeo",
+        images: [{ url: "/og-default.jpg", width: 1200, height: 630 }],
+        type: "profile",
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: `${nameFromSlug} | Treeo`,
+        description: t.seo.businessDesc.replace("{{description}}", nameFromSlug),
+        images: ["/og-default.jpg"],
+      },
     };
   }
 
