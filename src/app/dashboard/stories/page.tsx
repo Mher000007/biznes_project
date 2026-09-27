@@ -6,6 +6,7 @@ import { useI18n } from "@/i18n";
 import Link from "next/link";
 import { Sparkles, Trash2, Eye, Calendar, Upload, Link as LinkIcon, AlertCircle, CheckCircle, Lock, Clock, ChevronDown, Check, MousePointerClick, Bookmark, Heart } from "lucide-react";
 import { compressImageFile } from "@/lib/imageUtils";
+import HighlightsBuilder from "@/components/dashboard/HighlightsBuilder";
 
 interface Story {
   _id: string;
