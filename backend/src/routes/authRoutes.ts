@@ -34,17 +34,19 @@ router.post('/logout', logout);
 router.post('/refresh', refreshTokenHandler);
 
 // OAuth Routes
+const frontendUrl = process.env.FRONTEND_URL || 'https://treeo.am';
+
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'], session: false }));
 router.get(
   '/google/callback',
-  passport.authenticate('google', { session: false, failureRedirect: '/signin?error=google_oauth_failed' }),
+  passport.authenticate('google', { session: false, failureRedirect: `${frontendUrl}/signin?error=google_oauth_failed` }),
   oauthSuccessCallback
 );
 
 router.get('/facebook', passport.authenticate('facebook', { scope: ['email'], session: false }));
 router.get(
   '/facebook/callback',
-  passport.authenticate('facebook', { session: false, failureRedirect: '/signin?error=facebook_oauth_failed' }),
+  passport.authenticate('facebook', { session: false, failureRedirect: `${frontendUrl}/signin?error=facebook_oauth_failed` }),
   oauthSuccessCallback
 );
 
