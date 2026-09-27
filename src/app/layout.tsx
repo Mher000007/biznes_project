@@ -61,6 +61,19 @@ export default async function RootLayout({
   return (
     <html lang={locale} className={`${montserrat.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning data-scroll-behavior="smooth">
       <head>
+        {/* Google tag (gtag.js) */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZD2LGNZF7Z"></script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+
+              gtag('config', 'G-ZD2LGNZF7Z');
+            `,
+          }}
+        />
         <script
           dangerouslySetInnerHTML={{
             __html: `
