@@ -61,7 +61,7 @@ export function getResetPasswordTemplate({ name, link, lang = 'hy' }: EmailTempl
               <table role="presentation" border="0" cellpadding="0" cellspacing="0">
                 <tr>
                   <td style="font-size: 26px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px;">
-                    Fin<span style="color: #2563eb;">dy</span>
+                    <img src="${process.env.FRONTEND_URL}/logo1.png" alt="TREEO LOGO"/>
                   </td>
                 </tr>
               </table>
