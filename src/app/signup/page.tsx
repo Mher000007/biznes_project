@@ -7,7 +7,7 @@ import { AccountType, getUsers } from "@/lib/auth";
 import { useAuth } from "@/context/AuthContext";
 import { useI18n } from "@/i18n";
 import axios from "axios";
-import { getApiUrl } from "@/lib/utils";
+import { getApiUrl, getOAuthUrl } from "@/lib/utils";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -114,7 +114,7 @@ export default function SignUpPage() {
   }, [name]);
 
   const handleGoogleClick = () => {
-    window.location.href = `${getApiUrl()}/auth/google`;
+    window.location.href = `${getOAuthUrl()}/auth/google`;
   };
 
   const [loading, setLoading] = useState(false);

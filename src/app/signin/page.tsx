@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Eye, EyeOff } from "lucide-react";
 import AnimatedBackground from "@/components/auth/AnimatedBackground";
 import { useI18n } from "@/i18n";
-import { getApiUrl } from "@/lib/utils";
+import { getApiUrl, getOAuthUrl } from "@/lib/utils";
 
 import api from "@/lib/api";
 
@@ -123,7 +123,7 @@ export default function SignInPage() {
   }, []);
 
   const handleGoogleClick = () => {
-    window.location.href = `${getApiUrl()}/auth/google`;
+    window.location.href = `${getOAuthUrl()}/auth/google`;
   };
 
   useEffect(() => {

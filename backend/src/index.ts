@@ -50,11 +50,9 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    // In production, reject requests with no origin (e.g. arbitrary curl scripts)
+    // OAuth callbacks from Google/Facebook arrive as browser navigations (GET
+    // redirects) with no `origin` header. These must be allowed through.
     if (!origin) {
-      if (process.env.NODE_ENV === 'production') {
-        return callback(new Error('CORS: Direct no-origin requests strictly forbidden in production'));
-      }
       return callback(null, true);
     }
     if (allowedOrigins.includes(origin)) return callback(null, true);
