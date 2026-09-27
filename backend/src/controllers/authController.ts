@@ -174,7 +174,7 @@ export const register = asyncHandler(async (req: Request, res: Response): Promis
 
   await user.save();
 
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  const frontendUrl = process.env.FRONTEND_URL || 'https://treeo.am';
   const verifyUrl = `${frontendUrl}/verify-email?token=${rawToken}`;
   const template = getVerifyEmailTemplate({ name: user.name, link: verifyUrl, lang: userLang });
 
@@ -427,7 +427,7 @@ export const forgotPassword = asyncHandler(async (req: Request, res: Response): 
   await user.save();
 
   const userLang = (req.body.locale as 'hy' | 'en' | 'ru') || user.locale || 'hy';
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  const frontendUrl = process.env.FRONTEND_URL || 'https://treeo.am';
   const resetUrl = `${frontendUrl}/reset-password?token=${rawToken}`;
 
   const template = getResetPasswordTemplate({ name: user.name, link: resetUrl, lang: userLang });
@@ -507,7 +507,7 @@ export const sendEmailVerification = asyncHandler(async (req: Request & { user?:
   await user.save();
 
   const userLang = (req.body.locale as 'hy' | 'en' | 'ru') || user.locale || 'hy';
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  const frontendUrl = process.env.FRONTEND_URL || 'https://treeo.am';
   const verifyUrl = `${frontendUrl}/verify-email?token=${rawToken}`;
 
   const template = getVerifyEmailTemplate({ name: user.name, link: verifyUrl, lang: userLang });
@@ -562,7 +562,7 @@ export const verifyEmail = asyncHandler(async (req: Request, res: Response): Pro
 
 // ─── OAuth Callback Handler ───────────────────────────────────────────────────
 export const oauthSuccessCallback = asyncHandler(async (req: Request & { user?: any }, res: Response): Promise<void> => {
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  const frontendUrl = process.env.FRONTEND_URL || 'https://treeo.am';
   if (!req.user) {
     res.redirect(`${frontendUrl}/signin?error=oauth_failed`);
     return;

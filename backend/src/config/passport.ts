@@ -7,7 +7,7 @@ export function configurePassport(): void {
   // ─── Google Strategy ────────────────────────────────────────────────────────
   const googleClientId = process.env.GOOGLE_CLIENT_ID || 'placeholder_google_client_id';
   const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET || 'placeholder_google_client_secret';
-  const googleCallbackUrl = process.env.GOOGLE_CALLBACK_URL || 'http://localhost:5001/api/auth/google/callback';
+  const googleCallbackUrl = process.env.GOOGLE_CALLBACK_URL || 'https://biznesprojectapi-production.up.railway.app/api/auth/google/callback';
 
   passport.use(
     new GoogleStrategy(
@@ -74,7 +74,7 @@ export function configurePassport(): void {
   // ─── Facebook Strategy ──────────────────────────────────────────────────────
   const facebookAppId = process.env.FACEBOOK_APP_ID || 'placeholder_facebook_app_id';
   const facebookAppSecret = process.env.FACEBOOK_APP_SECRET || 'placeholder_facebook_app_secret';
-  const facebookCallbackUrl = process.env.FACEBOOK_CALLBACK_URL || 'http://localhost:5001/api/auth/facebook/callback';
+  const facebookCallbackUrl = process.env.FACEBOOK_CALLBACK_URL || 'https://biznesprojectapi-production.up.railway.app/api/auth/facebook/callback';
 
   passport.use(
     new FacebookStrategy(
