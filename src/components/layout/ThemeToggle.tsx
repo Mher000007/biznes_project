@@ -1,32 +1,28 @@
 "use client";
-import { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { RootState } from "@/store/store";
-import { toggleTheme, setTheme } from "@/store/slices/uiSlice";
+import { useEffect, useState } from "react";
+import { useTheme } from "@/context/ThemeContext";
 import { Sun, Moon } from "lucide-react";
 
 export default function ThemeToggle() {
-  const dispatch = useDispatch();
-  const theme = useSelector((s: RootState) => s.ui.theme);
+  const { theme, setTheme } = useTheme();
+  const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem("theme") as "light" | "dark" | null;
-    if (saved) dispatch(setTheme(saved));
-    else if (window.matchMedia("(prefers-color-scheme: dark)").matches) dispatch(setTheme("dark"));
-  }, [dispatch]);
-
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", theme === "dark");
-    localStorage.setItem("theme", theme);
+    setIsDark(document.documentElement.classList.contains("dark"));
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
   }, [theme]);
 
   return (
     <button
-      onClick={() => dispatch(toggleTheme())}
+      onClick={() => setTheme(isDark ? "light" : "dark")}
       className="relative flex h-9 w-9 items-center justify-center rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--card))] transition-all hover:scale-105 hover:shadow-md"
       aria-label="Toggle theme"
     >
-      {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+      {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
     </button>
   );
 }

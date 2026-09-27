@@ -529,7 +529,6 @@ export default function DashboardOffers() {
     setHasInclusions(false);
     previousPrimaryText.current = "";
     setPrimaryLang('hy');
-    setShowTranslations(false);
     setFormData({
       packageName: "",
       pax: 1,
@@ -553,7 +552,6 @@ export default function DashboardOffers() {
     setHasInclusions(hasInc);
     const dishesArm = Array.isArray(offer.dishes) ? offer.dishes.join(", ") : "";
     previousPrimaryText.current = dishesArm;
-    setShowTranslations(false);
     setFormData({
       packageName: offer.packageName || "",
       pax: offer.pax || 1,
