@@ -51,24 +51,11 @@ export function getApiUrl(): string {
 }
 
 /**
- * Returns the absolute backend API URL for OAuth redirect flows.
- *
- * OAuth (Google / Facebook) triggers a full-page redirect chain:
- *   browser → backend → Google → backend callback → frontend
- *
- * This MUST bypass the Next.js rewrite proxy because:
- *  1. The proxy can't handle multi-step redirect chains properly on mobile.
- *  2. Cookies set by the backend in the callback need to be on the correct
- *     domain (backend → frontend redirect), not swallowed by the proxy.
- *
- * IMPORTANT: Only NEXT_PUBLIC_* env vars are available on the client.
- * We intentionally do NOT fall back to NEXT_PUBLIC_API_URL because it
- * may be set to localhost, which breaks OAuth on deployed/mobile.
+ * Returns the URL for OAuth redirect flows.
+ * Uses the Next.js proxy so that the backend's Set-Cookie headers
+ * are applied to the frontend domain.
  */
 export function getOAuthUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_OAUTH_BACKEND_URL ||
-    "https://biznesprojectapi-production.up.railway.app/api"
-  );
+  return getApiUrl();
 }
 
