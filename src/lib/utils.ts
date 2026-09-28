@@ -61,13 +61,13 @@ export function getApiUrl(): string {
  *  2. Cookies set by the backend in the callback need to be on the correct
  *     domain (backend → frontend redirect), not swallowed by the proxy.
  *
- * Uses NEXT_BACKEND_URL (the absolute backend origin) with an /api
- * suffix so it resolves to e.g. https://biznesprojectapi-production.up.railway.app/api
+ * IMPORTANT: Only NEXT_PUBLIC_* env vars are available on the client.
+ * We intentionally do NOT fall back to NEXT_PUBLIC_API_URL because it
+ * may be set to localhost, which breaks OAuth on deployed/mobile.
  */
 export function getOAuthUrl(): string {
   return (
-    process.env.NEXT_BACKEND_URL ||
-    process.env.NEXT_PUBLIC_API_URL ||
+    process.env.NEXT_PUBLIC_OAUTH_BACKEND_URL ||
     "https://biznesprojectapi-production.up.railway.app/api"
   );
 }
