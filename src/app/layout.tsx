@@ -34,18 +34,37 @@ export const metadata: Metadata = {
   keywords: ["Armenia", "business directory", "Armenian businesses", "B2B", "Yerevan", "Treeo"],
   authors: [{ name: "Treeo Team" }],
   robots: "index, follow",
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
   openGraph: {
     type: "website",
+    url: "https://treeo.am",
     siteName: "Treeo",
     title: "Treeo — Armenia's Business Directory",
     description: "Discover, connect, and grow with Armenian entrepreneurs. Find B2B partners and services across every industry in Armenia.",
-    images: ["/og-default.jpg"],
+    images: [
+      {
+        url: "https://treeo.am/logo1.png",
+        width: 1200,
+        height: 630,
+        alt: "Treeo — Armenia's Business Directory",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Treeo — Armenia's Business Directory",
     description: "Discover, connect, and grow with Armenian entrepreneurs. Find B2B partners and services across every industry in Armenia.",
-    images: ["/og-default.jpg"],
+    images: [
+      {
+        url: "https://treeo.am/logo1.png",
+        width: 1200,
+        height: 630,
+        alt: "Treeo — Armenia's Business Directory",
+      },
+    ],
   },
   manifest: "/site.webmanifest",
 };
