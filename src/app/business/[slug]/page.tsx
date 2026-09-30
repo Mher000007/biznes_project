@@ -42,14 +42,14 @@ export async function generateMetadata(
         description: t.seo.businessDesc.replace("{{description}}", nameFromSlug),
         url: `https://treeo.am/business/${slug}`,
         siteName: "Treeo",
-        images: [{ url: "/og-default.jpg", width: 1200, height: 630 }],
+        images: [{ url: "https://treeo.am/logo1.png", width: 1200, height: 630 }],
         type: "profile",
       },
       twitter: {
         card: "summary_large_image",
         title: `${nameFromSlug} | Treeo`,
         description: t.seo.businessDesc.replace("{{description}}", nameFromSlug),
-        images: ["/og-default.jpg"],
+        images: ["https://treeo.am/logo1.png"],
       },
     };
   }
@@ -70,7 +70,7 @@ export async function generateMetadata(
     .replace("{{city}}", city);
 
   // Extract cover image
-  let image = "/og-default.jpg";
+  let image = "https://treeo.am/logo1.png";
   if (business.coverImageUrl && typeof business.coverImageUrl === 'string' && !business.coverImageUrl.includes('photo-')) {
     image = business.coverImageUrl;
   } else if (business.logo && typeof business.logo === 'string' && !business.logo.includes('photo-')) {
