@@ -53,6 +53,7 @@ export const en = {
     viewAll: "View all",
     premiumTitle: "Offers",
     premiumSubtitle: "Verified and top recommended offers",
+    swipe: "Swipe",
   },
   // Stats
   stats: {

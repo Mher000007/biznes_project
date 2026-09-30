@@ -51,6 +51,7 @@ export const hy: Translations = {
     viewAll: "Դիտել բոլորը",
     premiumTitle: "Առաջարկներ",
     premiumSubtitle: "Երաշխավորված և լավագույն առաջարկներ",
+    swipe: "Թերթել",
   },
   stats: {
     businesses: "Բիզնեսներ",

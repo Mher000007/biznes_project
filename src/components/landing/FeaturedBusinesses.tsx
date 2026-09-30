@@ -225,7 +225,7 @@ export default function FeaturedBusinesses() {
                   
                   <div className="flex items-center gap-3 sm:gap-4 self-start sm:self-auto">
                     <div className={styles.swipeIndicator}>
-                      <span className={styles.swipeText}>Թերթել</span>
+                      <span className={styles.swipeText}>{t.featured.swipe}</span>
                       <SwipeIcon className={styles.swipeIcon} />
                     </div>
                     <Link href="/discover?verified=true" className={styles.viewAll}>
