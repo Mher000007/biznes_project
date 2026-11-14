@@ -1,381 +1,603 @@
 @use "../../styles/theme" as *;
 @use "../../styles/responsive" as *;
 
-.header {
+/* ========== ELEVEIGHT AI INSPIRED FLOATING GLASS PILL NAVBAR ========== */
+
+.inner,
+:global(.klcqGG_inner) {
   position: fixed;
-  left: 0;
-  right: 0;
-  top: 0;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  max-width: 1280px;
+  margin-inline: auto;
   z-index: 100;
-  background-color: $bg-primary;
-  border-bottom: 1px solid $border-light;
-  box-shadow: none; // Strictly remove box-shadows
-  height: 64px;
+  --panel-radius: 9999px;
+  border-radius: var(--panel-radius);
+  pointer-events: all;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-  gap: 16px;
-  transition: opacity 0.35s ease, filter 0.35s ease, background-color 0.3s ease;
+  flex-direction: column;
+
+  /*
+   * IMPORTANT: no backdrop-filter / background on the root.
+   * A backdrop-filter here turns this element into a "backdrop root",
+   * so .glassEffect would see nothing behind it and the SVG refraction
+   * would never show. The glass lives entirely in the .glass layers.
+   */
+  background: transparent;
+  border: none;
+  box-shadow:
+    0 16px 36px -10px rgba(0, 0, 0, 0.08),
+    0 2px 10px rgba(0, 0, 0, 0.03);
+  transition:
+    border-radius 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.3s ease,
+    background-color 0.3s ease,
+    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    top 0.3s ease,
+    opacity 0.3s ease;
+
+  @include mq-down("md") {
+    top: 10px;
+    left: 12px;
+    right: 12px;
+  }
 
   &.dimmed {
     opacity: 0.15 !important;
     filter: blur(4px) brightness(0.7) !important;
-    pointer-events: none !important;
     user-select: none !important;
   }
 
+  /* Dark Mode: pure black glass (tint is on .glassTint), no blue cast */
+  :global(.dark) & {
+    border: none;
+    box-shadow:
+      0 20px 48px -10px rgba(0, 0, 0, 0.85),
+      0 2px 10px rgba(0, 0, 0, 0.6);
+  }
+
+  &[data-expanded="true"],
+  &[data-open="true"] {
+    --panel-radius: 28px;
+    box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.15), 0 4px 16px rgba(0, 0, 0, 0.06);
+
+    :global(.dark) & {
+      box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.9), 0 4px 16px rgba(0, 0, 0, 0.5);
+    }
+  }
+}
+
+/* Glass Layers (SVG Liquid-Glass Refraction) */
+.glass,
+:global(.klcqGG_glass) {
+  border-radius: inherit;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Refraction layer: samples the page behind and warps it with #glass-distortion */
+.glassEffect,
+:global(.klcqGG_glassEffect) {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  /* Prefixed FIRST: Lightning CSS drops the unprefixed one if -webkit- comes after it */
+  -webkit-backdrop-filter: blur(1px);
+  backdrop-filter: blur(1px);
+  filter: url(#glass-distortion);
+  isolation: isolate;
+  overflow: hidden;
+  clip-path: inset(0 round var(--panel-radius));
+}
+
+/* Transparent tint: light = darker smoky tone, dark = deep pure black */
+.glassTint,
+:global(.klcqGG_glassTint) {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  background: rgba(220, 226, 236, 0.45);
+  transition: background-color 0.3s ease;
+
+  :global(.dark) & {
+    background: rgba(0, 0, 0, 0.58);
+  }
+}
+
+/* Glass bevel highlight — disabled (no white edge around the pill) */
+.glassShine,
+:global(.klcqGG_glassShine) {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  box-shadow: none;
+}
+
+.glassContent,
+:global(.klcqGG_glassContent) {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Top Row (klcqGG_topRow) */
+.topRow,
+:global(.klcqGG_topRow) {
+  width: 100%;
+  min-height: 62px;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
   @include mq-down("md") {
-    padding: 0 16px;
+    min-height: 54px;
+    padding: 0 14px;
     gap: 8px;
   }
 }
 
-.logo {
+/* Logo (klcqGG_logo) */
+.logo,
+:global(.klcqGG_logo) {
   display: flex;
   align-items: center;
   text-decoration: none;
   flex-shrink: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    opacity: 0.85;
+    transform: scale(1.02);
+  }
 }
 
 .logoImage {
-  height: 7rem;
-  width: 100%;
-  min-width: 120px;
+  height: 36px;
+  width: 105px;
   background-image: url('/logo1.png');
   background-size: contain;
   background-repeat: no-repeat;
   background-position: left center;
-  transition: filter 0.3s ease;
   flex-shrink: 0;
-}
-
-.mobileLogoImage {
-  height: 2.5rem;
-  width: auto;
-  object-fit: contain;
-  /* Green filter matching exactly #00C853 */
-  filter: brightness(0) saturate(100%) invert(55%) sepia(70%) saturate(1473%) hue-rotate(101deg) brightness(93%) contrast(101%) !important;
   transition: filter 0.3s ease;
+
+  @include mq-down("md") {
+    height: 30px;
+    width: 86px;
+  }
 }
 
-.searchForm {
+/* Main Navigation (F6duVW_nav) */
+.nav,
+:global(.F6duVW_nav) {
+  display: flex;
+  align-items: center;
+
+  @include mq-down("lg") {
+    display: none; // Desktop only
+  }
+}
+
+.navList,
+:global(.F6duVW_list) {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  @include mq-down("lg") {
+    display: none; // Desktop only
+  }
+}
+
+.navItem,
+:global(.F6duVW_navItem) {
+  position: relative;
+}
+
+.navLink,
+:global(.F6duVW_navLink) {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #334155;
+  white-space: nowrap;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  border-radius: 9999px;
+  padding: 7px 16px;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: inherit;
+  transition: all 0.2s ease;
+
+  :global(.dark) & {
+    color: #cbd5e1;
+  }
+
+  &:hover {
+    color: #000000;
+    background: rgba(0, 0, 0, 0.05);
+
+    :global(.dark) & {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.08);
+    }
+  }
+
+  &.active,
+  &[aria-current="page"] {
+    color: #000000;
+    background: rgba(0, 200, 83, 0.2);
+    font-weight: 700;
+
+    :global(.dark) & {
+      color: #ffffff;
+      background: rgba(0, 200, 83, 0.28);
+    }
+  }
+}
+
+/* Actions Section (klcqGG_actions) */
+.actions,
+:global(.klcqGG_actions) {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex: 1;
-  max-width: 320px;
-
-  @include mq-down("lg") {
-    max-width: none;
-  }
+  flex-shrink: 0;
 
   @include mq-down("md") {
-    position: absolute;
-    top: 0;
-    right: 16px;
-    height: 100%;
-    width: 0;
-    opacity: 0;
-    pointer-events: none;
-    overflow: hidden;
-    background-color: transparent;
-    z-index: 105;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    margin: 0;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-
-    &.mobileActive {
-      width: 100%;
-      right: 0;
-      opacity: 1;
-      pointer-events: auto;
-      padding: 0 16px;
-      background-color: transparent;
-      justify-content: center;
-      overflow: visible;
-    }
+    gap: 6px;
   }
 }
 
-.searchGroup {
+/* Search Toggle Button (klcqGG_searchToggle) */
+.searchToggle,
+:global(.klcqGG_searchToggle) {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.03);
+  color: #334155;
+  cursor: pointer;
   display: flex;
   align-items: center;
-  background-color: var(--bg-input-search); // Very light grey background
-  border-radius: 4px; // Max 4px border radius for soft but structured look
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+
+  :global(.dark) & {
+    border-color: rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.06);
+    color: #e2e8f0;
+  }
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.07);
+    transform: scale(1.05);
+
+    :global(.dark) & {
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+    }
+  }
+
+  &[data-open="true"] {
+    background: #00C853;
+    color: #ffffff;
+    border-color: #00C853;
+    box-shadow: 0 0 16px rgba(0, 200, 83, 0.45);
+    transform: scale(1.05);
+  }
+
+  @include mq-down("md") {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* Action Buttons (VLzsWq_button) */
+.buttonCta,
+:global(.VLzsWq_button) {
+  border-radius: 9999px;
+  padding: 8px 22px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  cursor: pointer;
   border: 1px solid transparent;
-  flex: 1;
-  overflow: visible;
-  position: relative;
-  height: 40px;
-  transition: $transition-smooth;
-
-  &:focus-within {
-    border-color: $text-secondary;
-    background-color: $bg-primary;
-  }
-
-  @include mq-down("md") {
-    flex-direction: row;
-    width: 100%;
-    background-color: var(--bg-input-search);
-    border-radius: 20px;
-    gap: 0;
-    height: 40px;
-  }
-}
-
-.mobileSearchBack {
-  display: none;
-
-  @include mq-down("md") {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 100%;
-    background: transparent;
-    border: none;
-    color: $text-primary;
-    cursor: pointer;
-    flex-shrink: 0;
-    padding-left: 12px;
-    padding-right: 4px;
-  }
-}
-
-.inputWrapper {
-  display: flex;
-  align-items: center;
-  padding: 0 12px;
-  flex: 1;
-  height: 100%;
-  min-width: 0;
-
-  @include mq-down("md") {
-    width: 100%;
-    background-color: transparent;
-    height: 100%;
-    padding-left: 8px;
-  }
-}
-
-.inputIcon {
-  width: 16px;
-  height: 16px;
-  color: $text-secondary;
-  margin-right: 8px;
-  flex-shrink: 0;
-}
-
-.inputField {
-  width: 100%;
-  height: 100%;
-  border: none !important;
-  background: transparent !important;
-  padding: 0 !important;
-  font-size: 14px;
-  color: $text-primary;
-  outline: none;
-
-  &::placeholder {
-    color: $text-secondary;
-  }
-}
-
-.selectField {
-  width: 100%;
-  height: 100%;
-  border: none !important;
-  background: transparent !important;
-  padding: 0 !important;
-  font-size: 14px;
-  color: $text-primary;
-  outline: none;
-  cursor: pointer;
-
-  & option {
-    background-color: $bg-primary;
-    color: $text-primary;
-  }
-}
-
-.divider {
-  width: 1px;
-  height: 24px;
-  background-color: $border-light;
-  flex-shrink: 0;
-
-  @include mq-down("md") {
-    display: none;
-  }
-}
-
-.searchButton {
-  height: 40px;
-  padding: 0 20px;
-  background-color: $accent-primary; // Solid black
-  color: #FFFFFF; // White text
-  border: none;
-  border-radius: 4px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: $transition-smooth;
-  flex-shrink: 0;
-
-  @include hover-device {
-    &:hover {
-      opacity: 0.85;
-      transform: translateY(-1px);
-    }
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-
-  @include mq-down("md") {
-    width: 100%;
-  }
-}
-
-/* Nav Actions & Links */
-.navActions {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-
-  @include mq-down("md") {
-    gap: 8px;
-  }
-
-  &.hideOnMobileSearch {
-    @include mq-down("md") {
-      display: none !important;
-    }
-  }
-}
-
-.links {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  margin-left: auto;
-  margin-right: 24px;
-
-  @include mq-down("lg") {
-    display: none; // Hidden on smaller screens
-  }
-}
-
-:global(.transparent-header) {
-  .links {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    margin: 0;
-  }
-}
-
-.navLink {
-  font-size: 13px;
-  font-weight: 500;
-  color: $text-secondary;
-  transition: $transition-smooth;
-
-  @include hover-device {
-    &:hover {
-      color: $text-primary;
-    }
-  }
-
-  &.active {
-    color: $text-primary;
-    font-weight: 600;
-  }
-}
-
-.actionButton {
-  font-size: 13px;
-  font-weight: 600;
-  color: $text-secondary;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  transition: $transition-smooth;
-
-  @include hover-device {
-    &:hover {
-      color: $text-primary;
-    }
-  }
-}
-
-.registerButton {
-  height: 36px;
-  padding: 0 16px;
-  background-color: $accent-primary;
-  color: #FFFFFF;
-  border: none;
-  border-radius: 4px;
-  font-size: 13px;
-  font-weight: 600;
-  text-decoration: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: $transition-smooth;
+  gap: 8px;
+  text-decoration: none;
+  font-family: inherit;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 
-  @include hover-device {
+  &[data-variant="primary"],
+  &:global(.klcqGG_aiCloudCta) {
+    background-color: #00C853;
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(0, 200, 83, 0.35);
+
     &:hover {
-      opacity: 0.85;
+      background-color: #00b34a;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(0, 200, 83, 0.45);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
+  &[data-variant="outline"],
+  &:global(.klcqGG_cta) {
+    background: transparent;
+    border-color: rgba(0, 0, 0, 0.12);
+    color: #1e293b;
+
+    :global(.dark) & {
+      border-color: rgba(255, 255, 255, 0.16);
+      color: #f8fafc;
+    }
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.05);
+      border-color: rgba(0, 0, 0, 0.25);
+
+      :global(.dark) & {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.35);
+      }
+    }
+  }
+}
+
+.userProfilePill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  text-decoration: none;
+  transition: all 0.2s ease;
+
+  :global(.dark) & {
+    color: #e2e8f0;
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.08);
+
+    :global(.dark) & {
+      background: rgba(255, 255, 255, 0.12);
+    }
+  }
+}
+
+.logoutButton {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+    transform: scale(1.05);
+  }
+}
+
+/* Mobile Menu Button (klcqGG_menuButton) */
+.menuButton,
+:global(.klcqGG_menuButton) {
+  display: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.03);
+  color: #334155;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+
+  :global(.dark) & {
+    border-color: rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.06);
+    color: #e2e8f0;
+  }
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.07);
+
+    :global(.dark) & {
+      background: rgba(255, 255, 255, 0.12);
     }
   }
 
   @include mq-down("lg") {
-    display: none; // Hide in header for mobile/tablet screen sizes, since it's inside the menu drawer
-  }
-}
-
-.mobileControls {
-  display: none;
-
-  @include mq-down("lg") {
     display: flex;
-    align-items: center;
-    gap: 8px;
+  }
+
+  @include mq-down("md") {
+    width: 36px;
+    height: 36px;
   }
 }
 
-.iconButton {
-  width: 36px;
-  height: 36px;
+/* Eleveight AI Search Panel */
+.searchPanel {
+  width: 100%;
+  padding: 0 20px 16px 20px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  animation: searchPanelSlide 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+
+  @include mq-down("md") {
+    padding: 0 12px 14px 12px;
+  }
+}
+
+@keyframes searchPanelSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.searchForm {
+  width: 100%;
+  position: relative;
+}
+
+.searchInputWrapper {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 9999px;
+  padding: 0 16px;
+  height: 44px;
+  width: 100%;
+  position: relative;
+  transition: all 0.2s ease;
+
+  :global(.dark) & {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.10);
+  }
+
+  &:focus-within {
+    border-color: #00C853;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(0, 200, 83, 0.15);
+
+    :global(.dark) & {
+      background: #000000;
+      border-color: #00E676;
+      box-shadow: 0 0 0 3px rgba(0, 230, 118, 0.2);
+    }
+  }
+}
+
+.searchIcon {
+  width: 18px;
+  height: 18px;
+  color: #94a3b8;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+
+.searchInput {
+  width: 100%;
+  height: 100%;
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  font-size: 14px;
+  font-family: inherit;
+  color: inherit;
+  outline: none;
+
+  &::placeholder {
+    color: #94a3b8;
+  }
+}
+
+.clearSearchBtn {
+  background: transparent;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: #94a3b8;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: transparent;
-  border: none;
-  color: $text-primary;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: $transition-smooth;
+  border-radius: 50%;
+  transition: color 0.15s;
 
   &:hover {
-    background-color: var(--bg-input-search);
+    color: #000000;
+
+    :global(.dark) & {
+      color: #ffffff;
+    }
   }
 }
 
-.mobileSearchTrigger {
-  @include mq-up("md") {
-    display: none !important;
+.suggestionsDropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.85);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  backdrop-filter: blur(24px) saturate(190%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 20px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  z-index: 999;
+  max-height: 380px;
+  overflow-y: auto;
+
+  /* Pure black translucent glass in dark mode (NO BLUE) */
+  :global(.dark) & {
+    background: rgba(0, 0, 0, 0.85);
+    border-color: rgba(255, 255, 255, 0.10);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85);
+  }
+
+  @include mq-down("md") {
+    left: 12px;
+    right: 12px;
   }
 }
 
-/* Mobile Full Screen Menu Overlay */
+/* Mobile Glass Drawer */
 .mobileMenu {
   display: none;
 
@@ -387,188 +609,98 @@
     left: 0;
     right: 0;
     bottom: 0;
-    height: 100dvh;
-    background-color: $bg-primary;
-    padding: 16px 24px;
-    z-index: 110;
-    gap: 20px;
-    animation: slideDown 0.25s ease-out forwards;
+    background: rgba(255, 255, 255, 0.88);
+    -webkit-backdrop-filter: blur(24px) saturate(190%);
+    backdrop-filter: blur(24px) saturate(190%);
+    z-index: 1000;
+    padding: 24px;
+    overflow-y: auto;
+    animation: mobileMenuFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: all;
+
+    /* Pure black translucent glass in dark mode (NO BLUE) */
+    :global(.dark) & {
+      background: rgba(0, 0, 0, 0.90);
+    }
   }
 }
 
-@keyframes slideDown {
+@keyframes mobileMenuFadeIn {
   from {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: scale(0.98);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: scale(1);
   }
 }
 
-.transparentHeader {
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0) 100%) !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  border-bottom: none !important;
-  box-shadow: none !important;
+.mobileMenuClose {
+  align-self: flex-end;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.05);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+  cursor: pointer;
+  margin-bottom: 20px;
 
-  // Make the logo stand out in white against the dark tint
-  .logoImage {
-    filter: brightness(0) invert(1) !important;
+  :global(.dark) & {
+    background: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.mobileLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.mobileNavLink {
+  font-size: 18px;
+  font-weight: 700;
+  color: #334155;
+  text-decoration: none;
+  padding: 12px 16px;
+  border-radius: 16px;
+  transition: all 0.2s ease;
+
+  :global(.dark) & {
+    color: #cbd5e1;
   }
 
-  // Navbar Links
-  .navLink {
-    color: rgba(255, 255, 255, 0.7) !important;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  &:hover {
+    color: #000000;
+    background: rgba(0, 0, 0, 0.05);
 
-    &:hover {
-      color: #FFFFFF !important;
-    }
-
-    &.active {
-      color: #FFFFFF !important;
-      text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-    }
-  }
-
-  // Plain text labels / actions
-  .actionButton,
-  :global(.hidden.lg\:inline-flex.text-\[13px\]) {
-    color: #FFFFFF !important;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-
-    &:hover {
-      color: #FFFFFF !important;
-    }
-  }
-
-  // Style the search bar inputs to match the dark glassmorphic look
-  .searchGroup {
-    background-color: rgba(0, 0, 0, 0.45) !important;
-    border-color: rgba(255, 255, 255, 0.15) !important;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
-
-    &:focus-within {
-      background-color: rgba(0, 0, 0, 0.65) !important;
-      border-color: rgba(255, 255, 255, 0.3) !important;
-    }
-  }
-
-  .inputField {
-    color: #FFFFFF !important;
-
-    &::placeholder {
-      color: #FFFFFF !important;
+    :global(.dark) & {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.08);
     }
   }
 
-  .selectField {
-    color: #FFFFFF !important;
+  &.active,
+  &[aria-current="page"] {
+    color: #000000;
+    background: rgba(0, 200, 83, 0.2);
+    font-weight: 700;
 
-    // Override Tailwind classes for the span and chevron SVG inside
-    span,
-    svg {
-      color: #FFFFFF !important;
-    }
-
-    & option {
-      background-color: #101012 !important;
-      color: #FFFFFF !important;
-    }
-  }
-
-  .inputIcon {
-    color: #FFFFFF !important;
-  }
-
-  .divider {
-    background-color: rgba(255, 255, 255, 0.15) !important;
-  }
-
-  // Adjust Language Switcher button styles
-  :global(.flex.items-center.h-9.rounded-lg.border) {
-    border-color: rgba(255, 255, 255, 0.15) !important;
-    background-color: rgba(0, 0, 0, 0.45) !important;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
-
-    button {
-      color: rgba(255, 255, 255, 0.6) !important;
-
-      &:hover {
-        color: #FFFFFF !important;
-        background-color: rgba(255, 255, 255, 0.08) !important;
-      }
-
-      // Active state button (EN, HY, RU)
-      &:global(.bg-\[hsl\(var\(--foreground\)\)\]) {
-        background-color: #FFFFFF !important;
-        color: #101012 !important;
-      }
-    }
-  }
-
-  // Adjust Theme Toggle button styles
-  :global(.relative.flex.h-9.w-9) {
-    border-color: rgba(255, 255, 255, 0.15) !important;
-    background-color: rgba(0, 0, 0, 0.45) !important;
-    color: #FFFFFF !important;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15) !important;
-
-    &:hover {
-      background-color: rgba(255, 255, 255, 0.08) !important;
-      color: #FFFFFF !important;
-    }
-  }
-
-  // Adjust Sign Out button styles
-  :global(.hidden.lg\:inline-flex.h-9.items-center.rounded-lg.border) {
-    border-color: rgba(255, 255, 255, 0.15) !important;
-    color: rgba(255, 255, 255, 0.7) !important;
-    background-color: rgba(0, 0, 0, 0.2) !important;
-
-    &:hover {
-      color: #FFFFFF !important;
-      background-color: rgba(255, 255, 255, 0.08) !important;
-      border-color: rgba(255, 255, 255, 0.3) !important;
-    }
-  }
-
-  // Adjust mobile menu trigger button color
-  .iconButton {
-    color: #FFFFFF !important;
-
-    &:hover {
-      background-color: rgba(255, 255, 255, 0.08) !important;
-    }
-  }
-
-  // User greeting and logout in transparent header
-  .authText {
-    color: #FFFFFF !important;
-
-    span {
-      color: #FFFFFF !important;
-    }
-
-    svg {
-      color: #FFFFFF !important;
-    }
-  }
-
-  button[aria-label="Log Out"] {
-    color: #FFFFFF !important;
-
-    svg {
-      color: #FFFFFF !important;
+    :global(.dark) & {
+      color: #ffffff;
+      background: rgba(0, 200, 83, 0.28);
     }
   }
 }
 
-:global(body.hide-navbar-mobile) .header {
+:global(body.hide-navbar-mobile) .inner,
+:global(body.hide-navbar-mobile) :global(.klcqGG_inner) {
   @include mq-down("md") {
     display: none !important;
   }

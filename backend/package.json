@@ -6,6 +6,9 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "mongo:start": "mongod --dbpath ~/.mongodb/data --logpath ~/.mongodb/mongod.log --fork",
+    "mongo:status": "lsof -i :27017",
+    "mongo:stop": "pkill -f mongod || true",
     "build": "tsc",
     "start": "node dist/index.js",
     "lint": "eslint src --ext .ts",

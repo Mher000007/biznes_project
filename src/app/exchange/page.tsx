@@ -835,11 +835,11 @@ export default function ExchangePage() {
                       }
                     }}
                     placeholder="0"
-                    className={`w-full bg-[hsl(var(--muted))]/50 border rounded-xl px-4 py-3 text-2xl font-bold text-center focus:outline-none focus:ring-2 transition-all ${showBusinessQrError 
-                        ? 'border-red-500 focus:ring-red-500/50 text-red-500 animate-error-shake' 
-                        : Number(qrAmount) > ((currentUser as any)?.treeoCoins || 0)
-                          ? 'border-red-500 focus:ring-red-500/50 text-red-500 animate-error-shake'
-                          : 'border-[hsl(var(--border))] focus:ring-emerald-500/50 text-[hsl(var(--foreground))]'
+                    className={`w-full bg-[hsl(var(--muted))]/50 border rounded-xl px-4 py-3 text-2xl font-bold text-center focus:outline-none focus:ring-2 transition-all ${showBusinessQrError
+                      ? 'border-red-500 focus:ring-red-500/50 text-red-500 animate-error-shake'
+                      : Number(qrAmount) > ((currentUser as any)?.treeoCoins || 0)
+                        ? 'border-red-500 focus:ring-red-500/50 text-red-500 animate-error-shake'
+                        : 'border-[hsl(var(--border))] focus:ring-emerald-500/50 text-[hsl(var(--foreground))]'
                       }`}
                   />
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col text-right">

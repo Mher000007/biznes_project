@@ -16,6 +16,10 @@ const nextConfig: NextConfig = {
         source: '/api/backend/:path*',
         destination: `${BACKEND_URL}/:path*`,
       },
+      {
+        source: '/api/:path((?!ai/chat|translate|geocode).*)',
+        destination: `${BACKEND_URL}/:path*`,
+      },
     ];
   },
 };
