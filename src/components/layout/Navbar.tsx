@@ -7,7 +7,6 @@ import ThemeToggle from "./ThemeToggle";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { useI18n } from "@/i18n";
 import { useAuth } from "@/context/AuthContext";
-import { MOCK_BUSINESSES } from "@/data/mock-businesses";
 import axios from "axios";
 import { getApiUrl } from "@/lib/utils";
 import { transliterateArmenian } from "@/lib/transliterate";
@@ -59,23 +58,10 @@ export default function Navbar() {
       return direct.trim();
     }
 
+
+
     const itemKey = item.id || item.slug || "";
     const itemName = (item.name || item.businessName || "").toLowerCase().trim();
-
-    const mockMatch = MOCK_BUSINESSES.find(
-      (b) =>
-        (itemKey && (b.id === itemKey || b.slug === itemKey)) ||
-        (itemName && b.name && b.name.toLowerCase().trim() === itemName)
-    );
-    if (mockMatch) {
-      const mockLogo =
-        mockMatch.logo ||
-        mockMatch.logoUrl ||
-        (Array.isArray(mockMatch.images) ? mockMatch.images[0] : "") ||
-        mockMatch.coverImageUrl ||
-        "";
-      if (mockLogo) return mockLogo;
-    }
 
     if (typeof localStorage !== "undefined") {
       const profilesStr = localStorage.getItem("armbiz-business-profiles");
@@ -145,15 +131,7 @@ export default function Navbar() {
         for (const key of favIds) {
           if (seen.has(key)) continue;
 
-          const mockMatch = MOCK_BUSINESSES.find(b => b.id === key || b.slug === key);
-          if (mockMatch) {
-            const logo = resolveBusinessLogo(mockMatch);
-            list.push({ ...mockMatch, logoUrl: logo, logo: logo });
-            seen.add(key);
-            if (mockMatch.id) seen.add(String(mockMatch.id));
-            if (mockMatch.slug) seen.add(String(mockMatch.slug));
-            continue;
-          }
+
 
           const profilesStr = localStorage.getItem("armbiz-business-profiles");
           if (profilesStr) {
@@ -210,7 +188,7 @@ export default function Navbar() {
     }
   };
 
-  // Debounced search suggestions fetch (API + Mock + LocalStorage)
+  // Debounced search suggestions fetch (API + LocalStorage)
   useEffect(() => {
     const fetchSuggestions = async () => {
       setLoadingSuggestions(true);
@@ -244,18 +222,7 @@ export default function Navbar() {
           return lText.includes(query) || lText.includes(armQuery) || lText.includes(enQuery);
         };
 
-        // Top Restaurants / HoReCa businesses for initial suggestions, or search matching
-        const matchedMock = query
-          ? MOCK_BUSINESSES.filter((b) => {
-            const bName = b.name || "";
-            const bCat = typeof b.category === "object" ? (b.category?.name || b.category?.slug || "") : (b.category || "");
-            const bCity = b.city || "";
-            const bDesc = b.description || b.shortDescription || "";
-            const bTags = (b.tags || []).join(" ");
-            return matchesQuery(bName) || matchesQuery(bCat) || matchesQuery(bCity) || matchesQuery(bDesc) || matchesQuery(bTags);
-          })
-          : MOCK_BUSINESSES.filter((b) => b.category?.slug === "horeca" || b.category?.id === "cat-horeca" || b.category?.name === "HoReCa")
-            .sort((a, b) => (b.ratingAvg || 0) - (a.ratingAvg || 0) || (b.reviewCount || 0) - (a.reviewCount || 0));
+
 
         // Filter backend results if query is provided
         const filteredBackend = query
@@ -321,21 +288,8 @@ export default function Navbar() {
           verified: b.verified || b.isVerified,
         }));
 
-        // Normalize mock items
-        const normalizedMock = matchedMock.map((b: any) => ({
-          _id: b.id,
-          slug: b.slug || b.id,
-          name: b.name,
-          city: b.city || "Yerevan",
-          category: b.category || { name: "HoReCa" },
-          images: b.images || [],
-          logo: b.logoUrl || "",
-          rating: b.ratingAvg || 0,
-          verified: b.isVerified,
-        }));
-
-        // Merge backend + Top Restaurants mock + matched local profiles
-        const combined = [...normalizedBackend, ...normalizedMock, ...matchedLocalProfiles];
+        // Merge backend + matched local profiles
+        const combined = [...normalizedBackend, ...matchedLocalProfiles];
         const uniqueList: any[] = [];
         const seenKeys = new Set<string>();
 

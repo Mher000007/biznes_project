@@ -1,7 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { MOCK_BUSINESSES } from "@/data/mock-businesses";
 import { Star, MapPin, Crown, Medal, Loader2, UtensilsCrossed } from "lucide-react";
 import { getApiUrl } from "@/lib/utils";
 import axios from "axios";
@@ -106,42 +105,10 @@ export default function FeaturedBusinesses() {
           mapped.sort((a, b) => b.ratingAvg - a.ratingAvg || b.reviewCount - a.reviewCount);
           setBusinesses(mapped.slice(0, 5));
         } else {
-          const horeca = MOCK_BUSINESSES
-            .filter((b) => b.category?.slug === "horeca")
-            .sort((a, b) => (b.ratingAvg || 0) - (a.ratingAvg || 0) || (b.reviewCount || 0) - (a.reviewCount || 0))
-            .slice(0, 5)
-            .map((b) => ({
-              id: b.id,
-              name: b.name,
-              slug: b.slug,
-              category: { name: b.category?.name || "HoReCa" },
-              shortDescription: b.shortDescription || "",
-              city: b.city || "",
-              ratingAvg: b.ratingAvg || 0,
-              reviewCount: b.reviewCount || 0,
-              isVerified: b.isVerified || false,
-              logoUrl: b.logoUrl || "",
-            }));
-          setBusinesses(horeca);
+          setBusinesses([]);
         }
       } catch (err) {
-        const horeca = MOCK_BUSINESSES
-          .filter((b) => b.category?.slug === "horeca")
-          .sort((a, b) => (b.ratingAvg || 0) - (a.ratingAvg || 0) || (b.reviewCount || 0) - (a.reviewCount || 0))
-          .slice(0, 5)
-          .map((b) => ({
-            id: b.id,
-            name: b.name,
-            slug: b.slug,
-            category: { name: b.category?.name || "HoReCa" },
-            shortDescription: b.shortDescription || "",
-            city: b.city || "",
-            ratingAvg: b.ratingAvg || 0,
-            reviewCount: b.reviewCount || 0,
-            isVerified: b.isVerified || false,
-            logoUrl: b.logoUrl || "",
-          }));
-        setBusinesses(horeca);
+        setBusinesses([]);
       }
 
       // 2. Load Featured Businesses for the Slider
@@ -201,6 +168,10 @@ export default function FeaturedBusinesses() {
     return stars;
   };
 
+  if (!loading && premiumBusinesses.length === 0 && businesses.length === 0) {
+    return null;
+  }
+
   return (
     <section className={styles.section}>
       <div className={styles.container}>
@@ -245,61 +216,63 @@ export default function FeaturedBusinesses() {
             )}
 
             {/* Top 5 Ranking List */}
-            <div className={premiumBusinesses.length > 0 ? "pt-10 border-t border-white/10" : ""}>
-              <div className={styles.header}>
-                <div className={styles.headerLeft}>
-                  <div>
-                    <h2 className={styles.title}>{t.featured.title}</h2>
-                    <p className={styles.subtitle}>{t.featured.subtitle}</p>
+            {businesses.length > 0 && (
+              <div className={premiumBusinesses.length > 0 ? "pt-10 border-t border-white/10" : ""}>
+                <div className={styles.header}>
+                  <div className={styles.headerLeft}>
+                    <div>
+                      <h2 className={styles.title}>{t.featured.title}</h2>
+                      <p className={styles.subtitle}>{t.featured.subtitle}</p>
+                    </div>
                   </div>
+                  <Link href="/discover?category=horeca" className={styles.viewAll}>
+                    {t.featured.viewAll}
+                  </Link>
                 </div>
-                <Link href="/discover?category=horeca" className={styles.viewAll}>
-                  {t.featured.viewAll}
-                </Link>
-              </div>
 
-              <div className={styles.rankingList}>
-                {businesses.map((biz, index) => {
-                  const rank = index + 1;
-                  return (
-                    <Link key={biz.id} href={`/business/${biz.slug}`} className={`${styles.rankItem} ${getRankClass(rank)}`}>
-                      <div className={styles.rankBadge}>
-                        {getRankIcon(rank)}
-                      </div>
+                <div className={styles.rankingList}>
+                  {businesses.map((biz, index) => {
+                    const rank = index + 1;
+                    return (
+                      <Link key={biz.id} href={`/business/${biz.slug}`} className={`${styles.rankItem} ${getRankClass(rank)}`}>
+                        <div className={styles.rankBadge}>
+                          {getRankIcon(rank)}
+                        </div>
 
-                      <div className={styles.bizAvatar}>
-                        {biz.logoUrl ? (
-                          <img src={biz.logoUrl} alt={biz.name} className={styles.avatarImg} />
-                        ) : (
-                          <div className={styles.avatarPlaceholder}>
-                            <UtensilsCrossed className={styles.avatarIcon} />
+                        <div className={styles.bizAvatar}>
+                          {biz.logoUrl ? (
+                            <img src={biz.logoUrl} alt={biz.name} className={styles.avatarImg} />
+                          ) : (
+                            <div className={styles.avatarPlaceholder}>
+                              <UtensilsCrossed className={styles.avatarIcon} />
+                            </div>
+                          )}
+                        </div>
+
+                        <div className={styles.bizInfo}>
+                          <div className={styles.bizNameRow}>
+                            <h3 className={styles.bizName}>{biz.name}</h3>
                           </div>
-                        )}
-                      </div>
-
-                      <div className={styles.bizInfo}>
-                        <div className={styles.bizNameRow}>
-                          <h3 className={styles.bizName}>{biz.name}</h3>
+                          <p className={styles.bizDesc}>{biz.shortDescription}</p>
+                          <div className={styles.bizMeta}>
+                            <span className={styles.location}>
+                              <MapPin className={styles.metaIcon} />
+                              {biz.city}
+                            </span>
+                          </div>
                         </div>
-                        <p className={styles.bizDesc}>{biz.shortDescription}</p>
-                        <div className={styles.bizMeta}>
-                          <span className={styles.location}>
-                            <MapPin className={styles.metaIcon} />
-                            {biz.city}
-                          </span>
-                        </div>
-                      </div>
 
-                      <div className={styles.ratingBlock}>
-                        <div className={styles.ratingScore}>{biz.ratingAvg.toFixed(1)}</div>
-                        <div className={styles.starsRow}>{renderStars(biz.ratingAvg)}</div>
-                        <div className={styles.reviewCount}>{biz.reviewCount} {t.business.reviews}</div>
-                      </div>
-                    </Link>
-                  );
-                })}
+                        <div className={styles.ratingBlock}>
+                          <div className={styles.ratingScore}>{biz.ratingAvg.toFixed(1)}</div>
+                          <div className={styles.starsRow}>{renderStars(biz.ratingAvg)}</div>
+                          <div className={styles.reviewCount}>{biz.reviewCount} {t.business.reviews}</div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
           </>
         )}
       </div>

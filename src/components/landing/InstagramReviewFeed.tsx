@@ -4,7 +4,6 @@ import Link from "next/link";
 import axios from "axios";
 import { Heart, Loader2, ChevronLeft, ChevronRight, Volume2, VolumeX, Quote, ArrowLeft } from "lucide-react";
 import { getApiUrl } from "@/lib/utils";
-import { MOCK_BUSINESSES } from "@/data/mock-businesses";
 import { useI18n } from "@/i18n";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
@@ -40,41 +39,7 @@ interface ReviewCardData {
   createdAt?: string;
 }
 
-const FALLBACK_REVIEWS: ReviewCardData[] = [
-  {
-    id: "mock-1",
-    user: { name: "Anahit Sargsyan", initials: "AS" },
-    biz: { name: "Lavash Restaurant Group", slug: "lavash-restaurant-group", address: "22 Abovyan St", city: "Yerevan" },
-    time: "2h ago",
-    media: [{ url: "https://images.unsplash.com/photo-1608897013039-887f21d8c804?w=800&auto=format&fit=crop&q=80", type: 'image' }],
-    rating: 5,
-    likes: 42,
-    caption: "Amazing traditional food! The lavash is always hot and fresh, and the khorovats was perfectly cooked. Excellent service too.",
-    businessId: "mock-1"
-  },
-  {
-    id: "mock-2",
-    user: { name: "Karen Vardanyan", initials: "KV" },
-    biz: { name: "Dargett Craft Brewery", slug: "dargett-craft-brewery", address: "72 Aram St", city: "Yerevan" },
-    time: "5h ago",
-    media: [{ url: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800&auto=format&fit=crop&q=80", type: 'image' }],
-    rating: 5,
-    likes: 24,
-    caption: "Great atmosphere and huge selection of local craft beers. The apricot ale is a must-try!",
-    businessId: "mock-biz-2",
-  },
-  {
-    id: "mock-3",
-    user: { name: "Mariam Davtyan", initials: "MD" },
-    biz: { name: "Ararat Organic Farms", slug: "ararat-organic-farms", address: "Artashat Highway, Km 12", city: "Artashat" },
-    time: "3d ago",
-    media: [{ url: "https://images.unsplash.com/photo-1610348725531-843dff563e2c?w=800&auto=format&fit=crop&q=80", type: 'image' }],
-    rating: 4,
-    likes: 18,
-    caption: "The sweetest peaches and fresh herbs! We buy wholesale for our market chain and our customers love the organic quality from Ararat.",
-    businessId: "mock-biz-3",
-  }
-];
+
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -148,6 +113,12 @@ export default function InstagramReviewFeed() {
             if (mediaList.length === 0 && r.image) {
               mediaList.push({ url: r.image, type: 'image' });
             }
+            if (mediaList.length === 0 && r.business?.images && r.business.images.length > 0) {
+              r.business.images.slice(0, 3).forEach((img: string) => mediaList.push({ url: img, type: 'image' }));
+            }
+            if (mediaList.length === 0 && r.business?.logo) {
+              mediaList.push({ url: r.business.logo, type: 'image' });
+            }
 
             const authorName = r.author?.name || r.authorName || "Anonymous User";
 
@@ -190,8 +161,6 @@ export default function InstagramReviewFeed() {
               if (Array.isArray(parsed)) {
                 parsed.forEach((r: any) => {
                   if (r._id && r._id.startsWith("local-")) {
-                    const mockBiz = MOCK_BUSINESSES.find((b) => b.slug === slug);
-
                     const mediaList: ReviewMedia[] = [];
                     if (r.videos && r.videos.length > 0) {
                       r.videos.forEach((v: string) => mediaList.push({ url: v, type: 'video' }));
@@ -202,19 +171,6 @@ export default function InstagramReviewFeed() {
                     if (mediaList.length === 0 && r.image) {
                       mediaList.push({ url: r.image, type: 'image' });
                     }
-                    if (mediaList.length === 0 && mockBiz?.images && mockBiz.images.length > 0) {
-                      mockBiz.images.forEach((img: string) => mediaList.push({ url: img, type: 'image' }));
-                    }
-                    if (mediaList.length === 0) {
-                      const nameLower = (mockBiz?.name || "").toLowerCase();
-                      if (nameLower.includes("restaurant") || nameLower.includes("lavash") || nameLower.includes("cafe")) {
-                        mediaList.push({ url: "https://images.unsplash.com/photo-1608897013039-887f21d8c804?w=800&auto=format&fit=crop&q=80", type: 'image' });
-                      } else if (nameLower.includes("farm") || nameLower.includes("produce") || nameLower.includes("organic")) {
-                        mediaList.push({ url: "https://images.unsplash.com/photo-1610348725531-843dff563e2c?w=800&auto=format&fit=crop&q=80", type: 'image' });
-                      } else {
-                        mediaList.push({ url: "https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=800&auto=format&fit=crop&q=80", type: 'image' });
-                      }
-                    }
 
                     localReviews.push({
                       id: r._id,
@@ -223,10 +179,10 @@ export default function InstagramReviewFeed() {
                         initials: getInitials(r.authorName || "Anonymous User"),
                       },
                       biz: {
-                        name: mockBiz?.name || "Local Business",
+                        name: r.businessName || "Local Business",
                         slug: slug,
-                        address: mockBiz?.address || "Armenia",
-                        city: mockBiz?.city || "",
+                        address: r.businessAddress || "Armenia",
+                        city: r.businessCity || "",
                       },
                       time: timeAgo(r.createdAt),
                       createdAt: r.createdAt,
@@ -234,7 +190,7 @@ export default function InstagramReviewFeed() {
                       rating: r.rating || 5,
                       likes: r.helpfulCount || 0,
                       caption: r.comment || "",
-                      businessId: mockBiz?.id || "local-biz",
+                      businessId: r.businessId || slug,
                     });
                   }
                 });
@@ -250,31 +206,11 @@ export default function InstagramReviewFeed() {
       const userReviews = [...backendReviews, ...localReviews];
       userReviews.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
-      // Merge user reviews with fallback reviews
-      const merged: ReviewCardData[] = [...userReviews];
-
-      FALLBACK_REVIEWS.forEach((fallback) => {
-        if (merged.length < 6) {
-          const hasDuplicate = merged.some((m) => m.biz.slug === fallback.biz.slug);
-          if (!hasDuplicate) {
-            merged.push(fallback);
-          }
-        }
-      });
-
-      if (merged.length < 3) {
-        FALLBACK_REVIEWS.forEach((f) => {
-          if (!merged.some((m) => m.id === f.id)) {
-            merged.push(f);
-          }
-        });
-      }
-
-      setReviews(merged);
+      setReviews(userReviews);
 
       // initialize liked map
       const initialLikedMap: Record<string, { liked: boolean; count: number }> = {};
-      merged.forEach((r) => {
+      userReviews.forEach((r) => {
         initialLikedMap[r.id] = { liked: false, count: r.likes };
       });
       setLikedMap(initialLikedMap);

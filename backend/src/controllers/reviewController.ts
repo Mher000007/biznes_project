@@ -347,7 +347,7 @@ export const getAllReviews = asyncHandler(
       .skip(skip)
       .limit(limit)
       .populate('author', 'name avatar')
-      .populate('business', 'name slug address city images');
+      .populate('business', 'name slug address city images logo coverImageUrl');
 
     res.status(200).json({
       success: true,

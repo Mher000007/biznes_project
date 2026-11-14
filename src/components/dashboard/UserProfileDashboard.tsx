@@ -55,7 +55,6 @@ import {
   Bot,
   BotOff
 } from "lucide-react";
-import { MOCK_BUSINESSES } from "@/data/mock-businesses";
 
 function formatRelativeTime(iso?: string, locale: string = "hy"): string {
   if (!iso) return locale === "hy" ? "Հենց նոր" : locale === "ru" ? "Только что" : "Just now";
@@ -600,23 +599,10 @@ export default function UserProfileDashboard() {
       return direct.trim();
     }
 
+
+
     const itemKey = item.id || item.slug || "";
     const itemName = (item.name || item.businessName || "").toLowerCase().trim();
-
-    const mockMatch = MOCK_BUSINESSES.find(
-      (b) =>
-        (itemKey && (b.id === itemKey || b.slug === itemKey)) ||
-        (itemName && b.name && b.name.toLowerCase().trim() === itemName)
-    );
-    if (mockMatch) {
-      const mockLogo =
-        mockMatch.logo ||
-        mockMatch.logoUrl ||
-        (Array.isArray(mockMatch.images) ? mockMatch.images[0] : "") ||
-        mockMatch.coverImageUrl ||
-        "";
-      if (mockLogo) return mockLogo;
-    }
 
     if (typeof localStorage !== "undefined") {
       const profilesStr = localStorage.getItem("armbiz-business-profiles");
@@ -690,15 +676,7 @@ export default function UserProfileDashboard() {
       for (const key of favIds) {
         if (seen.has(key)) continue;
 
-        // Check MOCK_BUSINESSES
-        const mockMatch = MOCK_BUSINESSES.find(b => b.id === key || b.slug === key);
-        if (mockMatch) {
-          list.push(mockMatch);
-          seen.add(key);
-          if (mockMatch.id) seen.add(String(mockMatch.id));
-          if (mockMatch.slug) seen.add(String(mockMatch.slug));
-          continue;
-        }
+
 
         // Check custom local profiles
         const profilesStr = localStorage.getItem("armbiz-business-profiles");
@@ -1900,11 +1878,8 @@ export default function UserProfileDashboard() {
             ) : (
               <div className="space-y-4">
                 {userReviewsList.map((rev, idx) => {
-                  const bSlug = rev.businessSlug || "";
-                  const mockMatch = MOCK_BUSINESSES.find((b) => b.slug === bSlug || b.id === bSlug);
-                  const displayTitle = mockMatch
-                    ? mockMatch.name
-                    : rev.businessName || bSlug || "Business";
+                  const bSlug = rev.businessSlug || rev.business?.slug || "";
+                  const displayTitle = rev.businessName || rev.business?.name || bSlug || "Business";
 
                   const ratingVal = Math.min(5, Math.max(1, Number(rev.rating) || 5));
                   const imageList: string[] = rev.images && rev.images.length > 0 ? rev.images : (rev.image ? [rev.image] : []);

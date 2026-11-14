@@ -1,7 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { MOCK_BUSINESSES } from "@/data/mock-businesses";
 import { Star, MapPin, BadgeCheck, Globe, Phone, Mail, Clock, Users, Calendar, ArrowLeft, Send, X, Compass, ChevronLeft, ChevronRight, CheckCircle, Maximize2, ChevronDown, Heart, Bookmark, Sparkles, Coins, Info } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
@@ -607,71 +606,6 @@ export default function BusinessProfilePage() {
             console.error("Error parsing localstorage business profiles", e);
           }
         }
-      }
-
-      // Fallback to MOCK_BUSINESSES
-      const mockBiz = MOCK_BUSINESSES.find((b) => b.slug === slug);
-      if (mockBiz) {
-        // Increment mock views in localStorage
-        let updatedViews = mockBiz.viewCount;
-        let updatedInqs = mockBiz.inquiryCount;
-        let updatedRating = mockBiz.ratingAvg;
-        let updatedReviewsCount = mockBiz.reviewCount;
-        if (typeof window !== "undefined") {
-          const mockViewsKey = "armbiz-mock-views";
-          try {
-            const mockViewsMap = JSON.parse(window.localStorage.getItem(mockViewsKey) || "{}");
-            const currentViews = mockViewsMap[slug] !== undefined ? mockViewsMap[slug] : mockBiz.viewCount;
-            updatedViews = currentViews + 1;
-            mockViewsMap[slug] = updatedViews;
-            window.localStorage.setItem(mockViewsKey, JSON.stringify(mockViewsMap));
-          } catch (e) {
-            console.error("Error updating mock views in localStorage", e);
-          }
-
-          const mockInqKey = "armbiz-mock-inquiries";
-          try {
-            const mockInqMap = JSON.parse(window.localStorage.getItem(mockInqKey) || "{}");
-            if (mockInqMap[slug] !== undefined) {
-              updatedInqs = mockInqMap[slug];
-            }
-          } catch (e) { }
-
-          const mockReviewKey = "armbiz-mock-reviews";
-          try {
-            const mockReviewsMap = JSON.parse(window.localStorage.getItem(mockReviewKey) || "{}");
-            if (mockReviewsMap[slug] !== undefined) {
-              updatedRating = mockReviewsMap[slug].ratingAvg;
-              updatedReviewsCount = mockReviewsMap[slug].reviewCount;
-            }
-          } catch (e) { }
-        }
-
-        // Map mock structures to DB structures
-        const normalizedBiz = {
-          ...mockBiz,
-          viewCount: updatedViews,
-          inquiryCount: updatedInqs,
-          ratingAvg: updatedRating,
-          reviewCount: updatedReviewsCount,
-          services: mockBiz.services.map(s => ({
-            name: s.name,
-            description: s.description,
-            price: s.priceRange && s.priceRange.includes('$') ? parseInt(s.priceRange.replace(/[^0-9]/g, '')) * 400 || 5000 : 8000,
-            duration: "45 mins"
-          })),
-          menu: mockBiz.category.slug === "horeca" ? [
-            { name: "Armenian Khorovats (BBQ)", price: 4200, description: "Charcoal grilled marinated pork loin", category: "Main Course" },
-            { name: "Lavash Wrap", price: 1800, description: "Flatbread wrap with fresh greens and cheese", category: "Appetizer" },
-            { name: "Basturma Platter", price: 3200, description: "Air-cured beef with fenugreek spice", category: "Appetizer" },
-            { name: "Khachapuri", price: 2500, description: "Cheese-filled crusty bread", category: "Main Course" },
-            { name: "Armenian Brandy (10 Y.O)", price: 4500, description: "Premium local brandy glass", category: "Drinks" }
-          ] : [],
-          highlights: []
-        };
-        setBusiness(normalizedBiz);
-        setLiveRating(normalizedBiz.ratingAvg || 0);
-        setLiveReviewCount(normalizedBiz.reviewCount || 0);
       }
       setLoading(false);
     }

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
 import OpenAI from "openai";
-import { MOCK_BUSINESSES } from "@/data/mock-businesses";
 
 const apiKey = process.env.GEMINI_API_KEY || process.env.OPENAI_API_KEY || "";
 
@@ -426,13 +425,8 @@ export async function POST(request: NextRequest) {
       console.error("Failed to prefetch businesses:", e);
     }
 
-    // Merge all sources to search businesses
+    // All businesses from API
     const combinedBizList = [...allBusinesses];
-    for (const mb of MOCK_BUSINESSES) {
-      if (!combinedBizList.some((b: any) => (b._id && b._id === mb.id) || (b.id && b.id === mb.id) || (b.slug && b.slug === mb.slug))) {
-        combinedBizList.push(mb);
-      }
-    }
 
     const getBizCoverImage = (b: any) => {
       if (!b) return "";
@@ -483,9 +477,6 @@ export async function POST(request: NextRequest) {
     // Helper to find business by ID or Name
     const findBusiness = async (idOrName: string) => {
       let biz = allBusinesses.find(b => b._id === idOrName || b.id === idOrName || (b.name && b.name.toLowerCase() === idOrName.toLowerCase()) || (b.slug && b.slug.toLowerCase() === idOrName.toLowerCase()));
-      if (!biz) {
-        biz = MOCK_BUSINESSES.find((b: any) => b.id === idOrName || b._id === idOrName || b.slug === idOrName || (b.name && b.name.toLowerCase() === idOrName.toLowerCase()));
-      }
       if (!biz && idOrName.match(/^[0-9a-fA-F]{24}$/)) {
         try {
           const singleRes = await axios.get(`${apiUrl}/businesses/${idOrName}`, { timeout: 5000 });

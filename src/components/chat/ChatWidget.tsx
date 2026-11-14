@@ -13,7 +13,6 @@ import { QRCodeSVG } from "qrcode.react";
 import { useI18n } from "@/i18n";
 import { useAuth } from "@/context/AuthContext";
 import ChatMap from "./ChatMap";
-import { MOCK_BUSINESSES } from "@/data/mock-businesses";
 
 const logoCache = new Map<string, string>();
 let cachedProfiles: any[] | null = null;
@@ -93,21 +92,6 @@ const resolveBusinessLogo = (item: any): string => {
         result = item.image.trim();
       } else if (Array.isArray(item.images) && item.images.length > 0 && typeof item.images[0] === 'string' && item.images[0].trim().length > 0) {
         result = item.images[0].trim();
-      } else {
-        // 4. Check MOCK_BUSINESSES
-        const mockMatch = MOCK_BUSINESSES.find(
-          (b) =>
-            (itemKey && (b.id === itemKey || b.slug === itemKey)) ||
-            (itemName && b.name && b.name.toLowerCase().trim() === itemName)
-        );
-        if (mockMatch) {
-          result =
-            mockMatch.logo ||
-            mockMatch.logoUrl ||
-            (Array.isArray(mockMatch.images) && mockMatch.images.length > 0 ? mockMatch.images[0] : "") ||
-            mockMatch.coverImageUrl ||
-            "";
-        }
       }
     }
   }
@@ -190,16 +174,7 @@ const resolveBusinessGallery = (item: any): string[] => {
     }
   }
 
-  // 3. Check MOCK_BUSINESSES
-  const mockMatch = MOCK_BUSINESSES.find(
-    (b) =>
-      (itemKey && (b.id === itemKey || b.slug === itemKey)) ||
-      (itemName && b.name && b.name.toLowerCase().trim() === itemName)
-  );
-  if (mockMatch) {
-    if (Array.isArray(mockMatch.images)) mockMatch.images.forEach(addPhoto);
-    if (mockMatch.coverImageUrl) addPhoto(mockMatch.coverImageUrl);
-  }
+
 
   if (cacheKey) galleryCache.set(cacheKey, photos);
   return photos;

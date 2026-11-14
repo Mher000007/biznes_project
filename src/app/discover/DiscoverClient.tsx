@@ -4,7 +4,6 @@ import { useState, useEffect, Suspense, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store/store";
 import { setQuery, setCity, setCategory, setRatingMin, setVerifiedOnly, setSortBy, resetFilters } from "@/store/slices/filterSlice";
-import { MOCK_BUSINESSES } from "@/data/mock-businesses";
 import { CATEGORIES, SORT_OPTIONS } from "@/lib/constants";
 import { LocationSelect } from "@/components/ui/LocationSelect";
 import { RatingSelect } from "@/components/ui/RatingSelect";
@@ -32,7 +31,7 @@ const DiscoverMap = dynamic(() => import("@/components/discover/DiscoverMap"), {
   ),
 });
 
-// Normalize a backend business doc to the same shape as a MOCK_BUSINESSES entry
+// Normalize a backend business doc to the frontend Business shape
 function normalizeBackendBusiness(b: any) {
   const cat = b.category || {};
   return {
@@ -167,18 +166,17 @@ function DiscoverContent() {
         const res = await axios.get(`${API}/businesses`, {
           params: { limit: 100 },
         });
-        if (res.data?.success && res.data.data?.length > 0) {
+        if (res.data?.success && Array.isArray(res.data.data)) {
           const normalized = res.data.data.map(normalizeBackendBusiness);
           setBusinesses(normalized);
           setLoading(false);
           return;
         }
       } catch (err: any) {
-        console.warn("Backend businesses fetch failed, using static mock data:", err?.message || err);
+        console.warn("Backend businesses fetch failed:", err?.message || err);
       }
 
-      // Fallback: use static mock data
-      setBusinesses(MOCK_BUSINESSES as any[]);
+      setBusinesses([]);
       setLoading(false);
     }
 

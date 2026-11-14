@@ -4,7 +4,7 @@ import styles from "./About.module.scss";
 import { useI18n } from "@/i18n";
 import { useEffect, useState } from "react";
 import { getApiUrl } from "@/lib/utils";
-import { ChevronDown, Utensils, Coffee, Hotel, Wine, Star, MapPin, Search, CalendarCheck, Map, BadgeCheck } from "lucide-react";
+import { ChevronDown, Utensils, Star, MapPin, Search, CalendarCheck, Map, BadgeCheck } from "lucide-react";
 const FAQ_DATA = {
   hy: [
     { q: "Ի՞նչ է Treeo-ն և ինչպե՞ս է այն աշխատում:", a: "Treeo-ն միասնական հարթակ է, որը թույլ է տալիս գտնել և ամրագրել սեղաններ ռեստորաններում, սենյակներ հյուրանոցներում և այլ ծառայություններ HoReCa ոլորտում։" },
@@ -29,11 +29,11 @@ const FAQ_DATA = {
   ]
 };
 
-const MOCK_CARDS = [
-  { icon: <Utensils />, title: "Lavash Restaurant", rating: 4.9, location: "Yerevan", color: "linear-gradient(135deg, #FF6B6B, #FF8E53)" },
-  { icon: <Coffee />, title: "Cascade Lounge", rating: 4.7, location: "Yerevan", color: "linear-gradient(135deg, #4D96FF, #6BCB77)" },
-  { icon: <Hotel />, title: "Dilijan Resort", rating: 4.9, location: "Dilijan", color: "linear-gradient(135deg, #9D4EDD, #C77DFF)" },
-  { icon: <Wine />, title: "Dolmama", rating: 4.8, location: "Yerevan", color: "linear-gradient(135deg, #FF9F1C, #FFBF69)" },
+const REAL_DEFAULT_CARDS = [
+  { title: "Semoi Mot", rating: 5.0, location: "Yerevan", color: "linear-gradient(135deg, #FF6B6B, #FF8E53)" },
+  { title: "Picante", rating: 5.0, location: "Yerevan", color: "linear-gradient(135deg, #4D96FF, #6BCB77)" },
+  { title: "yasaman", rating: 4.8, location: "Yerevan", color: "linear-gradient(135deg, #9D4EDD, #C77DFF)" },
+  { title: "Dav`s steak house", rating: 4.9, location: "Yerevan", color: "linear-gradient(135deg, #FF9F1C, #FFBF69)" },
 ];
 
 function formatBusinessCount(count: number): string {
@@ -45,6 +45,7 @@ function formatBusinessCount(count: number): string {
 export default function AboutClient() {
   const { t, locale } = useI18n();
   const [businessCount, setBusinessCount] = useState<string>("...");
+  const [storyCards, setStoryCards] = useState<any[]>(REAL_DEFAULT_CARDS);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
   const toggleFaq = (index: number) => {
@@ -54,18 +55,33 @@ export default function AboutClient() {
   const faqs = FAQ_DATA[locale as keyof typeof FAQ_DATA] || FAQ_DATA.hy;
 
   useEffect(() => {
-    const fetchCount = async () => {
+    const fetchCountAndCards = async () => {
       try {
-        const res = await fetch(`${getApiUrl()}/businesses?limit=1`);
+        const res = await fetch(`${getApiUrl()}/businesses?limit=4&sort=-rating`);
         if (!res.ok) throw new Error("failed");
         const json = await res.json();
-        const total: number = json?.pagination?.total_count ?? 0;
+        const total: number = json?.pagination?.total_count ?? json?.data?.length ?? 0;
         setBusinessCount(formatBusinessCount(total));
+        if (json?.data && Array.isArray(json.data) && json.data.length > 0) {
+          const colors = [
+            "linear-gradient(135deg, #FF6B6B, #FF8E53)",
+            "linear-gradient(135deg, #4D96FF, #6BCB77)",
+            "linear-gradient(135deg, #9D4EDD, #C77DFF)",
+            "linear-gradient(135deg, #FF9F1C, #FFBF69)",
+          ];
+          const mapped = json.data.slice(0, 4).map((b: any, idx: number) => ({
+            title: b.name,
+            rating: b.rating || b.ratingAvg || 5.0,
+            location: b.city || "Yerevan",
+            color: colors[idx % colors.length],
+          }));
+          setStoryCards(mapped);
+        }
       } catch {
-        setBusinessCount("100+");
+        setBusinessCount("10+");
       }
     };
-    fetchCount();
+    fetchCountAndCards();
   }, []);
 
   const STATS = [
@@ -104,11 +120,11 @@ export default function AboutClient() {
 
           <div className={styles.storyVisualInner}>
             <div className={styles.cardsStack}>
-              {MOCK_CARDS.map((c) => (
+              {storyCards.map((c) => (
                 <div key={c.title} className={styles.floatingCard}>
                   <div className={styles.cardHeader}>
                     <div className={styles.iconWrapper} style={{ background: c.color, color: "#fff" }}>
-                      {c.icon}
+                      <Utensils />
                     </div>
                     <div className={styles.cardTitle}>{c.title}</div>
                   </div>

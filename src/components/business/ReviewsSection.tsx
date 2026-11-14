@@ -111,154 +111,14 @@ function RatingBar({ count, total }: { count: number; total: number }) {
   );
 }
 
-// ─── Seeded reviews helper ───────────────────────────────────────────────────
-function getSeededReviews(slug: string): Review[] {
-  const now = new Date();
-  const date1 = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString(); // 2 days ago
-  const date2 = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString(); // 5 days ago
-  const date3 = new Date(now.getTime() - 12 * 24 * 60 * 60 * 1000).toISOString(); // 12 days ago
-
-  if (slug === "lavash-restaurant-group") {
-    return [
-      {
-        _id: "seed-lavash-1",
-        author: { _id: "u1", name: "Anahit Sargsyan" },
-        authorName: "Anahit Sargsyan",
-        rating: 5,
-        comment: "Amazing traditional food! The lavash is always hot and fresh, and the khorovats was perfectly cooked. Excellent service too.",
-        isVerified: true,
-        helpfulCount: 14,
-        createdAt: date1
-      },
-      {
-        _id: "seed-lavash-2",
-        author: { _id: "u2", name: "Aram Grigoryan" },
-        authorName: "Aram Grigoryan",
-        rating: 5,
-        comment: "Best restaurant in Yerevan for traditional Armenian cuisine. The basturma and khachapuri are outstanding. Highly recommended!",
-        isVerified: true,
-        helpfulCount: 8,
-        createdAt: date2
-      },
-      {
-        _id: "seed-lavash-3",
-        author: { _id: "u3", name: "Sarah Connor" },
-        authorName: "Sarah Connor",
-        rating: 4,
-        comment: "Great atmosphere and delicious food. The seating area is beautiful. Service can be a bit slow during weekend peak hours, but overall a great experience.",
-        isVerified: false,
-        helpfulCount: 3,
-        createdAt: date3
-      }
-    ];
-  } else if (slug === "armstone-materials") {
-    return [
-      {
-        _id: "seed-stone-1",
-        author: { _id: "u4", name: "Gevorg Harutyunyan" },
-        authorName: "Gevorg Harutyunyan",
-        rating: 5,
-        comment: "Outstanding tufa and basalt quality. We ordered in bulk for our home facade and they delivered on time with perfect specifications.",
-        isVerified: true,
-        helpfulCount: 9,
-        createdAt: date1
-      },
-      {
-        _id: "seed-stone-2",
-        author: { _id: "u5", name: "Tigran Abrahamyan" },
-        authorName: "Tigran Abrahamyan",
-        rating: 4,
-        comment: "Good service and competitive pricing. The stones were cut precisely. Minor delay in transport, but customer support was very helpful.",
-        isVerified: true,
-        helpfulCount: 2,
-        createdAt: date2
-      }
-    ];
-  } else if (slug === "ararat-organic-farms") {
-    return [
-      {
-        _id: "seed-farms-1",
-        author: { _id: "u6", name: "Mariam Davtyan" },
-        authorName: "Mariam Davtyan",
-        rating: 5,
-        comment: "The sweetest peaches and fresh herbs! We buy wholesale for our market chain and our customers love the organic quality from Ararat.",
-        isVerified: true,
-        helpfulCount: 7,
-        createdAt: date1
-      },
-      {
-        _id: "seed-farms-2",
-        author: { _id: "u7", name: "John Doe" },
-        authorName: "John Doe",
-        rating: 4,
-        comment: "Excellent organic vegetables. They supply our cafe and the freshness is always top-notch. Highly recommended organic supplier.",
-        isVerified: false,
-        helpfulCount: 1,
-        createdAt: date2
-      }
-    ];
-  } else if (slug === "elite-build-materials") {
-    return [
-      {
-        _id: "seed-elite-1",
-        author: { _id: "u8", name: "Karen Karapetyan" },
-        authorName: "Karen Karapetyan",
-        rating: 5,
-        comment: "A huge selection of construction tools and dry mixes. They offer great wholesale discounts for contractors. Very reliable partner.",
-        isVerified: true,
-        helpfulCount: 11,
-        createdAt: date1
-      },
-      {
-        _id: "seed-elite-2",
-        author: { _id: "u9", name: "Narek Simonyan" },
-        authorName: "Narek Simonyan",
-        rating: 4,
-        comment: "Good price range for power tool rentals. The mixers were in great condition. Smooth return process.",
-        isVerified: true,
-        helpfulCount: 4,
-        createdAt: date2
-      }
-    ];
-  }
-  return [];
-}
-
 // ─── Mathematical rating distributor helper ──────────────────────────────────
-function calculateMockDistribution(total: number, avg: number): Record<number, number> {
+function computeDistribution(reviewList: Review[]): Record<number, number> {
   const dist: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-  if (total <= 0) return dist;
-
-  if (avg >= 4.7) {
-    dist[5] = Math.round(total * 0.85);
-    dist[4] = Math.round(total * 0.12);
-    dist[3] = Math.round(total * 0.03);
-  } else if (avg >= 4.5) {
-    dist[5] = Math.round(total * 0.70);
-    dist[4] = Math.round(total * 0.20);
-    dist[3] = Math.round(total * 0.08);
-    dist[2] = Math.round(total * 0.02);
-  } else if (avg >= 4.0) {
-    dist[5] = Math.round(total * 0.50);
-    dist[4] = Math.round(total * 0.35);
-    dist[3] = Math.round(total * 0.10);
-    dist[2] = Math.round(total * 0.04);
-    dist[1] = Math.round(total * 0.01);
-  } else {
-    dist[5] = Math.round(total * 0.30);
-    dist[4] = Math.round(total * 0.30);
-    dist[3] = Math.round(total * 0.20);
-    dist[2] = Math.round(total * 0.15);
-    dist[1] = Math.round(total * 0.05);
-  }
-
-  // Adjust sum due to rounding
-  const sum = dist[1] + dist[2] + dist[3] + dist[4] + dist[5];
-  const diff = total - sum;
-  if (diff !== 0) {
-    dist[5] = Math.max(0, dist[5] + diff);
-  }
-
+  reviewList.forEach((r) => {
+    if (r.rating >= 1 && r.rating <= 5) {
+      dist[r.rating] = (dist[r.rating] || 0) + 1;
+    }
+  });
   return dist;
 }
 
@@ -409,62 +269,37 @@ export default function ReviewsSection({
     }
   }, [businessId, isBackend]);
 
-  // Fallback localStorage reviews for mock/local businesses
+  // Fallback localStorage reviews for local businesses
   const loadLocalReviews = useCallback(() => {
     try {
       const raw = localStorage.getItem(`armbiz-reviews-${businessSlug}`);
-      let parsed: Review[] = [];
-      if (raw) {
-        parsed = JSON.parse(raw);
-      } else {
-        parsed = getSeededReviews(businessSlug);
-        if (parsed.length > 0) {
-          localStorage.setItem(`armbiz-reviews-${businessSlug}`, JSON.stringify(parsed));
-        }
-      }
+      const parsed: Review[] = raw ? JSON.parse(raw) : [];
 
       setReviews(parsed);
 
-      // Distinguish user-added reviews (IDs starting with "local-")
-      const userAddedReviews = parsed.filter(r => r._id.startsWith("local-"));
-      const userReviewsCount = userAddedReviews.length;
-
-      // Calculate total count: initial count + user reviews
-      const totalCount = initialReviewCount + userReviewsCount;
-
-      // Calculate weighted average
-      let calculatedAvg = initialRating;
+      const totalCount = parsed.length;
+      let calculatedAvg = 0;
       if (totalCount > 0) {
-        const userSum = userAddedReviews.reduce((sum, r) => sum + r.rating, 0);
-        calculatedAvg = ((initialRating * initialReviewCount) + userSum) / totalCount;
-        calculatedAvg = Math.round(calculatedAvg * 10) / 10;
+        const sum = parsed.reduce((acc, r) => acc + (r.rating || 0), 0);
+        calculatedAvg = Math.round((sum / totalCount) * 10) / 10;
       }
 
       setAvgRating(calculatedAvg);
       setReviewCount(totalCount);
       onRatingUpdate?.(calculatedAvg, totalCount);
 
-      // Compute distribution: base distribution from initial counts + user reviews
-      const baseDist = calculateMockDistribution(initialReviewCount, initialRating);
-      userAddedReviews.forEach(r => {
-        if (r.rating >= 1 && r.rating <= 5) {
-          baseDist[r.rating] = (baseDist[r.rating] || 0) + 1;
-        }
-      });
-      setDistribution(baseDist);
+      setDistribution(computeDistribution(parsed));
       setTotalPages(Math.ceil(parsed.length / 3) || 1);
     } catch { /* ignore */ }
-  }, [businessSlug, initialRating, initialReviewCount, onRatingUpdate]);
+  }, [businessSlug, onRatingUpdate]);
 
   useEffect(() => {
-    setTimeout(() => {
-      if (isBackend) {
-        fetchReviews(1);
-      } else {
-        loadLocalReviews();
-        setPage(1);
-      }
-    }, 1500);
+    if (isBackend) {
+      fetchReviews(1);
+    } else {
+      loadLocalReviews();
+      setPage(1);
+    }
   }, [businessId, isBackend, fetchReviews, loadLocalReviews]);
 
   // Sync initial counts when props change
@@ -616,25 +451,21 @@ export default function ReviewsSection({
         window.dispatchEvent(new Event("reviewsUpdated"));
       } catch { /* ignore */ }
 
-      // Recalculate based on initial data + all user-added reviews
+      // Recalculate based on all user-added reviews
       const userAdded = updated.filter(r => r._id.startsWith("local-"));
       const userCount = userAdded.length;
-      const totalCount = initialReviewCount + userCount;
-      const userSum = userAdded.reduce((sum, r) => sum + r.rating, 0);
-      const rounded = Math.round((((initialRating * initialReviewCount) + userSum) / totalCount) * 10) / 10;
+      let rounded = 0;
+      if (userCount > 0) {
+        const userSum = userAdded.reduce((sum, r) => sum + r.rating, 0);
+        rounded = Math.round((userSum / userCount) * 10) / 10;
+      }
 
       setAvgRating(rounded);
-      setReviewCount(totalCount);
-      onRatingUpdate?.(rounded, totalCount);
+      setReviewCount(userCount);
+      onRatingUpdate?.(rounded, userCount);
 
       // Update distribution
-      const baseDist = calculateMockDistribution(initialReviewCount, initialRating);
-      userAdded.forEach(r => {
-        if (r.rating >= 1 && r.rating <= 5) {
-          baseDist[r.rating] = (baseDist[r.rating] || 0) + 1;
-        }
-      });
-      setDistribution(baseDist);
+      setDistribution(computeDistribution(updated));
 
       setSubmitSuccess(true);
       setSelectedRating(0);
